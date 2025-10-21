@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "./styles/design-system.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -44,234 +43,78 @@
 
 :root {
   --radius: 0.625rem;
-  
-  /* Primary Colors */
-  --background: #FFFFFF; /* Light mode background */
-  --foreground: #0D0D0D; /* Light mode text */
-  --card: #FFFFFF;
-  --card-foreground: #0D0D0D;
-  --popover: #FFFFFF;
-  --popover-foreground: #0D0D0D;
-  
-  /* Accent Colors */
-  --primary: #A689F3; /* Purple highlight */
-  --primary-foreground: #FFFFFF;
-  --secondary: #FFD85C; /* Yellow highlight */
-  --secondary-foreground: #0D0D0D;
-  --muted: #F5F5F5;
-  --muted-foreground: #7A7A7A; /* Subtle text */
-  --accent: #A689F3;
-  --accent-foreground: #FFFFFF;
-  --destructive: #E74C3C; /* Red error */
-  --success: #2ECC71; /* Green success */
-  
-  /* Borders and inputs */
-  --border: #2B2B2B;
-  --input: #2B2B2B;
-  --ring: #A689F3;
-  
-  /* Charts */
-  --chart-1: #A689F3; /* Purple */
-  --chart-2: #FFD85C; /* Yellow */
-  --chart-3: #C5A3FF; /* Map dots / heat area */
-  --chart-4: #2ECC71; /* Green */
-  --chart-5: #E74C3C; /* Red */
-  
-  /* Sidebar */
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #0D0D0D;
-  --sidebar-primary: #A689F3;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F5F5F5;
-  --sidebar-accent-foreground: #0D0D0D;
-  --sidebar-border: #2B2B2B;
-  --sidebar-ring: #A689F3;
-  
-  /* Text Colors */
-  --text-primary: #0D0D0D; /* Light mode primary text */
-  --text-secondary: #B3B3B3; /* Secondary text */
-  --text-subtle: #7A7A7A; /* Subtle text / placeholder */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.13 0.028 261.692);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.13 0.028 261.692);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.13 0.028 261.692);
+  --primary: oklch(0.21 0.034 264.665);
+  --primary-foreground: oklch(0.985 0.002 247.839);
+  --secondary: oklch(0.967 0.003 264.542);
+  --secondary-foreground: oklch(0.21 0.034 264.665);
+  --muted: oklch(0.967 0.003 264.542);
+  --muted-foreground: oklch(0.551 0.027 264.364);
+  --accent: oklch(0.967 0.003 264.542);
+  --accent-foreground: oklch(0.21 0.034 264.665);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.928 0.006 264.531);
+  --input: oklch(0.928 0.006 264.531);
+  --ring: oklch(0.707 0.022 261.325);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0.002 247.839);
+  --sidebar-foreground: oklch(0.13 0.028 261.692);
+  --sidebar-primary: oklch(0.21 0.034 264.665);
+  --sidebar-primary-foreground: oklch(0.985 0.002 247.839);
+  --sidebar-accent: oklch(0.967 0.003 264.542);
+  --sidebar-accent-foreground: oklch(0.21 0.034 264.665);
+  --sidebar-border: oklch(0.928 0.006 264.531);
+  --sidebar-ring: oklch(0.707 0.022 261.325);
 }
 
 .dark {
-  /* Primary Colors - Dark Mode */
-  --background: #0D0D0D; /* Black background */
-  --foreground: #FFFFFF; /* White text */
-  --card: #1A1A1A; /* Deep gray card */
-  --card-foreground: #FFFFFF;
-  --popover: #1A1A1A;
-  --popover-foreground: #FFFFFF;
-  
-  /* Accent Colors */
-  --primary: #A689F3; /* Purple highlight */
-  --primary-foreground: #FFFFFF;
-  --secondary: #FFD85C; /* Yellow highlight */
-  --secondary-foreground: #0D0D0D;
-  --muted: #1A1A1A;
-  --muted-foreground: #B3B3B3; /* Secondary text */
-  --accent: #A689F3;
-  --accent-foreground: #FFFFFF;
-  --destructive: #E74C3C; /* Red error */
-  --success: #2ECC71; /* Green success */
-  
-  /* Borders and inputs */
-  --border: #2B2B2B; /* Medium gray border */
-  --input: #2B2B2B;
-  --ring: #A689F3;
-  
-  /* Charts */
-  --chart-1: #A689F3; /* Purple */
-  --chart-2: #FFD85C; /* Yellow */
-  --chart-3: #C5A3FF; /* Map dots / heat area */
-  --chart-4: #2ECC71; /* Green */
-  --chart-5: #E74C3C; /* Red */
-  
-  /* Sidebar */
-  --sidebar: #1A1A1A;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #A689F3;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #2B2B2B;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #2B2B2B;
-  --sidebar-ring: #A689F3;
-  
-  /* Text Colors */
-  --text-primary: #FFFFFF; /* Primary white text */
-  --text-secondary: #B3B3B3; /* Muted gray text */
-  --text-subtle: #7A7A7A; /* Subtle text / placeholder */
-}
-
-/* Typography */
-:root {
-  --font-family-primary: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  
-  /* Font Sizes */
-  --font-size-heading: clamp(20px, 2.5vw, 28px); /* 20-28px */
-  --font-size-body: clamp(14px, 1.5vw, 16px); /* 14-16px */
-  --font-size-label: clamp(12px, 1vw, 13px); /* 12-13px */
-  
-  /* Font Weights */
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
+  --background: oklch(0.13 0.028 261.692);
+  --foreground: oklch(0.985 0.002 247.839);
+  --card: oklch(0.21 0.034 264.665);
+  --card-foreground: oklch(0.985 0.002 247.839);
+  --popover: oklch(0.21 0.034 264.665);
+  --popover-foreground: oklch(0.985 0.002 247.839);
+  --primary: oklch(0.928 0.006 264.531);
+  --primary-foreground: oklch(0.21 0.034 264.665);
+  --secondary: oklch(0.278 0.033 256.848);
+  --secondary-foreground: oklch(0.985 0.002 247.839);
+  --muted: oklch(0.278 0.033 256.848);
+  --muted-foreground: oklch(0.707 0.022 261.325);
+  --accent: oklch(0.278 0.033 256.848);
+  --accent-foreground: oklch(0.985 0.002 247.839);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.551 0.027 264.364);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.21 0.034 264.665);
+  --sidebar-foreground: oklch(0.985 0.002 247.839);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0.002 247.839);
+  --sidebar-accent: oklch(0.278 0.033 256.848);
+  --sidebar-accent-foreground: oklch(0.985 0.002 247.839);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  
-  html {
-    font-family: var(--font-family-primary);
-  }
-  
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-family-primary);
-    font-size: var(--font-size-body);
-    font-weight: var(--font-weight-regular);
-    line-height: 1.5;
-  }
-  
-  h1, h2, h3, h4, h5, h6 {
-    font-size: var(--font-size-heading);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-  }
-  
-  .text-primary {
-    color: var(--text-primary);
-  }
-  
-  .text-secondary {
-    color: var(--text-secondary);
-  }
-  
-  .text-subtle {
-    color: var(--text-subtle);
-  }
-  
-  .font-regular {
-    font-weight: var(--font-weight-regular);
-  }
-  
-  .font-medium {
-    font-weight: var(--font-weight-medium);
-  }
-  
-  .font-semibold {
-    font-weight: var(--font-weight-semibold);
-  }
-  
-  .text-heading {
-    font-size: var(--font-size-heading);
-  }
-  
-  .text-body {
-    font-size: var(--font-size-body);
-  }
-  
-  .text-label {
-    font-size: var(--font-size-label);
-  }
-}
-
-/* Custom utility classes for your color scheme */
-@layer utilities {
-  .bg-black {
-    background-color: #0D0D0D;
-  }
-  
-  .bg-deep-gray {
-    background-color: #1A1A1A;
-  }
-  
-  .bg-medium-gray {
-    background-color: #2B2B2B;
-  }
-  
-  .bg-purple {
-    background-color: #A689F3;
-  }
-  
-  .bg-yellow {
-    background-color: #FFD85C;
-  }
-  
-  .bg-green {
-    background-color: #2ECC71;
-  }
-  
-  .bg-red {
-    background-color: #E74C3C;
-  }
-  
-  .text-white {
-    color: #FFFFFF;
-  }
-  
-  .text-muted {
-    color: #B3B3B3;
-  }
-  
-  .text-subtle {
-    color: #7A7A7A;
-  }
-  
-  .border-medium-gray {
-    border-color: #2B2B2B;
-  }
-  
-  .chart-line-1 {
-    color: #A689F3;
-  }
-  
-  .chart-line-2 {
-    color: #FFD85C;
-  }
-  
-  .map-dots {
-    color: #C5A3FF;
   }
 }
