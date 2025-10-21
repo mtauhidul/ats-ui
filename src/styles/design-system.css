@@ -1,0 +1,155 @@
+/* ATS UI Design System */
+
+/* ===== COLOR PALETTE ===== */
+
+/* Primary Colors */
+:root {
+  --color-black: #0D0D0D;
+  --color-deep-gray: #1A1A1A;
+  --color-medium-gray: #2B2B2B;
+}
+
+/* Accent Colors */
+:root {
+  --color-purple: #A689F3;
+  --color-yellow: #FFD85C;
+  --color-green: #2ECC71;
+  --color-red: #E74C3C;
+}
+
+/* Text Colors */
+:root {
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #B3B3B3;
+  --color-text-subtle: #7A7A7A;
+}
+
+/* Data Visualization */
+:root {
+  --color-chart-line-1: #A689F3;
+  --color-chart-line-2: #FFD85C;
+  --color-map-dots: #C5A3FF;
+}
+
+/* ===== TYPOGRAPHY ===== */
+
+/* Font Family */
+:root {
+  --font-family-primary: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Font Weights */
+:root {
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+}
+
+/* Font Sizes */
+:root {
+  --font-size-heading-min: 20px;
+  --font-size-heading-max: 28px;
+  --font-size-body-min: 14px;
+  --font-size-body-max: 16px;
+  --font-size-label-min: 12px;
+  --font-size-label-max: 13px;
+  
+  /* Responsive font sizes */
+  --font-size-heading: clamp(var(--font-size-heading-min), 2.5vw, var(--font-size-heading-max));
+  --font-size-body: clamp(var(--font-size-body-min), 1.5vw, var(--font-size-body-max));
+  --font-size-label: clamp(var(--font-size-label-min), 1vw, var(--font-size-label-max));
+}
+
+/* ===== UTILITY CLASSES ===== */
+
+/* Background Colors */
+.bg-black { background-color: var(--color-black); }
+.bg-deep-gray { background-color: var(--color-deep-gray); }
+.bg-medium-gray { background-color: var(--color-medium-gray); }
+.bg-purple { background-color: var(--color-purple); }
+.bg-yellow { background-color: var(--color-yellow); }
+.bg-green { background-color: var(--color-green); }
+.bg-red { background-color: var(--color-red); }
+
+/* Text Colors */
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-subtle { color: var(--color-text-subtle); }
+.text-purple { color: var(--color-purple); }
+.text-yellow { color: var(--color-yellow); }
+.text-green { color: var(--color-green); }
+.text-red { color: var(--color-red); }
+
+/* Typography */
+.font-regular { font-weight: var(--font-weight-regular); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+
+.text-heading { font-size: var(--font-size-heading); }
+.text-body { font-size: var(--font-size-body); }
+.text-label { font-size: var(--font-size-label); }
+
+/* Border Colors */
+.border-medium-gray { border-color: var(--color-medium-gray); }
+.border-purple { border-color: var(--color-purple); }
+
+/* Chart and Data Visualization */
+.chart-line-1 { color: var(--color-chart-line-1); }
+.chart-line-2 { color: var(--color-chart-line-2); }
+.map-dots { color: var(--color-map-dots); }
+
+/* Component Styles */
+.card-dark {
+  background-color: var(--color-deep-gray);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-medium-gray);
+}
+
+.button-primary {
+  background-color: var(--color-purple);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.button-primary:hover {
+  background-color: color-mix(in srgb, var(--color-purple) 90%, white);
+}
+
+.button-secondary {
+  background-color: var(--color-yellow);
+  color: var(--color-black);
+  font-weight: var(--font-weight-medium);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.button-secondary:hover {
+  background-color: color-mix(in srgb, var(--color-yellow) 90%, white);
+}
+
+.input-dark {
+  background-color: var(--color-deep-gray);
+  border: 1px solid var(--color-medium-gray);
+  color: var(--color-text-primary);
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  font-size: var(--font-size-body);
+}
+
+.input-dark::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.input-dark:focus {
+  outline: none;
+  border-color: var(--color-purple);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-purple) 20%, transparent);
+}
