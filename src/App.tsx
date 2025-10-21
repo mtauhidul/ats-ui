@@ -1,24 +1,24 @@
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import "./App.css";
-import { Button } from "./components/ui/button";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import Layout from "./components/layout";
+import { Toaster } from "./components/ui/sonner";
+import AuthPage from "./pages/auth";
+import DashboardPage from "./pages/dashboard";
+import HomePage from "./pages/home";
+import JobsPage from "./pages/jobs";
 
 function App() {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    toast("Count updated!");
-  }, [count]);
-
   return (
-    <>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <Button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </Button>
-      </div>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<HomePage />} />
+          <Route path="auth" element={<AuthPage />} />
+          <Route path="jobs" element={<JobsPage />} />
+        </Route>
+        <Route path="dashboard" element={<DashboardPage />} />
+      </Routes>
+      <Toaster />
+    </BrowserRouter>
   );
 }
 

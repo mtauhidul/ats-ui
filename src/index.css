@@ -112,9 +112,19 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
+    outline-color: color-mix(in srgb, var(--ring), transparent 50%);
   }
+  html,
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--sidebar);
+    color: var(--foreground);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
+  #root {
+    min-height: 100vh;
+    background-color: var(--sidebar);
   }
 }
