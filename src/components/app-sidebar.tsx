@@ -15,7 +15,7 @@ import {
 } from "@tabler/icons-react";
 import * as React from "react";
 
-import { NavDocuments } from "@/components/nav-documents";
+import { NavUtilities } from "@/components/nav-utilities";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
@@ -38,67 +38,67 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/dashboard",
       icon: IconDashboard,
     },
     {
       title: "Clients",
-      url: "#",
+      url: "/dashboard/clients",
       icon: IconBuilding,
     },
     {
       title: "Jobs",
-      url: "#",
+      url: "/dashboard/jobs",
       icon: IconBriefcase,
     },
     {
       title: "Candidates",
-      url: "#",
+      url: "/dashboard/candidates",
       icon: IconUserCheck,
     },
     {
       title: "Applications",
-      url: "#",
+      url: "/dashboard/applications",
       icon: IconFileText,
     },
 
     {
       title: "Team",
-      url: "#",
+      url: "/dashboard/team",
       icon: IconUsers,
     },
     {
       title: "Analytics",
-      url: "#",
+      url: "/dashboard/analytics",
       icon: IconChartBar,
     },
   ],
   navSecondary: [
     {
       title: "Search",
-      url: "#",
+      url: "/dashboard/search",
       icon: IconSearch,
     },
     {
       title: "Settings",
-      url: "#",
+      url: "/dashboard/settings",
       icon: IconSettings,
     },
     {
       title: "Get Help",
-      url: "#",
+      url: "/dashboard/help",
       icon: IconHelp,
     },
   ],
   utilities: [
     {
       name: "Tags",
-      url: "#",
+      url: "/dashboard/tags",
       icon: IconTag,
     },
     {
       name: "Categories",
-      url: "#",
+      url: "/dashboard/categories",
       icon: IconBookmark,
     },
   ],
@@ -116,7 +116,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <a href="#">
                 <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">YTFCS Inc.</span>
+                <span className="text-base font-semibold">YTFCS ATS</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -124,7 +124,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.utilities} />
+        <NavUtilities items={data.utilities} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

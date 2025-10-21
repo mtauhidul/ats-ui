@@ -1,9 +1,11 @@
+import { useState } from "react";
 import {
   IconDotsVertical,
   IconLogout,
   IconNotification,
   IconUserCircle,
 } from "@tabler/icons-react";
+import { Link } from "react-router-dom";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -32,27 +34,58 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const [isHovered, setIsHovered] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const textColor = (isHovered || isOpen) ? 'rgb(17, 24, 39)' : '';
 
   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-            >
+    <div className="isolate">
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <SidebarMenuButton
+                size="lg"
+                className="data-[state=open]:bg-sidebar-accent group hover:bg-sidebar-accent relative z-10 focus-visible:outline-none focus-visible:ring-0"
+                style={{ isolation: 'isolate' }}
+              >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg group-hover:text-sidebar-accent group-data-[state=open]:text-sidebar-accent">
+                  CN
+                </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="text-muted-foreground truncate text-xs">
+              <div 
+                className="grid flex-1 text-left text-sm leading-tight"
+                style={{
+                  '--name-color': 'hsl(var(--sidebar-foreground))',
+                  '--email-color': 'hsl(var(--muted-foreground))',
+                } as React.CSSProperties}
+              >
+                <span 
+                  className="truncate font-medium"
+                  style={{ 
+                    color: 'var(--name-color) !important',
+                  }}
+                >
+                  {user.name}
+                </span>
+                <span 
+                  className="truncate text-xs"
+                  style={{ 
+                    color: 'var(--email-color) !important',
+                  }}
+                >
                   {user.email}
                 </span>
               </div>
-              <IconDotsVertical className="ml-auto size-4" />
+              <IconDotsVertical 
+                className="ml-auto size-4 group-hover:!text-sidebar-accent group-data-[state=open]:!text-sidebar-accent" 
+                style={{ 
+                  color: 'var(--default-icon-color, hsl(var(--sidebar-foreground))) !important',
+                }}
+              />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -77,13 +110,17 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconUserCircle />
-                Account
+              <DropdownMenuItem asChild>
+                <Link to="/dashboard/account">
+                  <IconUserCircle />
+                  Account
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconNotification />
-                Notifications
+              <DropdownMenuItem asChild>
+                <Link to="/dashboard/notifications">
+                  <IconNotification />
+                  Notifications
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -95,5 +132,6 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
+    </div>
   );
 }
