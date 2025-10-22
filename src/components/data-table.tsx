@@ -33,8 +33,6 @@ import {
   IconCheck,
   IconX,
   IconDownload,
-  IconPlayerPlay,
-  IconVideo,
 } from "@tabler/icons-react";
 import {
   flexRender,
@@ -86,7 +84,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -167,9 +164,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "type",
-    header: "AI Status",
+    header: "AI Recommendation",
     cell: ({ row }) => (
-      <div className="w-24">
+      <div className="w-28">
         <Badge
           variant="outline"
           className="text-muted-foreground px-2 py-1 flex items-center gap-1 text-xs"
@@ -198,10 +195,10 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
           variant="outline"
           className="text-muted-foreground px-2 py-1 flex items-center gap-1"
         >
-          {row.original.status === "Done" ? (
+          {row.original.status === "Approved" ? (
             <>
               <IconCircleCheckFilled className="size-3 fill-green-500 dark:fill-green-400" />
-              Done
+              Approved
             </>
           ) : row.original.status === "Rejected" ? (
             <>
@@ -642,26 +639,46 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
     }
   }, [isDrawerOpen, showResumePreview]);
 
-  // Helper function to get status badge color
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'done':
-        return 'default';
-      case 'in progress':
-        return 'secondary';
-      case 'rejected':
-        return 'destructive';
-      default:
-        return 'outline';
+  // Helper function to get status badge
+  const getStatusBadge = (status: string) => {
+    const statusLower = status.toLowerCase();
+    
+    if (statusLower === 'approved') {
+      return (
+        <Badge className="bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-400 border-green-500/20 hover:bg-green-500/20">
+          <IconCircleCheckFilled className="h-3 w-3 mr-1" />
+          Approved
+        </Badge>
+      );
+    } else if (statusLower === 'rejected') {
+      return (
+        <Badge className="bg-red-500/10 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-500/20 hover:bg-red-500/20">
+          <IconX className="h-3 w-3 mr-1" />
+          Rejected
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge className="bg-amber-500/10 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20">
+          <IconLoader className="h-3 w-3 mr-1 animate-spin" />
+          In Process
+        </Badge>
+      );
     }
   };
 
   // Helper function to get AI status badge
   const getAIStatusBadge = (type: string) => {
     const isValid = type === 'valid';
-    return (
-      <Badge variant={isValid ? 'default' : 'destructive'} className="text-xs">
-        {isValid ? 'Valid' : 'Invalid'}
+    return isValid ? (
+      <Badge className="bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-400 border-green-500/20 hover:bg-green-500/20">
+        <IconCircleCheckFilled className="h-3 w-3 mr-1" />
+        AI Approved
+      </Badge>
+    ) : (
+      <Badge className="bg-red-500/10 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-500/20 hover:bg-red-500/20">
+        <IconX className="h-3 w-3 mr-1" />
+        AI Rejected
       </Badge>
     );
   };
@@ -676,422 +693,338 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           {item.header}
         </Button>
       </DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader className="gap-1">
+      <DrawerContent className="max-h-[96vh]">
+        <DrawerHeader className="border-b">
           <DrawerTitle>Application Details</DrawerTitle>
           <DrawerDescription>
-            View applicant information and application status
+            Review and manage applicant information
           </DrawerDescription>
         </DrawerHeader>
-        <div className="flex flex-col gap-6 overflow-y-auto px-4 text-sm">
-          {/* Applicant Photo and Basic Info */}
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={item.photo || ""} />
-              <AvatarFallback className="text-lg">
+        
+        <div className="flex flex-col gap-5 overflow-y-auto px-6 py-5">
+          {/* Applicant Header Card */}
+          <div className="flex items-start gap-4 rounded-lg border bg-muted/30 p-4">
+            <Avatar className="h-14 w-14 border-2 rounded-lg">
+              <AvatarImage src={item.photo || ""} className="object-cover" />
+              <AvatarFallback className="text-base font-semibold">
                 {item.header.split(' ').map(n => n[0]).join('')}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold">{item.header}</h3>
-              <p className="text-muted-foreground">{item.email}</p>
-              {item.phone && <p className="text-muted-foreground text-xs">{item.phone}</p>}
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-semibold mb-1">{item.header}</h3>
+              {item.email && (
+                <p className="text-sm text-muted-foreground truncate mb-0.5">{item.email}</p>
+              )}
+              {item.phone && (
+                <p className="text-xs text-muted-foreground">{item.phone}</p>
+              )}
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {getStatusBadge(item.status)}
+                {getAIStatusBadge(item.type)}
+              </div>
             </div>
           </div>
 
-          <Separator />
-
-          {/* Application Details Grid */}
-          <div className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">Current Status</Label>
-                <div className="mt-1">
-                  <Badge variant={getStatusBadgeVariant(item.status)}>
-                    {item.status}
-                  </Badge>
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">AI Status</Label>
-                <div className="mt-1">
-                  {getAIStatusBadge(item.type)}
-                </div>
-              </div>
+          {/* Quick Info Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg border bg-card p-3">
+              <Label className="text-xs text-muted-foreground">Date Applied</Label>
+              <p className="text-sm font-medium mt-1">{item.dateApplied || 'N/A'}</p>
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">Date Applied</Label>
-                <p className="mt-1 text-sm">{item.dateApplied || 'Not available'}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">Job ID</Label>
-                <p className="mt-1 text-sm font-mono">{item.jobIdDisplay || 'Not assigned'}</p>
-              </div>
+            <div className="rounded-lg border bg-card p-3">
+              <Label className="text-xs text-muted-foreground">Job ID</Label>
+              <p className="text-sm font-medium font-mono mt-1">{item.jobIdDisplay || 'N/A'}</p>
             </div>
-
-            <div>
-              <Label className="text-sm font-medium text-muted-foreground">Assigned Reviewer</Label>
-              <div className="mt-1">
-                <span className="text-sm font-medium text-lime-600 dark:text-lime-400 bg-lime-50 dark:bg-lime-950/20 px-2 py-1 rounded-md">
-                  {item.reviewer}
-                </span>
-              </div>
+            <div className="rounded-lg border bg-lime-500/10 dark:bg-lime-500/10 border-lime-500/20 p-3">
+              <Label className="text-xs text-lime-700 dark:text-lime-400 font-medium">Reviewer</Label>
+              <p className="text-sm font-semibold text-lime-800 dark:text-lime-300 mt-1 truncate">{item.reviewer}</p>
             </div>
+            {item.yearsOfExperience && (
+              <div className="rounded-lg border bg-card p-3">
+                <Label className="text-xs text-muted-foreground">Experience</Label>
+                <p className="text-sm font-medium mt-1">{item.yearsOfExperience} years</p>
+              </div>
+            )}
+          </div>
 
-            {/* Additional Details */}
-            {(item.currentTitle || item.currentCompany || item.yearsOfExperience) && (
-              <>
-                <Separator />
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Professional Information</Label>
-                  <div className="mt-2 space-y-1">
-                    {item.currentTitle && (
-                      <p className="text-sm"><span className="font-medium">Title:</span> {item.currentTitle}</p>
-                    )}
-                    {item.currentCompany && (
-                      <p className="text-sm"><span className="font-medium">Company:</span> {item.currentCompany}</p>
-                    )}
-                    {item.yearsOfExperience && (
-                      <p className="text-sm"><span className="font-medium">Experience:</span> {item.yearsOfExperience} years</p>
-                    )}
+          {/* Professional Information */}
+          {(item.currentTitle || item.currentCompany || item.educationLevel || item.expectedSalary) && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                Professional Information
+              </h4>
+              <div className="rounded-lg border divide-y">
+                {item.currentTitle && (
+                  <div className="flex items-center justify-between p-3 text-sm">
+                    <span className="text-muted-foreground">Position</span>
+                    <span className="font-medium text-right">{item.currentTitle}</span>
                   </div>
-                </div>
-              </>
-            )}
-
-            {/* Skills */}
-            {item.skills && item.skills.length > 0 && (
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">Skills</Label>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {item.skills.slice(0, 6).map((skill, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      {skill}
-                    </Badge>
-                  ))}
-                  {item.skills.length > 6 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{item.skills.length - 6} more
-                    </Badge>
-                  )}
-                </div>
+                )}
+                {item.currentCompany && (
+                  <div className="flex items-center justify-between p-3 text-sm">
+                    <span className="text-muted-foreground">Company</span>
+                    <span className="font-medium text-right">{item.currentCompany}</span>
+                  </div>
+                )}
+                {item.educationLevel && (
+                  <div className="flex items-center justify-between p-3 text-sm">
+                    <span className="text-muted-foreground">Education</span>
+                    <span className="font-medium text-right">{item.educationLevel}</span>
+                  </div>
+                )}
+                {item.expectedSalary && (
+                  <div className="flex items-center justify-between p-3 text-sm">
+                    <span className="text-muted-foreground">Salary Expectation</span>
+                    <span className="font-medium text-right">{item.expectedSalary}</span>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Resume Information */}
-            {(item.resumeFilename || item.resumeText) && (
-              <>
-                <Separator />
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Resume</Label>
-                  <div className="mt-2 space-y-2">
-                    {item.resumeFilename && (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+          {/* Contact Information */}
+          {(item.location || item.linkedinUrl || item.portfolioUrl) && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold">Contact Information</h4>
+              <div className="rounded-lg border divide-y">
+                {item.location && (
+                  <div className="flex items-center justify-between p-3 text-sm">
+                    <span className="text-muted-foreground">Location</span>
+                    <span className="font-medium text-right">{item.location}</span>
+                  </div>
+                )}
+                {item.linkedinUrl && (
+                  <div className="flex items-center justify-between p-3 text-sm">
+                    <span className="text-muted-foreground">LinkedIn</span>
+                    <a 
+                      href={item.linkedinUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-primary hover:underline font-medium"
+                    >
+                      View Profile
+                    </a>
+                  </div>
+                )}
+                {item.portfolioUrl && (
+                  <div className="flex items-center justify-between p-3 text-sm">
+                    <span className="text-muted-foreground">Portfolio</span>
+                    <a 
+                      href={item.portfolioUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-primary hover:underline font-medium"
+                    >
+                      View Website
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Skills & Languages */}
+          {((item.skills && item.skills.length > 0) || (item.languages && item.languages.length > 0)) && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold">Skills & Languages</h4>
+              <div className="rounded-lg border bg-card p-4 space-y-3">
+                {item.skills && item.skills.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Technical Skills</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.skills.map((skill, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs font-normal">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {item.languages && item.languages.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Languages</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.languages.map((language, index) => (
+                        <Badge key={index} variant="outline" className="text-xs font-normal">
+                          {language}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Documents Section */}
+          {(item.resumeFilename || item.coverLetter) && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold">Documents</h4>
+              <div className="space-y-3">
+                {/* Resume */}
+                {item.resumeFilename && (
+                  <div className="rounded-lg border overflow-hidden">
+                    <div className="flex items-center justify-between gap-3 p-3 bg-muted/50">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="rounded-md bg-background p-2 border">
                           <IconFileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{item.resumeFilename}</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{item.resumeFilename}</p>
                           {item.resumeFileSize && (
-                            <span className="text-xs text-muted-foreground">({item.resumeFileSize})</span>
+                            <p className="text-xs text-muted-foreground">{item.resumeFileSize}</p>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              // Handle resume download
-                              if (item.resumeFilename) {
-                                console.log(`Downloading resume: ${item.resumeFilename}`);
-                                // Add your download logic here
-                                const link = document.createElement('a');
-                                link.href = `/uploads/resumes/${item.resumeFilename}`;
-                                link.download = item.resumeFilename;
-                                link.click();
-                              }
-                            }}
-                            className="h-8 px-2 hover:bg-green-50 hover:text-green-600"
-                            title="Download Resume"
-                          >
-                            <IconDownload className="h-4 w-4" />
-                            <span className="sr-only">Download Resume</span>
-                          </Button>
-                        </div>
                       </div>
-                    )}
-                    
-                    {/* Resume Preview Section */}
-                    {item.resumeFilename && (
-                      <div className="mt-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs font-medium text-muted-foreground">Resume Preview:</p>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowResumePreview(!showResumePreview)}
-                            className="h-6 px-2 text-xs"
-                          >
-                            {showResumePreview ? 'Hide Preview' : 'Show Preview'}
-                          </Button>
-                        </div>
-                        {showResumePreview && (
-                          <div className="border rounded-lg overflow-hidden bg-white">
-                            {item.resumeFilename.toLowerCase().endsWith('.pdf') ? (
-                              <div className="relative">
-                                <iframe
-                                  src={`/uploads/resumes/${item.resumeFilename}#toolbar=0&navpanes=0&scrollbar=0`}
-                                  className="w-full h-96 border-0"
-                                  title="Resume Preview"
-                                  onError={() => {
-                                    // Fallback if iframe fails to load
-                                    console.log('PDF preview failed, consider showing text version');
-                                  }}
-                                />
-                                <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                                  PDF Preview
-                                </div>
-                              </div>
-                            ) : item.resumeText ? (
-                              <div className="max-h-96 overflow-y-auto p-4 bg-gray-50">
-                                <div className="mb-2 text-xs text-muted-foreground font-medium">Text Version:</div>
-                                <pre className="text-xs text-foreground whitespace-pre-wrap font-mono leading-relaxed">
-                                  {item.resumeText}
-                                </pre>
-                              </div>
-                            ) : (
-                              <div className="p-4 text-center text-muted-foreground">
-                                <IconFileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">Preview not available for this file type</p>
-                                <p className="text-xs">Please use the download button to view the resume</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowResumePreview(!showResumePreview)}
+                          className="h-8 px-3"
+                        >
+                          <span className="text-xs">{showResumePreview ? 'Hide' : 'View'}</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => {
+                            if (item.resumeFilename) {
+                              const link = document.createElement('a');
+                              link.href = `/uploads/resumes/${item.resumeFilename}`;
+                              link.download = item.resumeFilename;
+                              link.click();
+                            }
+                          }}
+                          title="Download Resume"
+                        >
+                          <IconDownload className="h-4 w-4" />
+                        </Button>
                       </div>
-                    )}
-                    
-                    {item.coverLetter && (
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-2">Cover Letter:</p>
-                        <div className="p-3 bg-muted/30 rounded-lg border max-h-80 overflow-y-auto">
-                          <div className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed break-words">
-                            {item.coverLetter}
+                    </div>
+                    {showResumePreview && (
+                      <div className="border-t">
+                        {item.resumeFilename.toLowerCase().endsWith('.pdf') ? (
+                          <div className="relative bg-muted/30">
+                            <iframe
+                              src={`/uploads/resumes/${item.resumeFilename}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                              className="w-full h-[500px]"
+                              title="Resume Preview"
+                              onError={(e) => {
+                                console.error('PDF preview failed:', e);
+                                (e.target as HTMLIFrameElement).style.display = 'none';
+                              }}
+                            />
                           </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Video Introduction Section */}
-                    {item.videoIntroUrl && (
-                      <div className="mt-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <IconVideo className="h-4 w-4 text-muted-foreground" />
-                            <p className="text-xs font-medium text-muted-foreground">Video Introduction:</p>
+                        ) : item.resumeText ? (
+                          <div className="max-h-[500px] overflow-y-auto p-4 bg-muted/30">
+                            <pre className="text-xs whitespace-pre-wrap leading-relaxed">
+                              {item.resumeText}
+                            </pre>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            {item.videoIntroDuration && (
-                              <span>{item.videoIntroDuration}</span>
-                            )}
-                            {item.videoIntroFileSize && (
-                              <span>({item.videoIntroFileSize})</span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="border rounded-lg overflow-hidden bg-black">
-                          <video
-                            controls
-                            className="w-full max-h-80"
-                            preload="metadata"
-                            poster={item.photo || undefined}
-                          >
-                            <source src={item.videoIntroUrl} type="video/mp4" />
-                            <source src={item.videoIntroUrl} type="video/webm" />
-                            <source src={item.videoIntroUrl} type="video/ogg" />
-                            <div className="p-4 text-center text-white">
-                              <IconPlayerPlay className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                              <p className="text-sm">Your browser does not support video playback</p>
-                              <p className="text-xs">Please download the video to view it</p>
-                            </div>
-                          </video>
-                        </div>
-                        {item.videoIntroFilename && (
-                          <div className="mt-2 text-xs text-muted-foreground">
-                            <span>File: {item.videoIntroFilename}</span>
+                        ) : (
+                          <div className="p-12 text-center bg-muted/30">
+                            <IconFileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
+                            <p className="text-sm text-muted-foreground mb-1">Preview not available</p>
+                            <p className="text-xs text-muted-foreground">Download the file to view</p>
                           </div>
                         )}
                       </div>
                     )}
                   </div>
-                </div>
-              </>
-            )}
-          </div>
+                )}
+                
+                {/* Cover Letter */}
+                {item.coverLetter && (
+                  <div className="rounded-lg border overflow-hidden">
+                    <div className="px-4 py-2.5 bg-muted/50 border-b">
+                      <Label className="text-xs font-medium">Cover Letter</Label>
+                    </div>
+                    <div className="p-4 max-h-64 overflow-y-auto bg-card">
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{item.coverLetter}</p>
+                    </div>
+                  </div>
+                )}
 
-          {/* Personal Details Section */}
-          <Separator />
-          <div>
-            <Label className="text-base font-semibold text-foreground">Personal Details</Label>
-            <div className="mt-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Full Name</Label>
-                  <p className="mt-1 text-sm">{item.header}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Email Address</Label>
-                  <p className="mt-1 text-sm break-all">{item.email || 'Not provided'}</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Phone Number</Label>
-                  <p className="mt-1 text-sm">{item.phone || 'Not provided'}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Location</Label>
-                  <p className="mt-1 text-sm">{item.location || 'Not specified'}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">LinkedIn Profile</Label>
-                  {item.linkedinUrl ? (
-                    <a href={item.linkedinUrl} target="_blank" rel="noopener noreferrer" 
-                       className="mt-1 text-sm text-blue-600 hover:text-blue-800 break-all">
-                      {item.linkedinUrl}
-                    </a>
-                  ) : (
-                    <p className="mt-1 text-sm text-muted-foreground">Not provided</p>
-                  )}
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Portfolio/Website</Label>
-                  {item.portfolioUrl ? (
-                    <a href={item.portfolioUrl} target="_blank" rel="noopener noreferrer" 
-                       className="mt-1 text-sm text-blue-600 hover:text-blue-800 break-all">
-                      {item.portfolioUrl}
-                    </a>
-                  ) : (
-                    <p className="mt-1 text-sm text-muted-foreground">Not provided</p>
-                  )}
-                </div>
+                {/* Video Introduction */}
+                {item.videoIntroUrl && (
+                  <div className="rounded-lg border overflow-hidden">
+                    <div className="px-4 py-2.5 bg-muted/50 border-b flex items-center justify-between">
+                      <Label className="text-xs font-medium">Video Introduction</Label>
+                      {(item.videoIntroDuration || item.videoIntroFileSize) && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          {item.videoIntroDuration && <span>{item.videoIntroDuration}</span>}
+                          {item.videoIntroFileSize && <span>• {item.videoIntroFileSize}</span>}
+                        </div>
+                      )}
+                    </div>
+                    <div className="bg-black">
+                      <video
+                        controls
+                        className="w-full max-h-80"
+                        preload="metadata"
+                        poster={item.photo || undefined}
+                      >
+                        <source src={item.videoIntroUrl} type="video/mp4" />
+                        <source src={item.videoIntroUrl} type="video/webm" />
+                        <source src={item.videoIntroUrl} type="video/ogg" />
+                      </video>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-
-          {/* Professional Background */}
-          <div>
-            <Label className="text-base font-semibold text-foreground">Professional Background</Label>
-            <div className="mt-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Current Position</Label>
-                  <p className="mt-1 text-sm">{item.currentTitle || 'Not specified'}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Current Company</Label>
-                  <p className="mt-1 text-sm">{item.currentCompany || 'Not specified'}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Years of Experience</Label>
-                  <p className="mt-1 text-sm">{item.yearsOfExperience ? `${item.yearsOfExperience} years` : 'Not specified'}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Education Level</Label>
-                  <p className="mt-1 text-sm">{item.educationLevel || 'Not specified'}</p>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">Salary Expectation</Label>
-                <p className="mt-1 text-sm">{item.expectedSalary || 'Not specified'}</p>
-              </div>
-
-              {/* Technical Skills */}
-              {item.skills && item.skills.length > 0 && (
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Technical Skills</Label>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {item.skills.map((skill, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Languages */}
-              {item.languages && item.languages.length > 0 && (
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Languages</Label>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {item.languages.map((language, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {language}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          )}
 
           {/* Application Notes */}
           {item.notes && (
-            <div>
-              <Label className="text-base font-semibold text-foreground">Application Notes</Label>
-              <div className="mt-2 p-3 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">{item.notes}</p>
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold">Notes</h4>
+              <div className="rounded-lg border bg-muted/30 p-4">
+                <p className="text-sm leading-relaxed">{item.notes}</p>
               </div>
             </div>
           )}
 
           {/* Resume Full Text */}
-          {item.resumeText && (
-            <div>
-              <Label className="text-base font-semibold text-foreground">Resume Full Text</Label>
-              <div className="mt-2 p-4 bg-muted/50 border rounded-lg max-h-96 overflow-y-auto">
-                <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">
+          {item.resumeText && !showResumePreview && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold">Resume Full Text</h4>
+              <div className="rounded-lg border bg-muted/30 p-4 max-h-96 overflow-y-auto">
+                <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed text-muted-foreground">
                   {item.resumeText}
                 </pre>
               </div>
             </div>
           )}
         </div>
-        <DrawerFooter>
-          <Button 
-            onClick={() => {
-              // Handle approve functionality
-              console.log(`Approving application for ${item.header}`);
-              // Add your approve logic here
-            }}
-            className="flex items-center gap-2"
-          >
-            <IconCheck className="h-4 w-4" />
-            Approve
-          </Button>
-          <DrawerClose asChild>
+
+        <DrawerFooter className="border-t gap-2">
+          <div className="flex gap-2">
             <Button 
-              variant="outline"
               onClick={() => {
-                // Handle reject functionality
-                console.log(`Rejecting application for ${item.header}`);
-                // Add your reject logic here
+                console.log(`Approving application for ${item.header}`);
               }}
-              className="flex items-center gap-2"
+              className="flex-1"
+              size="default"
             >
-              <IconX className="h-4 w-4" />
-              Reject
+              <IconCheck className="h-4 w-4" />
+              Approve
             </Button>
-          </DrawerClose>
+            <DrawerClose asChild>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  console.log(`Rejecting application for ${item.header}`);
+                }}
+                className="flex-1"
+                size="default"
+              >
+                <IconX className="h-4 w-4" />
+                Reject
+              </Button>
+            </DrawerClose>
+          </div>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
