@@ -1,16 +1,24 @@
+import { DataTable } from "@/components/data-table";
+import data from "../data.json";
+
 export default function TeamPage() {
+  const transformedData = data.map((item) => ({
+    ...item,
+    target: Number(item.target),
+    limit: Number(item.limit),
+  }));
+
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
           <div className="px-4 lg:px-6">
-            <div className="flex items-center justify-center h-64 border-2 border-dashed border-gray-300 rounded-lg">
-              <div className="text-center">
-                <h2 className="text-lg font-medium text-gray-900">Team</h2>
-                <p className="text-gray-500 mt-2">Team management content will be displayed here</p>
-              </div>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-foreground mb-2">Team</h2>
+              <p className="text-muted-foreground">Manage team members, assignments, and performance</p>
             </div>
           </div>
+          <DataTable data={transformedData} />
         </div>
       </div>
     </div>
