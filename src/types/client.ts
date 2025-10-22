@@ -1,27 +1,32 @@
-// Client Status Const
+import type { BaseEntity } from "./common";
+
+// Client Status
 export const ClientStatus = {
   ACTIVE: "active",
   INACTIVE: "inactive",
   PENDING: "pending",
+  ON_HOLD: "on_hold",
 } as const;
 
 export type ClientStatus = (typeof ClientStatus)[keyof typeof ClientStatus];
 
-// Client Type/Industry Categories
-export const ClientType = {
-  STARTUP: "startup",
-  SME: "sme",
-  ENTERPRISE: "enterprise",
+// Industry Categories
+export const Industry = {
   TECHNOLOGY: "technology",
   HEALTHCARE: "healthcare",
   FINANCE: "finance",
   EDUCATION: "education",
+  RETAIL: "retail",
+  MANUFACTURING: "manufacturing",
+  CONSULTING: "consulting",
+  REAL_ESTATE: "real_estate",
+  HOSPITALITY: "hospitality",
   OTHER: "other",
 } as const;
 
-export type ClientType = (typeof ClientType)[keyof typeof ClientType];
+export type Industry = (typeof Industry)[keyof typeof Industry];
 
-// Company Size Options
+// Company Size
 export const CompanySize = {
   SMALL: "1-50",
   MEDIUM: "51-200",
@@ -31,139 +36,193 @@ export const CompanySize = {
 
 export type CompanySize = (typeof CompanySize)[keyof typeof CompanySize];
 
-// Contact Person Interface (Simplified)
+// Communication Note Type
+export const CommunicationNoteType = {
+  EMAIL: "email",
+  PHONE: "phone",
+  MEETING: "meeting",
+  VIDEO_CALL: "video_call",
+  GENERAL: "general",
+} as const;
+
+export type CommunicationNoteType =
+  (typeof CommunicationNoteType)[keyof typeof CommunicationNoteType];
+
+// Contact Person
 export interface ContactPerson {
   id: string;
   name: string;
   email: string;
   phone?: string;
   position: string;
+  isPrimary: boolean;
 }
 
-// Enhanced Client Statistics Interface
+// Communication Note
+export interface CommunicationNote {
+  id: string;
+  clientId: string;
+  type: CommunicationNoteType;
+  subject: string;
+  content: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Client Statistics
 export interface ClientStatistics {
   totalJobs: number;
   activeJobs: number;
   closedJobs: number;
   draftJobs: number;
   totalCandidates: number;
+  activeCandidates: number;
   hiredCandidates: number;
-  pendingCandidates: number;
   rejectedCandidates: number;
-  averageTimeToHire?: number; // in days
-  successRate?: number; // percentage of successful hires
+  averageTimeToHire?: number;
+  successRate?: number;
+}
+
+// Activity History Item
+export interface ClientActivityHistory {
+  id: string;
+  clientId: string;
+  action: string;
+  description: string;
+  performedBy: string;
+  performedByName: string;
+  timestamp: Date;
+  metadata?: Record<string, unknown>;
 }
 
 // Main Client Interface
-export interface Client {
-  id: string;
-
-  // Essential Information
+export interface Client extends BaseEntity {
+  // Basic Information (Required)
   companyName: string;
-  description?: string;
+  email: string;
+  phone: string;
   website?: string;
   logo?: string;
 
-  // Classification
-  type: ClientType;
-  status: ClientStatus;
+  // Classification (Required)
+  industry: Industry;
   companySize: CompanySize;
+  status: ClientStatus;
 
-  // Primary Contact (Only one required)
-  primaryContact: ContactPerson;
-
-  // Location (Single address)
-  address?: {
+  // Location (Required)
+  address: {
+    street?: string;
     city: string;
+    state?: string;
     country: string;
+    postalCode?: string;
   };
 
-  // Enhanced Statistics (Auto-calculated from jobs/candidates)
+  // Description
+  description?: string;
+
+  // Contacts
+  contacts: ContactPerson[];
+
+  // Statistics (Auto-calculated)
   statistics: ClientStatistics;
 
-  // Communication & Notes
-  notes?: string; // Important for client communication tracking
+  // Relations
+  jobIds: string[];
+  candidateIds: string[];
+
+  // Communication
+  communicationNotes?: CommunicationNote[];
+
+  // Activity History
+  activityHistory?: ClientActivityHistory[];
+
+  // Tags
+  tags?: string[];
 
   // Metadata
-  createdAt: Date;
-  updatedAt: Date;
-
-  // Optional
-  tags?: string[];
+  assignedTo?: string;
+  assignedToName?: string;
 }
 
-// For API responses and client cards
+// Client Summary
 export interface ClientSummary {
   id: string;
   companyName: string;
   logo?: string;
   status: ClientStatus;
-  type: ClientType;
+  industry: Industry;
   companySize: CompanySize;
   statistics: ClientStatistics;
-  primaryContact: ContactPerson;
+  primaryContact?: ContactPerson;
   createdAt: Date;
-  address?: {
+  address: {
     city: string;
     country: string;
   };
-  hasNotes: boolean; // Indicator if client has communication notes
 }
 
-// For creating new clients (Minimal required fields)
+// Create Client Request
 export interface CreateClientRequest {
   companyName: string;
-  description?: string;
+  email: string;
+  phone: string;
   website?: string;
-  type: ClientType;
+  industry: Industry;
   companySize: CompanySize;
-  primaryContact: {
-    name: string;
-    email: string;
-    phone?: string;
-    position: string;
-  };
-  address?: {
-    city: string;
-    country: string;
-  };
-  notes?: string; // For initial client communication notes
-}
-
-// For updating existing clients
-export interface UpdateClientRequest {
-  companyName?: string;
   description?: string;
-  website?: string;
-  logo?: string;
-  type?: ClientType;
-  status?: ClientStatus;
-  companySize?: CompanySize;
-  primaryContact?: {
+  address: {
+    street?: string;
+    city: string;
+    state?: string;
+    country: string;
+    postalCode?: string;
+  };
+  contacts: Array<{
     name: string;
     email: string;
     phone?: string;
     position: string;
-  };
-  address?: {
-    city: string;
-    country: string;
-  };
-  notes?: string; // Update communication notes
+    isPrimary: boolean;
+  }>;
   tags?: string[];
 }
 
-// For filtering (Simplified)
-export interface ClientFilters {
-  status?: ClientStatus[];
-  type?: ClientType[];
-  companySize?: CompanySize[];
-  hasActiveJobs?: boolean;
-  hasNotes?: boolean; // Filter clients with communication notes
-  search?: string; // Search in company name, contact name, or notes
+// Update Client Request
+export interface UpdateClientRequest {
+  companyName?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  logo?: string;
+  industry?: Industry;
+  companySize?: CompanySize;
+  status?: ClientStatus;
+  description?: string;
+  address?: {
+    street?: string;
+    city: string;
+    state?: string;
+    country: string;
+    postalCode?: string;
+  };
+  tags?: string[];
+  assignedTo?: string;
 }
 
-// For sorting
+// Client Filters
+export interface ClientFilters {
+  status?: ClientStatus[];
+  industry?: Industry[];
+  companySize?: CompanySize[];
+  hasActiveJobs?: boolean;
+  assignedTo?: string;
+  search?: string;
+}
+
+// Client Sort
 export type ClientSortField =
   | "companyName"
   | "createdAt"
@@ -171,20 +230,39 @@ export type ClientSortField =
   | "totalJobs"
   | "activeJobs"
   | "totalCandidates"
-  | "hiredCandidates"
-  | "successRate";
+  | "hiredCandidates";
 
 export interface ClientSortOptions {
   field: ClientSortField;
   direction: "asc" | "desc";
 }
 
-// For client communication tracking
-export interface ClientNote {
-  id: string;
-  clientId: string;
+// Contact CRUD
+export interface CreateContactRequest {
+  name: string;
+  email: string;
+  phone?: string;
+  position: string;
+  isPrimary: boolean;
+}
+
+export interface UpdateContactRequest {
+  name?: string;
+  email?: string;
+  phone?: string;
+  position?: string;
+  isPrimary?: boolean;
+}
+
+// Communication Note CRUD
+export interface CreateCommunicationNoteRequest {
+  type: CommunicationNoteType;
+  subject: string;
   content: string;
-  type: "email" | "phone" | "in-person" | "meeting" | "general";
-  createdAt: Date;
-  createdBy: string; // User who added the note
+}
+
+export interface UpdateCommunicationNoteRequest {
+  type?: CommunicationNoteType;
+  subject?: string;
+  content?: string;
 }

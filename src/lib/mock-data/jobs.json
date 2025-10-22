@@ -1,0 +1,104 @@
+[
+  {
+    "id": "job-1",
+    "title": "Senior Full Stack Developer",
+    "description": "We are looking for an experienced Full Stack Developer...",
+    "clientId": "client-1",
+    "status": "open",
+    "type": "full_time",
+    "experienceLevel": "senior",
+    "workMode": "remote",
+    "location": {
+      "city": "San Francisco",
+      "country": "USA"
+    },
+    "salaryRange": {
+      "min": 120000,
+      "max": 180000,
+      "currency": "USD",
+      "period": "yearly"
+    },
+    "requirements": {
+      "experience": "5+ years",
+      "skills": {
+        "required": ["React", "Node.js", "TypeScript", "PostgreSQL"],
+        "preferred": ["AWS", "Docker", "GraphQL"]
+      }
+    },
+    "responsibilities": [],
+    "department": "Engineering",
+    "priority": "high",
+    "openings": 2,
+    "filledPositions": 0,
+    "recruiterIds": [],
+    "hiringManagerIds": [],
+    "categoryIds": [],
+    "tagIds": [],
+    "candidateIds": ["cand-1", "cand-2", "cand-3"],
+    "statistics": {
+      "totalCandidates": 3,
+      "activeCandidates": 2,
+      "hiredCandidates": 0,
+      "rejectedCandidates": 1,
+      "interviewingCandidates": 1,
+      "offerExtendedCandidates": 0
+    },
+    "totalApplications": 3,
+    "approvedApplications": 2,
+    "rejectedApplications": 1,
+    "candidatesInPipeline": 2,
+    "createdAt": "2025-10-01T00:00:00.000Z",
+    "updatedAt": "2025-10-20T00:00:00.000Z"
+  },
+  {
+    "id": "job-2",
+    "title": "DevOps Engineer",
+    "description": "Looking for a skilled DevOps Engineer...",
+    "clientId": "client-1",
+    "status": "open",
+    "type": "full_time",
+    "experienceLevel": "mid",
+    "workMode": "hybrid",
+    "location": {
+      "city": "New York",
+      "country": "USA"
+    },
+    "salaryRange": {
+      "min": 100000,
+      "max": 140000,
+      "currency": "USD",
+      "period": "yearly"
+    },
+    "requirements": {
+      "experience": "3+ years",
+      "skills": {
+        "required": ["AWS", "Kubernetes", "Docker", "CI/CD"],
+        "preferred": ["Terraform", "Ansible"]
+      }
+    },
+    "responsibilities": [],
+    "department": "Engineering",
+    "priority": "medium",
+    "openings": 1,
+    "filledPositions": 0,
+    "recruiterIds": [],
+    "hiringManagerIds": [],
+    "categoryIds": [],
+    "tagIds": [],
+    "candidateIds": ["cand-4"],
+    "statistics": {
+      "totalCandidates": 1,
+      "activeCandidates": 1,
+      "hiredCandidates": 0,
+      "rejectedCandidates": 0,
+      "interviewingCandidates": 0,
+      "offerExtendedCandidates": 0
+    },
+    "totalApplications": 1,
+    "approvedApplications": 1,
+    "rejectedApplications": 0,
+    "candidatesInPipeline": 1,
+    "createdAt": "2025-10-10T00:00:00.000Z",
+    "updatedAt": "2025-10-15T00:00:00.000Z"
+  }
+]

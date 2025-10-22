@@ -116,7 +116,19 @@ export interface Job extends BaseEntity {
   categoryIds: string[];
   tagIds: string[];
   
+  // Candidate tracking
+  candidateIds: string[];
+  
   // Statistics
+  statistics?: {
+    totalCandidates: number;
+    activeCandidates: number;
+    hiredCandidates: number;
+    rejectedCandidates: number;
+    interviewingCandidates: number;
+    offerExtendedCandidates: number;
+  };
+  
   totalApplications: number;
   approvedApplications: number;
   rejectedApplications: number;
