@@ -48,7 +48,7 @@ import {
 } from "@tanstack/react-table";
 import * as React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
-import { toast } from "sonner";
+
 import { z } from "zod";
 
 import { Badge } from "@/components/ui/badge";
@@ -156,19 +156,36 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "header",
-    header: "Header",
+    header: "Applicant Name",
     cell: ({ row }) => {
-      return <TableCellViewer item={row.original} />;
+      return (
+        <div className="w-48">
+          <TableCellViewer item={row.original} />
+        </div>
+      );
     },
     enableHiding: false,
   },
   {
     accessorKey: "type",
-    header: "Section Type",
+    header: "AI Status",
     cell: ({ row }) => (
-      <div className="w-32">
-        <Badge variant="outline" className="text-muted-foreground px-1.5">
-          {row.original.type}
+      <div className="w-24">
+        <Badge
+          variant="outline"
+          className="text-muted-foreground px-2 py-1 flex items-center gap-1 text-xs"
+        >
+          {row.original.type === "valid" ? (
+            <>
+              <IconCircleCheckFilled className="size-3 fill-green-500 dark:fill-green-400" />
+              Valid
+            </>
+          ) : (
+            <>
+              <span className="size-3 text-red-500">✕</span>
+              Invalid
+            </>
+          )}
         </Badge>
       </div>
     ),
@@ -177,97 +194,95 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.status === "Done" ? (
-          <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
-        ) : (
-          <IconLoader />
-        )}
-        {row.original.status}
-      </Badge>
+      <div className="w-32">
+        <Badge
+          variant="outline"
+          className="text-muted-foreground px-2 py-1 flex items-center gap-1"
+        >
+          {row.original.status === "Done" ? (
+            <>
+              <IconCircleCheckFilled className="size-3 fill-green-500 dark:fill-green-400" />
+              Done
+            </>
+          ) : row.original.status === "Rejected" ? (
+            <>
+              <span className="size-3 text-red-500">✕</span>
+              Rejected
+            </>
+          ) : (
+            <>
+              <IconLoader className="size-3" />
+              In Process
+            </>
+          )}
+        </Badge>
+      </div>
     ),
   },
   {
     accessorKey: "target",
-    header: () => <div className="w-full text-right">Target</div>,
-    cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            loading: `Saving ${row.original.header}`,
-            success: "Done",
-            error: "Error",
-          });
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-target`} className="sr-only">
-          Target
-        </Label>
-        <Input
-          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
-          defaultValue={String(row.original.target)}
-          id={`${row.original.id}-target`}
-        />
-      </form>
-    ),
+    header: () => <div className="w-full text-left">Date Applied</div>,
+    cell: ({ row }) => {
+      return (
+        <div className="text-left text-sm w-32">
+          {row.original.dateApplied || new Date().toLocaleDateString()}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "limit",
-    header: () => <div className="w-full text-right">Limit</div>,
-    cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            loading: `Saving ${row.original.header}`,
-            success: "Done",
-            error: "Error",
-          });
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-limit`} className="sr-only">
-          Limit
-        </Label>
-        <Input
-          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
-          defaultValue={String(row.original.limit)}
-          id={`${row.original.id}-limit`}
-        />
-      </form>
-    ),
+    header: () => <div className="w-full text-left">Job ID</div>,
+    cell: ({ row }) => {
+      return (
+        <div className="text-left text-sm w-24">
+          {row.original.jobIdDisplay || "-"}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "reviewer",
     header: "Reviewer",
     cell: ({ row }) => {
-      const isAssigned = row.original.reviewer !== "Assign reviewer";
-
-      if (isAssigned) {
-        return row.original.reviewer;
-      }
+      const isAssigned =
+        row.original.reviewer !== "Unassigned" &&
+        row.original.reviewer !== "Assign reviewer";
 
       return (
-        <>
+        <div className="w-40">
           <Label htmlFor={`${row.original.id}-reviewer`} className="sr-only">
             Reviewer
           </Label>
-          <Select>
+          <Select
+            defaultValue={isAssigned ? row.original.reviewer : undefined}
+            onValueChange={(value) => {
+              // Update the reviewer in the data
+              console.log(
+                `Assigning reviewer ${value} to application ${row.original.id}`
+              );
+              // In a real app, this would update the backend/state
+            }}
+          >
             <SelectTrigger
-              className="w-38 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
+              className="w-full **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
               size="sm"
               id={`${row.original.id}-reviewer`}
             >
-              <SelectValue placeholder="Assign reviewer" />
+              <SelectValue placeholder="Assign Reviewer" />
             </SelectTrigger>
             <SelectContent align="end">
-              <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-              <SelectItem value="Jamik Tashpulatov">
-                Jamik Tashpulatov
+              <SelectItem value="Assign Reviewer" disabled>
+                Assign Reviewer
               </SelectItem>
+              <SelectItem value="John Smith">John Smith</SelectItem>
+              <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
+              <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
+              <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
+              <SelectItem value="Tom Davis">Tom Davis</SelectItem>
             </SelectContent>
           </Select>
-        </>
+        </div>
       );
     },
   },
