@@ -33,6 +33,13 @@ import {
   IconCheck,
   IconX,
   IconDownload,
+  IconSearch,
+  IconFilter,
+  IconArrowsSort,
+  IconUsers,
+  IconClockHour4,
+  IconUserCheck,
+  IconUserX,
 } from "@tabler/icons-react";
 import {
   flexRender,
@@ -284,29 +291,69 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     id: "actions",
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-            size="icon"
-          >
-            <IconDotsVertical />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-32">
-          <DropdownMenuItem>Edit</DropdownMenuItem>
-          <DropdownMenuItem>Make a copy</DropdownMenuItem>
-          <DropdownMenuItem>Favorite</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    cell: () => null, // Will be populated with handlers in the component
   },
 ];
+
+// Row actions column that needs access to handlers
+const createActionsColumn = (handlers: {
+  onApprove: (id: number) => void;
+  onReject: (id: number) => void;
+  onAssignReviewer: (id: number) => void;
+  onDownloadResume: (id: number) => void;
+  onDelete: (id: number) => void;
+}): ColumnDef<z.infer<typeof schema>> => ({
+  id: "actions",
+  cell: ({ row }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+          size="icon"
+        >
+          <IconDotsVertical />
+          <span className="sr-only">Open menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <div className="px-2 py-1.5 text-xs font-semibold text-primary-foreground bg-primary">
+          ID #{row.original.id}
+        </div>
+        <DropdownMenuItem 
+          onClick={() => handlers.onApprove(row.original.id)}
+          disabled={row.original.status === "Approved"}
+        >
+          <IconCheck className="h-3 w-3 mr-2 text-green-600" />
+          Approve
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => handlers.onReject(row.original.id)}
+          disabled={row.original.status === "Rejected"}
+        >
+          <IconX className="h-3 w-3 mr-2 text-red-600" />
+          Reject
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => handlers.onAssignReviewer(row.original.id)}>
+          <IconUserCheck className="h-3 w-3 mr-2" />
+          Assign Reviewer
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handlers.onDownloadResume(row.original.id)}>
+          <IconDownload className="h-3 w-3 mr-2" />
+          Download Resume
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          variant="destructive"
+          onClick={() => handlers.onDelete(row.original.id)}
+        >
+          Delete Application
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ),
+});
 
 function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
@@ -350,6 +397,7 @@ export function DataTable({
     pageIndex: 0,
     pageSize: 10,
   });
+  const [globalFilter, setGlobalFilter] = React.useState("");
   const sortableId = React.useId();
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -357,20 +405,123 @@ export function DataTable({
     useSensor(KeyboardSensor, {})
   );
 
+  // Bulk action handlers
+  const handleBulkApprove = () => {
+    const selectedIds = table.getFilteredSelectedRowModel().rows.map(r => r.original.id);
+    setData(prevData => 
+      prevData.map(item => 
+        selectedIds.includes(item.id) ? { ...item, status: "Approved" } : item
+      )
+    );
+    table.resetRowSelection();
+  };
+
+  const handleBulkReject = () => {
+    const selectedIds = table.getFilteredSelectedRowModel().rows.map(r => r.original.id);
+    setData(prevData => 
+      prevData.map(item => 
+        selectedIds.includes(item.id) ? { ...item, status: "Rejected" } : item
+      )
+    );
+    table.resetRowSelection();
+  };
+
+  const handleBulkAssignReviewer = () => {
+    const selectedIds = table.getFilteredSelectedRowModel().rows.map(r => r.original.id);
+    // In real app, this would open a modal to select reviewer
+    const reviewer = prompt("Enter reviewer name:");
+    if (reviewer) {
+      setData(prevData => 
+        prevData.map(item => 
+          selectedIds.includes(item.id) ? { ...item, reviewer } : item
+        )
+      );
+      table.resetRowSelection();
+    }
+  };
+
+  const handleBulkExport = () => {
+    const selectedData = table.getFilteredSelectedRowModel().rows.map(r => r.original);
+    console.log("Exporting data:", selectedData);
+    // In real app, this would trigger file download
+    alert(`Exporting ${selectedData.length} applications`);
+  };
+
+  // Individual action handlers
+  const handleApprove = (id: number) => {
+    setData(prevData => 
+      prevData.map(item => 
+        item.id === id ? { ...item, status: "Approved" } : item
+      )
+    );
+  };
+
+  const handleReject = (id: number) => {
+    setData(prevData => 
+      prevData.map(item => 
+        item.id === id ? { ...item, status: "Rejected" } : item
+      )
+    );
+  };
+
+  const handleAssignReviewer = (id: number) => {
+    const reviewer = prompt("Enter reviewer name:");
+    if (reviewer) {
+      setData(prevData => 
+        prevData.map(item => 
+          item.id === id ? { ...item, reviewer } : item
+        )
+      );
+    }
+  };
+
+  const handleDownloadResume = (id: number) => {
+    const application = data.find(item => item.id === id);
+    if (application?.resumeFilename) {
+      const link = document.createElement('a');
+      link.href = `/uploads/resumes/${application.resumeFilename}`;
+      link.download = application.resumeFilename;
+      link.click();
+    } else {
+      alert("No resume file available");
+    }
+  };
+
+  const handleDelete = (id: number) => {
+    if (confirm("Are you sure you want to delete this application?")) {
+      setData(prevData => prevData.filter(item => item.id !== id));
+    }
+  };
+
   const dataIds = React.useMemo<UniqueIdentifier[]>(
     () => data?.map(({ id }) => id) || [],
     [data]
   );
 
+  // Create columns with handlers
+  const columnsWithActions = React.useMemo(() => {
+    const baseColumns = columns.slice(0, -1); // Remove the placeholder actions column
+    const actionsColumn = createActionsColumn({
+      onApprove: handleApprove,
+      onReject: handleReject,
+      onAssignReviewer: handleAssignReviewer,
+      onDownloadResume: handleDownloadResume,
+      onDelete: handleDelete,
+    });
+    return [...baseColumns, actionsColumn];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
   const table = useReactTable({
     data,
-    columns,
+    columns: columnsWithActions,
     state: {
       sorting,
       columnVisibility,
       rowSelection,
       columnFilters,
       pagination,
+      globalFilter,
     },
     getRowId: (row) => row.id.toString(),
     enableRowSelection: true,
@@ -379,12 +530,30 @@ export function DataTable({
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    globalFilterFn: (row, _columnId, filterValue) => {
+      const searchValue = filterValue.toLowerCase();
+      const searchFields = [
+        row.original.header,
+        row.original.email,
+        row.original.phone,
+        row.original.status,
+        row.original.reviewer,
+        row.original.jobIdDisplay,
+        row.original.currentTitle,
+        row.original.currentCompany,
+      ];
+      
+      return searchFields.some(field => 
+        field?.toString().toLowerCase().includes(searchValue)
+      );
+    },
   });
 
   function handleDragEnd(event: DragEndEvent) {
@@ -398,80 +567,348 @@ export function DataTable({
     }
   }
 
+  // Calculate statistics from filtered data
+  const filteredData = table.getFilteredRowModel().rows.map(row => row.original);
+  const totalApplications = filteredData.length;
+  const approvedCount = filteredData.filter(item => item.status === "Approved").length;
+  const rejectedCount = filteredData.filter(item => item.status === "Rejected").length;
+  const inProcessCount = filteredData.filter(item => item.status === "In Process").length;
+
   return (
     <Tabs
       defaultValue="outline"
       className="w-full flex-col justify-start gap-6"
     >
-      <div className="flex items-center justify-between px-4 lg:px-6">
-        <Label htmlFor="view-selector" className="sr-only">
-          View
-        </Label>
-        <Select defaultValue="outline">
-          <SelectTrigger
-            className="flex w-fit @4xl/main:hidden"
-            size="sm"
-            id="view-selector"
-          >
-            <SelectValue placeholder="Select a view" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="outline">Outline</SelectItem>
-            <SelectItem value="past-performance">Past Performance</SelectItem>
-            <SelectItem value="key-personnel">Key Personnel</SelectItem>
-            <SelectItem value="focus-documents">Focus Documents</SelectItem>
-          </SelectContent>
-        </Select>
-        <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="outline">Outline</TabsTrigger>
-          <TabsTrigger value="past-performance">
-            Past Performance <Badge variant="secondary">3</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="key-personnel">
-            Key Personnel <Badge variant="secondary">2</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="focus-documents">Focus Documents</TabsTrigger>
-        </TabsList>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <IconLayoutColumns />
-                <span className="hidden lg:inline">Customize Columns</span>
-                <span className="lg:hidden">Columns</span>
-                <IconChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {table
-                .getAllColumns()
-                .filter(
-                  (column) =>
-                    typeof column.accessorFn !== "undefined" &&
-                    column.getCanHide()
-                )
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
+      <div className="flex flex-col gap-4 px-4 lg:px-6">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="rounded-lg border bg-gradient-to-br from-card to-muted/20 p-3 shadow-sm">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="rounded-md bg-primary/10 p-1.5">
+                <IconUsers className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">Total</span>
+            </div>
+            <p className="text-xl font-bold">{totalApplications}</p>
+            <p className="text-xs text-muted-foreground">Applications</p>
+          </div>
+          <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="rounded-md bg-green-500/10 p-1.5">
+                <IconUserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+              </div>
+              <span className="text-xs font-medium text-green-700 dark:text-green-400">Approved</span>
+            </div>
+            <p className="text-xl font-bold text-green-600 dark:text-green-400">{approvedCount}</p>
+            <p className="text-xs text-green-600/70 dark:text-green-400/70">
+              {totalApplications > 0 ? Math.round((approvedCount / totalApplications) * 100) : 0}% of total
+            </p>
+          </div>
+          <div className="rounded-lg border bg-gradient-to-br from-red-50 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10 p-3 shadow-sm">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="rounded-md bg-red-500/10 p-1.5">
+                <IconUserX className="h-4 w-4 text-red-600 dark:text-red-400" />
+              </div>
+              <span className="text-xs font-medium text-red-700 dark:text-red-400">Rejected</span>
+            </div>
+            <p className="text-xl font-bold text-red-600 dark:text-red-400">{rejectedCount}</p>
+            <p className="text-xs text-red-600/70 dark:text-red-400/70">
+              {totalApplications > 0 ? Math.round((rejectedCount / totalApplications) * 100) : 0}% of total
+            </p>
+          </div>
+          <div className="rounded-lg border bg-gradient-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="rounded-md bg-amber-500/10 p-1.5">
+                <IconClockHour4 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Pending</span>
+            </div>
+            <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{inProcessCount}</p>
+            <p className="text-xs text-amber-600/70 dark:text-amber-400/70">
+              {totalApplications > 0 ? Math.round((inProcessCount / totalApplications) * 100) : 0}% of total
+            </p>
+          </div>
+        </div>
+
+        {/* Search, Filter, Sort Bar */}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-1 items-center gap-2">
+            <div className="relative flex-1 max-w-md">
+              <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by name, email, job, company..."
+                value={globalFilter ?? ""}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                className="w-full h-9 pl-9 pr-4 text-sm rounded-md border bg-background shadow-xs focus:outline-none focus:ring-2 focus:ring-ring/50"
+              />
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {/* Bulk Actions - Show when rows are selected */}
+            {table.getFilteredSelectedRowModel().rows.length > 0 && (
+              <div className="flex items-center gap-2 mr-2 px-3 py-1.5 rounded-md bg-primary/10 border border-primary/20">
+                <span className="text-sm font-medium">
+                  {table.getFilteredSelectedRowModel().rows.length} selected
+                </span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-7 px-2">
+                      Actions
+                      <IconChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={handleBulkApprove}>
+                      <IconCheck className="h-4 w-4 mr-2 text-green-600" />
+                      Approve Selected
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBulkReject}>
+                      <IconX className="h-4 w-4 mr-2 text-red-600" />
+                      Reject Selected
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleBulkAssignReviewer}>
+                      <IconUserCheck className="h-4 w-4 mr-2" />
+                      Assign Reviewer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBulkExport}>
+                      <IconDownload className="h-4 w-4 mr-2" />
+                      Export Selected
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => table.resetRowSelection()}
+                      className="text-muted-foreground"
                     >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button variant="outline" size="sm">
-            <IconPlus />
-            <span className="hidden lg:inline">Add Section</span>
-          </Button>
+                      Clear Selection
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <IconFilter className="h-4 w-4" />
+                  <span className="hidden sm:inline">Filter</span>
+                  {columnFilters.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
+                      {columnFilters.length}
+                    </Badge>
+                  )}
+                  <IconChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <div className="px-2 py-1.5 text-xs font-semibold">Filter by Status</div>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={!columnFilters.find(f => f.id === "status")}
+                  onCheckedChange={() => {
+                    setColumnFilters(prev => prev.filter(f => f.id !== "status"));
+                  }}
+                >
+                  All Statuses
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={columnFilters.find(f => f.id === "status")?.value === "Approved"}
+                  onCheckedChange={(checked) => {
+                    setColumnFilters(prev => 
+                      checked 
+                        ? [...prev.filter(f => f.id !== "status"), { id: "status", value: "Approved" }]
+                        : prev.filter(f => f.id !== "status")
+                    );
+                  }}
+                >
+                  <IconUserCheck className="h-3 w-3 mr-2 text-green-600" />
+                  Approved
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={columnFilters.find(f => f.id === "status")?.value === "In Process"}
+                  onCheckedChange={(checked) => {
+                    setColumnFilters(prev => 
+                      checked 
+                        ? [...prev.filter(f => f.id !== "status"), { id: "status", value: "In Process" }]
+                        : prev.filter(f => f.id !== "status")
+                    );
+                  }}
+                >
+                  <IconClockHour4 className="h-3 w-3 mr-2 text-amber-600" />
+                  In Process
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={columnFilters.find(f => f.id === "status")?.value === "Rejected"}
+                  onCheckedChange={(checked) => {
+                    setColumnFilters(prev => 
+                      checked 
+                        ? [...prev.filter(f => f.id !== "status"), { id: "status", value: "Rejected" }]
+                        : prev.filter(f => f.id !== "status")
+                    );
+                  }}
+                >
+                  <IconUserX className="h-3 w-3 mr-2 text-red-600" />
+                  Rejected
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1.5 text-xs font-semibold">Filter by AI</div>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={!columnFilters.find(f => f.id === "type")}
+                  onCheckedChange={() => {
+                    setColumnFilters(prev => prev.filter(f => f.id !== "type"));
+                  }}
+                >
+                  All AI Results
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={columnFilters.find(f => f.id === "type")?.value === "valid"}
+                  onCheckedChange={(checked) => {
+                    setColumnFilters(prev => 
+                      checked 
+                        ? [...prev.filter(f => f.id !== "type"), { id: "type", value: "valid" }]
+                        : prev.filter(f => f.id !== "type")
+                    );
+                  }}
+                >
+                  <IconCheck className="h-3 w-3 mr-2 text-green-600" />
+                  AI Approved
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={columnFilters.find(f => f.id === "type")?.value === "invalid"}
+                  onCheckedChange={(checked) => {
+                    setColumnFilters(prev => 
+                      checked 
+                        ? [...prev.filter(f => f.id !== "type"), { id: "type", value: "invalid" }]
+                        : prev.filter(f => f.id !== "type")
+                    );
+                  }}
+                >
+                  <IconX className="h-3 w-3 mr-2 text-red-600" />
+                  AI Rejected
+                </DropdownMenuCheckboxItem>
+                {columnFilters.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setColumnFilters([])}
+                      className="text-destructive"
+                    >
+                      Clear All Filters
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <IconArrowsSort className="h-4 w-4" />
+                  <span className="hidden sm:inline">Sort</span>
+                  <IconChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => setSorting([{ id: "header", desc: false }])}>
+                  Name (A → Z)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSorting([{ id: "header", desc: true }])}>
+                  Name (Z → A)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSorting([{ id: "dateApplied", desc: true }])}>
+                  Date (Newest)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSorting([{ id: "dateApplied", desc: false }])}>
+                  Date (Oldest)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSorting([{ id: "status", desc: false }])}>
+                  Status (A → Z)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSorting([{ id: "jobIdDisplay", desc: false }])}>
+                  Job ID (Low → High)
+                </DropdownMenuItem>
+                {sorting.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setSorting([])}
+                      className="text-destructive"
+                    >
+                      Clear Sorting
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <IconLayoutColumns />
+                  <span className="hidden lg:inline">Columns</span>
+                  <IconChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <div className="px-2 py-1.5 text-xs font-semibold">Toggle Columns</div>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={table.getColumn("header")?.getIsVisible()}
+                  onCheckedChange={(value) =>
+                    table.getColumn("header")?.toggleVisibility(!!value)
+                  }
+                >
+                  Applicant Name
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={table.getColumn("type")?.getIsVisible()}
+                  onCheckedChange={(value) =>
+                    table.getColumn("type")?.toggleVisibility(!!value)
+                  }
+                >
+                  AI Recommendation
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={table.getColumn("status")?.getIsVisible()}
+                  onCheckedChange={(value) =>
+                    table.getColumn("status")?.toggleVisibility(!!value)
+                  }
+                >
+                  Status
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={table.getColumn("target")?.getIsVisible()}
+                  onCheckedChange={(value) =>
+                    table.getColumn("target")?.toggleVisibility(!!value)
+                  }
+                >
+                  Date Applied
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={table.getColumn("limit")?.getIsVisible()}
+                  onCheckedChange={(value) =>
+                    table.getColumn("limit")?.toggleVisibility(!!value)
+                  }
+                >
+                  Job ID
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={table.getColumn("reviewer")?.getIsVisible()}
+                  onCheckedChange={(value) =>
+                    table.getColumn("reviewer")?.toggleVisibility(!!value)
+                  }
+                >
+                  Reviewer
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
+
       <TabsContent
         value="outline"
         className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
