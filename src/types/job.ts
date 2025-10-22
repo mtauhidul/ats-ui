@@ -120,20 +120,19 @@ export interface Job extends BaseEntity {
   candidateIds: string[];
   
   // Statistics
-  statistics?: {
+  statistics: {
+    totalApplications: number;
+    approvedApplications: number;
+    rejectedApplications: number;
     totalCandidates: number;
     activeCandidates: number;
     hiredCandidates: number;
     rejectedCandidates: number;
     interviewingCandidates: number;
     offerExtendedCandidates: number;
+    candidatesInPipeline: number;
+    averageTimeToHire?: number;
   };
-  
-  totalApplications: number;
-  approvedApplications: number;
-  rejectedApplications: number;
-  candidatesInPipeline: number;
-  averageTimeToHire?: number; // in days
 }
 
 // Job with related data for display
@@ -189,8 +188,10 @@ export interface JobSummary {
   salaryRange?: SalaryRange;
   openings: number;
   filledPositions: number;
-  totalApplications: number;
-  candidatesInPipeline: number;
+  statistics: {
+    totalApplications: number;
+    candidatesInPipeline: number;
+  };
   priority: Priority;
   applicationDeadline?: Date;
   createdAt: Date;

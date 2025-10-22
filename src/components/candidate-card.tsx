@@ -35,105 +35,99 @@ export function CandidateCard({ candidate, jobId, onClick }: CandidateCardProps)
 
   return (
     <Card 
-      className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-primary/50"
+      className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:border-primary/50 group overflow-hidden"
       onClick={onClick}
     >
-      <CardContent className="p-5">
-        <div className="flex items-start gap-4">
-          {/* Avatar */}
-          <Avatar className="h-14 w-14 border-2 border-border">
-            <AvatarImage src={candidate.avatar} alt={fullName} />
-            <AvatarFallback className="text-lg font-semibold">{initials}</AvatarFallback>
-          </Avatar>
+      <CardContent className="p-4">
+        {/* Header Section */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <Avatar className="h-12 w-12 border-2 border-border">
+              <AvatarImage src={candidate.avatar} alt={fullName} />
+              <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                {fullName}
+              </h3>
+              <p className="text-xs text-muted-foreground truncate">
+                {candidate.currentTitle || 'Not specified'}
+                {candidate.currentCompany && ` at ${candidate.currentCompany}`}
+              </p>
+            </div>
+          </div>
+          <Badge className={cn("text-xs px-2 py-1 border", statusColors[jobApplication.status])}>
+            {jobApplication.status.replace(/_/g, ' ')}
+          </Badge>
+        </div>
 
-          {/* Main Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-foreground truncate">
-                  {fullName}
-                </h3>
-                {candidate.currentTitle && (
-                  <p className="text-sm text-muted-foreground truncate">
-                    {candidate.currentTitle}
-                    {candidate.currentCompany && ` at ${candidate.currentCompany}`}
-                  </p>
-                )}
-              </div>
-              <Badge className={cn("border ml-2 flex-shrink-0", statusColors[jobApplication.status])}>
-                {jobApplication.status.replace(/_/g, ' ')}
+        {/* Info Grid */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
+          {candidate.email && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+              <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">{candidate.email}</span>
+            </div>
+          )}
+          {candidate.phone && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">{candidate.phone}</span>
+            </div>
+          )}
+          {candidate.address && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">{candidate.address.city}, {candidate.address.country}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
+            <span>{candidate.yearsOfExperience} years exp.</span>
+          </div>
+        </div>
+
+        {/* Skills Section */}
+        {candidate.skills && candidate.skills.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {candidate.skills.slice(0, 5).map((skill, index) => (
+              <Badge key={index} variant="outline" className="text-xs px-2 py-0.5 font-normal">
+                {skill.name}
               </Badge>
-            </div>
+            ))}
+            {candidate.skills.length > 5 && (
+              <Badge variant="outline" className="text-xs px-2 py-0.5 bg-muted/50 font-normal">
+                +{candidate.skills.length - 5} more
+              </Badge>
+            )}
+          </div>
+        )}
 
-            {/* Info Grid */}
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              {candidate.email && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-                  <Mail className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span className="truncate">{candidate.email}</span>
-                </div>
-              )}
-              {candidate.phone && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Phone className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span className="truncate">{candidate.phone}</span>
-                </div>
-              )}
-              {candidate.address && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span className="truncate">{candidate.address.city}, {candidate.address.country}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
-                <span>{candidate.yearsOfExperience} years exp.</span>
-              </div>
-            </div>
-
-            {/* Skills */}
-            {candidate.skills && candidate.skills.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {candidate.skills.slice(0, 5).map((skill, index) => (
-                  <Badge key={index} variant="outline" className="text-xs px-2 py-0.5">
-                    {skill.name}
-                  </Badge>
-                ))}
-                {candidate.skills.length > 5 && (
-                  <Badge variant="outline" className="text-xs px-2 py-0.5">
-                    +{candidate.skills.length - 5} more
-                  </Badge>
-                )}
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 border-t">
+          <div className="flex items-center gap-3">
+            {jobApplication.rating && (
+              <div className="flex items-center gap-1.5">
+                <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                <span className="text-xs font-medium text-foreground">{jobApplication.rating.toFixed(1)}</span>
               </div>
             )}
-
-            {/* Footer Stats */}
-            <div className="flex items-center justify-between pt-3 border-t text-xs">
-              <div className="flex items-center gap-3">
-                {jobApplication.rating && (
-                  <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                    <Star className="h-3.5 w-3.5 fill-current" />
-                    <span className="font-medium">{jobApplication.rating.toFixed(1)}</span>
-                  </div>
-                )}
-                {candidate.education && candidate.education.length > 0 && (
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <GraduationCap className="h-3.5 w-3.5" />
-                    <span>{candidate.education[0].degree}</span>
-                  </div>
-                )}
-                {candidate.certifications && candidate.certifications.length > 0 && (
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Award className="h-3.5 w-3.5" />
-                    <span>{candidate.certifications.length} certs</span>
-                  </div>
-                )}
+            {candidate.education && candidate.education.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">{candidate.education[0].degree}</span>
               </div>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>{daysSinceApplied}d ago</span>
+            )}
+            {candidate.certifications && candidate.certifications.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Award className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">{candidate.certifications.length} certs</span>
               </div>
-            </div>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5" />
+            <span>{daysSinceApplied}d ago</span>
           </div>
         </div>
       </CardContent>

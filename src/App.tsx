@@ -12,6 +12,7 @@ import ApplicationsPage from "./pages/dashboard/applications";
 import TeamPage from "./pages/dashboard/team";
 import AnalyticsPage from "./pages/dashboard/analytics";
 import DashboardJobsPage from "./pages/dashboard/jobs";
+import JobPipelinePage from "./pages/dashboard/jobs/pipeline";
 import TagsPage from "./pages/dashboard/tags";
 import CategoriesPage from "./pages/dashboard/categories";
 import AccountPage from "./pages/dashboard/account";
@@ -34,6 +35,7 @@ function App() {
           <Route index element={<DashboardMainPage />} />
           <Route path="clients" element={<ClientsPage />} />
           <Route path="jobs" element={<DashboardJobsPage />} />
+          <Route path="jobs/pipeline/:jobId" element={<JobPipelinePage />} />
           <Route path="candidates" element={<CandidatesPage />} />
           <Route path="applications" element={<ApplicationsPage />} />
           <Route path="team" element={<TeamPage />} />

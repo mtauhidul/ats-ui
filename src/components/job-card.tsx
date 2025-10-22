@@ -1,6 +1,8 @@
-import { Building2, MapPin, Briefcase, Clock, Users, DollarSign, Calendar } from "lucide-react";
+import { Building2, MapPin, Briefcase, Clock, Users, DollarSign, Kanban } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { Job } from "@/types/job";
 import { cn } from "@/lib/utils";
 
@@ -28,9 +30,15 @@ const typeColors = {
 } as const;
 
 export function JobCard({ job, onClick, clientName }: JobCardProps) {
-  const totalCandidates = job.candidateIds?.length || 0;
+  const navigate = useNavigate();
+  const totalCandidates = job.statistics?.totalCandidates || job.candidateIds?.length || 0;
   const activeCandidates = job.statistics?.activeCandidates || 0;
   const hiredCandidates = job.statistics?.hiredCandidates || 0;
+
+  const handlePipelineClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/dashboard/jobs/pipeline/${job.id}`);
+  };
 
   return (
     <Card 
@@ -104,10 +112,15 @@ export function JobCard({ job, onClick, clientName }: JobCardProps) {
               <span className="text-muted-foreground">Hired</span>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5" />
-            <span>Posted {new Date(job.createdAt).toLocaleDateString()}</span>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            onClick={handlePipelineClick}
+          >
+            <Kanban className="h-3.5 w-3.5 mr-1.5" />
+            Pipeline
+          </Button>
         </div>
       </CardContent>
     </Card>
