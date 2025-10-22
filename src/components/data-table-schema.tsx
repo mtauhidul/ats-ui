@@ -11,7 +11,7 @@ export const schema = z.object({
   dateApplied: z.string().optional(),
   jobIdDisplay: z.string().optional(),
   // Additional applicant fields
-  photo: z.string().optional(),
+  photo: z.string().nullable().optional(),
   email: z.string().optional(),
   phone: z.string().optional(),
   currentTitle: z.string().optional(),
@@ -22,4 +22,17 @@ export const schema = z.object({
   resumeText: z.string().optional(),
   resumeFilename: z.string().optional(),
   resumeFileSize: z.string().optional(),
+  // Personal details
+  location: z.string().optional(),
+  linkedinUrl: z.string().optional(),
+  portfolioUrl: z.string().optional(),
+  educationLevel: z.string().optional(),
+  expectedSalary: z.string().optional(),
+  languages: z.array(z.string()).optional(),
+  notes: z.string().optional(),
+  // Video introduction
+  videoIntroUrl: z.string().optional(),
+  videoIntroFilename: z.string().optional(),
+  videoIntroFileSize: z.string().optional(),
+  videoIntroDuration: z.string().optional(),
 });

@@ -18,6 +18,31 @@ export default function ApplicationsPage() {
     // Add original data for display
     dateApplied: new Date(app.submittedAt).toLocaleDateString(),
     jobIdDisplay: app.jobId || "-",
+    // Additional applicant details
+    photo: app.photo || undefined,
+    email: app.email,
+    phone: app.phone,
+    currentTitle: app.currentTitle,
+    currentCompany: app.currentCompany,
+    yearsOfExperience: app.yearsOfExperience,
+    skills: app.skills,
+    coverLetter: app.coverLetter,
+    resumeText: app.resumeText,
+    resumeFilename: app.resume?.filename,
+    resumeFileSize: app.resume?.size ? `${Math.round(app.resume.size / 1024)} KB` : undefined,
+    // Personal details (using available fields or providing fallbacks)
+    location: app.address || undefined,
+    linkedinUrl: app.linkedInUrl || undefined, // Note: correct case in data
+    portfolioUrl: app.portfolioUrl || undefined,
+    educationLevel: undefined, // Not available in current data
+    expectedSalary: undefined, // Not available in current data  
+    languages: undefined, // Not available in current data
+    notes: undefined, // Not available in current data
+    // Video introduction (demo data for first applicant)
+    videoIntroUrl: index === 0 ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" : undefined,
+    videoIntroFilename: index === 0 ? "sarah_johnson_intro.mp4" : undefined,
+    videoIntroFileSize: index === 0 ? "15.2 MB" : undefined,
+    videoIntroDuration: index === 0 ? "2:30" : undefined,
   }));
 
   return (

@@ -25,11 +25,16 @@ import {
   IconChevronsRight,
   IconCircleCheckFilled,
   IconDotsVertical,
+  IconFileText,
   IconGripVertical,
   IconLayoutColumns,
   IconLoader,
   IconPlus,
-  IconTrendingUp,
+  IconCheck,
+  IconX,
+  IconDownload,
+  IconPlayerPlay,
+  IconVideo,
 } from "@tabler/icons-react";
 import {
   flexRender,
@@ -47,18 +52,12 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import * as React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 
 import { z } from "zod";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Drawer,
@@ -78,7 +77,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -628,31 +627,50 @@ export function DataTable({
   );
 }
 
-const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
-];
 
-const chartConfig = {
-  desktop: {
-    label: "Desktop",
-    color: "var(--primary)",
-  },
-  mobile: {
-    label: "Mobile",
-    color: "var(--primary)",
-  },
-} satisfies ChartConfig;
 
 function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   const isMobile = useIsMobile();
+  const [showResumePreview, setShowResumePreview] = React.useState(false);
+
+  // Auto-hide resume preview when drawer closes
+  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+  
+  React.useEffect(() => {
+    if (!isDrawerOpen && showResumePreview) {
+      setShowResumePreview(false);
+    }
+  }, [isDrawerOpen, showResumePreview]);
+
+  // Helper function to get status badge color
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'done':
+        return 'default';
+      case 'in progress':
+        return 'secondary';
+      case 'rejected':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+
+  // Helper function to get AI status badge
+  const getAIStatusBadge = (type: string) => {
+    const isValid = type === 'valid';
+    return (
+      <Badge variant={isValid ? 'default' : 'destructive'} className="text-xs">
+        {isValid ? 'Valid' : 'Invalid'}
+      </Badge>
+    );
+  };
 
   return (
-    <Drawer direction={isMobile ? "bottom" : "right"}>
+    <Drawer 
+      direction={isMobile ? "bottom" : "right"}
+      onOpenChange={setIsDrawerOpen}
+    >
       <DrawerTrigger asChild>
         <Button variant="link" className="text-foreground w-fit px-0 text-left">
           {item.header}
@@ -660,146 +678,419 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="gap-1">
-          <DrawerTitle>{item.header}</DrawerTitle>
+          <DrawerTitle>Application Details</DrawerTitle>
           <DrawerDescription>
-            Showing total visitors for the last 6 months
+            View applicant information and application status
           </DrawerDescription>
         </DrawerHeader>
-        <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-          {!isMobile && (
-            <>
-              <ChartContainer config={chartConfig}>
-                <AreaChart
-                  accessibilityLayer
-                  data={chartData}
-                  margin={{
-                    left: 0,
-                    right: 10,
-                  }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => value.slice(0, 3)}
-                    hide
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="dot" />}
-                  />
-                  <Area
-                    dataKey="mobile"
-                    type="natural"
-                    fill="var(--color-mobile)"
-                    fillOpacity={0.6}
-                    stroke="var(--color-mobile)"
-                    stackId="a"
-                  />
-                  <Area
-                    dataKey="desktop"
-                    type="natural"
-                    fill="var(--color-desktop)"
-                    fillOpacity={0.4}
-                    stroke="var(--color-desktop)"
-                    stackId="a"
-                  />
-                </AreaChart>
-              </ChartContainer>
-              <Separator />
-              <div className="grid gap-2">
-                <div className="flex gap-2 leading-none font-medium">
-                  Trending up by 5.2% this month{" "}
-                  <IconTrendingUp className="size-4" />
-                </div>
-                <div className="text-muted-foreground">
-                  Showing total visitors for the last 6 months. This is just
-                  some random text to test the layout. It spans multiple lines
-                  and should wrap around.
+        <div className="flex flex-col gap-6 overflow-y-auto px-4 text-sm">
+          {/* Applicant Photo and Basic Info */}
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={item.photo || ""} />
+              <AvatarFallback className="text-lg">
+                {item.header.split(' ').map(n => n[0]).join('')}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold">{item.header}</h3>
+              <p className="text-muted-foreground">{item.email}</p>
+              {item.phone && <p className="text-muted-foreground text-xs">{item.phone}</p>}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Application Details Grid */}
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Current Status</Label>
+                <div className="mt-1">
+                  <Badge variant={getStatusBadgeVariant(item.status)}>
+                    {item.status}
+                  </Badge>
                 </div>
               </div>
-              <Separator />
-            </>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">AI Status</Label>
+                <div className="mt-1">
+                  {getAIStatusBadge(item.type)}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Date Applied</Label>
+                <p className="mt-1 text-sm">{item.dateApplied || 'Not available'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Job ID</Label>
+                <p className="mt-1 text-sm font-mono">{item.jobIdDisplay || 'Not assigned'}</p>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">Assigned Reviewer</Label>
+              <div className="mt-1">
+                <span className="text-sm font-medium text-lime-600 dark:text-lime-400 bg-lime-50 dark:bg-lime-950/20 px-2 py-1 rounded-md">
+                  {item.reviewer}
+                </span>
+              </div>
+            </div>
+
+            {/* Additional Details */}
+            {(item.currentTitle || item.currentCompany || item.yearsOfExperience) && (
+              <>
+                <Separator />
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Professional Information</Label>
+                  <div className="mt-2 space-y-1">
+                    {item.currentTitle && (
+                      <p className="text-sm"><span className="font-medium">Title:</span> {item.currentTitle}</p>
+                    )}
+                    {item.currentCompany && (
+                      <p className="text-sm"><span className="font-medium">Company:</span> {item.currentCompany}</p>
+                    )}
+                    {item.yearsOfExperience && (
+                      <p className="text-sm"><span className="font-medium">Experience:</span> {item.yearsOfExperience} years</p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Skills */}
+            {item.skills && item.skills.length > 0 && (
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Skills</Label>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {item.skills.slice(0, 6).map((skill, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      {skill}
+                    </Badge>
+                  ))}
+                  {item.skills.length > 6 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{item.skills.length - 6} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Resume Information */}
+            {(item.resumeFilename || item.resumeText) && (
+              <>
+                <Separator />
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Resume</Label>
+                  <div className="mt-2 space-y-2">
+                    {item.resumeFilename && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <IconFileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{item.resumeFilename}</span>
+                          {item.resumeFileSize && (
+                            <span className="text-xs text-muted-foreground">({item.resumeFileSize})</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              // Handle resume download
+                              if (item.resumeFilename) {
+                                console.log(`Downloading resume: ${item.resumeFilename}`);
+                                // Add your download logic here
+                                const link = document.createElement('a');
+                                link.href = `/uploads/resumes/${item.resumeFilename}`;
+                                link.download = item.resumeFilename;
+                                link.click();
+                              }
+                            }}
+                            className="h-8 px-2 hover:bg-green-50 hover:text-green-600"
+                            title="Download Resume"
+                          >
+                            <IconDownload className="h-4 w-4" />
+                            <span className="sr-only">Download Resume</span>
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Resume Preview Section */}
+                    {item.resumeFilename && (
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-medium text-muted-foreground">Resume Preview:</p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowResumePreview(!showResumePreview)}
+                            className="h-6 px-2 text-xs"
+                          >
+                            {showResumePreview ? 'Hide Preview' : 'Show Preview'}
+                          </Button>
+                        </div>
+                        {showResumePreview && (
+                          <div className="border rounded-lg overflow-hidden bg-white">
+                            {item.resumeFilename.toLowerCase().endsWith('.pdf') ? (
+                              <div className="relative">
+                                <iframe
+                                  src={`/uploads/resumes/${item.resumeFilename}#toolbar=0&navpanes=0&scrollbar=0`}
+                                  className="w-full h-96 border-0"
+                                  title="Resume Preview"
+                                  onError={() => {
+                                    // Fallback if iframe fails to load
+                                    console.log('PDF preview failed, consider showing text version');
+                                  }}
+                                />
+                                <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                                  PDF Preview
+                                </div>
+                              </div>
+                            ) : item.resumeText ? (
+                              <div className="max-h-96 overflow-y-auto p-4 bg-gray-50">
+                                <div className="mb-2 text-xs text-muted-foreground font-medium">Text Version:</div>
+                                <pre className="text-xs text-foreground whitespace-pre-wrap font-mono leading-relaxed">
+                                  {item.resumeText}
+                                </pre>
+                              </div>
+                            ) : (
+                              <div className="p-4 text-center text-muted-foreground">
+                                <IconFileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">Preview not available for this file type</p>
+                                <p className="text-xs">Please use the download button to view the resume</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {item.coverLetter && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Cover Letter:</p>
+                        <div className="p-3 bg-muted/30 rounded-lg border max-h-80 overflow-y-auto">
+                          <div className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed break-words">
+                            {item.coverLetter}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Video Introduction Section */}
+                    {item.videoIntroUrl && (
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <IconVideo className="h-4 w-4 text-muted-foreground" />
+                            <p className="text-xs font-medium text-muted-foreground">Video Introduction:</p>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {item.videoIntroDuration && (
+                              <span>{item.videoIntroDuration}</span>
+                            )}
+                            {item.videoIntroFileSize && (
+                              <span>({item.videoIntroFileSize})</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="border rounded-lg overflow-hidden bg-black">
+                          <video
+                            controls
+                            className="w-full max-h-80"
+                            preload="metadata"
+                            poster={item.photo || undefined}
+                          >
+                            <source src={item.videoIntroUrl} type="video/mp4" />
+                            <source src={item.videoIntroUrl} type="video/webm" />
+                            <source src={item.videoIntroUrl} type="video/ogg" />
+                            <div className="p-4 text-center text-white">
+                              <IconPlayerPlay className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                              <p className="text-sm">Your browser does not support video playback</p>
+                              <p className="text-xs">Please download the video to view it</p>
+                            </div>
+                          </video>
+                        </div>
+                        {item.videoIntroFilename && (
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            <span>File: {item.videoIntroFilename}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Personal Details Section */}
+          <Separator />
+          <div>
+            <Label className="text-base font-semibold text-foreground">Personal Details</Label>
+            <div className="mt-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Full Name</Label>
+                  <p className="mt-1 text-sm">{item.header}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Email Address</Label>
+                  <p className="mt-1 text-sm break-all">{item.email || 'Not provided'}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Phone Number</Label>
+                  <p className="mt-1 text-sm">{item.phone || 'Not provided'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Location</Label>
+                  <p className="mt-1 text-sm">{item.location || 'Not specified'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">LinkedIn Profile</Label>
+                  {item.linkedinUrl ? (
+                    <a href={item.linkedinUrl} target="_blank" rel="noopener noreferrer" 
+                       className="mt-1 text-sm text-blue-600 hover:text-blue-800 break-all">
+                      {item.linkedinUrl}
+                    </a>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted-foreground">Not provided</p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Portfolio/Website</Label>
+                  {item.portfolioUrl ? (
+                    <a href={item.portfolioUrl} target="_blank" rel="noopener noreferrer" 
+                       className="mt-1 text-sm text-blue-600 hover:text-blue-800 break-all">
+                      {item.portfolioUrl}
+                    </a>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted-foreground">Not provided</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Professional Background */}
+          <div>
+            <Label className="text-base font-semibold text-foreground">Professional Background</Label>
+            <div className="mt-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Current Position</Label>
+                  <p className="mt-1 text-sm">{item.currentTitle || 'Not specified'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Current Company</Label>
+                  <p className="mt-1 text-sm">{item.currentCompany || 'Not specified'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Years of Experience</Label>
+                  <p className="mt-1 text-sm">{item.yearsOfExperience ? `${item.yearsOfExperience} years` : 'Not specified'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Education Level</Label>
+                  <p className="mt-1 text-sm">{item.educationLevel || 'Not specified'}</p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Salary Expectation</Label>
+                <p className="mt-1 text-sm">{item.expectedSalary || 'Not specified'}</p>
+              </div>
+
+              {/* Technical Skills */}
+              {item.skills && item.skills.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Technical Skills</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {item.skills.map((skill, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Languages */}
+              {item.languages && item.languages.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Languages</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {item.languages.map((language, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {language}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Application Notes */}
+          {item.notes && (
+            <div>
+              <Label className="text-base font-semibold text-foreground">Application Notes</Label>
+              <div className="mt-2 p-3 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">{item.notes}</p>
+              </div>
+            </div>
           )}
-          <form className="flex flex-col gap-4">
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="header">Header</Label>
-              <Input id="header" defaultValue={item.header} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="type">Type</Label>
-                <Select defaultValue={item.type}>
-                  <SelectTrigger id="type" className="w-full">
-                    <SelectValue placeholder="Select a type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Table of Contents">
-                      Table of Contents
-                    </SelectItem>
-                    <SelectItem value="Executive Summary">
-                      Executive Summary
-                    </SelectItem>
-                    <SelectItem value="Technical Approach">
-                      Technical Approach
-                    </SelectItem>
-                    <SelectItem value="Design">Design</SelectItem>
-                    <SelectItem value="Capabilities">Capabilities</SelectItem>
-                    <SelectItem value="Focus Documents">
-                      Focus Documents
-                    </SelectItem>
-                    <SelectItem value="Narrative">Narrative</SelectItem>
-                    <SelectItem value="Cover Page">Cover Page</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="status">Status</Label>
-                <Select defaultValue={item.status}>
-                  <SelectTrigger id="status" className="w-full">
-                    <SelectValue placeholder="Select a status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Done">Done</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Not Started">Not Started</SelectItem>
-                  </SelectContent>
-                </Select>
+
+          {/* Resume Full Text */}
+          {item.resumeText && (
+            <div>
+              <Label className="text-base font-semibold text-foreground">Resume Full Text</Label>
+              <div className="mt-2 p-4 bg-muted/50 border rounded-lg max-h-96 overflow-y-auto">
+                <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">
+                  {item.resumeText}
+                </pre>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="target">Target</Label>
-                <Input id="target" defaultValue={String(item.target)} />
-              </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="limit">Limit</Label>
-                <Input id="limit" defaultValue={String(item.limit)} />
-              </div>
-            </div>
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="reviewer">Reviewer</Label>
-              <Select defaultValue={item.reviewer}>
-                <SelectTrigger id="reviewer" className="w-full">
-                  <SelectValue placeholder="Select a reviewer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-                  <SelectItem value="Jamik Tashpulatov">
-                    Jamik Tashpulatov
-                  </SelectItem>
-                  <SelectItem value="Emily Whalen">Emily Whalen</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </form>
+          )}
         </div>
         <DrawerFooter>
-          <Button>Submit</Button>
+          <Button 
+            onClick={() => {
+              // Handle approve functionality
+              console.log(`Approving application for ${item.header}`);
+              // Add your approve logic here
+            }}
+            className="flex items-center gap-2"
+          >
+            <IconCheck className="h-4 w-4" />
+            Approve
+          </Button>
           <DrawerClose asChild>
-            <Button variant="outline">Done</Button>
+            <Button 
+              variant="outline"
+              onClick={() => {
+                // Handle reject functionality
+                console.log(`Rejecting application for ${item.header}`);
+                // Add your reject logic here
+              }}
+              className="flex items-center gap-2"
+            >
+              <IconX className="h-4 w-4" />
+              Reject
+            </Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
