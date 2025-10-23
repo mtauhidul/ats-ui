@@ -11,13 +11,15 @@ export default function ApplicationsPage() {
         ? "In Process"
         : app.status === "approved"
         ? "Done"
-        : "Rejected",
+        : app.status === "rejected"
+        ? "Rejected"
+        : "In Process",
     target: new Date(app.submittedAt).getDate(), // Day number for sorting but we'll override display
-    limit: Number(app.jobId?.replace(/\D/g, "") || index + 1), // Job number for sorting but we'll override display
-    reviewer: app.reviewedBy || "Unassigned",
+    limit: Number(app.targetJobId?.replace(/\D/g, "") || index + 1), // Job number for sorting but we'll override display
+    reviewer: app.reviewedByName || "Unassigned",
     // Add original data for display
     dateApplied: new Date(app.submittedAt).toLocaleDateString(),
-    jobIdDisplay: app.jobId || "-",
+    jobIdDisplay: app.targetJobTitle || app.targetJobId || "-",
     // Additional applicant details
     photo: app.photo || undefined,
     email: app.email,

@@ -95,16 +95,23 @@ export default function ClientsPage() {
         ...lang,
         proficiency: lang.proficiency as "basic" | "conversational" | "fluent" | "native",
       })),
-      jobApplications: candidate.jobApplications.map((app) => ({
-        ...app,
-        status: app.status as Candidate["jobApplications"][0]["status"],
-        appliedAt: new Date(app.appliedAt),
-        lastStatusChange: new Date(app.lastStatusChange),
-      })),
+      jobApplications: candidate.jobApplications.map((app) => {
+        const appWithEmail = app as typeof app & { lastEmailDate?: string };
+        return {
+          ...app,
+          status: app.status as Candidate["jobApplications"][0]["status"],
+          appliedAt: new Date(app.appliedAt),
+          lastStatusChange: new Date(app.lastStatusChange),
+          lastEmailDate: appWithEmail.lastEmailDate ? new Date(appWithEmail.lastEmailDate) : undefined,
+        };
+      }),
+      lastEmailDate: (candidate as typeof candidate & { lastEmailDate?: string }).lastEmailDate 
+        ? new Date((candidate as typeof candidate & { lastEmailDate?: string }).lastEmailDate!) 
+        : undefined,
       workExperience: [],
-      categoryIds: [],
-      tagIds: [],
-      isActive: true,
+      categoryIds: candidate.categoryIds || [],
+      tagIds: candidate.tagIds || [],
+      isActive: candidate.isActive ?? true,
     }))
   );
 
@@ -164,7 +171,6 @@ export default function ClientsPage() {
         successRate: 0,
       },
       jobIds: [],
-      candidateIds: [],
       createdAt: new Date(),
       updatedAt: new Date(),
       contacts: data.contacts.map((c, i) => ({
@@ -254,7 +260,7 @@ export default function ClientsPage() {
       ...data,
       status: "draft",
       filledPositions: 0,
-      candidateIds: [],
+      candidateIds: [], // This is correct - Jobs should have candidateIds
       statistics: {
         totalApplications: 0,
         approvedApplications: 0,

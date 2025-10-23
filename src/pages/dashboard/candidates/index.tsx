@@ -1,65 +1,72 @@
 import { CandidatesDataTable } from "@/components/candidates-data-table";
-import applicationsData from "@/lib/mock-data/applications.json";
+import candidatesData from "@/lib/mock-data/candidates.json";
+import jobsData from "@/lib/mock-data/jobs.json";
+import clientsData from "@/lib/mock-data/clients.json";
 
 // Mock stages and clients for demonstration
 const stages = ["New Application", "Screening", "Interview", "Assessment", "Offer", "Hired"];
-const clients = [
-  { name: "Tech Corp Inc.", logo: "https://api.dicebear.com/7.x/initials/svg?seed=TC" },
-  { name: "Innovation Labs", logo: "https://api.dicebear.com/7.x/initials/svg?seed=IL" },
-  { name: "Global Solutions", logo: "https://api.dicebear.com/7.x/initials/svg?seed=GS" },
-  { name: "StartUp Hub", logo: "https://api.dicebear.com/7.x/initials/svg?seed=SH" },
-  { name: "Enterprise Co.", logo: "https://api.dicebear.com/7.x/initials/svg?seed=EC" },
-];
 
 // Mock team members pool
 const teamMembersPool = ["John Smith", "Sarah Wilson", "Mike Johnson", "Lisa Brown", "Tom Davis", "Emma Davis", "Alex Chen"];
 
 export default function CandidatesPage() {
-  const transformedData = applicationsData.map((app, index) => {
+  const transformedData = candidatesData.map((candidate, index) => {
     // Randomly assign 0-3 team members
     const teamMemberCount = Math.floor(Math.random() * 4);
     const shuffled = [...teamMembersPool].sort(() => 0.5 - Math.random());
     const selectedTeamMembers = teamMemberCount > 0 ? shuffled.slice(0, teamMemberCount) : [];
     
-    const clientIndex = index % clients.length;
+    // Get first job application details
+    const firstJobApp = candidate.jobApplications[0];
+    const job = jobsData.find(j => j.id === firstJobApp?.jobId);
+    const client = clientsData.find(c => c.id === job?.clientId);
+    
+    // Map candidate status to display status
+    const getDisplayStatus = (status: string) => {
+      switch(status) {
+        case "new": return "In Process";
+        case "screening": return "In Process";
+        case "interviewing": return "In Process";
+        case "offer_extended": return "In Process";
+        case "hired": return "Hired";
+        case "rejected": return "Rejected";
+        case "withdrawn": return "Rejected";
+        default: return "In Process";
+      }
+    };
     
     return {
       id: index + 1,
-      header: `${app.firstName} ${app.lastName}`, // Candidate name
-      type: app.jobId || `JOB-${String(index + 1).padStart(3, '0')}`, // Job ID Applied
-      status:
-        app.status === "pending"
-          ? "In Process"
-          : app.status === "approved"
-          ? "Hired"
-          : "Rejected",
-      target: new Date(app.submittedAt).getDate(), // For sorting
-      limit: Number(app.jobId?.replace(/\D/g, "") || index + 1), // For sorting
-      reviewer: app.reviewedBy || "Unassigned",
+      header: `${candidate.firstName} ${candidate.lastName}`, // Candidate name
+      type: firstJobApp?.jobId || "N/A", // Job ID Applied
+      status: getDisplayStatus(firstJobApp?.status || "new"),
+      target: new Date(candidate.createdAt).getDate(), // For sorting
+      limit: candidate.yearsOfExperience || 0, // For sorting
+      reviewer: "Team", // Could be derived from job assignments
       // Display data with realistic variations
       dateApplied: stages[index % stages.length], // Current Stage
-      jobIdDisplay: clients[clientIndex].name, // Client name
-      clientLogo: clients[clientIndex].logo, // Client logo
+      jobIdDisplay: client?.companyName || "Unknown Client", // Client name
+      clientLogo: client?.logo || `https://api.dicebear.com/7.x/initials/svg?seed=${client?.companyName || 'C'}`, // Client logo
       teamMembers: selectedTeamMembers, // Assigned team members
-      // Additional applicant details
-      photo: app.photo || undefined,
-      email: app.email,
-      phone: app.phone,
-      currentTitle: app.currentTitle,
-      currentCompany: app.currentCompany,
-      yearsOfExperience: app.yearsOfExperience,
-      skills: app.skills,
-      coverLetter: app.coverLetter,
-      resumeText: app.resumeText,
-      resumeFilename: app.resume?.filename,
-      resumeFileSize: app.resume?.size ? `${Math.round(app.resume.size / 1024)} KB` : undefined,
-      // Personal details (using available fields or providing fallbacks)
-      location: app.address || undefined,
-      linkedinUrl: app.linkedInUrl || undefined,
-      portfolioUrl: app.portfolioUrl || undefined,
-      educationLevel: undefined,
+      // Additional candidate details
+      photo: candidate.avatar || undefined,
+      email: candidate.email,
+      phone: candidate.phone,
+      currentTitle: candidate.currentTitle,
+      currentCompany: candidate.currentCompany,
+      yearsOfExperience: candidate.yearsOfExperience,
+      skills: candidate.skills?.map(s => s.name) || [],
+      coverLetter: undefined,
+      resumeText: undefined,
+      resumeFilename: undefined,
+      resumeFileSize: undefined,
+      // Personal details
+      location: candidate.address ? `${candidate.address.city}, ${candidate.address.country}` : undefined,
+      linkedinUrl: undefined,
+      portfolioUrl: undefined,
+      educationLevel: candidate.education?.[0]?.level || undefined,
       expectedSalary: undefined,  
-      languages: undefined,
+      languages: candidate.languages?.map(l => l.name) || undefined,
       notes: undefined,
       // Video introduction (demo data for first applicant)
       videoIntroUrl: index === 0 ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" : undefined,

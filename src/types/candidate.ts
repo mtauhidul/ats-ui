@@ -92,6 +92,7 @@ export interface CandidatePipeline {
   currentStage?: string;
   notes?: string;
   rating?: number; // 1-5 star rating
+  resumeScore?: number; // AI-generated resume match score (0-100) against job requirements
   interviewScheduled?: Date;
   rejectionReason?: string;
   withdrawalReason?: string;

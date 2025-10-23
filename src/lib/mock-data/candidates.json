@@ -36,15 +36,30 @@
     ],
     "certifications": ["AWS Certified Developer"],
     "source": "linkedin",
+    "jobIds": ["job-1"],
+    "applicationIds": ["app-001"],
+    "clientIds": ["client-1"],
     "jobApplications": [
       {
         "jobId": "job-1",
+        "applicationId": "app-001",
         "status": "interviewing",
         "appliedAt": "2025-10-05T00:00:00.000Z",
         "lastStatusChange": "2025-10-15T00:00:00.000Z",
-        "rating": 4.5
+        "rating": 4.5,
+        "resumeScore": 88,
+        "emailIds": [],
+        "emailsSent": 3,
+        "emailsReceived": 2,
+        "lastEmailDate": "2025-10-20T00:00:00.000Z"
       }
     ],
+    "totalEmailsSent": 3,
+    "totalEmailsReceived": 2,
+    "lastEmailDate": "2025-10-20T00:00:00.000Z",
+    "isActive": true,
+    "categoryIds": [],
+    "tagIds": [],
     "createdAt": "2025-10-05T00:00:00.000Z",
     "updatedAt": "2025-10-15T00:00:00.000Z"
   },
@@ -86,15 +101,30 @@
     ],
     "certifications": [],
     "source": "job_board",
+    "jobIds": ["job-1"],
+    "applicationIds": ["app-002"],
+    "clientIds": ["client-1"],
     "jobApplications": [
       {
         "jobId": "job-1",
+        "applicationId": "app-002",
         "status": "screening",
         "appliedAt": "2025-10-08T00:00:00.000Z",
         "lastStatusChange": "2025-10-12T00:00:00.000Z",
-        "rating": 4.0
+        "rating": 4.0,
+        "resumeScore": 75,
+        "emailIds": [],
+        "emailsSent": 1,
+        "emailsReceived": 1,
+        "lastEmailDate": "2025-10-18T00:00:00.000Z"
       }
     ],
+    "totalEmailsSent": 1,
+    "totalEmailsReceived": 1,
+    "lastEmailDate": "2025-10-18T00:00:00.000Z",
+    "isActive": true,
+    "categoryIds": [],
+    "tagIds": [],
     "createdAt": "2025-10-08T00:00:00.000Z",
     "updatedAt": "2025-10-12T00:00:00.000Z"
   },
@@ -134,16 +164,31 @@
     ],
     "certifications": [],
     "source": "website",
+    "jobIds": ["job-1"],
+    "applicationIds": ["app-003"],
+    "clientIds": ["client-1"],
     "jobApplications": [
       {
         "jobId": "job-1",
+        "applicationId": "app-003",
         "status": "rejected",
         "appliedAt": "2025-10-03T00:00:00.000Z",
         "lastStatusChange": "2025-10-10T00:00:00.000Z",
         "rating": 2.5,
-        "rejectionReason": "Not enough backend experience"
+        "resumeScore": 52,
+        "rejectionReason": "Not enough backend experience",
+        "emailIds": [],
+        "emailsSent": 2,
+        "emailsReceived": 0,
+        "lastEmailDate": "2025-10-10T00:00:00.000Z"
       }
     ],
+    "totalEmailsSent": 2,
+    "totalEmailsReceived": 0,
+    "lastEmailDate": "2025-10-10T00:00:00.000Z",
+    "isActive": false,
+    "categoryIds": [],
+    "tagIds": [],
     "createdAt": "2025-10-03T00:00:00.000Z",
     "updatedAt": "2025-10-10T00:00:00.000Z"
   },
@@ -184,15 +229,27 @@
     ],
     "certifications": ["AWS Certified Solutions Architect", "Kubernetes Certified Administrator"],
     "source": "recruiter",
+    "jobIds": ["job-2"],
+    "applicationIds": [],
+    "clientIds": ["client-1"],
     "jobApplications": [
       {
         "jobId": "job-2",
         "status": "new",
         "appliedAt": "2025-10-18T00:00:00.000Z",
         "lastStatusChange": "2025-10-18T00:00:00.000Z",
-        "rating": 4.8
+        "rating": 4.8,
+        "resumeScore": 92,
+        "emailIds": [],
+        "emailsSent": 0,
+        "emailsReceived": 0
       }
     ],
+    "totalEmailsSent": 0,
+    "totalEmailsReceived": 0,
+    "isActive": true,
+    "categoryIds": [],
+    "tagIds": [],
     "createdAt": "2025-10-18T00:00:00.000Z",
     "updatedAt": "2025-10-18T00:00:00.000Z"
   }
