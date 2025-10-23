@@ -7,7 +7,7 @@ import type { Job } from "@/types/job";
 import type { Pipeline, PipelineStage } from "@/types/pipeline";
 import { DEFAULT_PIPELINE_TEMPLATES } from "@/types/pipeline";
 import { ArrowLeft, Edit } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -18,6 +18,7 @@ import jobsData from "@/lib/mock-data/jobs.json";
 export default function JobPipelinePage() {
   const navigate = useNavigate();
   const { jobId } = useParams<{ jobId: string }>();
+  const kanbanContainerRef = useRef<HTMLDivElement>(null);
 
   // Find the job
   const job = jobsData.find((j) => j.id === jobId) as Job | undefined;
@@ -116,7 +117,7 @@ export default function JobPipelinePage() {
   };
 
   return (
-    <div className="flex flex-col h-full w-full max-w-[80vw] mx-auto">
+    <div className="flex flex-col h-full w-full">
       {/* Header - Fixed */}
       <div className="border-b bg-card">
         <div className="px-6 py-3">
@@ -179,13 +180,14 @@ export default function JobPipelinePage() {
             </div>
           ) : (
             pipeline && (
-              <div className="h-full overflow-hidden">
+              <div ref={kanbanContainerRef} className="h-full overflow-hidden">
                 <JobKanbanBoard
                   pipeline={pipeline}
                   candidates={candidates}
                   onCandidateClick={handleCandidateClick}
                   onStatusChange={handleStatusChange}
                   onStageUpdate={handleStageUpdate}
+                  containerRef={kanbanContainerRef}
                 />
               </div>
             )

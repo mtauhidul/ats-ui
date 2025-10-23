@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useSidebar } from "@/components/ui/sidebar";
 import type { Candidate } from "@/types/candidate";
 import type { Pipeline, PipelineStage } from "@/types/pipeline";
 import {
@@ -35,7 +34,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Edit, MoreHorizontal, Plus, User } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { DroppableArea } from "./droppable-area";
 import { CandidateCard, SortableCandidate } from "./sortable-candidate";
 
@@ -45,6 +44,7 @@ interface JobKanbanBoardProps {
   onCandidateClick: (candidate: Candidate) => void;
   onStatusChange: (candidateId: string, newStageId: string) => void;
   onStageUpdate?: (stage: PipelineStage) => void;
+  containerRef?: React.RefObject<HTMLDivElement | null>; // Accept ref from parent
 }
 
 export function JobKanbanBoard({
@@ -53,98 +53,109 @@ export function JobKanbanBoard({
   onCandidateClick,
   onStatusChange,
   onStageUpdate,
+  containerRef: externalRef,
 }: JobKanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isEditStageDialogOpen, setIsEditStageDialogOpen] = useState(false);
   const [editingStage, setEditingStage] = useState<PipelineStage | null>(null);
-  const [containerMaxWidth, setContainerMaxWidth] = useState<number>(0);
 
-  const { state: sidebarState } = useSidebar();
+  // Track the parent container size to dynamically adjust column widths
+  // Use external ref if provided, otherwise create internal ref
+  const internalRef = useRef<HTMLDivElement>(null);
+  const parentRef = externalRef || internalRef;
 
-  // Calculate container width when sidebar state changes
-  useEffect(() => {
-    const calculateMaxWidth = () => {
-      const viewportWidth = window.innerWidth;
-      // Use the gap element which actually changes width, not the sidebar itself
-      const sidebarGapElement = document.querySelector('[data-slot="sidebar-gap"]');
-      const sidebarWidth = sidebarGapElement?.getBoundingClientRect().width || 0;
-      
-      console.log('🔍 Width Calculation:', {
-        sidebarState,
-        viewportWidth,
-        sidebarWidth,
-        containerMaxWidth: viewportWidth - sidebarWidth
-      });
-      
-      setContainerMaxWidth(viewportWidth - sidebarWidth);
-    };
-
-    const sidebarGapElement = document.querySelector('[data-slot="sidebar-gap"]');
-    
-    // Listen for transition end on the sidebar gap
-    const handleTransitionEnd = () => {
-      calculateMaxWidth();
-    };
-    
-    if (sidebarGapElement) {
-      sidebarGapElement.addEventListener('transitionend', handleTransitionEnd);
-    }
-    
-    // Also calculate immediately (in case no transition)
-    calculateMaxWidth();
-    
-    // Also recalculate on window resize
-    window.addEventListener("resize", calculateMaxWidth);
-
-    return () => {
-      if (sidebarGapElement) {
-        sidebarGapElement.removeEventListener('transitionend', handleTransitionEnd);
-      }
-      window.removeEventListener("resize", calculateMaxWidth);
-    };
-  }, [sidebarState]);
-
-  // Calculate column widths
+  // Calculate optimal column widths based on available space
   const columnWidths = useMemo(() => {
-    const minColumnWidth = 300;
-    const maxColumnWidth = 400;
-    const availableWidth = containerMaxWidth > 0 ? containerMaxWidth : window.innerWidth;
+    // Each stage gets a fixed comfortable width - they will scroll if needed
+    const minColumnWidth = 300; // Comfortable minimum width per stage
+    const maxColumnWidth = 400; // Maximum width per stage
     
-    const stageCount = pipeline.stages.length;
-    const containerPadding = 48; // px-6
-    const wrapperPadding = 16; // p-2
-    const columnGap = 12; // gap-3
-    const borderWidth = 2; // 1px each side
-    const scrollBuffer = 2;
-    
-    const totalGaps = columnGap * (stageCount - 1);
-    const totalBorders = borderWidth * stageCount;
-    const totalPadding = containerPadding + wrapperPadding;
-    
-    const availableForStages = availableWidth - totalPadding - totalGaps - totalBorders - scrollBuffer;
-    const idealWidth = Math.floor(availableForStages / stageCount);
-    
-    let columnWidth;
-    if (idealWidth >= minColumnWidth && idealWidth <= maxColumnWidth) {
-      columnWidth = idealWidth;
-    } else if (idealWidth > maxColumnWidth) {
-      columnWidth = maxColumnWidth;
-    } else {
-      columnWidth = minColumnWidth;
-    }
-    
-    return pipeline.stages.map(() => columnWidth);
-  }, [pipeline.stages, containerMaxWidth]);
+    const viewportWidth = window.innerWidth;
+    const sidebarElement = document.querySelector('[data-sidebar="sidebar"]');
+    const sidebarWidth = sidebarElement
+      ? sidebarElement.getBoundingClientRect().width
+      : 0;
+    const actualAvailableViewportWidth = viewportWidth - sidebarWidth;
 
-  // Configure drag sensors
+    console.log("🌐 Total Viewport Width:", viewportWidth, "px");
+    console.log("📱 Sidebar Width:", sidebarWidth, "px");
+    console.log("� Pipeline Container Width (Parent):", parentWidth, "px");
+    console.log(
+      "📊 Available Width After Sidebar:",
+      viewportWidth - sidebarWidth,
+      "px"
+    );
+    console.log("�🔍 Debug - Parent Width:", parentWidth);
+
+    const minColumnWidth = 250; // Reduced minimum for better flexibility
+    const maxColumnWidth = 400; // Maximum width to prevent overly wide columns
+
+    const containerHorizontalPadding = 48; // px-6: 24px left + 24px right
+    const wrapperHorizontalPadding = 16; // p-2: 8px left + 8px right
+    const columnGap = 12; // gap-3
+
+    const stageCount = pipeline.stages.length;
+    const totalGaps = columnGap * (stageCount - 1);
+    const totalPadding = containerHorizontalPadding + wrapperHorizontalPadding;
+
+    // Calculate available width
+    const availableWidth = parentWidth - totalPadding - totalGaps;
+
+    console.log("📊 Debug - Available Width:", availableWidth);
+    console.log("📊 Debug - Stage Count:", stageCount);
+
+    // Calculate ideal width per column
+    const idealWidth = Math.floor(availableWidth / stageCount);
+
+    console.log("📊 Debug - Ideal Width per Column:", idealWidth);
+
+    // Always distribute available width evenly - don't force minimum if it doesn't fit
+    // This prevents horizontal scrolling
+    const constrainedWidth = Math.min(
+      maxColumnWidth,
+      Math.max(minColumnWidth, idealWidth)
+    );
+
+    // If ideal width is less than minimum, use ideal to fit perfectly
+    const finalWidth =
+      idealWidth < minColumnWidth ? idealWidth : constrainedWidth;
+
+    console.log("✅ Final Width per Column:", finalWidth);
+
+    // Recalculate remainder with final width
+    const remainder = availableWidth - finalWidth * stageCount;
+
+    console.log("📊 Remainder to distribute:", remainder);
+
+    // Distribute remainder pixels across columns
+    const widths = pipeline.stages.map((_, index) => {
+      return finalWidth + (index < remainder ? 1 : 0);
+    });
+
+    console.log("✅ Final Widths:", widths);
+    console.log(
+      "✅ Total Width:",
+      widths.reduce((a, b) => a + b, 0) + totalGaps + totalPadding
+    );
+    console.log("----------------------------------------");
+
+    return widths;
+  }, [parentWidth, pipeline.stages]);
+
+  // For future use: prevents database listener conflicts during drag operations
+  // const [isDragInProgress, setIsDragInProgress] = useState(false);
+
+  // Configure drag sensors with 3px activation distance
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 3 },
+      activationConstraint: {
+        distance: 3,
+      },
     }),
     useSensor(KeyboardSensor)
   );
 
-  // Group candidates by stage
+  // Group candidates by their current stage
   const candidatesByStage = useMemo(() => {
     const grouped: Record<string, Candidate[]> = {};
 
@@ -153,6 +164,7 @@ export function JobKanbanBoard({
     });
 
     candidates.forEach((candidate) => {
+      // Find the job application for this pipeline
       const jobApplication = candidate.jobApplications.find(
         (app) => app.jobId === pipeline.jobId
       );
@@ -163,6 +175,7 @@ export function JobKanbanBoard({
           grouped[stageId].push(candidate);
         }
       } else {
+        // Default to first stage if no current stage
         const firstStage = pipeline.stages[0];
         if (firstStage) {
           grouped[firstStage.id].push(candidate);
@@ -174,12 +187,15 @@ export function JobKanbanBoard({
   }, [candidates, pipeline]);
 
   const getCandidatesForStage = useCallback(
-    (stageId: string) => candidatesByStage[stageId] || [],
+    (stageId: string) => {
+      return candidatesByStage[stageId] || [];
+    },
     [candidatesByStage]
   );
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+    // setIsDragInProgress(true); // For future use with Firebase listeners
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -187,24 +203,34 @@ export function JobKanbanBoard({
 
     if (!over) {
       setActiveId(null);
+      // setIsDragInProgress(false); // For future use with Firebase listeners
       return;
     }
 
     const candidateId = active.id as string;
     const newStageId = over.id as string;
+
+    // Optimistic update - immediately update UI
+    // Find current stage
     const currentCandidate = candidates.find((c) => c.id === candidateId);
-    
     if (currentCandidate) {
       const currentApp = currentCandidate.jobApplications.find(
         (app) => app.jobId === pipeline.jobId
       );
 
+      // Only update if changing stages
       if (currentApp?.currentStage !== newStageId) {
+        // Call the onStatusChange callback to update the backend
         onStatusChange(candidateId, newStageId);
       }
     }
 
     setActiveId(null);
+
+    // For future use: Add delay before re-enabling listeners to prevent conflicts
+    // setTimeout(() => {
+    //   setIsDragInProgress(false);
+    // }, 500);
   };
 
   const handleEditStage = () => {
@@ -217,11 +243,22 @@ export function JobKanbanBoard({
 
   return (
     <div
-      className="h-full flex flex-col"
-      style={{
-        maxWidth: containerMaxWidth > 0 ? `${containerMaxWidth}px` : undefined,
-      }}
+      ref={externalRef ? undefined : parentRef}
+      className="h-full flex flex-col overflow-hidden"
     >
+      {/* Debug info - Remove after fixing */}
+      {parentWidth > 0 && (
+        <div className="bg-yellow-100 border border-yellow-400 px-2 py-1 text-xs">
+          Parent: {parentWidth}px | Columns: {columnWidths.join(", ")}px |
+          Total:{" "}
+          {columnWidths.reduce((a, b) => a + b, 0) +
+            (pipeline.stages.length - 1) * 12 +
+            64}
+          px
+        </div>
+      )}
+
+      {/* Header - Fixed width, no scroll */}
       <div className="flex-shrink-0 px-6 pt-6 pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
@@ -237,14 +274,15 @@ export function JobKanbanBoard({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-x-auto px-6 pb-6">
+      {/* Kanban Board - Only this scrolls horizontally */}
+      <div className="flex-1 min-h-0 overflow-hidden px-6 pb-6">
         <DndContext
           sensors={sensors}
           collisionDetection={rectIntersection}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="h-full flex gap-3 p-2">
+          <div className="h-full w-full flex gap-3 p-2">
             {pipeline.stages
               .sort((a, b) => a.order - b.order)
               .map((stage, index) => (
@@ -254,6 +292,7 @@ export function JobKanbanBoard({
                   style={{ width: `${columnWidths[index]}px` }}
                 >
                   <div className="bg-card rounded-lg border border-border shadow-sm h-full flex flex-col">
+                    {/* Stage Header */}
                     <div className="px-2 py-1.5 border-b border-border flex-shrink-0">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-1.5 min-w-0">
@@ -296,6 +335,7 @@ export function JobKanbanBoard({
                       </div>
                     </div>
 
+                    {/* Candidates Column */}
                     <SortableContext
                       items={getCandidatesForStage(stage.id).map((c) => c.id)}
                       strategy={verticalListSortingStrategy}
@@ -342,6 +382,7 @@ export function JobKanbanBoard({
         </DndContext>
       </div>
 
+      {/* Edit Stage Dialog */}
       <Dialog
         open={isEditStageDialogOpen}
         onOpenChange={setIsEditStageDialogOpen}
