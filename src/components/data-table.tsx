@@ -29,7 +29,6 @@ import {
   IconGripVertical,
   IconLayoutColumns,
   IconLoader,
-  IconPlus,
   IconCheck,
   IconX,
   IconDownload,
@@ -99,9 +98,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { TabsTrigger } from "@radix-ui/react-tabs";
 import type { schema } from "./data-table-schema";
 
 // Create a separate component for the drag handle
@@ -1066,6 +1064,33 @@ export function DataTable({
 function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   const isMobile = useIsMobile();
   const [showResumePreview, setShowResumePreview] = React.useState(false);
+  const [showJobAssignDialog, setShowJobAssignDialog] = React.useState(false);
+  const [selectedJobId, setSelectedJobId] = React.useState<string>(item.jobIdDisplay || "");
+  const [searchQuery, setSearchQuery] = React.useState("");
+
+  // Load jobs data
+  const [jobs, setJobs] = React.useState<Array<{ id: string; title: string; clientId: string }>>([]);
+
+  React.useEffect(() => {
+    // Load jobs from mock data
+    import("@/lib/mock-data/jobs.json").then((data) => {
+      setJobs(data.default.map((job: { id: string; title: string; clientId: string }) => ({
+        id: job.id,
+        title: job.title,
+        clientId: job.clientId
+      })));
+    });
+  }, []);
+
+  // Filter jobs based on search query
+  const filteredJobs = React.useMemo(() => {
+    if (!searchQuery) return jobs;
+    const query = searchQuery.toLowerCase();
+    return jobs.filter(job => 
+      job.title.toLowerCase().includes(query) || 
+      job.id.toLowerCase().includes(query)
+    );
+  }, [jobs, searchQuery]);
 
   // Auto-hide resume preview when drawer closes
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
@@ -1437,31 +1462,140 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
         </div>
 
         <DrawerFooter className="border-t gap-2">
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => {
-                console.log(`Approving application for ${item.header}`);
-              }}
-              className="flex-1"
-              size="default"
-            >
-              <IconCheck className="h-4 w-4" />
-              Approve
-            </Button>
-            <DrawerClose asChild>
+          {showJobAssignDialog ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="job-select" className="text-sm font-semibold">
+                  Assign to Job <span className="text-destructive">*</span>
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {item.jobIdDisplay && item.jobIdDisplay !== '-' 
+                    ? `Current assignment: ${item.jobIdDisplay}. You can change it below.`
+                    : 'Select a job to assign this application to'}
+                </p>
+                
+                {/* Search Input */}
+                <div className="relative">
+                  <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search jobs by title or ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+
+                {/* Jobs List */}
+                <div className="border rounded-md max-h-[200px] overflow-y-auto">
+                  {filteredJobs.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      {searchQuery ? 'No jobs found matching your search' : 'No jobs available'}
+                    </div>
+                  ) : (
+                    <div className="divide-y">
+                      {filteredJobs.map((job) => (
+                        <button
+                          key={job.id}
+                          type="button"
+                          onClick={() => setSelectedJobId(job.id)}
+                          className={`w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors ${
+                            selectedJobId === job.id ? 'bg-primary/10 border-l-2 border-l-primary' : ''
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm truncate">{job.title}</div>
+                              <div className="text-xs text-muted-foreground">ID: {job.id}</div>
+                            </div>
+                            {selectedJobId === job.id && (
+                              <IconCircleCheckFilled className="h-5 w-5 text-primary flex-shrink-0" />
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {selectedJobId && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-md">
+                    <IconCircleCheckFilled className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">
+                      Selected: {jobs.find(j => j.id === selectedJobId)?.title || selectedJobId}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => {
+                    if (!selectedJobId) {
+                      alert("Please select a job before approving");
+                      return;
+                    }
+                    const selectedJob = jobs.find(j => j.id === selectedJobId);
+                    console.log(`Approving application for ${item.header} and assigning to job: ${selectedJobId}`);
+                    setShowJobAssignDialog(false);
+                    // In real app, this would update the backend
+                    alert(`Application approved and assigned to:\n${selectedJob?.title} (${selectedJobId})`);
+                  }}
+                  className="flex-1"
+                  size="default"
+                  disabled={!selectedJobId}
+                >
+                  <IconCheck className="h-4 w-4 mr-2" />
+                  Confirm Approval
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setShowJobAssignDialog(false);
+                    setSearchQuery("");
+                  }}
+                  className="flex-1"
+                  size="default"
+                >
+                  <IconX className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
               <Button 
-                variant="outline"
                 onClick={() => {
-                  console.log(`Rejecting application for ${item.header}`);
+                  // Pre-select the current job if it exists
+                  if (item.jobIdDisplay && item.jobIdDisplay !== '-') {
+                    setSelectedJobId(item.jobIdDisplay);
+                  } else {
+                    setSelectedJobId("");
+                  }
+                  setShowJobAssignDialog(true);
                 }}
                 className="flex-1"
                 size="default"
+                disabled={item.status === "Done"}
               >
-                <IconX className="h-4 w-4" />
-                Reject
+                <IconCheck className="h-4 w-4" />
+                Approve
               </Button>
-            </DrawerClose>
-          </div>
+              <DrawerClose asChild>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    console.log(`Rejecting application for ${item.header}`);
+                  }}
+                  className="flex-1"
+                  size="default"
+                  disabled={item.status === "Rejected"}
+                >
+                  <IconX className="h-4 w-4" />
+                  Reject
+                </Button>
+              </DrawerClose>
+            </div>
+          )}
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
