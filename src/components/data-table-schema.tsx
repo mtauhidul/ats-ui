@@ -10,6 +10,9 @@ export const schema = z.object({
   reviewer: z.string(),
   dateApplied: z.string().optional(),
   jobIdDisplay: z.string().optional(),
+  // Candidates-specific fields
+  clientLogo: z.string().optional(),
+  teamMembers: z.array(z.string()).optional(),
   // Additional applicant fields
   photo: z.string().nullable().optional(),
   email: z.string().optional(),

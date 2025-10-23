@@ -1,84 +1,71 @@
-import { DataTable } from "@/components/data-table";
-import candidatesData from "@/lib/mock-data/candidates.json";
+import { CandidatesDataTable } from "@/components/candidates-data-table";
+import applicationsData from "@/lib/mock-data/applications.json";
+
+// Mock stages and clients for demonstration
+const stages = ["New Application", "Screening", "Interview", "Assessment", "Offer", "Hired"];
+const clients = [
+  { name: "Tech Corp Inc.", logo: "https://api.dicebear.com/7.x/initials/svg?seed=TC" },
+  { name: "Innovation Labs", logo: "https://api.dicebear.com/7.x/initials/svg?seed=IL" },
+  { name: "Global Solutions", logo: "https://api.dicebear.com/7.x/initials/svg?seed=GS" },
+  { name: "StartUp Hub", logo: "https://api.dicebear.com/7.x/initials/svg?seed=SH" },
+  { name: "Enterprise Co.", logo: "https://api.dicebear.com/7.x/initials/svg?seed=EC" },
+];
+
+// Mock team members pool
+const teamMembersPool = ["John Smith", "Sarah Wilson", "Mike Johnson", "Lisa Brown", "Tom Davis", "Emma Davis", "Alex Chen"];
 
 export default function CandidatesPage() {
-  const transformedData = candidatesData.map((candidate, index) => {
-    // Get the most prominent status from all job applications
-    const primaryApplication = candidate.jobApplications.reduce((prev, curr) => {
-      const statusPriority = {
-        offer_extended: 7,
-        interviewing: 6,
-        testing: 5,
-        reference_check: 4,
-        screening: 3,
-        new: 2,
-        hired: 1,
-        rejected: 0,
-        withdrawn: 0,
-      };
-      return statusPriority[curr.status as keyof typeof statusPriority] > 
-             statusPriority[prev.status as keyof typeof statusPriority]
-        ? curr
-        : prev;
-    }, candidate.jobApplications[0]);
-
-    // Count active applications
-    const activeApplications = candidate.jobApplications.filter((app) =>
-      ["new", "screening", "interviewing", "testing", "reference_check", "offer_extended"].includes(app.status)
-    ).length;
-
+  const transformedData = applicationsData.map((app, index) => {
+    // Randomly assign 0-3 team members
+    const teamMemberCount = Math.floor(Math.random() * 4);
+    const shuffled = [...teamMembersPool].sort(() => 0.5 - Math.random());
+    const selectedTeamMembers = teamMemberCount > 0 ? shuffled.slice(0, teamMemberCount) : [];
+    
+    const clientIndex = index % clients.length;
+    
     return {
       id: index + 1,
-      header: `${candidate.firstName} ${candidate.lastName}`, // Candidate name
-      type: candidate.source === "linkedin" ? "LinkedIn" : 
-            candidate.source === "job_board" ? "Job Board" :
-            candidate.source === "referral" ? "Referral" :
-            candidate.source === "recruiter" ? "Recruiter" :
-            candidate.source === "website" ? "Website" :
-            candidate.source, // Source of candidate
+      header: `${app.firstName} ${app.lastName}`, // Candidate name
+      type: app.jobId || `JOB-${String(index + 1).padStart(3, '0')}`, // Job ID Applied
       status:
-        primaryApplication.status === "hired"
-          ? "Done"
-          : primaryApplication.status === "rejected"
-          ? "Rejected"
-          : primaryApplication.status === "withdrawn"
-          ? "Withdrawn"
-          : "In Process",
-      target: candidate.yearsOfExperience || 0, // Years of experience for sorting
-      limit: candidate.jobApplications.length, // Total applications for sorting
-      reviewer: candidate.currentCompany || "Seeking Opportunity",
-      // Display data
-      dateApplied: new Date(candidate.createdAt).toLocaleDateString(),
-      jobIdDisplay: `${candidate.jobApplications.length} Application${candidate.jobApplications.length > 1 ? 's' : ''}`,
-      // Candidate details
-      photo: candidate.avatar || undefined,
-      email: candidate.email,
-      phone: candidate.phone,
-      currentTitle: candidate.currentTitle,
-      currentCompany: candidate.currentCompany,
-      yearsOfExperience: candidate.yearsOfExperience,
-      skills: candidate.skills?.map(s => s.name),
-      coverLetter: undefined, // Not applicable for candidates view
-      resumeText: undefined,
-      resumeFilename: undefined, // Resume attached to candidate profile
-      resumeFileSize: undefined,
-      // Personal details
-      location: candidate.address ? `${candidate.address.city}, ${candidate.address.country}` : undefined,
-      linkedinUrl: undefined,
-      portfolioUrl: undefined,
-      educationLevel: candidate.education?.[0]?.degree,
-      expectedSalary: undefined,
-      languages: candidate.languages?.map(l => `${l.name} (${l.proficiency})`) || [],
+        app.status === "pending"
+          ? "In Process"
+          : app.status === "approved"
+          ? "Hired"
+          : "Rejected",
+      target: new Date(app.submittedAt).getDate(), // For sorting
+      limit: Number(app.jobId?.replace(/\D/g, "") || index + 1), // For sorting
+      reviewer: app.reviewedBy || "Unassigned",
+      // Display data with realistic variations
+      dateApplied: stages[index % stages.length], // Current Stage
+      jobIdDisplay: clients[clientIndex].name, // Client name
+      clientLogo: clients[clientIndex].logo, // Client logo
+      teamMembers: selectedTeamMembers, // Assigned team members
+      // Additional applicant details
+      photo: app.photo || undefined,
+      email: app.email,
+      phone: app.phone,
+      currentTitle: app.currentTitle,
+      currentCompany: app.currentCompany,
+      yearsOfExperience: app.yearsOfExperience,
+      skills: app.skills,
+      coverLetter: app.coverLetter,
+      resumeText: app.resumeText,
+      resumeFilename: app.resume?.filename,
+      resumeFileSize: app.resume?.size ? `${Math.round(app.resume.size / 1024)} KB` : undefined,
+      // Personal details (using available fields or providing fallbacks)
+      location: app.address || undefined,
+      linkedinUrl: app.linkedInUrl || undefined,
+      portfolioUrl: app.portfolioUrl || undefined,
+      educationLevel: undefined,
+      expectedSalary: undefined,  
+      languages: undefined,
       notes: undefined,
-      // Additional candidate-specific info
-      totalApplications: candidate.jobApplications.length,
-      activeApplications: activeApplications,
-      primaryStatus: primaryApplication.status,
-      primaryJobId: primaryApplication.jobId,
-      certifications: candidate.certifications?.join(", "),
-      preferredWorkMode: undefined,
-      willingToRelocate: undefined,
-      availableStartDate: undefined,
+      // Video introduction (demo data for first applicant)
+      videoIntroUrl: index === 0 ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" : undefined,
+      videoIntroFilename: index === 0 ? "sarah_johnson_intro.mp4" : undefined,
+      videoIntroFileSize: index === 0 ? "15.2 MB" : undefined,
+      videoIntroDuration: index === 0 ? "2:30" : undefined,
     };
   });
 
@@ -92,11 +79,11 @@ export default function CandidatesPage() {
                 Candidates
               </h2>
               <p className="text-muted-foreground">
-                Manage all candidates across all jobs and track their complete journey
+                Track and manage candidates across all job applications
               </p>
             </div>
           </div>
-          <DataTable data={transformedData} />
+          <CandidatesDataTable data={transformedData} />
         </div>
       </div>
     </div>
