@@ -1,0 +1,829 @@
+import * as React from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  IconArrowLeft,
+  IconBriefcase,
+  IconCalendar,
+  IconCircleCheckFilled,
+  IconClockHour4,
+  IconDownload,
+  IconFileText,
+  IconMail,
+  IconMapPin,
+  IconPhone,
+  IconUserCheck,
+  IconUserX,
+} from "@tabler/icons-react";
+import applicationsData from "@/lib/mock-data/applications.json";
+
+// Helper functions for status badges
+function getStatusBadge(status: string) {
+  switch (status) {
+    case "Hired":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800"
+        >
+          <IconCircleCheckFilled className="h-3 w-3 mr-1" />
+          Hired
+        </Badge>
+      );
+    case "Rejected":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800"
+        >
+          <IconUserX className="h-3 w-3 mr-1" />
+          Rejected
+        </Badge>
+      );
+    case "In Process":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800"
+        >
+          <IconClockHour4 className="h-3 w-3 mr-1" />
+          In Process
+        </Badge>
+      );
+    default:
+      return <Badge variant="secondary">{status}</Badge>;
+  }
+}
+
+// Mock stages and clients for demonstration
+const stages = ["New Application", "Screening", "Interview", "Assessment", "Offer", "Hired"];
+const clients = [
+  { name: "Tech Corp Inc.", logo: "https://api.dicebear.com/7.x/initials/svg?seed=TC" },
+  { name: "Innovation Labs", logo: "https://api.dicebear.com/7.x/initials/svg?seed=IL" },
+  { name: "Global Solutions", logo: "https://api.dicebear.com/7.x/initials/svg?seed=GS" },
+  { name: "StartUp Hub", logo: "https://api.dicebear.com/7.x/initials/svg?seed=SH" },
+  { name: "Enterprise Co.", logo: "https://api.dicebear.com/7.x/initials/svg?seed=EC" },
+];
+
+// Mock communications data
+const mockCommunications = [
+  {
+    id: 1,
+    type: "email",
+    subject: "Application Received - Acknowledgment",
+    date: "2024-01-15 10:30 AM",
+    direction: "outbound",
+  },
+  {
+    id: 2,
+    type: "email",
+    subject: "Interview Invitation - Technical Round",
+    date: "2024-01-18 02:15 PM",
+    direction: "outbound",
+  },
+  {
+    id: 3,
+    type: "email",
+    subject: "Re: Interview Confirmation",
+    date: "2024-01-18 03:45 PM",
+    direction: "inbound",
+  },
+  {
+    id: 4,
+    type: "email",
+    subject: "Follow-up After Interview",
+    date: "2024-01-22 09:00 AM",
+    direction: "outbound",
+  },
+];
+
+export default function CandidateDetailsPage() {
+  const { candidateId } = useParams<{ candidateId: string }>();
+  const navigate = useNavigate();
+  const [showResumePreview, setShowResumePreview] = React.useState(false);
+  const [showVideoPreview, setShowVideoPreview] = React.useState(false);
+
+  // Find the candidate data (mock)
+  const candidateIndex = candidateId ? parseInt(candidateId) - 1 : 0;
+  const app = applicationsData[candidateIndex] || applicationsData[0];
+  
+  const clientIndex = candidateIndex % clients.length;
+  
+  // Mock job titles
+  const jobTitles = [
+    "Senior Full Stack Developer",
+    "Product Manager",
+    "UX/UI Designer",
+    "Data Scientist",
+    "DevOps Engineer",
+  ];
+  
+  // Mock team members
+  const teamMembersPool = ["John Smith", "Sarah Wilson", "Mike Johnson", "Lisa Brown", "Tom Davis"];
+  const teamMemberCount = Math.floor(Math.random() * 3) + 1;
+  const shuffled = [...teamMembersPool].sort(() => 0.5 - Math.random());
+  const assignedTeamMembers = shuffled.slice(0, teamMemberCount);
+  
+  const candidate = {
+    id: candidateId || "1",
+    firstName: app.firstName,
+    lastName: app.lastName,
+    fullName: `${app.firstName} ${app.lastName}`,
+    email: app.email,
+    phone: app.phone,
+    photo: app.photo,
+    currentTitle: app.currentTitle,
+    currentCompany: app.currentCompany,
+    yearsOfExperience: app.yearsOfExperience,
+    skills: app.skills,
+    coverLetter: app.coverLetter,
+    resumeText: app.resumeText,
+    resumeFilename: app.resume?.filename,
+    resumeFileSize: app.resume?.size ? `${Math.round(app.resume.size / 1024)} KB` : undefined,
+    location: app.address,
+    linkedInUrl: app.linkedInUrl,
+    portfolioUrl: app.portfolioUrl,
+    status: app.status === "pending" ? "In Process" : app.status === "approved" ? "Hired" : "Rejected",
+    jobId: app.jobId || `JOB-${String(candidateIndex + 1).padStart(3, '0')}`,
+    jobTitle: jobTitles[candidateIndex % jobTitles.length],
+    currentStage: stages[candidateIndex % stages.length],
+    clientName: clients[clientIndex].name,
+    clientLogo: clients[clientIndex].logo,
+    appliedDate: new Date(app.submittedAt).toLocaleDateString(),
+    lastStatusChange: new Date(Date.now() - Math.floor(Math.random() * 10) * 24 * 60 * 60 * 1000).toLocaleDateString(),
+    rating: candidateIndex % 2 === 0 ? 4.5 : undefined,
+    reviewedBy: app.reviewedBy || "John Smith",
+    teamMembers: assignedTeamMembers,
+    interviewScheduled: candidateIndex < 3 ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString() : undefined,
+    totalEmails: Math.floor(Math.random() * 10) + 4,
+    // Video introduction data (for first candidate)
+    videoIntroUrl: candidateIndex === 0 ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" : undefined,
+    videoIntroFilename: candidateIndex === 0 ? "video_introduction.mp4" : undefined,
+    videoIntroFileSize: candidateIndex === 0 ? "15.2 MB" : undefined,
+    videoIntroDuration: candidateIndex === 0 ? "2:30" : undefined,
+  };
+
+  // Mock history data - simulate past applications
+  const historyData = [
+    {
+      id: "1",
+      jobTitle: "Senior Software Engineer",
+      jobId: "JOB-001",
+      clientName: "Tech Corp Inc.",
+      appliedDate: "2023-08-15",
+      status: "Rejected",
+      stage: "Interview",
+      lastUpdated: "2023-09-02",
+    },
+    {
+      id: "2",
+      jobTitle: "Frontend Developer",
+      jobId: "JOB-045",
+      clientName: "StartUp Hub",
+      appliedDate: "2023-11-20",
+      status: "Hired",
+      stage: "Hired",
+      lastUpdated: "2023-12-15",
+    },
+  ];
+
+  return (
+    <div className="flex flex-1 flex-col">
+      <div className="@container/main flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+          {/* Header with Back Button */}
+          <div className="px-4 lg:px-6">
+            <div className="flex items-center gap-4 mb-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/dashboard/candidates")}
+                className="gap-2"
+              >
+                <IconArrowLeft className="h-4 w-4" />
+                Back to Candidates
+              </Button>
+            </div>
+
+            {/* Candidate Header Card */}
+            <Card className="border-2">
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row gap-6">
+                  <Avatar className="h-24 w-24 border-2 rounded-lg flex-shrink-0">
+                    <AvatarImage src={candidate.photo || ""} className="object-cover" />
+                    <AvatarFallback className="text-2xl font-semibold rounded-lg">
+                      {candidate.firstName[0]}
+                      {candidate.lastName[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
+                      <div>
+                        <h1 className="text-2xl font-bold mb-1">{candidate.fullName}</h1>
+                        {candidate.currentTitle && (
+                          <p className="text-muted-foreground flex items-center gap-2">
+                            <IconBriefcase className="h-4 w-4" />
+                            {candidate.currentTitle}
+                            {candidate.currentCompany && ` at ${candidate.currentCompany}`}
+                          </p>
+                        )}
+                      </div>
+                      {getStatusBadge(candidate.status)}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <IconMail className="h-4 w-4" />
+                        <a href={`mailto:${candidate.email}`} className="hover:text-foreground">
+                          {candidate.email}
+                        </a>
+                      </div>
+                      {candidate.phone && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <IconPhone className="h-4 w-4" />
+                          <a href={`tel:${candidate.phone}`} className="hover:text-foreground">
+                            {candidate.phone}
+                          </a>
+                        </div>
+                      )}
+                      {candidate.location && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <IconMapPin className="h-4 w-4" />
+                          <span>{candidate.location}</span>
+                        </div>
+                      )}
+                      {candidate.yearsOfExperience && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <IconBriefcase className="h-4 w-4" />
+                          <span>{candidate.yearsOfExperience} years experience</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {candidate.linkedInUrl || candidate.portfolioUrl ? (
+                      <div className="flex gap-2 mt-4">
+                        {candidate.linkedInUrl && (
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={candidate.linkedInUrl} target="_blank" rel="noopener noreferrer">
+                              LinkedIn Profile
+                            </a>
+                          </Button>
+                        )}
+                        {candidate.portfolioUrl && (
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={candidate.portfolioUrl} target="_blank" rel="noopener noreferrer">
+                              Portfolio
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Tabs Section */}
+          <div className="px-4 lg:px-6">
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="h-11 p-1 bg-card border border-border w-full inline-flex">
+                <TabsTrigger value="overview" className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground">
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="candidacy" className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground">
+                  Current Candidacy
+                </TabsTrigger>
+                <TabsTrigger value="history" className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground">
+                  History
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="mt-6 space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Professional Information */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Professional Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {candidate.currentTitle && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Current Position</Label>
+                          <p className="text-sm font-medium mt-1">{candidate.currentTitle}</p>
+                        </div>
+                      )}
+                      {candidate.currentCompany && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Current Company</Label>
+                          <p className="text-sm font-medium mt-1">{candidate.currentCompany}</p>
+                        </div>
+                      )}
+                      {candidate.yearsOfExperience && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Years of Experience</Label>
+                          <p className="text-sm font-medium mt-1">{candidate.yearsOfExperience} years</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Contact Information */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Contact Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Email</Label>
+                        <p className="text-sm font-medium mt-1">
+                          <a href={`mailto:${candidate.email}`} className="text-primary hover:underline">
+                            {candidate.email}
+                          </a>
+                        </p>
+                      </div>
+                      {candidate.phone && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Phone</Label>
+                          <p className="text-sm font-medium mt-1">
+                            <a href={`tel:${candidate.phone}`} className="text-primary hover:underline">
+                              {candidate.phone}
+                            </a>
+                          </p>
+                        </div>
+                      )}
+                      {candidate.location && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Location</Label>
+                          <p className="text-sm font-medium mt-1">{candidate.location}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Skills */}
+                {candidate.skills && candidate.skills.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Skills</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {candidate.skills.map((skill, index) => (
+                          <Badge key={index} variant="secondary" className="text-sm font-normal">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Documents */}
+                {(candidate.resumeFilename || candidate.videoIntroUrl) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Documents & Media</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Resume */}
+                      {candidate.resumeFilename && (
+                        <div className="rounded-lg border overflow-hidden">
+                          <div className="flex items-center justify-between gap-3 p-3 bg-muted/50">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="rounded-md bg-background p-2 border">
+                                <IconFileText className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium truncate">{candidate.resumeFilename}</p>
+                                {candidate.resumeFileSize && (
+                                  <p className="text-xs text-muted-foreground">{candidate.resumeFileSize}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowResumePreview(!showResumePreview)}
+                                className="h-8 px-3"
+                              >
+                                <span className="text-xs">
+                                  {showResumePreview ? "Hide" : "View"}
+                                </span>
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                <IconDownload className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          {showResumePreview && (
+                            <div className="border-t">
+                              {candidate.resumeFilename.toLowerCase().endsWith(".pdf") ? (
+                                <div className="relative bg-muted/30">
+                                  <iframe
+                                    src={`/uploads/resumes/${candidate.resumeFilename}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                    className="w-full h-[600px]"
+                                    title="Resume Preview"
+                                  />
+                                </div>
+                              ) : candidate.resumeText ? (
+                                <div className="max-h-[600px] overflow-y-auto p-4 bg-muted/30">
+                                  <pre className="text-xs whitespace-pre-wrap leading-relaxed">
+                                    {candidate.resumeText}
+                                  </pre>
+                                </div>
+                              ) : (
+                                <div className="p-12 text-center bg-muted/30">
+                                  <IconFileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
+                                  <p className="text-sm text-muted-foreground mb-1">
+                                    Preview not available
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Download the file to view
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Video Introduction */}
+                      {candidate.videoIntroUrl && (
+                        <div className="rounded-lg border overflow-hidden">
+                          <div className="flex items-center justify-between gap-3 p-3 bg-muted/50">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="rounded-md bg-background p-2 border">
+                                <IconFileText className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium truncate">
+                                  {candidate.videoIntroFilename || "Video Introduction"}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                  {candidate.videoIntroDuration && (
+                                    <span>{candidate.videoIntroDuration}</span>
+                                  )}
+                                  {candidate.videoIntroFileSize && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{candidate.videoIntroFileSize}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowVideoPreview(!showVideoPreview)}
+                                className="h-8 px-3"
+                              >
+                                <span className="text-xs">
+                                  {showVideoPreview ? "Hide" : "View"}
+                                </span>
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                <IconDownload className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          {showVideoPreview && (
+                            <div className="border-t bg-black flex items-center justify-center">
+                              <video
+                                controls
+                                className="w-full h-[600px] object-contain"
+                                preload="metadata"
+                                poster={candidate.photo || undefined}
+                              >
+                                <source src={candidate.videoIntroUrl} type="video/mp4" />
+                                <source src={candidate.videoIntroUrl} type="video/webm" />
+                                <source src={candidate.videoIntroUrl} type="video/ogg" />
+                                Your browser does not support the video tag.
+                              </video>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Cover Letter */}
+                {candidate.coverLetter && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Cover Letter</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="prose prose-sm max-w-none">
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                          {candidate.coverLetter}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              {/* Current Candidacy Tab */}
+              <TabsContent value="candidacy" className="mt-6 space-y-6">
+                {/* Current Application Card */}
+                <Card className="border-primary/20">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-12 w-12 rounded-md border-2">
+                          <AvatarImage src={candidate.clientLogo} />
+                          <AvatarFallback className="rounded-md">
+                            {candidate.clientName.split(" ").map((n) => n[0]).join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <CardTitle className="text-lg">{candidate.jobTitle}</CardTitle>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {candidate.clientName}
+                          </p>
+                        </div>
+                      </div>
+                      {getStatusBadge(candidate.status)}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Job Information Grid */}
+                    <div>
+                      <h4 className="text-sm font-semibold mb-3">Job Information</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="p-3 rounded-lg border bg-muted/30">
+                          <Label className="text-xs text-muted-foreground">Job ID</Label>
+                          <p className="text-sm font-medium font-mono mt-1">{candidate.jobId}</p>
+                        </div>
+                        <div className="p-3 rounded-lg border bg-muted/30">
+                          <Label className="text-xs text-muted-foreground">Client</Label>
+                          <p className="text-sm font-medium mt-1">{candidate.clientName}</p>
+                        </div>
+                        <div className="p-3 rounded-lg border bg-muted/30">
+                          <Label className="text-xs text-muted-foreground">Job Title</Label>
+                          <p className="text-sm font-medium mt-1">{candidate.jobTitle}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Application Progress */}
+                    <div>
+                      <h4 className="text-sm font-semibold mb-3">Application Progress</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="p-3 rounded-lg border bg-card">
+                          <Label className="text-xs text-muted-foreground">Current Stage</Label>
+                          <p className="text-sm font-semibold mt-1 text-primary">{candidate.currentStage}</p>
+                        </div>
+                        <div className="p-3 rounded-lg border bg-card">
+                          <Label className="text-xs text-muted-foreground">Applied Date</Label>
+                          <p className="text-sm font-medium mt-1">{candidate.appliedDate}</p>
+                        </div>
+                        <div className="p-3 rounded-lg border bg-card">
+                          <Label className="text-xs text-muted-foreground">Last Updated</Label>
+                          <p className="text-sm font-medium mt-1">{candidate.lastStatusChange}</p>
+                        </div>
+                        {candidate.interviewScheduled && (
+                          <div className="p-3 rounded-lg border bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+                            <Label className="text-xs text-amber-700 dark:text-amber-400">Next Interview</Label>
+                            <p className="text-sm font-semibold mt-1 text-amber-800 dark:text-amber-300">
+                              {candidate.interviewScheduled}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Rating & Feedback */}
+                    {candidate.rating && (
+                      <div>
+                        <h4 className="text-sm font-semibold mb-3">Rating & Feedback</h4>
+                        <div className="p-4 rounded-lg border bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/30 dark:to-orange-950/30 border-yellow-200 dark:border-yellow-800">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              {[...Array(5)].map((_, i) => (
+                                <IconCircleCheckFilled
+                                  key={i}
+                                  className={`h-5 w-5 ${
+                                    i < Math.floor(candidate.rating!)
+                                      ? "text-yellow-500 fill-yellow-500"
+                                      : "text-gray-300 dark:text-gray-600"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-lg font-bold text-yellow-700 dark:text-yellow-400">
+                              {candidate.rating.toFixed(1)}
+                            </span>
+                            <span className="text-sm text-muted-foreground">/ 5.0</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Based on interview feedback and assessments
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Team Assignment */}
+                    <div>
+                      <h4 className="text-sm font-semibold mb-3">Team Assignment</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-3 rounded-lg border bg-card">
+                          <Label className="text-xs text-muted-foreground mb-2 block">Reviewed By</Label>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs">
+                                {candidate.reviewedBy.split(" ").map((n) => n[0]).join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm font-medium">{candidate.reviewedBy}</span>
+                          </div>
+                        </div>
+                        <div className="p-3 rounded-lg border bg-card">
+                          <Label className="text-xs text-muted-foreground mb-2 block">Assigned Team Members</Label>
+                          <div className="flex items-center gap-1">
+                            {candidate.teamMembers.slice(0, 3).map((member, idx) => (
+                              <Avatar key={idx} className="h-8 w-8 border-2 border-background">
+                                <AvatarFallback className="text-xs">
+                                  {member.split(" ").map((n) => n[0]).join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                            ))}
+                            {candidate.teamMembers.length > 3 && (
+                              <div className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                                <span className="text-xs font-medium">+{candidate.teamMembers.length - 3}</span>
+                              </div>
+                            )}
+                            <span className="text-xs text-muted-foreground ml-2">
+                              {candidate.teamMembers.length} member{candidate.teamMembers.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Communication Stats */}
+                    <div>
+                      <h4 className="text-sm font-semibold mb-3">Communication Statistics</h4>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="p-3 rounded-lg border bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+                          <Label className="text-xs text-blue-700 dark:text-blue-400">Total Emails</Label>
+                          <p className="text-2xl font-bold mt-1 text-blue-800 dark:text-blue-300">{candidate.totalEmails}</p>
+                        </div>
+                        <div className="p-3 rounded-lg border bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
+                          <Label className="text-xs text-green-700 dark:text-green-400">Sent</Label>
+                          <p className="text-2xl font-bold mt-1 text-green-800 dark:text-green-300">
+                            {Math.floor(candidate.totalEmails * 0.6)}
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-lg border bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800">
+                          <Label className="text-xs text-purple-700 dark:text-purple-400">Received</Label>
+                          <p className="text-2xl font-bold mt-1 text-purple-800 dark:text-purple-300">
+                            {Math.ceil(candidate.totalEmails * 0.4)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Communication Timeline */}
+                    <div className="pt-4 border-t">
+                      <h4 className="text-sm font-semibold mb-3">Communication History</h4>
+                      <div className="space-y-3">
+                        {mockCommunications.map((comm) => (
+                          <div key={comm.id} className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
+                            <div className={`p-2 rounded-md ${comm.direction === 'outbound' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
+                              <IconMail className={`h-4 w-4 ${comm.direction === 'outbound' ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'}`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="text-sm font-medium">{comm.subject}</p>
+                                <Badge variant="outline" className="text-xs">
+                                  {comm.direction === 'outbound' ? 'Sent' : 'Received'}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <IconCalendar className="h-3 w-3" />
+                                {comm.date}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Quick Actions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Quick Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm">
+                        <IconMail className="h-4 w-4 mr-2" />
+                        Send Email
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <IconCalendar className="h-4 w-4 mr-2" />
+                        Schedule Interview
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <IconUserCheck className="h-4 w-4 mr-2" />
+                        Move to Next Stage
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* History Tab */}
+              <TabsContent value="history" className="mt-6 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Application History</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      All past applications and interactions in the platform
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    {historyData.length > 0 ? (
+                      <div className="space-y-4">
+                        {historyData.map((history) => (
+                          <div key={history.id} className="p-4 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
+                            <div className="flex items-start justify-between gap-4 mb-3">
+                              <div>
+                                <h4 className="font-semibold">{history.jobTitle}</h4>
+                                <p className="text-sm text-muted-foreground">{history.clientName}</p>
+                              </div>
+                              {getStatusBadge(history.status)}
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Job ID</Label>
+                                <p className="font-mono text-xs mt-1">{history.jobId}</p>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Applied</Label>
+                                <p className="text-xs mt-1">{history.appliedDate}</p>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Final Stage</Label>
+                                <p className="text-xs mt-1">{history.stage}</p>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Last Updated</Label>
+                                <p className="text-xs mt-1">{history.lastUpdated}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <IconClockHour4 className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
+                        <p className="text-sm text-muted-foreground">No previous applications</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Note about re-applying */}
+                <Card className="border-dashed">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-md bg-primary/10">
+                        <IconUserCheck className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium mb-1">Apply to Future Jobs</p>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          This candidate can be assigned to any future job openings. Their profile and documents are saved in the system.
+                        </p>
+                        <Button variant="outline" size="sm">
+                          Assign to New Job
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

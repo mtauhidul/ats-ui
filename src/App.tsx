@@ -8,6 +8,7 @@ import JobsPage from "./pages/jobs";
 import DashboardMainPage from "./pages/dashboard/dashboard-main";
 import ClientsPage from "./pages/dashboard/clients";
 import CandidatesPage from "./pages/dashboard/candidates";
+import CandidateDetailsPage from "./pages/dashboard/candidates/details";
 import ApplicationsPage from "./pages/dashboard/applications";
 import TeamPage from "./pages/dashboard/team";
 import AnalyticsPage from "./pages/dashboard/analytics";
@@ -37,6 +38,7 @@ function App() {
           <Route path="jobs" element={<DashboardJobsPage />} />
           <Route path="jobs/pipeline/:jobId" element={<JobPipelinePage />} />
           <Route path="candidates" element={<CandidatesPage />} />
+          <Route path="candidates/:candidateId" element={<CandidateDetailsPage />} />
           <Route path="applications" element={<ApplicationsPage />} />
           <Route path="team" element={<TeamPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />

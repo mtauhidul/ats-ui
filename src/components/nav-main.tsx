@@ -1,7 +1,8 @@
-import { useState } from "react";
 import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
+import { QuickImportModal } from "@/components/modals/quick-import-modal";
 import { Button } from "@/components/ui/button";
 import {
   SidebarGroup,
@@ -10,7 +11,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { QuickImportModal } from "@/components/modals/quick-import-modal";
 
 export function NavMain({
   items,
@@ -34,7 +34,7 @@ export function NavMain({
               tooltip="Quick Import"
               className="bg-primary hover:!bg-accent active:!bg-accent min-w-8 duration-200 ease-linear [&]:!text-white [&:hover]:!text-foreground"
               onClick={() => setIsQuickImportOpen(true)}
-              style={{ color: 'white' }}
+              style={{ color: "white" }}
             >
               <IconCirclePlusFilled />
               <span>Quick Import</span>
@@ -56,9 +56,10 @@ export function NavMain({
         </SidebarMenu>
         <SidebarMenu>
           {items.map((item) => {
-            const isActive = location.pathname === item.url || 
+            const isActive =
+              location.pathname === item.url ||
               (item.url === "/dashboard" && location.pathname === "/dashboard");
-            
+
             return (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton
@@ -76,10 +77,10 @@ export function NavMain({
           })}
         </SidebarMenu>
       </SidebarGroupContent>
-      
-      <QuickImportModal 
-        open={isQuickImportOpen} 
-        onOpenChange={setIsQuickImportOpen} 
+
+      <QuickImportModal
+        open={isQuickImportOpen}
+        onOpenChange={setIsQuickImportOpen}
       />
     </SidebarGroup>
   );
