@@ -3,11 +3,21 @@ import { Plus, Search, Building2, Users, Briefcase, CheckCircle2 } from "lucide-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ClientCard } from "@/components/client-card";
 import { ClientDetails } from "@/components/client-details";
 import { AddClientModal } from "@/components/modals/add-client-modal";
 import type { Client, CommunicationNoteType, CreateClientRequest, ClientStatus } from "@/types/client";
-import type { Job } from "@/types/job";
+import type { Job, CreateJobRequest, JobStatus, JobType } from "@/types/job";
 import type { Candidate } from "@/types/candidate";
 import clientsData from "@/lib/mock-data/clients.json";
 import jobsData from "@/lib/mock-data/jobs.json";
@@ -21,6 +31,8 @@ export default function ClientsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [industryFilter, setIndustryFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("name");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   
   // Transform JSON data to match Client type
   const [clients, setClients] = useState<Client[]>(
@@ -45,11 +57,11 @@ export default function ClientsPage() {
   );
 
   // Transform jobs data
-  const [jobs] = useState<Job[]>(
+  const [jobs, setJobs] = useState<Job[]>(
     jobsData.map((job) => ({
       ...job,
-      status: job.status as Job["status"],
-      type: job.type as Job["type"],
+      status: job.status as JobStatus,
+      type: job.type as JobType,
       experienceLevel: job.experienceLevel as Job["experienceLevel"],
       workMode: job.workMode as Job["workMode"],
       priority: job.priority as Job["priority"],
@@ -187,19 +199,24 @@ export default function ClientsPage() {
       return;
     }
     
-    // Check if client has any jobs at all (optional warning)
-    if (client && client.statistics.totalJobs > 0) {
-      const confirmed = confirm(
-        `This client has ${client.statistics.totalJobs} job${client.statistics.totalJobs > 1 ? 's' : ''} in the system. Are you sure you want to delete this client?`
-      );
-      if (!confirmed) return;
+    // If client can be deleted, show confirmation dialog
+    if (client) {
+      setClientToDelete(client);
+      setDeleteConfirmOpen(true);
     }
+  };
+
+  const confirmDeleteClient = () => {
+    if (!clientToDelete) return;
     
-    setClients(clients.filter(c => c.id !== clientId));
+    setClients(clients.filter(c => c.id !== clientToDelete.id));
     toast.success("Client deleted successfully");
-    if (selectedClient?.id === clientId) {
+    if (selectedClient?.id === clientToDelete.id) {
       setSelectedClient(null);
     }
+    
+    setDeleteConfirmOpen(false);
+    setClientToDelete(null);
   };
 
   const handleUpdateClient = (clientId: string, updates: Partial<Client>) => {
@@ -229,6 +246,54 @@ export default function ClientsPage() {
     }
     
     toast.success("Client updated successfully");
+  };
+
+  const handleAddJob = (data: CreateJobRequest) => {
+    const newJob: Job = {
+      id: `job-${Date.now()}`,
+      ...data,
+      status: "draft",
+      filledPositions: 0,
+      candidateIds: [],
+      statistics: {
+        totalApplications: 0,
+        approvedApplications: 0,
+        rejectedApplications: 0,
+        totalCandidates: 0,
+        activeCandidates: 0,
+        hiredCandidates: 0,
+        rejectedCandidates: 0,
+        interviewingCandidates: 0,
+        offerExtendedCandidates: 0,
+        candidatesInPipeline: 0,
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    setJobs([newJob, ...jobs]);
+
+    // Update client statistics
+    if (selectedClient) {
+      const updatedStats = {
+        ...selectedClient.statistics,
+        totalJobs: selectedClient.statistics.totalJobs + 1,
+        draftJobs: selectedClient.statistics.draftJobs + 1,
+      };
+      
+      handleUpdateClient(selectedClient.id, { 
+        statistics: updatedStats,
+        jobIds: [...selectedClient.jobIds, newJob.id]
+      });
+
+      // Add activity
+      addActivityToClient(
+        selectedClient.id,
+        "job_created",
+        `New job "${data.title}" was created`,
+        { jobTitle: data.title, jobId: newJob.id }
+      );
+    }
   };
 
   // Filter clients based on search
@@ -276,6 +341,7 @@ export default function ClientsPage() {
           onBack={() => setSelectedClient(null)}
           onUpdate={handleUpdateClient}
           onDelete={handleDeleteClient}
+          onAddJob={handleAddJob}
         />
       </div>
     );
@@ -445,6 +511,35 @@ export default function ClientsPage() {
         onClose={() => setIsAddClientOpen(false)}
         onSubmit={handleAddClient}
       />
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Client</AlertDialogTitle>
+            <AlertDialogDescription>
+              {clientToDelete && (
+                <>
+                  Are you sure you want to delete <strong>{clientToDelete.companyName}</strong>?
+                  {clientToDelete.statistics.totalJobs > 0 && (
+                    <span className="block mt-2 text-amber-600 dark:text-amber-500">
+                      This client has {clientToDelete.statistics.totalJobs} job{clientToDelete.statistics.totalJobs > 1 ? 's' : ''} in the system.
+                    </span>
+                  )}
+                  <span className="block mt-2">
+                    This action cannot be undone.
+                  </span>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteClient} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete Client
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

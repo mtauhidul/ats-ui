@@ -8,17 +8,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { CandidateCard } from "@/components/candidate-card";
 import { JobCandidateDetails } from "@/components/job-candidate-details";
-// import { JobKanbanBoard } from "@/components/job-kanban-board"; // Moved to dedicated pipeline page
-import type { Job } from "@/types/job";
+import { EditJobModal } from "@/components/modals/edit-job-modal";
+import type { Job, UpdateJobRequest } from "@/types/job";
 import type { Candidate } from "@/types/candidate";
+import type { Client } from "@/types/client";
 import { cn } from "@/lib/utils";
 
 interface JobDetailsProps {
   job: Job;
   candidates: Candidate[];
+  clients: Client[];
   clientName: string;
   onBack: () => void;
   onCandidateClick: (candidate: Candidate) => void;
+  onEditJob?: (id: string, data: UpdateJobRequest) => void;
 }
 
 const statusColors = {
@@ -29,10 +32,11 @@ const statusColors = {
   cancelled: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
 } as const;
 
-export function JobDetails({ job, candidates, clientName, onBack, onCandidateClick }: JobDetailsProps) {
+export function JobDetails({ job, candidates, clients, clientName, onBack, onCandidateClick, onEditJob }: JobDetailsProps) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Filter candidates for this job
   const jobCandidates = candidates.filter(candidate => 
@@ -43,6 +47,13 @@ export function JobDetails({ job, candidates, clientName, onBack, onCandidateCli
   const handleStatusChange = (candidateId: string, jobId: string, newStatus: string) => {
     // This would update the candidate status in the parent component
     console.log("Status change:", { candidateId, jobId, newStatus });
+  };
+
+  const handleEditJob = (id: string, data: UpdateJobRequest) => {
+    if (onEditJob) {
+      onEditJob(id, data);
+    }
+    setIsEditModalOpen(false);
   };
 
   // If viewing candidate details
@@ -109,7 +120,7 @@ export function JobDetails({ job, candidates, clientName, onBack, onCandidateCli
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
@@ -123,7 +134,12 @@ export function JobDetails({ job, candidates, clientName, onBack, onCandidateCli
             <Badge className={cn("border text-sm px-3 py-1 whitespace-nowrap", statusColors[job.status])}>
               {job.status.replace(/_/g, ' ')}
             </Badge>
-            <Button variant="outline" size="sm" className="hidden sm:flex">
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden sm:flex"
+              onClick={() => setIsEditModalOpen(true)}
+            >
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
@@ -485,6 +501,15 @@ export function JobDetails({ job, candidates, clientName, onBack, onCandidateCli
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Job Modal */}
+      <EditJobModal
+        open={isEditModalOpen}
+        job={job}
+        clients={clients}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditJob}
+      />
     </div>
   );
 }

@@ -1,19 +1,55 @@
-import { useState } from "react";
-import { ArrowLeft, Building2, Globe, Mail, MapPin, Phone, User, Briefcase, Users as UsersIcon, Plus, FolderOpen, UserCheck, Clock, MessageSquare, Video, PhoneCall, FileEdit, CheckCircle2, UserPlus, Activity, Trash2, Edit } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AddContactModal } from "@/components/modals/add-contact-modal";
-import { AddCommunicationNoteModal } from "@/components/modals/add-communication-note-modal";
-import { EditClientModal } from "@/components/modals/edit-client-modal";
 import { JobCard } from "@/components/job-card";
 import { JobDetails } from "@/components/job-details";
-import type { Client, CreateContactRequest, CreateCommunicationNoteRequest, ContactPerson, CommunicationNote } from "@/types/client";
-import type { Job } from "@/types/job";
-import type { Candidate } from "@/types/candidate";
+import { AddCommunicationNoteModal } from "@/components/modals/add-communication-note-modal";
+import { AddContactModal } from "@/components/modals/add-contact-modal";
+import { AddJobModal } from "@/components/modals/add-job-modal";
+import { EditClientModal } from "@/components/modals/edit-client-modal";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import type { Candidate } from "@/types/candidate";
+import type {
+  Client,
+  CommunicationNote,
+  ContactPerson,
+  CreateCommunicationNoteRequest,
+  CreateContactRequest,
+} from "@/types/client";
+import type { CreateJobRequest, Job } from "@/types/job";
+import {
+  Activity,
+  ArrowLeft,
+  Briefcase,
+  Building2,
+  CheckCircle2,
+  Clock,
+  Edit,
+  FileEdit,
+  FolderOpen,
+  Globe,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Phone,
+  PhoneCall,
+  Plus,
+  Trash2,
+  User,
+  UserCheck,
+  UserPlus,
+  Users as UsersIcon,
+  Video,
+} from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 interface ClientDetailsProps {
@@ -23,39 +59,74 @@ interface ClientDetailsProps {
   onBack: () => void;
   onUpdate: (clientId: string, updates: Partial<Client>) => void;
   onDelete: (clientId: string) => void;
+  onAddJob?: (job: CreateJobRequest) => void;
 }
 
 const statusColors = {
-  active: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
-  inactive: "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20",
-  pending: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20",
-  on_hold: "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20",
+  active:
+    "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
+  inactive:
+    "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20",
+  pending:
+    "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20",
+  on_hold:
+    "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20",
 } as const;
 
 const industryColors = {
-  technology: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
-  healthcare: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
-  finance: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
-  education: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+  technology:
+    "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
+  healthcare:
+    "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
+  finance:
+    "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
+  education:
+    "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
   retail: "bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/20",
-  manufacturing: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20",
-  consulting: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20",
-  real_estate: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-  hospitality: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20",
+  manufacturing:
+    "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20",
+  consulting:
+    "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20",
+  real_estate:
+    "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
+  hospitality:
+    "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20",
   other: "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20",
 } as const;
 
-export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDelete }: ClientDetailsProps) {
+export function ClientDetails({
+  client,
+  jobs,
+  candidates,
+  onBack,
+  onUpdate,
+  onDelete,
+  onAddJob,
+}: ClientDetailsProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [isAddNoteOpen, setIsAddNoteOpen] = useState(false);
   const [isEditClientOpen, setIsEditClientOpen] = useState(false);
+  const [isAddJobOpen, setIsAddJobOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
+    null
+  );
   const primaryContact = client.contacts.find((c) => c.isPrimary);
 
   // Filter jobs for this client
-  const clientJobs = jobs.filter(job => job.clientId === client.id);
+  const clientJobs = jobs.filter((job) => job.clientId === client.id);
+
+  // Get all clients for the job modal (just this one client since we're in client context)
+  const clientsList = [client];
+
+  // Handle add job
+  const handleAddJob = (data: CreateJobRequest) => {
+    if (onAddJob) {
+      onAddJob(data);
+      toast.success("Job created successfully");
+    }
+  };
 
   // If viewing job details
   if (selectedJob) {
@@ -63,6 +134,7 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
       <JobDetails
         job={selectedJob}
         candidates={candidates}
+        clients={clientsList}
         clientName={client.companyName}
         onBack={() => setSelectedJob(null)}
         onCandidateClick={(candidate) => setSelectedCandidate(candidate)}
@@ -75,7 +147,7 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
       ...data,
       id: `contact-${Date.now()}`,
     };
-    
+
     // Create activity for adding contact
     const newActivity = {
       id: `activity-${Date.now()}`,
@@ -85,9 +157,13 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
       performedBy: "current-user-id",
       performedByName: "Current User",
       timestamp: new Date(),
-      metadata: { contactName: data.name, position: data.position, email: data.email },
+      metadata: {
+        contactName: data.name,
+        position: data.position,
+        email: data.email,
+      },
     };
-    
+
     onUpdate(client.id, {
       contacts: [...client.contacts, newContact],
       activityHistory: [newActivity, ...(client.activityHistory || [])],
@@ -96,8 +172,8 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
   };
 
   const handleDeleteContact = (contactId: string) => {
-    const contact = client.contacts.find(c => c.id === contactId);
-    
+    const contact = client.contacts.find((c) => c.id === contactId);
+
     // Create activity for deleting contact
     const newActivity = {
       id: `activity-${Date.now()}`,
@@ -109,9 +185,9 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
       timestamp: new Date(),
       metadata: { contactName: contact?.name, contactId },
     };
-    
+
     onUpdate(client.id, {
-      contacts: client.contacts.filter(c => c.id !== contactId),
+      contacts: client.contacts.filter((c) => c.id !== contactId),
       activityHistory: [newActivity, ...(client.activityHistory || [])],
     });
     toast.success("Contact deleted successfully");
@@ -127,19 +203,21 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    
+
     // Create activity for adding communication note
     const newActivity = {
       id: `activity-${Date.now()}`,
       clientId: client.id,
       action: "communication_logged",
-      description: `Communication logged: ${data.type.replace(/_/g, ' ')} - "${data.subject}"`,
+      description: `Communication logged: ${data.type.replace(/_/g, " ")} - "${
+        data.subject
+      }"`,
       performedBy: "current-user-id",
       performedByName: "Current User",
       timestamp: new Date(),
       metadata: { noteType: data.type, subject: data.subject },
     };
-    
+
     onUpdate(client.id, {
       communicationNotes: [newNote, ...(client.communicationNotes || [])],
       activityHistory: [newActivity, ...(client.activityHistory || [])],
@@ -148,8 +226,8 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
   };
 
   const handleDeleteNote = (noteId: string) => {
-    const note = client.communicationNotes?.find(n => n.id === noteId);
-    
+    const note = client.communicationNotes?.find((n) => n.id === noteId);
+
     // Create activity for deleting note
     const newActivity = {
       id: `activity-${Date.now()}`,
@@ -161,9 +239,11 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
       timestamp: new Date(),
       metadata: { noteSubject: note?.subject, noteId },
     };
-    
+
     onUpdate(client.id, {
-      communicationNotes: client.communicationNotes?.filter(n => n.id !== noteId),
+      communicationNotes: client.communicationNotes?.filter(
+        (n) => n.id !== noteId
+      ),
       activityHistory: [newActivity, ...(client.activityHistory || [])],
     });
     toast.success("Communication note deleted successfully");
@@ -173,33 +253,40 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
     // Check if client has active jobs
     if (client.statistics.activeJobs > 0) {
       toast.error(
-        `Cannot delete client "${client.companyName}". This client has ${client.statistics.activeJobs} active job${client.statistics.activeJobs > 1 ? 's' : ''}. Please close or reassign all active jobs before deleting.`,
+        `Cannot delete client "${client.companyName}". This client has ${
+          client.statistics.activeJobs
+        } active job${
+          client.statistics.activeJobs > 1 ? "s" : ""
+        }. Please close or reassign all active jobs before deleting.`,
         { duration: 5000 }
       );
       return;
     }
-    
+
     // Additional confirmation for clients with any jobs
-    let confirmMessage = "Are you sure you want to delete this client? This action cannot be undone.";
+    let confirmMessage =
+      "Are you sure you want to delete this client? This action cannot be undone.";
     if (client.statistics.totalJobs > 0) {
-      confirmMessage = `This client has ${client.statistics.totalJobs} job${client.statistics.totalJobs > 1 ? 's' : ''} in the system. Are you sure you want to delete this client? This action cannot be undone.`;
+      confirmMessage = `This client has ${client.statistics.totalJobs} job${
+        client.statistics.totalJobs > 1 ? "s" : ""
+      } in the system. Are you sure you want to delete this client? This action cannot be undone.`;
     }
-    
+
     if (confirm(confirmMessage)) {
       onDelete(client.id);
       onBack();
     }
   };
-  
+
   const getCommunicationIcon = (type: string) => {
     switch (type) {
-      case 'email':
+      case "email":
         return Mail;
-      case 'phone':
+      case "phone":
         return PhoneCall;
-      case 'meeting':
+      case "meeting":
         return UsersIcon;
-      case 'video_call':
+      case "video_call":
         return Video;
       default:
         return MessageSquare;
@@ -208,33 +295,33 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
 
   const getCommunicationColor = (type: string) => {
     switch (type) {
-      case 'email':
-        return 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20';
-      case 'phone':
-        return 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20';
-      case 'meeting':
-        return 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20';
-      case 'video_call':
-        return 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20';
+      case "email":
+        return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20";
+      case "phone":
+        return "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20";
+      case "meeting":
+        return "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20";
+      case "video_call":
+        return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20";
       default:
-        return 'bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20';
+        return "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20";
     }
   };
 
   const getActivityIcon = (action: string) => {
     switch (action) {
-      case 'job_created':
-      case 'job_posted':
+      case "job_created":
+      case "job_posted":
         return Briefcase;
-      case 'candidate_hired':
+      case "candidate_hired":
         return UserCheck;
-      case 'contact_added':
+      case "contact_added":
         return UserPlus;
-      case 'status_changed':
+      case "status_changed":
         return CheckCircle2;
-      case 'client_updated':
+      case "client_updated":
         return FileEdit;
-      case 'client_created':
+      case "client_created":
         return Building2;
       default:
         return Activity;
@@ -243,21 +330,21 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
 
   const getActivityColor = (action: string) => {
     switch (action) {
-      case 'job_created':
-      case 'job_posted':
-        return 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20';
-      case 'candidate_hired':
-        return 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20';
-      case 'contact_added':
-        return 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20';
-      case 'status_changed':
-        return 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20';
-      case 'client_updated':
-        return 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20';
-      case 'client_created':
-        return 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20';
+      case "job_created":
+      case "job_posted":
+        return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20";
+      case "candidate_hired":
+        return "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20";
+      case "contact_added":
+        return "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20";
+      case "status_changed":
+        return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20";
+      case "client_updated":
+        return "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20";
+      case "client_created":
+        return "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20";
       default:
-        return 'bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20';
+        return "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20";
     }
   };
 
@@ -266,11 +353,7 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
       {/* Header */}
       <div className="px-4 lg:px-6 py-4 border-b">
         <div className="flex items-center justify-between mb-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBack}
-          >
+          <Button variant="ghost" size="sm" onClick={onBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Clients
           </Button>
@@ -311,7 +394,10 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
               <Badge variant="outline" className={statusColors[client.status]}>
                 {client.status.replace("_", " ")}
               </Badge>
-              <Badge variant="outline" className={industryColors[client.industry]}>
+              <Badge
+                variant="outline"
+                className={industryColors[client.industry]}
+              >
                 {client.industry}
               </Badge>
               <Badge variant="outline">
@@ -334,11 +420,16 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
               <div className="rounded-md bg-blue-500/10 p-1.5">
                 <FolderOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </div>
-              <span className="text-xs font-medium text-blue-700 dark:text-blue-400">Total Jobs</span>
+              <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
+                Total Jobs
+              </span>
             </div>
-            <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{client.statistics.totalJobs}</p>
+            <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+              {client.statistics.totalJobs}
+            </p>
             <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
-              {client.statistics.activeJobs}A / {client.statistics.closedJobs}C / {client.statistics.draftJobs}D
+              {client.statistics.activeJobs}A / {client.statistics.closedJobs}C
+              / {client.statistics.draftJobs}D
             </p>
           </div>
           <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
@@ -346,11 +437,22 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
               <div className="rounded-md bg-green-500/10 p-1.5">
                 <Briefcase className="h-4 w-4 text-green-600 dark:text-green-400" />
               </div>
-              <span className="text-xs font-medium text-green-700 dark:text-green-400">Active Jobs</span>
+              <span className="text-xs font-medium text-green-700 dark:text-green-400">
+                Active Jobs
+              </span>
             </div>
-            <p className="text-xl font-bold text-green-600 dark:text-green-400">{client.statistics.activeJobs}</p>
+            <p className="text-xl font-bold text-green-600 dark:text-green-400">
+              {client.statistics.activeJobs}
+            </p>
             <p className="text-xs text-green-600/70 dark:text-green-400/70">
-              {client.statistics.totalJobs > 0 ? Math.round((client.statistics.activeJobs / client.statistics.totalJobs) * 100) : 0}% of total
+              {client.statistics.totalJobs > 0
+                ? Math.round(
+                    (client.statistics.activeJobs /
+                      client.statistics.totalJobs) *
+                      100
+                  )
+                : 0}
+              % of total
             </p>
           </div>
           <div className="rounded-lg border bg-gradient-to-br from-purple-50 to-purple-100/20 dark:from-purple-950/20 dark:to-purple-900/10 p-3 shadow-sm">
@@ -358,9 +460,13 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
               <div className="rounded-md bg-purple-500/10 p-1.5">
                 <UsersIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               </div>
-              <span className="text-xs font-medium text-purple-700 dark:text-purple-400">Total Candidates</span>
+              <span className="text-xs font-medium text-purple-700 dark:text-purple-400">
+                Total Candidates
+              </span>
             </div>
-            <p className="text-xl font-bold text-purple-600 dark:text-purple-400">{client.statistics.totalCandidates}</p>
+            <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
+              {client.statistics.totalCandidates}
+            </p>
             <p className="text-xs text-purple-600/70 dark:text-purple-400/70">
               {client.statistics.activeCandidates} active
             </p>
@@ -370,9 +476,13 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
               <div className="rounded-md bg-cyan-500/10 p-1.5">
                 <UsersIcon className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
               </div>
-              <span className="text-xs font-medium text-cyan-700 dark:text-cyan-400">Active Candidates</span>
+              <span className="text-xs font-medium text-cyan-700 dark:text-cyan-400">
+                Active Candidates
+              </span>
             </div>
-            <p className="text-xl font-bold text-cyan-600 dark:text-cyan-400">{client.statistics.activeCandidates}</p>
+            <p className="text-xl font-bold text-cyan-600 dark:text-cyan-400">
+              {client.statistics.activeCandidates}
+            </p>
             <p className="text-xs text-cyan-600/70 dark:text-cyan-400/70">
               In pipeline
             </p>
@@ -382,11 +492,22 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
               <div className="rounded-md bg-amber-500/10 p-1.5">
                 <UserCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               </div>
-              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Hired</span>
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                Hired
+              </span>
             </div>
-            <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{client.statistics.hiredCandidates}</p>
+            <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+              {client.statistics.hiredCandidates}
+            </p>
             <p className="text-xs text-amber-600/70 dark:text-amber-400/70">
-              {client.statistics.totalCandidates > 0 ? Math.round((client.statistics.hiredCandidates / client.statistics.totalCandidates) * 100) : 0}% success rate
+              {client.statistics.totalCandidates > 0
+                ? Math.round(
+                    (client.statistics.hiredCandidates /
+                      client.statistics.totalCandidates) *
+                      100
+                  )
+                : 0}
+              % success rate
             </p>
           </div>
           <div className="rounded-lg border bg-gradient-to-br from-red-50 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10 p-3 shadow-sm">
@@ -394,9 +515,13 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
               <div className="rounded-md bg-red-500/10 p-1.5">
                 <UserCheck className="h-4 w-4 text-red-600 dark:text-red-400" />
               </div>
-              <span className="text-xs font-medium text-red-700 dark:text-red-400">Rejected</span>
+              <span className="text-xs font-medium text-red-700 dark:text-red-400">
+                Rejected
+              </span>
             </div>
-            <p className="text-xl font-bold text-red-600 dark:text-red-400">{client.statistics.rejectedCandidates}</p>
+            <p className="text-xl font-bold text-red-600 dark:text-red-400">
+              {client.statistics.rejectedCandidates}
+            </p>
             <p className="text-xs text-red-600/70 dark:text-red-400/70">
               Not selected
             </p>
@@ -406,34 +531,38 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
 
       {/* Content */}
       <div className="flex-1 overflow-auto">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4 lg:px-6 py-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="px-4 lg:px-6 py-6"
+        >
           <TabsList className="h-11 p-1 bg-card border border-border w-fit">
-            <TabsTrigger 
-              value="overview" 
+            <TabsTrigger
+              value="overview"
               className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
             >
               Overview
             </TabsTrigger>
-            <TabsTrigger 
-              value="jobs" 
+            <TabsTrigger
+              value="jobs"
               className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
             >
               Jobs ({client.statistics.totalJobs})
             </TabsTrigger>
-            <TabsTrigger 
-              value="contacts" 
+            <TabsTrigger
+              value="contacts"
               className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
             >
               Contacts ({client.contacts.length})
             </TabsTrigger>
-            <TabsTrigger 
-              value="communications" 
+            <TabsTrigger
+              value="communications"
               className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
             >
               Communications ({client.communicationNotes?.length || 0})
             </TabsTrigger>
-            <TabsTrigger 
-              value="activity" 
+            <TabsTrigger
+              value="activity"
               className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
             >
               Activity ({client.activityHistory?.length || 0})
@@ -452,14 +581,18 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
                     <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <div className="text-sm font-medium">Email</div>
-                      <div className="text-sm text-muted-foreground">{client.email}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {client.email}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <div className="text-sm font-medium">Phone</div>
-                      <div className="text-sm text-muted-foreground">{client.phone}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {client.phone}
+                      </div>
                     </div>
                   </div>
                   {client.website && (
@@ -483,11 +616,14 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
                     <div>
                       <div className="text-sm font-medium">Address</div>
                       <div className="text-sm text-muted-foreground">
-                        {client.address.street && <div>{client.address.street}</div>}
+                        {client.address.street && (
+                          <div>{client.address.street}</div>
+                        )}
                         <div>
                           {client.address.city}
                           {client.address.state && `, ${client.address.state}`}
-                          {client.address.postalCode && ` ${client.address.postalCode}`}
+                          {client.address.postalCode &&
+                            ` ${client.address.postalCode}`}
                         </div>
                         <div>{client.address.country}</div>
                       </div>
@@ -497,8 +633,12 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
                     <div className="flex items-start gap-3">
                       <User className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <div className="text-sm font-medium">Account Manager</div>
-                        <div className="text-sm text-muted-foreground">{client.assignedToName}</div>
+                        <div className="text-sm font-medium">
+                          Account Manager
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {client.assignedToName}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -516,21 +656,27 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
                       <User className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
                         <div className="text-sm font-medium">Name</div>
-                        <div className="text-sm text-muted-foreground">{primaryContact.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {primaryContact.name}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <Briefcase className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
                         <div className="text-sm font-medium">Position</div>
-                        <div className="text-sm text-muted-foreground">{primaryContact.position}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {primaryContact.position}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
                         <div className="text-sm font-medium">Email</div>
-                        <div className="text-sm text-muted-foreground">{primaryContact.email}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {primaryContact.email}
+                        </div>
                       </div>
                     </div>
                     {primaryContact.phone && (
@@ -538,7 +684,9 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
                         <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
                         <div>
                           <div className="text-sm font-medium">Phone</div>
-                          <div className="text-sm text-muted-foreground">{primaryContact.phone}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {primaryContact.phone}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -551,7 +699,7 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
           <TabsContent value="jobs" className="mt-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">All Jobs</h2>
-              <Button size="sm">
+              <Button size="sm" onClick={() => setIsAddJobOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Job
               </Button>
@@ -569,7 +717,9 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
                 <div className="text-center py-12 text-muted-foreground">
                   <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-20" />
                   <p>No jobs found for this client</p>
-                  <p className="text-sm mt-2">Create a job to start recruiting candidates</p>
+                  <p className="text-sm mt-2">
+                    Create a job to start recruiting candidates
+                  </p>
                 </div>
               )}
             </div>
@@ -589,9 +739,14 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
                   <CardHeader>
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <CardTitle className="text-base">{contact.name}</CardTitle>
+                        <CardTitle className="text-base">
+                          {contact.name}
+                        </CardTitle>
                         {contact.isPrimary && (
-                          <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">
+                          <Badge
+                            variant="outline"
+                            className="bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                          >
                             Primary
                           </Badge>
                         )}
@@ -642,13 +797,23 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3 flex-1">
-                          <div className={cn("rounded-md p-2", getCommunicationColor(note.type))}>
+                          <div
+                            className={cn(
+                              "rounded-md p-2",
+                              getCommunicationColor(note.type)
+                            )}
+                          >
                             <Icon className="h-4 w-4" />
                           </div>
                           <div className="flex-1">
                             <div className="flex items-start justify-between mb-2">
-                              <CardTitle className="text-base">{note.subject}</CardTitle>
-                              <Badge variant="outline" className={getCommunicationColor(note.type)}>
+                              <CardTitle className="text-base">
+                                {note.subject}
+                              </CardTitle>
+                              <Badge
+                                variant="outline"
+                                className={getCommunicationColor(note.type)}
+                              >
                                 {note.type.replace("_", " ")}
                               </Badge>
                             </div>
@@ -665,13 +830,18 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4" />
-                          <span>{new Date(note.createdAt).toLocaleDateString('en-US', { 
-                            year: 'numeric', 
-                            month: 'short', 
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}</span>
+                          <span>
+                            {new Date(note.createdAt).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </span>
                         </div>
                         <Button
                           variant="ghost"
@@ -687,11 +857,14 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
                   </Card>
                 );
               })}
-              {(!client.communicationNotes || client.communicationNotes.length === 0) && (
+              {(!client.communicationNotes ||
+                client.communicationNotes.length === 0) && (
                 <div className="text-center py-12 text-muted-foreground">
                   <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-20" />
                   <p>No communication notes yet</p>
-                  <p className="text-sm mt-1">Add your first note to track interactions with this client</p>
+                  <p className="text-sm mt-1">
+                    Add your first note to track interactions with this client
+                  </p>
                 </div>
               )}
             </div>
@@ -704,17 +877,20 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
             <div className="space-y-3">
               {client.activityHistory?.map((activity, index) => {
                 const Icon = getActivityIcon(activity.action);
-                const isLast = index === (client.activityHistory?.length || 0) - 1;
+                const isLast =
+                  index === (client.activityHistory?.length || 0) - 1;
                 return (
                   <div key={activity.id} className="relative">
                     {!isLast && (
                       <div className="absolute left-[21px] top-11 bottom-0 w-0.5 bg-border" />
                     )}
                     <div className="flex gap-4">
-                      <div className={cn(
-                        "rounded-full p-2.5 shrink-0 relative z-10",
-                        getActivityColor(activity.action)
-                      )}>
+                      <div
+                        className={cn(
+                          "rounded-full p-2.5 shrink-0 relative z-10",
+                          getActivityColor(activity.action)
+                        )}
+                      >
                         <Icon className="h-4 w-4" />
                       </div>
                       <Card className="flex-1">
@@ -732,19 +908,27 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
                                 <div className="flex items-center gap-1.5">
                                   <Clock className="h-3.5 w-3.5" />
                                   <span>
-                                    {new Date(activity.timestamp).toLocaleDateString('en-US', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
+                                    {new Date(
+                                      activity.timestamp
+                                    ).toLocaleDateString("en-US", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
                                     })}
                                   </span>
                                 </div>
                               </div>
                             </div>
-                            <Badge variant="outline" className={cn("ml-2", getActivityColor(activity.action))}>
-                              {activity.action.replace(/_/g, ' ')}
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "ml-2",
+                                getActivityColor(activity.action)
+                              )}
+                            >
+                              {activity.action.replace(/_/g, " ")}
                             </Badge>
                           </div>
                         </CardHeader>
@@ -753,11 +937,14 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
                   </div>
                 );
               })}
-              {(!client.activityHistory || client.activityHistory.length === 0) && (
+              {(!client.activityHistory ||
+                client.activityHistory.length === 0) && (
                 <div className="text-center py-12 text-muted-foreground">
                   <Activity className="h-12 w-12 mx-auto mb-4 opacity-20" />
                   <p>No activity recorded yet</p>
-                  <p className="text-sm mt-1">Activity will appear here as actions are performed</p>
+                  <p className="text-sm mt-1">
+                    Activity will appear here as actions are performed
+                  </p>
                 </div>
               )}
             </div>
@@ -782,6 +969,15 @@ export function ClientDetails({ client, jobs, candidates, onBack, onUpdate, onDe
         onClose={() => setIsEditClientOpen(false)}
         onSubmit={(updates) => onUpdate(client.id, updates)}
         client={client}
+      />
+
+      <AddJobModal
+        open={isAddJobOpen}
+        clients={clientsList}
+        onClose={() => setIsAddJobOpen(false)}
+        onSubmit={handleAddJob}
+        prefilledClientId={client.id}
+        hideClientSelector={true}
       />
     </div>
   );

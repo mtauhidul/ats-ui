@@ -45,47 +45,47 @@ export function JobCard({ job, onClick, clientName }: JobCardProps) {
       className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary hover:border-l-primary/80"
       onClick={onClick}
     >
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-1">
+            <h3 className="text-base font-semibold text-foreground mb-1 line-clamp-1">
               {job.title}
             </h3>
             {clientName && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                <Building2 className="h-4 w-4" />
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Building2 className="h-3.5 w-3.5" />
                 <span>{clientName}</span>
               </div>
             )}
           </div>
-          <div className="flex flex-col gap-2 ml-4">
-            <Badge className={cn("border", statusColors[job.status])}>
+          <div className="flex gap-2 ml-4">
+            <Badge className={cn("border text-sm", statusColors[job.status])}>
               {job.status.replace(/_/g, ' ')}
             </Badge>
-            <Badge className={cn("border", typeColors[job.type])}>
+            <Badge className={cn("border text-sm", typeColors[job.type])}>
               {job.type.replace(/_/g, ' ')}
             </Badge>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-2 gap-2 mb-3">
           {job.location && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4 flex-shrink-0" />
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="truncate">{job.location.city}, {job.location.country}</span>
             </div>
           )}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Briefcase className="h-4 w-4 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="truncate">{job.workMode}</span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Clock className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="truncate">{job.experienceLevel}</span>
           </div>
           {job.salaryRange && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <DollarSign className="h-4 w-4 flex-shrink-0" />
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <DollarSign className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="truncate">
                 {job.salaryRange.currency} {job.salaryRange.min.toLocaleString()} - {job.salaryRange.max.toLocaleString()}
               </span>
@@ -94,28 +94,28 @@ export function JobCard({ job, onClick, clientName }: JobCardProps) {
         </div>
 
         {/* Candidate Statistics */}
-        <div className="flex items-center justify-between pt-4 border-t">
-          <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center justify-between pt-3 border-t">
+          <div className="flex items-center gap-3 text-sm">
             <div className="flex items-center gap-1.5">
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <Users className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="font-medium">{totalCandidates}</span>
-              <span className="text-muted-foreground">Total</span>
+              <span className="text-muted-foreground text-xs">Total</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-blue-500" />
+              <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
               <span className="font-medium text-blue-600 dark:text-blue-400">{activeCandidates}</span>
-              <span className="text-muted-foreground">Active</span>
+              <span className="text-muted-foreground text-xs">Active</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-green-500" />
+              <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
               <span className="font-medium text-green-600 dark:text-green-400">{hiredCandidates}</span>
-              <span className="text-muted-foreground">Hired</span>
+              <span className="text-muted-foreground text-xs">Hired</span>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
-            className="h-8"
+            className="h-8 text-sm"
             onClick={handlePipelineClick}
           >
             <Kanban className="h-3.5 w-3.5 mr-1.5" />

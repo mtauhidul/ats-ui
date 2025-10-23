@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { ArrowLeft, Mail, Phone, MapPin, Briefcase, GraduationCap, Award, Calendar, Star, Download, MessageSquare, UserCheck, UserX, Clock, FileText } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, Briefcase, GraduationCap, Award, Calendar, Star, Download, UserCheck, UserX, Clock, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CandidateEmailCommunication } from "@/components/candidate-email-communication";
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
 import { cn } from "@/lib/utils";
@@ -39,12 +40,24 @@ const skillLevelColors = {
 
 export function JobCandidateDetails({ candidate, job, onBack, onStatusChange }: JobCandidateDetailsProps) {
   const [activeTab, setActiveTab] = useState("overview");
+  const [showEmailCommunication, setShowEmailCommunication] = useState(false);
   
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
   const initials = `${candidate.firstName[0]}${candidate.lastName[0]}`.toUpperCase();
   
   // Get the job application for this specific job
   const jobApplication = candidate.jobApplications.find(app => app.jobId === job.id);
+
+  // If showing email communication
+  if (showEmailCommunication) {
+    return (
+      <CandidateEmailCommunication
+        candidate={candidate}
+        job={job}
+        onBack={() => setShowEmailCommunication(false)}
+      />
+    );
+  }
   
   if (!jobApplication) {
     return (
@@ -68,7 +81,7 @@ export function JobCandidateDetails({ candidate, job, onBack, onStatusChange }: 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
         <div className="flex items-start gap-4">
@@ -105,9 +118,9 @@ export function JobCandidateDetails({ candidate, job, onBack, onStatusChange }: 
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Button variant="outline" size="sm">
-            <MessageSquare className="h-4 w-4 lg:mr-2" />
-            <span className="hidden lg:inline">Message</span>
+          <Button variant="outline" size="sm" onClick={() => setShowEmailCommunication(true)}>
+            <Mail className="h-4 w-4 lg:mr-2" />
+            <span className="hidden lg:inline">Email</span>
           </Button>
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 lg:mr-2" />

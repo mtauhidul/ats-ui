@@ -82,7 +82,10 @@ export interface JobBenefits {
 export interface Job extends BaseEntity {
   title: string;
   description: string;
-  clientId: string;
+  
+  // Relations (Database references - stored as IDs)
+  clientId: string; // Reference to Client collection
+  
   status: JobStatus;
   type: JobType;
   experienceLevel: ExperienceLevel;
@@ -108,18 +111,20 @@ export interface Job extends BaseEntity {
   startDate?: Date;
   
   // Team assignment
-  hiringTeamId?: string;
-  recruiterIds: string[];
-  hiringManagerIds: string[];
+  hiringTeamId?: string; // Reference to Team collection
+  recruiterIds: string[]; // References to User/TeamMember collection
+  hiringManagerIds: string[]; // References to User/TeamMember collection
   
   // Categorization
-  categoryIds: string[];
-  tagIds: string[];
+  categoryIds: string[]; // References to Category collection
+  tagIds: string[]; // References to Tag collection
   
-  // Candidate tracking
-  candidateIds: string[];
+  // Relations (Database references - stored as IDs)
+  // Note: Applications are independent and not directly under jobs
+  // After approval, Applications become Candidates assigned to this job
+  candidateIds: string[]; // References to Candidate collection (approved candidates assigned to this job)
   
-  // Statistics
+  // Statistics (calculated from related data)
   statistics: {
     totalApplications: number;
     approvedApplications: number;

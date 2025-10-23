@@ -129,10 +129,9 @@ export interface Client extends BaseEntity {
   // Statistics (Auto-calculated)
   statistics: ClientStatistics;
 
-  // Relations
-  jobIds: string[];
-  candidateIds: string[];
-
+  // Relations (Database references - stored as IDs)
+  jobIds: string[]; // References to Job collection
+  
   // Communication
   communicationNotes?: CommunicationNote[];
 

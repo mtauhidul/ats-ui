@@ -22,15 +22,11 @@ export const ApplicationPriority = {
 
 export type ApplicationPriority = (typeof ApplicationPriority)[keyof typeof ApplicationPriority];
 
-// Initial job application before approval
+// Initial job application BEFORE approval and assignment to job
+// Applications are INDEPENDENT - not under any job or client initially
+// Once approved and assigned to a job → becomes a Candidate
 export interface Application extends BaseEntity {
-  // Job and candidate basic info
-  jobId: string;
-  jobTitle: string; // Cached for display
-  clientId: string;
-  clientName: string; // Cached for display
-  
-  // Applicant information
+  // Applicant information (independent of job/client)
   firstName: string;
   lastName: string;
   email: string;
@@ -69,15 +65,31 @@ export interface Application extends BaseEntity {
   // Social profiles
   linkedInUrl?: string;
   portfolioUrl?: string;
+  githubUrl?: string;
+  
+  // Target job information (OPTIONAL - can be captured from email subject line or application form)
+  // If null, this is a general application without specific job target
+  // This helps when routing/approving applications but is not mandatory
+  targetJobId?: string; // Job they're interested in (optional - can be from email subject)
+  targetJobTitle?: string; // Cached for display
+  targetClientId?: string; // Client they're interested in (optional)
+  targetClientName?: string; // Cached for display
   
   // Review information
   reviewedBy?: string; // User ID who reviewed
+  reviewedByName?: string;
   reviewedAt?: Date;
   reviewNotes?: string;
   rejectionReason?: string;
   
-  // If approved, stores the created candidate ID
-  candidateId?: string;
+  // Assignment information (after approval)
+  // When approved, application is assigned to a job and candidate is created
+  assignedJobId?: string; // Job assigned to after approval (may differ from targetJobId)
+  assignedClientId?: string; // Client assigned to after approval
+  candidateId?: string; // Created candidate ID after approval
+  approvedBy?: string; // User ID who approved
+  approvedByName?: string;
+  approvedAt?: Date;
   
   // Metadata
   submittedAt: Date;

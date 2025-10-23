@@ -84,7 +84,8 @@ export interface Language {
 
 // Candidate pipeline entry (for specific job)
 export interface CandidatePipeline {
-  jobId: string;
+  jobId: string; // Reference to Job collection
+  applicationId?: string; // Reference to Application collection
   status: CandidateStatus;
   appliedAt: Date;
   lastStatusChange: Date;
@@ -94,6 +95,13 @@ export interface CandidatePipeline {
   interviewScheduled?: Date;
   rejectionReason?: string;
   withdrawalReason?: string;
+  
+  // Email communication tracking for this specific job
+  emailIds: string[]; // References to Email collection - all emails sent/received for this job application
+  lastEmailDate?: Date;
+  emailsSent: number;
+  emailsReceived: number;
+  lastEmailSubject?: string;
 }
 
 // Main Candidate interface
@@ -146,11 +154,23 @@ export interface Candidate extends BaseEntity {
   portfolioUrl?: string;
   
   // Job applications - tracks status for each job applied to
-  jobApplications: CandidatePipeline[];
+  // IMPORTANT: Candidates are ALWAYS assigned to at least one job (mandatory)
+  // Candidates are created from approved Applications that are assigned to a job
+  jobApplications: CandidatePipeline[]; // Must have at least one entry
+  
+  // Relations (Database references - stored as IDs)
+  jobIds: string[]; // MANDATORY: All jobs this candidate has applied to - References to Job collection (at least one)
+  applicationIds: string[]; // References to original Application collection (if created from application)
+  clientIds: string[]; // All clients this candidate has interacted with (derived from jobs) - References to Client collection
+  
+  // Email communication (all emails across all jobs)
+  totalEmailsSent: number;
+  totalEmailsReceived: number;
+  lastEmailDate?: Date;
   
   // Categorization
-  categoryIds: string[];
-  tagIds: string[];
+  categoryIds: string[]; // References to Category collection
+  tagIds: string[]; // References to Tag collection
   
   // Metadata
   isActive: boolean;

@@ -6,12 +6,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { JobCard } from "@/components/job-card";
 import { JobDetails } from "@/components/job-details";
-import type { Job, JobStatus, JobType } from "@/types/job";
+import { AddJobModal } from "@/components/modals/add-job-modal";
+import type { Job, JobStatus, JobType, CreateJobRequest, UpdateJobRequest } from "@/types/job";
 import type { Client } from "@/types/client";
 import type { Candidate } from "@/types/candidate";
 import jobsData from "@/lib/mock-data/jobs.json";
 import clientsData from "@/lib/mock-data/clients.json";
 import candidatesData from "@/lib/mock-data/candidates.json";
+import { toast } from "sonner";
 
 export default function DashboardJobsPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -20,9 +22,10 @@ export default function DashboardJobsPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [clientFilter, setClientFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
+  const [isAddJobOpen, setIsAddJobOpen] = useState(false);
 
   // Transform jobs data
-  const [jobs] = useState<Job[]>(
+  const [jobs, setJobs] = useState<Job[]>(
     jobsData.map((job) => ({
       ...job,
       status: job.status as JobStatus,
@@ -93,6 +96,58 @@ export default function DashboardJobsPage() {
     return client?.companyName || "Unknown Client";
   };
 
+  // Handle add job
+  const handleAddJob = (data: CreateJobRequest) => {
+    const newJob: Job = {
+      id: `job-${Date.now()}`,
+      ...data,
+      status: "draft",
+      filledPositions: 0,
+      candidateIds: [],
+      statistics: {
+        totalApplications: 0,
+        approvedApplications: 0,
+        rejectedApplications: 0,
+        totalCandidates: 0,
+        activeCandidates: 0,
+        hiredCandidates: 0,
+        rejectedCandidates: 0,
+        interviewingCandidates: 0,
+        offerExtendedCandidates: 0,
+        candidatesInPipeline: 0,
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    setJobs([newJob, ...jobs]);
+    toast.success("Job created successfully");
+  };
+
+  const handleEditJob = (id: string, data: UpdateJobRequest) => {
+    setJobs(jobs.map(job => {
+      if (job.id === id) {
+        return {
+          ...job,
+          ...data,
+          updatedAt: new Date(),
+        };
+      }
+      return job;
+    }));
+    
+    // Update selectedJob if it's the one being edited
+    if (selectedJob && selectedJob.id === id) {
+      setSelectedJob({
+        ...selectedJob,
+        ...data,
+        updatedAt: new Date(),
+      });
+    }
+    
+    toast.success("Job updated successfully");
+  };
+
   // Filter jobs
   const filteredJobs = jobs.filter((job) => {
     const matchesSearch = searchQuery === "" || 
@@ -148,9 +203,11 @@ export default function DashboardJobsPage() {
               <JobDetails
                 job={selectedJob}
                 candidates={candidates}
+                clients={clients}
                 clientName={getClientName(selectedJob.clientId)}
                 onBack={() => setSelectedJob(null)}
                 onCandidateClick={() => {}}
+                onEditJob={handleEditJob}
               />
             </div>
           </div>
@@ -172,7 +229,7 @@ export default function DashboardJobsPage() {
                   Manage and track all job postings
                 </p>
               </div>
-              <Button>
+              <Button onClick={() => setIsAddJobOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add New Job
               </Button>
@@ -357,7 +414,7 @@ export default function DashboardJobsPage() {
                         : "Get started by creating your first job"}
                     </p>
                     {!searchQuery && statusFilter === "all" && typeFilter === "all" && clientFilter === "all" && (
-                      <Button>
+                      <Button onClick={() => setIsAddJobOpen(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Create Job
                       </Button>
@@ -380,6 +437,13 @@ export default function DashboardJobsPage() {
           </div>
         </div>
       </div>
+
+      <AddJobModal
+        open={isAddJobOpen}
+        clients={clients}
+        onClose={() => setIsAddJobOpen(false)}
+        onSubmit={handleAddJob}
+      />
     </div>
   );
 }

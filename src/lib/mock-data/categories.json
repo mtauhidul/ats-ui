@@ -1,0 +1,134 @@
+[
+  {
+    "id": "cat-1",
+    "name": "Technology",
+    "description": "Technology and IT related positions",
+    "parentId": null,
+    "isActive": true,
+    "color": "#3b82f6",
+    "sortOrder": 1,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-2",
+    "name": "Software Development",
+    "description": "Software engineering and development roles",
+    "parentId": "cat-1",
+    "isActive": true,
+    "color": "#3b82f6",
+    "sortOrder": 1,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-3",
+    "name": "DevOps",
+    "description": "DevOps and infrastructure roles",
+    "parentId": "cat-1",
+    "isActive": true,
+    "color": "#3b82f6",
+    "sortOrder": 2,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-4",
+    "name": "Finance",
+    "description": "Finance and accounting positions",
+    "parentId": null,
+    "isActive": true,
+    "color": "#10b981",
+    "sortOrder": 2,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-5",
+    "name": "Accounting",
+    "description": "Accounting and bookkeeping roles",
+    "parentId": "cat-4",
+    "isActive": true,
+    "color": "#10b981",
+    "sortOrder": 1,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-6",
+    "name": "Marketing",
+    "description": "Marketing and communications positions",
+    "parentId": null,
+    "isActive": true,
+    "color": "#f59e0b",
+    "sortOrder": 3,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-7",
+    "name": "Digital Marketing",
+    "description": "Digital and online marketing roles",
+    "parentId": "cat-6",
+    "isActive": true,
+    "color": "#f59e0b",
+    "sortOrder": 1,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-8",
+    "name": "Sales",
+    "description": "Sales and business development positions",
+    "parentId": null,
+    "isActive": true,
+    "color": "#ef4444",
+    "sortOrder": 4,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-9",
+    "name": "Human Resources",
+    "description": "HR and people operations positions",
+    "parentId": null,
+    "isActive": true,
+    "color": "#8b5cf6",
+    "sortOrder": 5,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-10",
+    "name": "Operations",
+    "description": "Operations and logistics positions",
+    "parentId": null,
+    "isActive": true,
+    "color": "#ec4899",
+    "sortOrder": 6,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-11",
+    "name": "Customer Support",
+    "description": "Customer service and support roles",
+    "parentId": null,
+    "isActive": true,
+    "color": "#06b6d4",
+    "sortOrder": 7,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-12",
+    "name": "Design",
+    "description": "Design and creative positions",
+    "parentId": null,
+    "isActive": false,
+    "color": "#a855f7",
+    "sortOrder": 8,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  }
+]
