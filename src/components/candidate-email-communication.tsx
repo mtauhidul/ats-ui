@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Send, Reply, Forward, Trash2, Archive, Star, MoreVertical, Paperclip, Image, Type, Clock, CheckCheck, Mail, Inbox, SendHorizontal, Download } from "lucide-react";
+import { ArrowLeft, Send, Reply, Forward, Trash2, Archive, Star, MoreVertical, Paperclip, Image, Type, Clock, CheckCheck, Mail, Inbox, SendHorizontal, Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +19,7 @@ import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { replaceTemplateVariables, extractEmailVariables } from "@/lib/email-template-helper";
 
 interface CandidateEmailCommunicationProps {
   candidate: Candidate;
@@ -83,6 +85,35 @@ const mockEmails: EmailThread[] = [
   },
 ];
 
+// Mock email templates (should come from settings in real app)
+interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+}
+
+const emailTemplates: EmailTemplate[] = [
+  {
+    id: "tmpl-1",
+    name: "Interview Invitation",
+    subject: "Interview Invitation - {{jobTitle}}",
+    body: "Dear {{firstName}} {{lastName}},\n\nWe are pleased to inform you that after reviewing your application for the {{jobTitle}} position at {{companyName}}, we would like to invite you for an interview.\n\nPlease confirm your attendance by replying to this email.\n\nWe look forward to meeting you!\n\nBest regards,\n{{recruiterName}}\n{{companyName}}",
+  },
+  {
+    id: "tmpl-2",
+    name: "Application Received",
+    subject: "Application Received - {{jobTitle}}",
+    body: "Dear {{firstName}},\n\nThank you for your interest in the {{jobTitle}} position at {{companyName}}.\n\nWe have successfully received your application and our team is currently reviewing all submissions.\n\nWe appreciate your interest in joining our team!\n\nBest regards,\n{{recruiterName}}\n{{companyName}}",
+  },
+  {
+    id: "tmpl-3",
+    name: "Follow-up Email",
+    subject: "Following up on {{jobTitle}} Application",
+    body: "Hi {{firstName}},\n\nI wanted to follow up on your application for the {{jobTitle}} position.\n\nWe're impressed with your background and would love to learn more about you.\n\nAre you available for a brief call this week?\n\nBest regards,\n{{recruiterName}}",
+  },
+];
+
 export function CandidateEmailCommunication({ candidate, job, onBack }: CandidateEmailCommunicationProps) {
   const [activeTab, setActiveTab] = useState("inbox");
   const [selectedEmail, setSelectedEmail] = useState<EmailThread | null>(null);
@@ -110,15 +141,22 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
       return;
     }
 
+    // Extract variables from candidate and job data
+    const variables = extractEmailVariables(candidate, job);
+    
+    // Replace template variables with actual values
+    const processedSubject = replaceTemplateVariables(composeData.subject, variables);
+    const processedContent = replaceTemplateVariables(composeData.content, variables);
+
     const newEmail: EmailThread = {
       id: `email-${Date.now()}`,
-      subject: composeData.subject,
+      subject: processedSubject,
       from: "HR Team",
       fromEmail: "hr@company.com",
       to: fullName,
       toEmail: composeData.to,
       timestamp: new Date(),
-      content: composeData.content,
+      content: processedContent,
       isRead: true,
       isStarred: false,
       type: "sent",
@@ -336,7 +374,51 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* To Field */}
+                {/* Template Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="template">Use Template (Optional)</Label>
+                  <Select
+                    onValueChange={(value) => {
+                      if (value === "none") return;
+                      const template = emailTemplates.find(t => t.id === value);
+                      if (template) {
+                        // Extract variables and apply template
+                        const variables = extractEmailVariables(candidate, job);
+                        const processedSubject = replaceTemplateVariables(template.subject, variables);
+                        const processedBody = replaceTemplateVariables(template.body, variables);
+                        
+                        setComposeData({
+                          ...composeData,
+                          subject: processedSubject,
+                          content: processedBody,
+                        });
+                        toast.success(`Template "${template.name}" applied`);
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="template">
+                      <SelectValue placeholder="Select a template..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          <span>No template</span>
+                        </div>
+                      </SelectItem>
+                      {emailTemplates.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            <span>{template.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* To */}
                 <div className="space-y-2">
                   <Label htmlFor="to">To</Label>
                   <Input

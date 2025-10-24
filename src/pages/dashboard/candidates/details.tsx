@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   IconArrowLeft,
+  IconArrowUp,
+  IconArrowDown,
   IconBriefcase,
   IconCalendar,
   IconCircleCheckFilled,
@@ -149,7 +151,7 @@ export default function CandidateDetailsPage() {
     linkedInUrl: app.linkedInUrl,
     portfolioUrl: app.portfolioUrl,
     status: app.status === "pending" ? "In Process" : app.status === "approved" ? "Hired" : "Rejected",
-    jobId: app.jobId || `JOB-${String(candidateIndex + 1).padStart(3, '0')}`,
+    jobId: app.targetJobId || `JOB-${String(candidateIndex + 1).padStart(3, '0')}`,
     jobTitle: jobTitles[candidateIndex % jobTitles.length],
     currentStage: stages[candidateIndex % stages.length],
     clientName: clients[clientIndex].name,
@@ -299,6 +301,9 @@ export default function CandidateDetailsPage() {
                 </TabsTrigger>
                 <TabsTrigger value="candidacy" className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground">
                   Current Candidacy
+                </TabsTrigger>
+                <TabsTrigger value="communications" className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground">
+                  Communications
                 </TabsTrigger>
                 <TabsTrigger value="history" className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground">
                   History
@@ -744,6 +749,180 @@ export default function CandidateDetailsPage() {
                         <IconUserCheck className="h-4 w-4 mr-2" />
                         Move to Next Stage
                       </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Communications Tab */}
+              <TabsContent value="communications" className="mt-6 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Email Communication History</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      All email communications with this candidate across all jobs
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Summary Stats */}
+                    <div className="grid grid-cols-3 gap-4 mb-6">
+                      <div className="p-4 rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center gap-2 mb-2">
+                          <IconMail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          <Label className="text-xs text-blue-700 dark:text-blue-400">Total Emails</Label>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-800 dark:text-blue-300">{candidate.totalEmails}</p>
+                      </div>
+                      <div className="p-4 rounded-lg border bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 border-green-200 dark:border-green-800">
+                        <div className="flex items-center gap-2 mb-2">
+                          <IconArrowUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <Label className="text-xs text-green-700 dark:text-green-400">Sent</Label>
+                        </div>
+                        <p className="text-2xl font-bold text-green-800 dark:text-green-300">
+                          {Math.floor(candidate.totalEmails * 0.6)}
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-lg border bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 border-purple-200 dark:border-purple-800">
+                        <div className="flex items-center gap-2 mb-2">
+                          <IconArrowDown className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                          <Label className="text-xs text-purple-700 dark:text-purple-400">Received</Label>
+                        </div>
+                        <p className="text-2xl font-bold text-purple-800 dark:text-purple-300">
+                          {Math.ceil(candidate.totalEmails * 0.4)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Job-wise Communication Summary */}
+                    <div className="space-y-4">
+                      {/* Current Job */}
+                      <div className="p-4 rounded-lg border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <Avatar className="h-10 w-10 rounded-md border-2 border-primary/20 flex-shrink-0">
+                              <AvatarImage src={candidate.clientLogo} />
+                              <AvatarFallback className="rounded-md text-xs">
+                                {candidate.clientName.split(" ").map((n) => n[0]).join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-sm mb-1 flex items-center gap-2">
+                                {candidate.jobTitle}
+                                <Badge variant="default" className="text-xs">Current</Badge>
+                              </h4>
+                              <p className="text-sm text-muted-foreground mb-2">{candidate.clientName}</p>
+                              <div className="grid grid-cols-3 gap-3 text-xs mt-3">
+                                <div className="p-2 rounded-md bg-background/60 border">
+                                  <Label className="text-xs text-muted-foreground">Job ID</Label>
+                                  <p className="font-mono mt-0.5">{candidate.jobId}</p>
+                                </div>
+                                <div className="p-2 rounded-md bg-background/60 border">
+                                  <Label className="text-xs text-muted-foreground">Total Emails</Label>
+                                  <p className="font-semibold mt-0.5">{mockCommunications.length}</p>
+                                </div>
+                                <div className="p-2 rounded-md bg-background/60 border">
+                                  <Label className="text-xs text-muted-foreground">Last Contact</Label>
+                                  <p className="mt-0.5">{mockCommunications[0]?.date}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full mt-3"
+                          onClick={() => navigate(`/dashboard/jobs/pipeline/${candidate.jobId}`)}
+                        >
+                          <IconMail className="h-4 w-4 mr-2" />
+                          View Full Communication Details
+                        </Button>
+                      </div>
+
+                      {/* Previous Jobs */}
+                      {historyData.map((history) => {
+                        // Mock email data for past jobs
+                        const emailCount = Math.floor(Math.random() * 8) + 2; // 2-9 emails
+                        const sentCount = Math.floor(emailCount * 0.6);
+                        const receivedCount = emailCount - sentCount;
+                        const lastEmailDate = history.lastUpdated;
+
+                        return (
+                          <div key={history.id} className="p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors">
+                            <div className="flex items-start justify-between gap-4 mb-3">
+                              <div className="flex items-start gap-3 flex-1 min-w-0">
+                                <Avatar className="h-10 w-10 rounded-md border flex-shrink-0">
+                                  <AvatarFallback className="rounded-md text-xs">
+                                    {history.clientName.split(" ").map((n) => n[0]).join("")}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-sm mb-1">{history.jobTitle}</h4>
+                                  <p className="text-sm text-muted-foreground mb-2">{history.clientName}</p>
+                                  <div className="grid grid-cols-3 gap-3 text-xs mt-3">
+                                    <div className="p-2 rounded-md bg-background/60 border">
+                                      <Label className="text-xs text-muted-foreground">Job ID</Label>
+                                      <p className="font-mono mt-0.5">{history.jobId}</p>
+                                    </div>
+                                    <div className="p-2 rounded-md bg-background/60 border">
+                                      <Label className="text-xs text-muted-foreground">Total Emails</Label>
+                                      <p className="font-semibold mt-0.5">{emailCount}</p>
+                                      <p className="text-muted-foreground mt-0.5">
+                                        {sentCount} sent, {receivedCount} received
+                                      </p>
+                                    </div>
+                                    <div className="p-2 rounded-md bg-background/60 border">
+                                      <Label className="text-xs text-muted-foreground">Last Contact</Label>
+                                      <p className="mt-0.5">{lastEmailDate}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="w-full mt-3"
+                              onClick={() => navigate(`/dashboard/jobs/pipeline/${history.jobId}`)}
+                            >
+                              <IconMail className="h-4 w-4 mr-2" />
+                              View Communication Details
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Empty State */}
+                    {historyData.length === 0 && mockCommunications.length === 0 && (
+                      <div className="text-center py-12">
+                        <IconMail className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
+                        <p className="text-sm text-muted-foreground mb-1">No email communications yet</p>
+                        <p className="text-xs text-muted-foreground">
+                          Start communicating with this candidate to see the history here
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Quick Email Action */}
+                <Card className="border-dashed">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-md bg-primary/10">
+                        <IconMail className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium mb-1">Send Email</p>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Quickly compose and send an email to this candidate from the current job context.
+                        </p>
+                        <Button variant="outline" size="sm">
+                          <IconMail className="h-4 w-4 mr-2" />
+                          Compose Email
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

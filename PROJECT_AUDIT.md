@@ -1,4 +1,5 @@
 # ATS UI - Complete Project Audit & Design System
+
 **Last Updated:** October 24, 2025  
 **Project:** Applicant Tracking System (ATS) UI  
 **Repository:** mtauhidul/ats-ui  
@@ -8,6 +9,7 @@
 ---
 
 ## 📋 Table of Contents
+
 1. [Executive Summary](#executive-summary)
 2. [Implementation Status](#implementation-status)
 3. [UI Design System](#ui-design-system)
@@ -21,12 +23,14 @@
 ## 1. Executive Summary
 
 ### Project Status
+
 - **Core Features:** 85% ✅
 - **UI Pages:** 50% (8/15 complete)
 - **Data Layer:** 95% ✅
 - **Components:** 80% ✅
 
 ### Technology Stack
+
 - **Frontend:** React 19.2.0 + TypeScript + Vite
 - **Styling:** Tailwind CSS 4.1.14 with custom theme
 - **UI Components:** Radix UI (headless components)
@@ -36,6 +40,7 @@
 - **Dev Server:** Vite on port 5173
 
 ### Key Achievements
+
 ✅ Complete mock data aligned with schema (38 records)  
 ✅ Full CRUD operations for Clients, Jobs, Categories, Tags  
 ✅ Interactive kanban board with drag-drop  
@@ -51,6 +56,7 @@
 ### ✅ Fully Implemented Pages (8/15)
 
 #### 1. Dashboard Main (`/dashboard`)
+
 - **Status:** ✅ Complete
 - **Features:**
   - 4 statistics cards with trend indicators
@@ -61,6 +67,7 @@
 - **Data:** Uses `data.json` for charts
 
 #### 2. Clients (`/dashboard/clients`)
+
 - **Status:** ✅ Complete
 - **Features:**
   - Card grid view with company logos
@@ -75,6 +82,7 @@
 - **Mock Data:** 6 clients
 
 #### 3. Jobs (`/dashboard/jobs`)
+
 - **Status:** ✅ Complete
 - **Features:**
   - Card/Table view toggle
@@ -88,6 +96,7 @@
 - **Mock Data:** 2 jobs
 
 #### 4. Jobs Pipeline (`/dashboard/jobs/pipeline/:jobId`)
+
 - **Status:** ✅ Complete
 - **Features:**
   - Drag-and-drop kanban board
@@ -100,6 +109,7 @@
 - **Utilities:** `pipeline-helpers.ts`
 
 #### 5. Candidates (`/dashboard/candidates`)
+
 - **Status:** ✅ Complete
 - **Features:**
   - Advanced data table (TanStack Table)
@@ -114,6 +124,7 @@
 - **Mock Data:** 4 candidates
 
 #### 6. Applications (`/dashboard/applications`)
+
 - **Status:** ✅ Complete
 - **Features:**
   - Data table with workflow status
@@ -126,6 +137,7 @@
 - **Mock Data:** 6 applications
 
 #### 7. Categories (`/dashboard/categories`)
+
 - **Status:** ✅ Complete
 - **Features:**
   - Full CRUD operations
@@ -136,6 +148,7 @@
 - **Mock Data:** 12 categories
 
 #### 8. Tags (`/dashboard/tags`)
+
 - **Status:** ✅ Complete
 - **Features:**
   - Full CRUD operations
@@ -150,6 +163,7 @@
 ### 🟡 Partially Implemented (1/15)
 
 #### Team (`/dashboard/team`)
+
 - **Status:** 🟡 Basic structure only
 - **Current:** Uses generic DataTable with `data.json`
 - **Missing:**
@@ -165,6 +179,7 @@
 ### ❌ Empty Placeholder Pages (7/15)
 
 #### 1. Analytics (`/dashboard/analytics`)
+
 - **Status:** ❌ Empty placeholder
 - **Current:** Dashed border placeholder with text
 - **Needed:**
@@ -178,6 +193,7 @@
 - **Priority:** Medium-High
 
 #### 2. Messages (`/dashboard/messages`)
+
 - **Status:** ❌ Empty placeholder
 - **Needed:**
   - Internal team chat interface
@@ -189,6 +205,7 @@
 - **Priority:** Medium
 
 #### 3. Settings (`/dashboard/settings`)
+
 - **Status:** ❌ Empty placeholder
 - **Needed:**
   - Tabbed interface (Profile, Email, System, Integrations)
@@ -201,6 +218,7 @@
 - **Priority:** High
 
 #### 4. Notifications (`/dashboard/notifications`)
+
 - **Status:** ❌ Empty placeholder
 - **Needed:**
   - Notification center
@@ -212,6 +230,7 @@
 - **Priority:** Low-Medium
 
 #### 5. Account (`/dashboard/account`)
+
 - **Status:** ❌ Empty placeholder
 - **Needed:**
   - Profile editing
@@ -223,6 +242,7 @@
 - **Priority:** Low-Medium
 
 #### 6. Help (`/dashboard/help`)
+
 - **Status:** ❌ Empty placeholder
 - **Needed:**
   - Documentation sections
@@ -234,6 +254,7 @@
 - **Priority:** Low
 
 #### 7. Search (`/dashboard/search`)
+
 - **Status:** ❌ Empty placeholder
 - **Needed:**
   - Global search across entities
@@ -249,6 +270,7 @@
 ## 3. UI Design System
 
 ### Design Philosophy
+
 **Brand:** Sequence — Light-first professional ATS theme  
 **Core Values:** Clean, professional, data-dense, accessible  
 **Inspiration:** Modern SaaS applications with emphasis on clarity
@@ -258,6 +280,7 @@
 ### 3.1 Color System
 
 #### Brand Colors
+
 ```css
 /* Primary Brand Colors */
 --primary: oklch(0.65 0.08 220);        /* Sky blue - primary actions */
@@ -269,29 +292,36 @@ Green: #00D47E  /* Primary green for success states */
 ```
 
 #### Neutrals
+
 ```css
 /* Light Theme (Default) */
---background: oklch(0.95 0.015 235);    /* Light cool gray-blue (#E9EEF2) */
---foreground: oklch(0.18 0.03 235);     /* Deep blue-gray text (#10232C) */
---card: oklch(0.98 0.006 235);          /* Almost white panels */
---muted: oklch(0.95 0.01 235);          /* Subdued surfaces */
+--background: oklch(0.95 0.015 235); /* Light cool gray-blue (#E9EEF2) */
+--foreground: oklch(0.18 0.03 235); /* Deep blue-gray text (#10232C) */
+--card: oklch(0.98 0.006 235); /* Almost white panels */
+--muted: oklch(0.95 0.01 235); /* Subdued surfaces */
 --muted-foreground: oklch(0.32 0.03 235); /* Secondary text */
---border: oklch(0.88 0.012 235);        /* Dividers (#D4DEE6) */
+--border: oklch(0.88 0.012 235); /* Dividers (#D4DEE6) */
 ```
 
 #### Semantic Colors
+
 ```css
---destructive: oklch(0.62 0.18 27);     /* Warm red for errors/delete */
---secondary: oklch(0.94 0.012 235);     /* Light chips/tags */
+--destructive: oklch(0.62 0.18 27); /* Warm red for errors/delete */
+--secondary: oklch(0.94 0.012 235); /* Light chips/tags */
 ```
 
 #### Status Badge Colors
+
 ```typescript
 const statusColors = {
-  active: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
-  inactive: "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20",
-  pending: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20",
-  on_hold: "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20",
+  active:
+    "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
+  inactive:
+    "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20",
+  pending:
+    "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20",
+  on_hold:
+    "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20",
   open: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
   closed: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
   draft: "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20",
@@ -300,23 +330,35 @@ const statusColors = {
 ```
 
 #### Industry/Type Colors
+
 ```typescript
 const industryColors = {
-  technology: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
-  healthcare: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
-  finance: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
-  education: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+  technology:
+    "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
+  healthcare:
+    "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
+  finance:
+    "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
+  education:
+    "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
   retail: "bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/20",
-  manufacturing: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20",
-  consulting: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20",
+  manufacturing:
+    "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20",
+  consulting:
+    "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20",
 };
 
 const jobTypeColors = {
-  full_time: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
-  part_time: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
-  contract: "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20",
-  freelance: "bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/20",
-  internship: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
+  full_time:
+    "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
+  part_time:
+    "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
+  contract:
+    "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20",
+  freelance:
+    "bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/20",
+  internship:
+    "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
 };
 ```
 
@@ -325,11 +367,13 @@ const jobTypeColors = {
 ### 3.2 Typography
 
 #### Font Family
+
 ```css
 --font-sans: "Helvetica", "Helvetica Neue", Arial, ui-sans-serif, system-ui;
 ```
 
 #### Type Scale
+
 ```typescript
 /* Headings */
 <h1 className="text-2xl font-bold">         // Page titles
@@ -343,6 +387,7 @@ const jobTypeColors = {
 ```
 
 #### Text Utilities
+
 - `line-clamp-1` / `line-clamp-2` - Truncate long text
 - `truncate` - Single line truncation with ellipsis
 - `tabular-nums` - Monospaced numbers for alignment
@@ -354,6 +399,7 @@ const jobTypeColors = {
 ### 3.3 Spacing & Layout
 
 #### Container Padding
+
 ```typescript
 // Standard page padding
 <div className="px-4 lg:px-6">           // Horizontal responsive padding
@@ -362,6 +408,7 @@ const jobTypeColors = {
 ```
 
 #### Grid Layouts
+
 ```typescript
 // Responsive card grids
 <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
@@ -371,6 +418,7 @@ const jobTypeColors = {
 ```
 
 #### Flexbox Patterns
+
 ```typescript
 // Header with actions
 <div className="flex items-center justify-between mb-6">
@@ -387,14 +435,15 @@ const jobTypeColors = {
 ### 3.4 Border Radius
 
 ```css
---radius: 0.65rem;                      /* Base radius (10.4px) */
+--radius: 0.65rem; /* Base radius (10.4px) */
 --radius-sm: calc(var(--radius) - 4px); /* Small (6.4px) */
 --radius-md: calc(var(--radius) - 2px); /* Medium (8.4px) */
---radius-lg: var(--radius);             /* Large (10.4px) */
+--radius-lg: var(--radius); /* Large (10.4px) */
 --radius-xl: calc(var(--radius) + 4px); /* Extra large (14.4px) */
 ```
 
 **Usage:**
+
 - Cards: `rounded-lg`
 - Buttons: `rounded-md`
 - Badges: `rounded-full` or `rounded-md`
@@ -407,12 +456,12 @@ const jobTypeColors = {
 
 ```typescript
 // Hover states
-hover:shadow-md         // Subtle elevation on hover
-hover:shadow-lg         // More prominent hover
+hover: shadow - md; // Subtle elevation on hover
+hover: shadow - lg; // More prominent hover
 
 // Card shadows
-shadow-xs              // Minimal shadow for subtle depth
-shadow-sm              // Default card shadow
+shadow - xs; // Minimal shadow for subtle depth
+shadow - sm; // Default card shadow
 ```
 
 ---
@@ -435,6 +484,7 @@ group-hover:text-primary transition-colors
 ### 4.1 Card Components
 
 #### Standard Card Pattern
+
 ```tsx
 <Card className="cursor-pointer hover:shadow-lg transition-all duration-200">
   <CardHeader>
@@ -459,6 +509,7 @@ group-hover:text-primary transition-colors
 ```
 
 #### Stats Card Pattern
+
 ```tsx
 <Card className="@container/card">
   <CardHeader>
@@ -474,17 +525,14 @@ group-hover:text-primary transition-colors
     </CardAction>
   </CardHeader>
   <CardFooter className="flex-col items-start gap-1.5 text-sm">
-    <div className="line-clamp-1 flex gap-2 font-medium">
-      Trend description
-    </div>
-    <div className="text-muted-foreground">
-      Metadata
-    </div>
+    <div className="line-clamp-1 flex gap-2 font-medium">Trend description</div>
+    <div className="text-muted-foreground">Metadata</div>
   </CardFooter>
 </Card>
 ```
 
 #### Card with Border Accent
+
 ```tsx
 <Card className="border-l-4 border-l-primary hover:border-l-primary/80">
   // Emphasizes importance (used in job cards)
@@ -496,6 +544,7 @@ group-hover:text-primary transition-colors
 ### 4.2 Badge Patterns
 
 #### Status Badges
+
 ```tsx
 <Badge variant="outline" className={statusColors[status]}>
   {status.replace("_", " ")}
@@ -503,6 +552,7 @@ group-hover:text-primary transition-colors
 ```
 
 #### Icon Badges
+
 ```tsx
 <Badge variant="outline">
   <Users className="h-3 w-3" />
@@ -511,6 +561,7 @@ group-hover:text-primary transition-colors
 ```
 
 #### Trend Badges
+
 ```tsx
 <Badge variant="outline">
   <IconTrendingUp />
@@ -544,6 +595,7 @@ const table = useReactTable({
 ```
 
 **Always include:**
+
 - Search input with debounce
 - Column visibility toggle
 - Status/type filters
@@ -556,6 +608,7 @@ const table = useReactTable({
 ### 4.4 Modal Patterns
 
 #### Add/Edit Modal Structure
+
 ```tsx
 <Dialog open={isOpen} onOpenChange={setIsOpen}>
   <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -563,17 +616,19 @@ const table = useReactTable({
       <DialogTitle>Title</DialogTitle>
       <DialogDescription>Description</DialogDescription>
     </DialogHeader>
-    
+
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Form fields */}
-      
+
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setIsOpen(false)}
+        >
           Cancel
         </Button>
-        <Button type="submit">
-          Save
-        </Button>
+        <Button type="submit">Save</Button>
       </DialogFooter>
     </form>
   </DialogContent>
@@ -581,13 +636,15 @@ const table = useReactTable({
 ```
 
 #### Delete Confirmation
+
 ```tsx
 <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
   <AlertDialogContent>
     <AlertDialogHeader>
       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
       <AlertDialogDescription>
-        This action cannot be undone. This will permanently delete the {itemType}.
+        This action cannot be undone. This will permanently delete the{" "}
+        {itemType}.
       </AlertDialogDescription>
     </AlertDialogHeader>
     <AlertDialogFooter>
@@ -630,9 +687,9 @@ const table = useReactTable({
         {/* Options */}
       </SelectContent>
     </Select>
-    
+
     {/* More filters */}
-    
+
     <Button onClick={handleAction}>
       <Plus className="h-4 w-4" />
       Add New
@@ -661,10 +718,8 @@ const table = useReactTable({
         <TabsTrigger value="details">Details</TabsTrigger>
         <TabsTrigger value="activity">Activity</TabsTrigger>
       </TabsList>
-      
-      <TabsContent value="overview">
-        {/* Content */}
-      </TabsContent>
+
+      <TabsContent value="overview">{/* Content */}</TabsContent>
     </Tabs>
   </SheetContent>
 </Sheet>
@@ -695,6 +750,7 @@ const table = useReactTable({
 **Preferred Icon Library:** Lucide React (primary), Tabler Icons (data tables)
 
 **Common Icons:**
+
 - `Building2` - Companies/clients
 - `Briefcase` - Jobs
 - `Users` / `User` - Candidates/team
@@ -709,6 +765,7 @@ const table = useReactTable({
 - `TrendingUp` / `TrendingDown` - Statistics
 
 **Icon Sizing:**
+
 - Small icons in badges: `h-3 w-3`
 - Standard icons: `h-4 w-4`
 - Medium icons in avatars: `h-5 w-5` or `h-6 w-6`
@@ -758,6 +815,7 @@ common.ts       - Shared types, utilities
 ### 5.3 Relationship Structure
 
 #### Bidirectional References
+
 ```typescript
 // Client ↔ Job
 Client.jobIds[]       → Job.id
@@ -780,6 +838,7 @@ clientsData.find(c => c.jobIds.includes(jobId))
 ```
 
 #### Statistics Calculation
+
 ```typescript
 // Client statistics (dynamic)
 statistics: {
@@ -805,24 +864,27 @@ statistics: {
 ### 5.4 Helper Utilities
 
 #### `/src/lib/statistics.ts`
+
 ```typescript
-calculateClientStatistics(client, jobs, candidates)
-calculateJobStatistics(job, candidates, applications)
+calculateClientStatistics(client, jobs, candidates);
+calculateJobStatistics(job, candidates, applications);
 ```
 
 #### `/src/lib/pipeline-helpers.ts`
+
 ```typescript
 mapStageToStatus(stageType: StageType): CandidateStatus
 updateCandidateStatus(candidate, newStage)
 ```
 
 #### `/src/lib/relationship-validators.ts`
+
 ```typescript
-addJobToClient(client, job)
-addCandidateToJob(job, candidate)
-removeCandidateFromJob(job, candidate)
-convertApplicationToCandidate(application, candidate)
-validateRelationships(clients, jobs, candidates, applications)
+addJobToClient(client, job);
+addCandidateToJob(job, candidate);
+removeCandidateFromJob(job, candidate);
+convertApplicationToCandidate(application, candidate);
+validateRelationships(clients, jobs, candidates, applications);
 ```
 
 ---
@@ -834,6 +896,7 @@ validateRelationships(clients, jobs, candidates, applications)
 **Component Status:** ✅ Fully built (`candidate-email-communication.tsx`, 533 lines)
 
 **What Exists:**
+
 - Complete email UI with inbox/sent/archive tabs
 - Compose email with rich text editor
 - Reply/forward/delete/star actions
@@ -842,6 +905,7 @@ validateRelationships(clients, jobs, candidates, applications)
 - Mock email data structure
 
 **What's Missing:**
+
 - Integration into Jobs detail view (add email tab)
 - Integration into Candidates detail view (add email tab)
 - Connect to candidates' email tracking data (`totalEmailsSent`, `totalEmailsReceived`)
@@ -849,6 +913,7 @@ validateRelationships(clients, jobs, candidates, applications)
 - Email template system
 
 **Implementation Steps:**
+
 1. Add "Email" tab to `JobDetails` component
 2. Add "Email" tab to candidate detail drawer
 3. Pass candidate + job data to `CandidateEmailCommunication`
@@ -866,11 +931,13 @@ validateRelationships(clients, jobs, candidates, applications)
 **Required Sections:**
 
 #### Profile Settings
+
 - User profile editing (name, email, avatar)
 - Password change form
 - Two-factor authentication toggle
 
 #### Email Configuration
+
 - SMTP settings (host, port, username, password)
 - Email signature editor
 - Default email templates:
@@ -882,18 +949,21 @@ validateRelationships(clients, jobs, candidates, applications)
 - Template variables: `{{candidateName}}`, `{{jobTitle}}`, etc.
 
 #### System Settings
+
 - Pipeline stage customization (add/remove/reorder)
 - Default workflow settings
 - Data retention policies
 - Export/import configurations
 
 #### Integrations
+
 - LinkedIn integration toggle
 - Calendar sync (Google/Outlook)
 - Slack notifications
 - Webhook configuration
 
 #### UI Structure
+
 ```tsx
 <Tabs defaultValue="profile">
   <TabsList>
@@ -917,46 +987,52 @@ validateRelationships(clients, jobs, candidates, applications)
 **Required Metrics:**
 
 #### Recruitment Metrics
+
 - Time-to-hire average (days from job posted to offer accepted)
 - Time-to-fill (days from job posted to position filled)
 - Applications per job
 - Candidate conversion rates (applied → interviewed → offered → hired)
 
 #### Source Analytics
+
 - Applications by source (LinkedIn, referral, website, etc.)
 - Source effectiveness (conversion rate by source)
 - Top performing sources
 
 #### Pipeline Analytics
+
 - Candidates by stage (funnel chart)
 - Stage conversion rates
 - Average time in each stage
 - Drop-off analysis
 
 #### Team Performance
+
 - Applications reviewed per recruiter
 - Time to first response
 - Interview completion rate
 - Offers made vs accepted
 
 #### Charts Needed
+
 - Area chart for trends over time
 - Funnel chart for pipeline conversion
 - Bar chart for source comparison
 - Pie chart for status distribution
 
 **UI Structure:**
+
 ```tsx
 <div className="space-y-6">
   {/* Date Range Selector */}
   <DateRangePicker />
-  
+
   {/* Key Metrics Cards */}
   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
     <MetricCard title="Time to Hire" value="24 days" trend="-3 days" />
     {/* More metric cards */}
   </div>
-  
+
   {/* Charts */}
   <Card>
     <CardHeader>
@@ -980,13 +1056,14 @@ validateRelationships(clients, jobs, candidates, applications)
 **Required Additions:**
 
 #### Team Member Schema
+
 ```typescript
 interface TeamMember {
   id: string;
   name: string;
   email: string;
   avatar?: string;
-  role: 'admin' | 'recruiter' | 'hiring_manager' | 'interviewer' | 'viewer';
+  role: "admin" | "recruiter" | "hiring_manager" | "interviewer" | "viewer";
   department?: string;
   permissions: Permission[];
   assignedJobs: string[];
@@ -996,13 +1073,14 @@ interface TeamMember {
     offersExtended: number;
     hires: number;
   };
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   createdAt: Date;
   lastActive: Date;
 }
 ```
 
 #### UI Features
+
 - Team member data table
 - Add/edit/delete team members
 - Role assignment with permission matrix
@@ -1019,6 +1097,7 @@ interface TeamMember {
 **Current Status:** ❌ Empty placeholder
 
 **Required Features:**
+
 - Search across all entities (candidates, jobs, clients, applications)
 - Real-time search with debounce
 - Type-ahead suggestions
@@ -1028,19 +1107,14 @@ interface TeamMember {
 - Keyboard shortcuts (Cmd/Ctrl + K)
 
 **UI Pattern:**
+
 ```tsx
 <Command>
   <CommandInput placeholder="Search everything..." />
   <CommandList>
-    <CommandGroup heading="Candidates">
-      {/* Candidate results */}
-    </CommandGroup>
-    <CommandGroup heading="Jobs">
-      {/* Job results */}
-    </CommandGroup>
-    <CommandGroup heading="Clients">
-      {/* Client results */}
-    </CommandGroup>
+    <CommandGroup heading="Candidates">{/* Candidate results */}</CommandGroup>
+    <CommandGroup heading="Jobs">{/* Job results */}</CommandGroup>
+    <CommandGroup heading="Clients">{/* Client results */}</CommandGroup>
   </CommandList>
 </Command>
 ```
@@ -1052,6 +1126,7 @@ interface TeamMember {
 ### 6.6 Other Missing Features
 
 #### Messages/Chat (MEDIUM PRIORITY)
+
 - Internal team communication
 - Real-time chat interface
 - Message threads
@@ -1061,6 +1136,7 @@ interface TeamMember {
 **Estimated Time:** 4-5 hours
 
 #### Notifications (LOW-MEDIUM PRIORITY)
+
 - Notification center
 - Real-time updates
 - Push notifications
@@ -1070,6 +1146,7 @@ interface TeamMember {
 **Estimated Time:** 2-3 hours
 
 #### Account Management (LOW PRIORITY)
+
 - Profile editing
 - Security settings
 - Session management
@@ -1078,6 +1155,7 @@ interface TeamMember {
 **Estimated Time:** 2-3 hours
 
 #### Help/Documentation (LOW PRIORITY)
+
 - User guides
 - Video tutorials
 - FAQs
@@ -1090,9 +1168,11 @@ interface TeamMember {
 ## 7. Development Roadmap
 
 ### Phase 1: Email Integration (Week 1)
+
 **Priority:** HIGH | **Time:** 2-3 hours
 
 **Tasks:**
+
 1. Add email tab to `JobDetails` component
 2. Add email tab to candidate detail drawer
 3. Wire up `CandidateEmailCommunication` component
@@ -1100,6 +1180,7 @@ interface TeamMember {
 5. Test email workflows (compose, reply, archive)
 
 **Deliverables:**
+
 - Fully functional email interface in Jobs and Candidates pages
 - Email history display
 - Send/reply capabilities (with toast confirmations)
@@ -1107,9 +1188,11 @@ interface TeamMember {
 ---
 
 ### Phase 2: Settings Implementation (Week 1-2)
+
 **Priority:** HIGH | **Time:** 3-4 hours
 
 **Tasks:**
+
 1. Create tabbed Settings layout
 2. Build Profile settings tab
 3. Create Email templates editor
@@ -1118,6 +1201,7 @@ interface TeamMember {
 6. Add Integration toggles
 
 **Deliverables:**
+
 - Complete Settings page with 4 tabs
 - Email template management system
 - Configurable system preferences
@@ -1125,9 +1209,11 @@ interface TeamMember {
 ---
 
 ### Phase 3: Analytics Dashboard (Week 2-3)
+
 **Priority:** MEDIUM-HIGH | **Time:** 4-5 hours
 
 **Tasks:**
+
 1. Create metric calculation functions
 2. Build key metrics cards
 3. Implement time-to-hire analytics
@@ -1138,6 +1224,7 @@ interface TeamMember {
 8. Implement export functionality
 
 **Deliverables:**
+
 - Comprehensive analytics dashboard
 - Interactive charts with drill-down
 - Exportable reports
@@ -1145,9 +1232,11 @@ interface TeamMember {
 ---
 
 ### Phase 4: Team Management Enhancement (Week 3)
+
 **Priority:** MEDIUM | **Time:** 2-3 hours
 
 **Tasks:**
+
 1. Define TeamMember schema and types
 2. Create team mock data (8-10 members)
 3. Build team-specific data table
@@ -1157,6 +1246,7 @@ interface TeamMember {
 7. Display team statistics
 
 **Deliverables:**
+
 - Fully functional team management page
 - Role-based permissions UI
 - Team performance tracking
@@ -1164,21 +1254,25 @@ interface TeamMember {
 ---
 
 ### Phase 5: Enhanced Features (Week 4-5)
+
 **Priority:** MEDIUM | **Time:** 8-12 hours
 
 **Global Search (3-4 hours):**
+
 - Implement Command K interface
 - Add search across all entities
 - Create result highlighting
 - Add keyboard shortcuts
 
 **Messages/Chat (4-5 hours):**
+
 - Build chat interface
 - Implement message threads
 - Add file attachments
 - Create @mentions system
 
 **Notifications (2-3 hours):**
+
 - Build notification center
 - Add real-time updates
 - Implement notification preferences
@@ -1186,9 +1280,11 @@ interface TeamMember {
 ---
 
 ### Phase 6: Polish & Optimization (Week 6)
+
 **Priority:** LOW-MEDIUM | **Time:** 4-6 hours
 
 **Tasks:**
+
 1. Complete Account management page
 2. Create Help/Documentation center
 3. Add loading states everywhere
@@ -1199,6 +1295,7 @@ interface TeamMember {
 8. Mobile responsiveness testing
 
 **Deliverables:**
+
 - All pages completed
 - Polished user experience
 - Production-ready application
@@ -1210,11 +1307,13 @@ interface TeamMember {
 ### 8.1 Code Organization
 
 **File Naming:**
+
 - Components: `kebab-case.tsx` (e.g., `client-card.tsx`)
 - Types: `kebab-case.ts` (e.g., `client.ts`)
 - Utilities: `kebab-case.ts` (e.g., `pipeline-helpers.ts`)
 
 **Component Structure:**
+
 ```tsx
 // 1. Imports (React, libraries, components, types, utils)
 import { useState } from "react";
@@ -1234,16 +1333,16 @@ const STATUS_COLORS = { ... };
 export function ComponentName({ prop }: ComponentProps) {
   // 4a. State
   const [state, setState] = useState();
-  
+
   // 4b. Derived values
   const computed = useMemo(() => ..., [deps]);
-  
+
   // 4c. Handlers
   const handleAction = () => { ... };
-  
+
   // 4d. Effects
   useEffect(() => { ... }, [deps]);
-  
+
   // 4e. Render
   return ( ... );
 }
@@ -1256,12 +1355,14 @@ export function ComponentName({ prop }: ComponentProps) {
 **Current Approach:** Local state with `useState`
 
 **When to Use:**
+
 - `useState` - Component-local state, form inputs
 - `useMemo` - Expensive calculations, filtered/sorted data
 - `useCallback` - Event handlers passed to children
 - `useEffect` - Side effects (API calls, subscriptions)
 
 **For Future Consideration:**
+
 - Context API for global state (auth, theme)
 - React Query for server state management
 - Zustand for complex client state
@@ -1271,6 +1372,7 @@ export function ComponentName({ prop }: ComponentProps) {
 ### 8.3 Performance Optimization
 
 **Current Patterns:**
+
 - Debounced search inputs
 - Pagination for large datasets
 - Virtualization for long lists (TanStack Virtual)
@@ -1278,6 +1380,7 @@ export function ComponentName({ prop }: ComponentProps) {
 - Code splitting by route
 
 **To Implement:**
+
 - `React.memo` for expensive components
 - `useMemo` for filtered/sorted data
 - `useCallback` for event handlers
@@ -1289,6 +1392,7 @@ export function ComponentName({ prop }: ComponentProps) {
 ### 8.4 Accessibility
 
 **Current Implementation:**
+
 - Semantic HTML (`<button>`, `<nav>`, `<main>`)
 - ARIA labels on icons
 - Keyboard navigation (Radix UI)
@@ -1296,6 +1400,7 @@ export function ComponentName({ prop }: ComponentProps) {
 - Color contrast ratios (WCAG AA)
 
 **To Improve:**
+
 - Screen reader testing
 - Focus visible indicators
 - ARIA live regions for notifications
@@ -1307,12 +1412,14 @@ export function ComponentName({ prop }: ComponentProps) {
 ### 8.5 Testing Strategy
 
 **Recommended Approach:**
+
 1. **Unit Tests** - Utility functions, helpers
 2. **Component Tests** - Isolated component testing
 3. **Integration Tests** - User workflows
 4. **E2E Tests** - Critical paths (Playwright)
 
 **Test Coverage Goals:**
+
 - Utilities: 90%+
 - Components: 70%+
 - Pages: 50%+
@@ -1324,21 +1431,24 @@ export function ComponentName({ prop }: ComponentProps) {
 ### DO's ✅
 
 1. **Always use semantic color classes**
+
    ```tsx
    // Good
    <Badge className="bg-green-500/10 text-green-700">Active</Badge>
-   
+
    // Bad
    <Badge className="bg-green-100 text-green-800">Active</Badge>
    ```
 
 2. **Use consistent spacing scale**
+
    ```tsx
-   gap-2, gap-4, gap-6  // Not gap-3, gap-5
-   px-4, py-4           // Consistent horizontal/vertical
+   gap - 2, gap - 4, gap - 6; // Not gap-3, gap-5
+   px - 4, py - 4; // Consistent horizontal/vertical
    ```
 
 3. **Maintain icon sizing consistency**
+
    ```tsx
    <Icon className="h-4 w-4" />  // Standard
    <Icon className="h-3 w-3" />  // Small (in badges)
@@ -1346,20 +1456,24 @@ export function ComponentName({ prop }: ComponentProps) {
    ```
 
 4. **Use truncation for long text**
+
    ```tsx
    <span className="line-clamp-1">...</span>
    <span className="truncate">...</span>
    ```
 
 5. **Add hover states to interactive elements**
+
    ```tsx
    hover:shadow-lg transition-all duration-200
    ```
 
 6. **Use Radix UI components for complex interactions**
+
    - Dropdowns, Dialogs, Selects, Tooltips
 
 7. **Keep color palette limited**
+
    - Primary (sky blue), Accent (green), Destructive (red)
    - Status colors (green, yellow, orange, red, gray, blue)
 
@@ -1373,40 +1487,47 @@ export function ComponentName({ prop }: ComponentProps) {
 ### DON'Ts ❌
 
 1. **Don't use arbitrary color values**
+
    ```tsx
    // Bad
-   className="bg-[#ff0000]"
-   
+   className = "bg-[#ff0000]";
+
    // Good
-   className="bg-destructive"
+   className = "bg-destructive";
    ```
 
 2. **Don't mix icon libraries unnecessarily**
+
    - Use Lucide React for UI
    - Use Tabler Icons only for data tables
 
 3. **Don't create inline styles**
+
    ```tsx
    // Bad
    style={{ marginTop: "20px" }}
-   
+
    // Good
    className="mt-5"
    ```
 
 4. **Don't skip loading/error states**
+
    - Always show skeleton loaders
    - Display error messages with retry options
 
 5. **Don't hardcode data in components**
+
    - Use mock data imports
    - Pass data as props
 
 6. **Don't ignore TypeScript errors**
+
    - Fix type issues immediately
    - Use `unknown` over `any`
 
 7. **Don't create overly complex components**
+
    - Break into smaller components at ~200 lines
    - Extract reusable logic to hooks
 
@@ -1419,6 +1540,7 @@ export function ComponentName({ prop }: ComponentProps) {
 ## 10. Quick Reference
 
 ### Color Variables Quick Lookup
+
 ```css
 bg-background         /* Page background */
 text-foreground       /* Primary text */
@@ -1431,27 +1553,29 @@ bg-destructive        /* Errors/delete */
 ```
 
 ### Common Class Combinations
+
 ```tsx
 /* Interactive card */
-"cursor-pointer hover:shadow-lg transition-all duration-200"
+"cursor-pointer hover:shadow-lg transition-all duration-200";
 
 /* Page section */
-"flex flex-col gap-4 py-4 md:gap-6 md:py-6"
+"flex flex-col gap-4 py-4 md:gap-6 md:py-6";
 
 /* Container */
-"px-4 lg:px-6"
+"px-4 lg:px-6";
 
 /* Flex header */
-"flex items-center justify-between mb-6"
+"flex items-center justify-between mb-6";
 
 /* Text truncation */
-"line-clamp-1"  // or "truncate"
+"line-clamp-1"; // or "truncate"
 
 /* Badge */
-"bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
+"bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20";
 ```
 
 ### Component Import Paths
+
 ```tsx
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

@@ -14,6 +14,7 @@ import TeamPage from "./pages/dashboard/team";
 import AnalyticsPage from "./pages/dashboard/analytics";
 import DashboardJobsPage from "./pages/dashboard/jobs";
 import JobPipelinePage from "./pages/dashboard/jobs/pipeline";
+import JobCandidateCommunicationPage from "./pages/dashboard/jobs/candidate-communication";
 import TagsPage from "./pages/dashboard/tags";
 import CategoriesPage from "./pages/dashboard/categories";
 import AccountPage from "./pages/dashboard/account";
