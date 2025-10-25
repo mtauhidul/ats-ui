@@ -6,6 +6,9 @@ import {
   IconUserCircle,
 } from "@tabler/icons-react";
 import { Link } from "react-router-dom";
+import { useClerk } from "@clerk/clerk-react";
+import { Badge } from "@/components/ui/badge";
+import { useUserRole } from "@/lib/auth";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -34,6 +37,21 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const { signOut } = useClerk();
+  const userRole = useUserRole();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
+
   // const [isHovered, setIsHovered] = useState(false);
   // const [isOpen, setIsOpen] = useState(false);
 
@@ -53,7 +71,7 @@ export function NavUser({
               <Avatar className="h-8 w-8 rounded-lg grayscale">
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-lg group-hover:text-sidebar-accent group-data-[state=open]:text-sidebar-accent">
-                  CN
+                  {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
               <div 
@@ -98,10 +116,19 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">
+                    {getInitials(user.name)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-medium">{user.name}</span>
+                    {userRole && (
+                      <Badge variant="secondary" className="text-xs capitalize">
+                        {userRole.replace('_', ' ')}
+                      </Badge>
+                    )}
+                  </div>
                   <span className="text-muted-foreground truncate text-xs">
                     {user.email}
                   </span>
@@ -124,7 +151,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSignOut}>
               <IconLogout />
               Log out
             </DropdownMenuItem>

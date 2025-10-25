@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,24 +9,42 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { User as UserIcon, Mail, Phone, Building, Shield, Bell, Lock, Eye, EyeOff, Upload } from "lucide-react";
-import teamData from "@/lib/mock-data/team.json";
 import { toast } from "sonner";
+import { useUser } from "@clerk/clerk-react";
+import { useUserRole } from "@/lib/auth";
 
 export default function AccountPage() {
-  // Use first user as current logged-in user
-  const currentUser = teamData[0];
+  const { user, isLoaded } = useUser();
+  const userRole = useUserRole();
 
   const [profileData, setProfileData] = useState({
-    firstName: currentUser.firstName,
-    lastName: currentUser.lastName,
-    email: currentUser.email,
-    phone: currentUser.phone,
-    department: currentUser.department,
-    title: currentUser.title,
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    department: "",
+    title: "",
   });
+
+  // Initialize profile data when user is loaded
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.primaryEmailAddress?.emailAddress || "",
+        phone: (user.unsafeMetadata?.phone as string) || user.phoneNumbers?.[0]?.phoneNumber || "",
+        department: (user.unsafeMetadata?.department as string) || "",
+        title: (user.unsafeMetadata?.title as string) || "",
+      });
+      setProfilePhoto(user.imageUrl || undefined);
+    }
+  }, [user]);
 
   const [profilePhoto, setProfilePhoto] = useState<string | undefined>(undefined);
   const [activeTab, setActiveTab] = useState("profile");
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -47,12 +65,40 @@ export default function AccountPage() {
     systemUpdates: false,
   });
 
-  const handleProfileSubmit = (e: React.FormEvent) => {
+  const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Profile updated successfully!");
+    setIsProfileLoading(true);
+    
+    try {
+      // Update Clerk user basic info
+      await user?.update({
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+      });
+
+      // Update unsafe metadata for department, title, and phone (store as metadata instead)
+      await user?.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          department: profileData.department,
+          title: profileData.title,
+          phone: profileData.phone, // Store phone in metadata for simplicity
+        },
+      });
+
+      // Reload user data
+      await user?.reload();
+
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      toast.error("Failed to update profile");
+      console.error(error);
+    } finally {
+      setIsProfileLoading(false);
+    }
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error("New passwords do not match!");
@@ -61,6 +107,36 @@ export default function AccountPage() {
     if (passwordData.newPassword.length < 8) {
       toast.error("Password must be at least 8 characters!");
       return;
+    }
+
+    setIsPasswordLoading(true);
+
+    try {
+      await user?.updatePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      });
+
+      toast.success("Password changed successfully! A confirmation email has been sent.");
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error: unknown) {
+      // Handle specific Clerk errors
+      const clerkError = error as { errors?: Array<{ code?: string; message?: string }> };
+      
+      if (clerkError?.errors?.[0]?.code === "form_password_incorrect") {
+        toast.error("Current password is incorrect");
+      } else if (clerkError?.errors?.[0]?.message) {
+        toast.error(clerkError.errors[0].message);
+      } else {
+        toast.error("Failed to change password");
+      }
+      console.error(error);
+    } finally {
+      setIsPasswordLoading(false);
     }
     toast.success("Password updated successfully!");
     setPasswordData({
@@ -75,19 +151,30 @@ export default function AccountPage() {
     toast.success("Notification preferences updated!");
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
         toast.error("File size must be less than 2MB");
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePhoto(reader.result as string);
+
+      try {
+        // Upload to Clerk
+        await user?.setProfileImage({ file });
+        
+        // Update local preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setProfilePhoto(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+        
         toast.success("Profile photo updated!");
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        toast.error("Failed to update profile photo");
+        console.error(error);
+      }
     }
   };
 
@@ -109,6 +196,17 @@ export default function AccountPage() {
         return <Badge variant="outline">{role}</Badge>;
     }
   };
+
+  if (!isLoaded || !user) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col">
@@ -133,35 +231,35 @@ export default function AccountPage() {
               <CardContent className="pt-6">
                 <div className="flex items-start gap-6">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src={profilePhoto} alt={currentUser.firstName} />
+                    <AvatarImage src={profilePhoto || user?.imageUrl} alt={profileData.firstName} />
                     <AvatarFallback className="text-2xl">
-                      {getInitials(currentUser.firstName, currentUser.lastName)}
+                      {getInitials(profileData.firstName, profileData.lastName)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-2xl font-bold">
-                        {currentUser.firstName} {currentUser.lastName}
+                        {profileData.firstName} {profileData.lastName}
                       </h3>
-                      {getRoleBadge(currentUser.role)}
+                      {userRole && getRoleBadge(userRole)}
                     </div>
-                    <p className="text-muted-foreground mb-3">{currentUser.title}</p>
+                    <p className="text-muted-foreground mb-3">{profileData.title || 'No title set'}</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Mail className="h-4 w-4" />
-                        {currentUser.email}
+                        {profileData.email}
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Phone className="h-4 w-4" />
-                        {currentUser.phone}
+                        {profileData.phone || 'No phone set'}
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Building className="h-4 w-4" />
-                        {currentUser.department}
+                        {profileData.department || 'No department set'}
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <UserIcon className="h-4 w-4" />
-                        Member since {new Date(currentUser.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -173,25 +271,33 @@ export default function AccountPage() {
               <Card>
                 <CardHeader className="pb-3">
                   <CardDescription>Active Jobs</CardDescription>
-                  <CardTitle className="text-3xl">{currentUser.statistics.activeJobs}</CardTitle>
+                  <CardTitle className="text-3xl">
+                    {((user?.unsafeMetadata?.statistics as Record<string, number>)?.activeJobs) || 0}
+                  </CardTitle>
                 </CardHeader>
               </Card>
               <Card>
                 <CardHeader className="pb-3">
                   <CardDescription>Placed Candidates</CardDescription>
-                  <CardTitle className="text-3xl">{currentUser.statistics.placedCandidates}</CardTitle>
+                  <CardTitle className="text-3xl">
+                    {((user?.unsafeMetadata?.statistics as Record<string, number>)?.placedCandidates) || 0}
+                  </CardTitle>
                 </CardHeader>
               </Card>
               <Card>
                 <CardHeader className="pb-3">
                   <CardDescription>Pending Reviews</CardDescription>
-                  <CardTitle className="text-3xl">{currentUser.statistics.pendingReviews}</CardTitle>
+                  <CardTitle className="text-3xl">
+                    {((user?.unsafeMetadata?.statistics as Record<string, number>)?.pendingReviews) || 0}
+                  </CardTitle>
                 </CardHeader>
               </Card>
               <Card>
                 <CardHeader className="pb-3">
                   <CardDescription>Emails Sent</CardDescription>
-                  <CardTitle className="text-3xl">{currentUser.statistics.emailsSent}</CardTitle>
+                  <CardTitle className="text-3xl">
+                    {((user?.unsafeMetadata?.statistics as Record<string, number>)?.emailsSent) || 0}
+                  </CardTitle>
                 </CardHeader>
               </Card>
             </div>
@@ -297,8 +403,12 @@ export default function AccountPage() {
                           id="email"
                           type="email"
                           value={profileData.email}
-                          onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                          disabled
+                          className="bg-muted cursor-not-allowed"
                         />
+                        <p className="text-xs text-muted-foreground">
+                          Email cannot be changed here. Contact your administrator to update.
+                        </p>
                       </div>
 
                       <div className="space-y-2">
@@ -330,8 +440,19 @@ export default function AccountPage() {
                       </div>
 
                       <div className="flex justify-end gap-2 pt-4">
-                        <Button type="button" variant="outline">Cancel</Button>
-                        <Button type="submit">Save Changes</Button>
+                        <Button type="button" variant="outline" disabled={isProfileLoading}>
+                          Cancel
+                        </Button>
+                        <Button type="submit" disabled={isProfileLoading}>
+                          {isProfileLoading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Saving...
+                            </>
+                          ) : (
+                            "Save Changes"
+                          )}
+                        </Button>
                       </div>
                     </form>
                   </CardContent>
@@ -415,33 +536,32 @@ export default function AccountPage() {
                       </div>
 
                       <div className="flex justify-end gap-2 pt-4">
-                        <Button type="button" variant="outline">Cancel</Button>
-                        <Button type="submit">Update Password</Button>
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          disabled={isPasswordLoading}
+                          onClick={() => {
+                            setPasswordData({
+                              currentPassword: "",
+                              newPassword: "",
+                              confirmPassword: "",
+                            });
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button type="submit" disabled={isPasswordLoading}>
+                          {isPasswordLoading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Updating...
+                            </>
+                          ) : (
+                            "Update Password"
+                          )}
+                        </Button>
                       </div>
                     </form>
-                  </CardContent>
-                </Card>
-
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle>Two-Factor Authentication</CardTitle>
-                    <CardDescription>
-                      Add an extra layer of security to your account
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Two-Factor Authentication</p>
-                        <p className="text-sm text-muted-foreground">
-                          Not enabled
-                        </p>
-                      </div>
-                      <Button variant="outline">
-                        <Lock className="h-4 w-4 mr-2" />
-                        Enable 2FA
-                      </Button>
-                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -563,7 +683,7 @@ export default function AccountPage() {
                   <CardContent className="space-y-4">
                     <div className="flex items-center gap-2 mb-4">
                       <span className="text-sm font-medium">Your Role:</span>
-                      {getRoleBadge(currentUser.role)}
+                      {userRole && getRoleBadge(userRole)}
                     </div>
 
                     <Separator />
@@ -571,49 +691,22 @@ export default function AccountPage() {
                     <div className="space-y-3">
                       <h4 className="text-sm font-medium">Enabled Permissions</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {currentUser.permissions.canManageClients && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Manage Clients
-                          </div>
-                        )}
-                        {currentUser.permissions.canManageJobs && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Manage Jobs
-                          </div>
-                        )}
-                        {currentUser.permissions.canReviewApplications && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Review Applications
-                          </div>
-                        )}
-                        {currentUser.permissions.canManageCandidates && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Manage Candidates
-                          </div>
-                        )}
-                        {currentUser.permissions.canSendEmails && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Send Emails
-                          </div>
-                        )}
-                        {currentUser.permissions.canManageTeam && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Manage Team
-                          </div>
-                        )}
-                        {currentUser.permissions.canAccessAnalytics && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Access Analytics
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="h-2 w-2 rounded-full bg-green-500" />
+                          View Dashboard
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="h-2 w-2 rounded-full bg-green-500" />
+                          Manage Profile
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="h-2 w-2 rounded-full bg-gray-300" />
+                          Additional permissions based on your role
+                        </div>
                       </div>
+                      <p className="text-xs text-muted-foreground mt-4">
+                        Your specific permissions are determined by your role. Contact your administrator to request additional access.
+                      </p>
                     </div>
 
                     <Separator />

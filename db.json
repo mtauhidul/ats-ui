@@ -593,6 +593,340 @@
       },
       "createdAt": "2025-10-10T00:00:00.000Z",
       "updatedAt": "2025-10-15T00:00:00.000Z"
+    },
+    {
+      "id": "job-3",
+      "title": "Product Designer",
+      "description": "We're seeking a talented Product Designer to join our design team and help create beautiful, user-centered digital experiences. You'll work closely with product managers and engineers to transform ideas into intuitive interfaces.",
+      "clientId": "client-2",
+      "status": "open",
+      "type": "full_time",
+      "experienceLevel": "mid",
+      "workMode": "remote",
+      "location": {
+        "city": "Austin",
+        "country": "USA"
+      },
+      "salaryRange": {
+        "min": 90000,
+        "max": 130000,
+        "currency": "USD",
+        "period": "yearly"
+      },
+      "requirements": {
+        "experience": "3-5 years",
+        "skills": {
+          "required": [
+            "Figma",
+            "Adobe XD",
+            "User Research",
+            "Prototyping"
+          ],
+          "preferred": [
+            "HTML/CSS",
+            "Animation",
+            "Design Systems"
+          ]
+        }
+      },
+      "responsibilities": [
+        "Design intuitive user interfaces for web and mobile applications",
+        "Conduct user research and usability testing",
+        "Create wireframes, prototypes, and high-fidelity mockups",
+        "Collaborate with engineering teams to ensure design implementation",
+        "Maintain and evolve our design system"
+      ],
+      "department": "Design",
+      "priority": "high",
+      "openings": 1,
+      "filledPositions": 0,
+      "recruiterIds": [],
+      "hiringManagerIds": [],
+      "categoryIds": [],
+      "tagIds": [],
+      "candidateIds": [],
+      "statistics": {
+        "totalApplications": 0,
+        "approvedApplications": 0,
+        "rejectedApplications": 0,
+        "totalCandidates": 0,
+        "activeCandidates": 0,
+        "hiredCandidates": 0,
+        "rejectedCandidates": 0,
+        "interviewingCandidates": 0,
+        "offerExtendedCandidates": 0,
+        "candidatesInPipeline": 0
+      },
+      "createdAt": "2025-10-15T00:00:00.000Z",
+      "updatedAt": "2025-10-20T00:00:00.000Z"
+    },
+    {
+      "id": "job-4",
+      "title": "Data Scientist",
+      "description": "Join our data science team to build predictive models and derive actionable insights from complex datasets. You'll work on cutting-edge machine learning projects that directly impact business decisions.",
+      "clientId": "client-1",
+      "status": "open",
+      "type": "full_time",
+      "experienceLevel": "senior",
+      "workMode": "hybrid",
+      "location": {
+        "city": "Boston",
+        "country": "USA"
+      },
+      "salaryRange": {
+        "min": 130000,
+        "max": 170000,
+        "currency": "USD",
+        "period": "yearly"
+      },
+      "requirements": {
+        "experience": "5+ years",
+        "skills": {
+          "required": [
+            "Python",
+            "Machine Learning",
+            "SQL",
+            "Statistics"
+          ],
+          "preferred": [
+            "TensorFlow",
+            "PyTorch",
+            "Big Data",
+            "Cloud Platforms"
+          ]
+        }
+      },
+      "responsibilities": [
+        "Develop and deploy machine learning models",
+        "Analyze large datasets to identify trends and patterns",
+        "Collaborate with stakeholders to define analytical requirements",
+        "Present findings to technical and non-technical audiences",
+        "Mentor junior data scientists"
+      ],
+      "department": "Data Science",
+      "priority": "high",
+      "openings": 2,
+      "filledPositions": 0,
+      "recruiterIds": [],
+      "hiringManagerIds": [],
+      "categoryIds": [],
+      "tagIds": [],
+      "candidateIds": [],
+      "statistics": {
+        "totalApplications": 0,
+        "approvedApplications": 0,
+        "rejectedApplications": 0,
+        "totalCandidates": 0,
+        "activeCandidates": 0,
+        "hiredCandidates": 0,
+        "rejectedCandidates": 0,
+        "interviewingCandidates": 0,
+        "offerExtendedCandidates": 0,
+        "candidatesInPipeline": 0
+      },
+      "createdAt": "2025-10-12T00:00:00.000Z",
+      "updatedAt": "2025-10-22T00:00:00.000Z"
+    },
+    {
+      "id": "job-5",
+      "title": "Frontend Developer",
+      "description": "We're looking for a passionate Frontend Developer to build responsive and performant web applications. You'll be working with modern JavaScript frameworks and contributing to our design system.",
+      "clientId": "client-3",
+      "status": "open",
+      "type": "full_time",
+      "experienceLevel": "junior",
+      "workMode": "remote",
+      "location": {
+        "city": "Seattle",
+        "country": "USA"
+      },
+      "salaryRange": {
+        "min": 70000,
+        "max": 95000,
+        "currency": "USD",
+        "period": "yearly"
+      },
+      "requirements": {
+        "experience": "2-3 years",
+        "skills": {
+          "required": [
+            "JavaScript",
+            "React",
+            "CSS",
+            "HTML"
+          ],
+          "preferred": [
+            "TypeScript",
+            "Next.js",
+            "Tailwind CSS",
+            "Testing"
+          ]
+        }
+      },
+      "responsibilities": [
+        "Build and maintain frontend applications",
+        "Implement responsive designs with attention to detail",
+        "Write clean, maintainable code",
+        "Participate in code reviews",
+        "Collaborate with designers and backend developers"
+      ],
+      "department": "Engineering",
+      "priority": "medium",
+      "openings": 1,
+      "filledPositions": 0,
+      "recruiterIds": [],
+      "hiringManagerIds": [],
+      "categoryIds": [],
+      "tagIds": [],
+      "candidateIds": [],
+      "statistics": {
+        "totalApplications": 0,
+        "approvedApplications": 0,
+        "rejectedApplications": 0,
+        "totalCandidates": 0,
+        "activeCandidates": 0,
+        "hiredCandidates": 0,
+        "rejectedCandidates": 0,
+        "interviewingCandidates": 0,
+        "offerExtendedCandidates": 0,
+        "candidatesInPipeline": 0
+      },
+      "createdAt": "2025-10-18T00:00:00.000Z",
+      "updatedAt": "2025-10-23T00:00:00.000Z"
+    },
+    {
+      "id": "job-6",
+      "title": "Marketing Manager",
+      "description": "Lead our marketing efforts and drive growth through innovative campaigns. You'll develop strategies, manage a team, and work cross-functionally to achieve business objectives.",
+      "clientId": "client-2",
+      "status": "open",
+      "type": "full_time",
+      "experienceLevel": "senior",
+      "workMode": "onsite",
+      "location": {
+        "city": "Chicago",
+        "country": "USA"
+      },
+      "salaryRange": {
+        "min": 95000,
+        "max": 135000,
+        "currency": "USD",
+        "period": "yearly"
+      },
+      "requirements": {
+        "experience": "5+ years",
+        "skills": {
+          "required": [
+            "Digital Marketing",
+            "SEO/SEM",
+            "Analytics",
+            "Content Strategy"
+          ],
+          "preferred": [
+            "Marketing Automation",
+            "Social Media",
+            "Budget Management",
+            "Team Leadership"
+          ]
+        }
+      },
+      "responsibilities": [
+        "Develop and execute comprehensive marketing strategies",
+        "Manage marketing budget and ROI",
+        "Lead and mentor marketing team members",
+        "Analyze campaign performance and optimize",
+        "Collaborate with sales and product teams"
+      ],
+      "department": "Marketing",
+      "priority": "medium",
+      "openings": 1,
+      "filledPositions": 0,
+      "recruiterIds": [],
+      "hiringManagerIds": [],
+      "categoryIds": [],
+      "tagIds": [],
+      "candidateIds": [],
+      "statistics": {
+        "totalApplications": 0,
+        "approvedApplications": 0,
+        "rejectedApplications": 0,
+        "totalCandidates": 0,
+        "activeCandidates": 0,
+        "hiredCandidates": 0,
+        "rejectedCandidates": 0,
+        "interviewingCandidates": 0,
+        "offerExtendedCandidates": 0,
+        "candidatesInPipeline": 0
+      },
+      "createdAt": "2025-10-14T00:00:00.000Z",
+      "updatedAt": "2025-10-21T00:00:00.000Z"
+    },
+    {
+      "id": "job-7",
+      "title": "Backend Engineer - Node.js",
+      "description": "Join our backend team to build scalable APIs and microservices. You'll work with modern technologies and contribute to the architecture of our cloud-based platform.",
+      "clientId": "client-1",
+      "status": "open",
+      "type": "contract",
+      "experienceLevel": "mid",
+      "workMode": "remote",
+      "location": {
+        "city": "Remote",
+        "country": "USA"
+      },
+      "salaryRange": {
+        "min": 80,
+        "max": 120,
+        "currency": "USD",
+        "period": "hourly"
+      },
+      "requirements": {
+        "experience": "3-5 years",
+        "skills": {
+          "required": [
+            "Node.js",
+            "Express",
+            "MongoDB",
+            "REST APIs"
+          ],
+          "preferred": [
+            "GraphQL",
+            "Microservices",
+            "Redis",
+            "Message Queues"
+          ]
+        }
+      },
+      "responsibilities": [
+        "Design and implement RESTful APIs",
+        "Build scalable microservices",
+        "Optimize database queries and performance",
+        "Write comprehensive tests",
+        "Participate in architectural decisions"
+      ],
+      "department": "Engineering",
+      "priority": "medium",
+      "openings": 1,
+      "filledPositions": 0,
+      "recruiterIds": [],
+      "hiringManagerIds": [],
+      "categoryIds": [],
+      "tagIds": [],
+      "candidateIds": [],
+      "statistics": {
+        "totalApplications": 0,
+        "approvedApplications": 0,
+        "rejectedApplications": 0,
+        "totalCandidates": 0,
+        "activeCandidates": 0,
+        "hiredCandidates": 0,
+        "rejectedCandidates": 0,
+        "interviewingCandidates": 0,
+        "offerExtendedCandidates": 0,
+        "candidatesInPipeline": 0
+      },
+      "createdAt": "2025-10-16T00:00:00.000Z",
+      "updatedAt": "2025-10-24T00:00:00.000Z"
     }
   ],
   "candidates": [

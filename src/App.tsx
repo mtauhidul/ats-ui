@@ -1,10 +1,12 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Layout from "./components/layout";
 import DashboardLayout from "./components/dashboard-layout";
+import ProtectedRoute from "./components/protected-route";
 import { Toaster } from "./components/ui/sonner";
 import AuthPage from "./pages/auth";
 import HomePage from "./pages/home";
 import JobsPage from "./pages/jobs";
+import PublicJobDetailPage from "./pages/jobs/detail";
 import DashboardMainPage from "./pages/dashboard/dashboard-main";
 import ClientsPage from "./pages/dashboard/clients";
 import ClientDetailPage from "./pages/dashboard/clients/detail";
@@ -37,9 +39,13 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="auth" element={<AuthPage />} />
           <Route path="jobs" element={<JobsPage />} />
+          <Route path="jobs/:jobId" element={<PublicJobDetailPage />} />
         </Route>
-        <Route path="dashboard" element={<DashboardLayout />}>
-          <Route index element={<DashboardMainPage />} />
+        
+        {/* Protected Dashboard Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="dashboard" element={<DashboardLayout />}>
+            <Route index element={<DashboardMainPage />} />
           
           {/* Clients Routes */}
           <Route path="clients" element={<ClientsPage />} />
@@ -72,6 +78,7 @@ function App() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="help" element={<HelpPage />} />
           <Route path="messages" element={<MessagesPage />} />
+          </Route>
         </Route>
       </Routes>
       <Toaster />
