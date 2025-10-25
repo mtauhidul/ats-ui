@@ -1,4 +1,4 @@
-import { useState } from "react";
+// import { useState } from "react";
 import {
   IconDotsVertical,
   IconLogout,
@@ -34,10 +34,10 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
-  const [isHovered, setIsHovered] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  // const [isHovered, setIsHovered] = useState(false);
+  // const [isOpen, setIsOpen] = useState(false);
 
-  const textColor = (isHovered || isOpen) ? 'rgb(17, 24, 39)' : '';
+  // const textColor = (isHovered || isOpen) ? 'rgb(17, 24, 39)' : '';
 
   return (
     <div className="isolate">

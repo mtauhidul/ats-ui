@@ -1,22 +1,20 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus, Search, Briefcase, Users, TrendingUp, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { JobCard } from "@/components/job-card";
-import { JobDetails } from "@/components/job-details";
 import { AddJobModal } from "@/components/modals/add-job-modal";
-import type { Job, JobStatus, JobType, CreateJobRequest, UpdateJobRequest } from "@/types/job";
+import type { Job, JobStatus, JobType, CreateJobRequest } from "@/types/job";
 import type { Client } from "@/types/client";
-import type { Candidate } from "@/types/candidate";
 import jobsData from "@/lib/mock-data/jobs.json";
 import clientsData from "@/lib/mock-data/clients.json";
-import candidatesData from "@/lib/mock-data/candidates.json";
 import { toast } from "sonner";
 
 export default function DashboardJobsPage() {
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -37,6 +35,7 @@ export default function DashboardJobsPage() {
         ...job.salaryRange,
         period: job.salaryRange.period as "yearly" | "hourly" | "daily" | "monthly",
       } : undefined,
+      applicationIds: job.applicationIds || [],
       createdAt: new Date(job.createdAt),
       updatedAt: new Date(job.updatedAt),
     }))
@@ -56,40 +55,6 @@ export default function DashboardJobsPage() {
     }))
   );
 
-  // Transform candidates data
-  const [candidates] = useState<Candidate[]>(
-    candidatesData.map((candidate) => ({
-      ...candidate,
-      source: candidate.source as Candidate["source"],
-      createdAt: new Date(candidate.createdAt),
-      updatedAt: new Date(candidate.updatedAt),
-      education: candidate.education.map((edu) => ({
-        ...edu,
-        level: edu.level as Candidate["education"][0]["level"],
-        startDate: new Date(edu.startDate),
-        endDate: edu.endDate ? new Date(edu.endDate) : undefined,
-      })),
-      skills: candidate.skills.map((skill) => ({
-        ...skill,
-        level: skill.level as "beginner" | "intermediate" | "advanced" | "expert",
-      })),
-      languages: candidate.languages.map((lang) => ({
-        ...lang,
-        proficiency: lang.proficiency as "basic" | "conversational" | "fluent" | "native",
-      })),
-      jobApplications: candidate.jobApplications.map((app) => ({
-        ...app,
-        status: app.status as Candidate["jobApplications"][0]["status"],
-        appliedAt: new Date(app.appliedAt),
-        lastStatusChange: new Date(app.lastStatusChange),
-      })),
-      workExperience: [],
-      categoryIds: [],
-      tagIds: [],
-      isActive: true,
-    }))
-  );
-
   // Get client name helper
   const getClientName = (clientId: string) => {
     const client = clients.find(c => c.id === clientId);
@@ -103,6 +68,7 @@ export default function DashboardJobsPage() {
       ...data,
       status: "draft",
       filledPositions: 0,
+      applicationIds: [],
       candidateIds: [],
       statistics: {
         totalApplications: 0,
@@ -122,30 +88,6 @@ export default function DashboardJobsPage() {
 
     setJobs([newJob, ...jobs]);
     toast.success("Job created successfully");
-  };
-
-  const handleEditJob = (id: string, data: UpdateJobRequest) => {
-    setJobs(jobs.map(job => {
-      if (job.id === id) {
-        return {
-          ...job,
-          ...data,
-          updatedAt: new Date(),
-        };
-      }
-      return job;
-    }));
-    
-    // Update selectedJob if it's the one being edited
-    if (selectedJob && selectedJob.id === id) {
-      setSelectedJob({
-        ...selectedJob,
-        ...data,
-        updatedAt: new Date(),
-      });
-    }
-    
-    toast.success("Job updated successfully");
   };
 
   // Filter jobs
@@ -192,29 +134,6 @@ export default function DashboardJobsPage() {
     totalOpenings: jobs.reduce((sum, j) => sum + (j.openings || 0), 0),
     filled: jobs.reduce((sum, j) => sum + (j.filledPositions || 0), 0),
   };
-
-  // If viewing job details
-  if (selectedJob) {
-    return (
-      <div className="flex flex-1 flex-col">
-        <div className="@container/main flex flex-1 flex-col gap-2">
-          <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-            <div className="px-4 lg:px-6">
-              <JobDetails
-                job={selectedJob}
-                candidates={candidates}
-                clients={clients}
-                clientName={getClientName(selectedJob.clientId)}
-                onBack={() => setSelectedJob(null)}
-                onCandidateClick={() => {}}
-                onEditJob={handleEditJob}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-1 flex-col">
@@ -427,7 +346,7 @@ export default function DashboardJobsPage() {
                     <JobCard
                       key={job.id}
                       job={job}
-                      onClick={() => setSelectedJob(job)}
+                      onClick={() => navigate(`/dashboard/jobs/${job.id}`)}
                       clientName={getClientName(job.clientId)}
                     />
                   ))}

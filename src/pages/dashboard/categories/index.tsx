@@ -33,7 +33,7 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>(
     categoriesData.map((category) => ({
       ...category,
-      parentId: category.parentId || undefined,
+      parentId: category.parentId ?? undefined,
       createdAt: new Date(category.createdAt),
       updatedAt: new Date(category.updatedAt),
     }))
@@ -114,11 +114,16 @@ export default function CategoriesPage() {
   // Build category tree
   const buildCategoryTree = (
     items: Category[],
-    parentId: string | null = null,
+    parentId: string | null | undefined = null,
     level: number = 0
   ): CategoryTree[] => {
     return items
-      .filter((item) => item.parentId === parentId)
+      .filter((item) => {
+        // Handle both null and undefined as "no parent"
+        const itemParent = item.parentId ?? null;
+        const targetParent = parentId ?? null;
+        return itemParent === targetParent;
+      })
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
       .map((item) => ({
         ...item,
@@ -215,10 +220,10 @@ export default function CategoriesPage() {
                       </span>
                     )}
                     <span
-                      className={`text-xs px-2 py-0.5 rounded ${
+                      className={`text-xs px-2 py-0.5 rounded border ${
                         category.isActive
-                          ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400"
-                          : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                          ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {category.isActive ? "Active" : "Inactive"}
@@ -324,50 +329,40 @@ export default function CategoriesPage() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mt-6">
-                <div className="rounded-lg border bg-gradient-to-br from-card to-muted/20 p-3 shadow-sm">
+              <div className="grid grid-cols-3 gap-3 mt-6">
+                <div className="rounded-lg border bg-card p-3 shadow-sm">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="rounded-md bg-primary/10 p-1.5">
                       <Folder className="h-4 w-4 text-primary" />
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Total
-                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">Total</span>
                   </div>
                   <p className="text-xl font-bold">{categories.length}</p>
                   <p className="text-xs text-muted-foreground">Categories</p>
                 </div>
-                <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
+                <div className="rounded-lg border bg-card p-3 shadow-sm">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="rounded-md bg-green-500/10 p-1.5">
-                      <Folder className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <Folder className="h-4 w-4 text-green-600 dark:text-green-500" />
                     </div>
-                    <span className="text-xs font-medium text-green-700 dark:text-green-400">
-                      Active
-                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">Active</span>
                   </div>
-                  <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                  <p className="text-xl font-bold text-green-600 dark:text-green-500">
                     {activeCategories.length}
                   </p>
-                  <p className="text-xs text-green-600/70 dark:text-green-400/70">
-                    In use
-                  </p>
+                  <p className="text-xs text-muted-foreground">In use</p>
                 </div>
-                <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100/20 dark:from-blue-950/20 dark:to-blue-900/10 p-3 shadow-sm">
+                <div className="rounded-lg border bg-card p-3 shadow-sm">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="rounded-md bg-blue-500/10 p-1.5">
-                      <FolderTree className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <FolderTree className="h-4 w-4 text-blue-600 dark:text-blue-500" />
                     </div>
-                    <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
-                      Parent
-                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">Parent</span>
                   </div>
-                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                  <p className="text-xl font-bold text-blue-600 dark:text-blue-500">
                     {parentCategories.length}
                   </p>
-                  <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
-                    Top level
-                  </p>
+                  <p className="text-xs text-muted-foreground">Top level</p>
                 </div>
               </div>
             </div>
@@ -423,10 +418,10 @@ export default function CategoriesPage() {
 
                     <div className="flex items-center justify-between pt-3 border-t">
                       <span
-                        className={`text-xs px-2 py-0.5 rounded ${
+                        className={`text-xs px-2 py-0.5 rounded border ${
                           category.isActive
-                            ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400"
-                            : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                            ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20"
+                            : "bg-muted text-muted-foreground"
                         }`}
                       >
                         {category.isActive ? "Active" : "Inactive"}

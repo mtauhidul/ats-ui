@@ -32,7 +32,7 @@ export function NavUtilities({
           return (
             <SidebarMenuItem key={item.name}>
               <SidebarMenuButton asChild isActive={isActive}>
-                <Link to={item.url}>
+                <Link to={item.url} className="[&:hover]:!text-black dark:[&:hover]:!text-white [&:hover>svg]:!text-black dark:[&:hover>svg]:!text-white">
                   <item.icon />
                   <span>{item.name}</span>
                 </Link>

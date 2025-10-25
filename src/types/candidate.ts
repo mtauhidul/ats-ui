@@ -160,6 +160,7 @@ export interface Candidate extends BaseEntity {
   jobApplications: CandidatePipeline[]; // Must have at least one entry
   
   // Relations (Database references - stored as IDs)
+  assignedRecruiterId?: string; // Primary recruiter managing this candidate (for UI filtering)
   jobIds: string[]; // MANDATORY: All jobs this candidate has applied to - References to Job collection (at least one)
   applicationIds: string[]; // References to original Application collection (if created from application)
   clientIds: string[]; // All clients this candidate has interacted with (derived from jobs) - References to Client collection

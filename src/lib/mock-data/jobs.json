@@ -21,8 +21,17 @@
     "requirements": {
       "experience": "5+ years",
       "skills": {
-        "required": ["React", "Node.js", "TypeScript", "PostgreSQL"],
-        "preferred": ["AWS", "Docker", "GraphQL"]
+        "required": [
+          "React",
+          "Node.js",
+          "TypeScript",
+          "PostgreSQL"
+        ],
+        "preferred": [
+          "AWS",
+          "Docker",
+          "GraphQL"
+        ]
       }
     },
     "responsibilities": [
@@ -35,11 +44,29 @@
     "priority": "high",
     "openings": 2,
     "filledPositions": 0,
-    "recruiterIds": ["rec-1"],
-    "hiringManagerIds": ["hm-1"],
-    "categoryIds": ["cat-1"],
-    "tagIds": ["tag-1", "tag-2"],
-    "candidateIds": ["cand-1", "cand-2", "cand-3"],
+    "recruiterIds": [
+      "rec-1"
+    ],
+    "hiringManagerIds": [
+      "hm-1"
+    ],
+    "categoryIds": [
+      "cat-1"
+    ],
+    "tagIds": [
+      "tag-1",
+      "tag-2"
+    ],
+    "applicationIds": [
+      "app-001",
+      "app-002",
+      "app-003"
+    ],
+    "candidateIds": [
+      "cand-1",
+      "cand-2",
+      "cand-3"
+    ],
     "statistics": {
       "totalApplications": 3,
       "approvedApplications": 2,
@@ -54,7 +81,8 @@
       "averageTimeToHire": 28
     },
     "createdAt": "2025-10-01T00:00:00.000Z",
-    "updatedAt": "2025-10-20T00:00:00.000Z"
+    "updatedAt": "2025-10-20T00:00:00.000Z",
+    "assignedRecruiterId": "user-1"
   },
   {
     "id": "job-2",
@@ -78,8 +106,16 @@
     "requirements": {
       "experience": "3+ years",
       "skills": {
-        "required": ["AWS", "Kubernetes", "Docker", "CI/CD"],
-        "preferred": ["Terraform", "Ansible"]
+        "required": [
+          "AWS",
+          "Kubernetes",
+          "Docker",
+          "CI/CD"
+        ],
+        "preferred": [
+          "Terraform",
+          "Ansible"
+        ]
       }
     },
     "responsibilities": [
@@ -92,11 +128,24 @@
     "priority": "medium",
     "openings": 1,
     "filledPositions": 0,
-    "recruiterIds": ["rec-1"],
-    "hiringManagerIds": ["hm-2"],
-    "categoryIds": ["cat-1"],
-    "tagIds": ["tag-3"],
-    "candidateIds": ["cand-4"],
+    "recruiterIds": [
+      "rec-1"
+    ],
+    "hiringManagerIds": [
+      "hm-2"
+    ],
+    "categoryIds": [
+      "cat-1"
+    ],
+    "tagIds": [
+      "tag-3"
+    ],
+    "applicationIds": [
+      "app-004"
+    ],
+    "candidateIds": [
+      "cand-4"
+    ],
     "statistics": {
       "totalApplications": 1,
       "approvedApplications": 1,
@@ -110,6 +159,7 @@
       "candidatesInPipeline": 1
     },
     "createdAt": "2025-10-10T00:00:00.000Z",
-    "updatedAt": "2025-10-15T00:00:00.000Z"
+    "updatedAt": "2025-10-15T00:00:00.000Z",
+    "assignedRecruiterId": "user-1"
   }
 ]

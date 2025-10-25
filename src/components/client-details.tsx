@@ -1,5 +1,4 @@
 import { JobCard } from "@/components/job-card";
-import { JobDetails } from "@/components/job-details";
 import { AddCommunicationNoteModal } from "@/components/modals/add-communication-note-modal";
 import { AddContactModal } from "@/components/modals/add-contact-modal";
 import { AddJobModal } from "@/components/modals/add-job-modal";
@@ -60,6 +59,7 @@ interface ClientDetailsProps {
   onUpdate: (clientId: string, updates: Partial<Client>) => void;
   onDelete: (clientId: string) => void;
   onAddJob?: (job: CreateJobRequest) => void;
+  onJobClick?: (jobId: string) => void;
 }
 
 const statusColors = {
@@ -97,21 +97,21 @@ const industryColors = {
 export function ClientDetails({
   client,
   jobs,
-  candidates,
+  // candidates, // Reserved for future use
   onBack,
   onUpdate,
   onDelete,
   onAddJob,
+  onJobClick,
 }: ClientDetailsProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [isAddNoteOpen, setIsAddNoteOpen] = useState(false);
   const [isEditClientOpen, setIsEditClientOpen] = useState(false);
   const [isAddJobOpen, setIsAddJobOpen] = useState(false);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
-    null
-  );
+  // const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
+  //   null
+  // );
   const primaryContact = client.contacts.find((c) => c.isPrimary);
 
   // Filter jobs for this client
@@ -127,20 +127,6 @@ export function ClientDetails({
       toast.success("Job created successfully");
     }
   };
-
-  // If viewing job details
-  if (selectedJob) {
-    return (
-      <JobDetails
-        job={selectedJob}
-        candidates={candidates}
-        clients={clientsList}
-        clientName={client.companyName}
-        onBack={() => setSelectedJob(null)}
-        onCandidateClick={(candidate) => setSelectedCandidate(candidate)}
-      />
-    );
-  }
 
   const handleAddContact = (data: CreateContactRequest) => {
     const newContact: ContactPerson = {
@@ -709,7 +695,7 @@ export function ClientDetails({
                 <JobCard
                   key={job.id}
                   job={job}
-                  onClick={() => setSelectedJob(job)}
+                  onClick={() => onJobClick?.(job.id)}
                   clientName={client.companyName}
                 />
               ))}

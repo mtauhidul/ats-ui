@@ -137,7 +137,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "type",
+    accessorKey: "jobIdDisplay",
     header: ({ column }) => {
       return (
         <Button
@@ -156,7 +156,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     },
     cell: ({ row }) => (
       <div className="w-24">
-        <span className="text-sm">{row.original.type}</span>
+        <span className="text-sm font-mono">{row.original.jobIdDisplay}</span>
       </div>
     ),
     filterFn: (row, id, value) => {
@@ -229,7 +229,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       </Button>
     ),
     cell: ({ row }) => {
-      const stage = row.original.dateApplied || "Not Started";
+      const stage = row.original.currentStage || "Not Started";
 
       // Define stage colors
       const getStageColor = (stage: string) => {
@@ -283,7 +283,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       </Button>
     ),
     cell: ({ row }) => {
-      const clientName = row.original.jobIdDisplay || "-";
+      const clientName = row.original.clientName || "-";
       const clientLogo = row.original.clientLogo;
 
       return (
@@ -584,7 +584,6 @@ export function CandidatesDataTable({
         row.original.jobIdDisplay,
         row.original.currentTitle,
         row.original.currentCompany,
-        row.original.type,
         row.original.dateApplied,
         row.original.location,
         row.original.educationLevel,
@@ -934,9 +933,9 @@ export function CandidatesDataTable({
                   Name
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
-                  checked={table.getColumn("type")?.getIsVisible()}
+                  checked={table.getColumn("jobIdDisplay")?.getIsVisible()}
                   onCheckedChange={(value) =>
-                    table.getColumn("type")?.toggleVisibility(!!value)
+                    table.getColumn("jobIdDisplay")?.toggleVisibility(!!value)
                   }
                 >
                   Job ID

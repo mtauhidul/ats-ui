@@ -125,9 +125,97 @@
     "name": "Design",
     "description": "Design and creative positions",
     "parentId": null,
-    "isActive": false,
+    "isActive": true,
     "color": "#a855f7",
     "sortOrder": 8,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-13",
+    "name": "UI/UX Design",
+    "description": "User interface and experience design roles",
+    "parentId": "cat-12",
+    "isActive": true,
+    "color": "#a855f7",
+    "sortOrder": 1,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-14",
+    "name": "Data Science",
+    "description": "Data science and analytics positions",
+    "parentId": "cat-1",
+    "isActive": true,
+    "color": "#3b82f6",
+    "sortOrder": 3,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-15",
+    "name": "Product Management",
+    "description": "Product management and strategy roles",
+    "parentId": null,
+    "isActive": true,
+    "color": "#f59e0b",
+    "sortOrder": 9,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-16",
+    "name": "Legal",
+    "description": "Legal and compliance positions",
+    "parentId": null,
+    "isActive": true,
+    "color": "#64748b",
+    "sortOrder": 10,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-17",
+    "name": "Content Marketing",
+    "description": "Content creation and marketing roles",
+    "parentId": "cat-6",
+    "isActive": true,
+    "color": "#f59e0b",
+    "sortOrder": 2,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-18",
+    "name": "Sales Engineering",
+    "description": "Technical sales and pre-sales roles",
+    "parentId": "cat-8",
+    "isActive": true,
+    "color": "#ef4444",
+    "sortOrder": 1,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-19",
+    "name": "Business Development",
+    "description": "Business development and partnerships",
+    "parentId": "cat-8",
+    "isActive": true,
+    "color": "#ef4444",
+    "sortOrder": 2,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z"
+  },
+  {
+    "id": "cat-20",
+    "name": "Executive",
+    "description": "C-level and executive positions",
+    "parentId": null,
+    "isActive": true,
+    "color": "#dc2626",
+    "sortOrder": 11,
     "createdAt": "2024-01-01T10:00:00Z",
     "updatedAt": "2024-01-01T10:00:00Z"
   }

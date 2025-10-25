@@ -45,6 +45,7 @@ interface JobKanbanBoardProps {
   onCandidateClick: (candidate: Candidate) => void;
   onStatusChange: (candidateId: string, newStageId: string) => void;
   onStageUpdate?: (stage: PipelineStage) => void;
+  containerRef?: React.RefObject<HTMLDivElement>;
 }
 
 export function JobKanbanBoard({

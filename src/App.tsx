@@ -7,14 +7,19 @@ import HomePage from "./pages/home";
 import JobsPage from "./pages/jobs";
 import DashboardMainPage from "./pages/dashboard/dashboard-main";
 import ClientsPage from "./pages/dashboard/clients";
+import ClientDetailPage from "./pages/dashboard/clients/detail";
 import CandidatesPage from "./pages/dashboard/candidates";
 import CandidateDetailsPage from "./pages/dashboard/candidates/details";
+import QuickImportPage from "./pages/dashboard/candidates/quick-import";
 import ApplicationsPage from "./pages/dashboard/applications";
 import TeamPage from "./pages/dashboard/team";
-import AnalyticsPage from "./pages/dashboard/analytics";
+import TeamMemberDetailPage from "./pages/dashboard/team/detail";
 import DashboardJobsPage from "./pages/dashboard/jobs";
+import JobDetailPage from "./pages/dashboard/jobs/detail";
+import JobCandidateDetailPage from "./pages/dashboard/jobs/candidate-detail";
 import JobPipelinePage from "./pages/dashboard/jobs/pipeline";
-import JobCandidateCommunicationPage from "./pages/dashboard/jobs/candidate-communication";
+import InterviewPage from "./pages/dashboard/jobs/interview";
+// import JobCandidateCommunicationPage from "./pages/dashboard/jobs/candidate-communication";
 import TagsPage from "./pages/dashboard/tags";
 import CategoriesPage from "./pages/dashboard/categories";
 import AccountPage from "./pages/dashboard/account";
@@ -35,14 +40,30 @@ function App() {
         </Route>
         <Route path="dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardMainPage />} />
+          
+          {/* Clients Routes */}
           <Route path="clients" element={<ClientsPage />} />
+          <Route path="clients/:clientId" element={<ClientDetailPage />} />
+          <Route path="clients/:clientId/jobs/:jobId" element={<JobDetailPage />} />
+          <Route path="clients/:clientId/jobs/:jobId/candidates/:candidateId" element={<JobCandidateDetailPage />} />
+          <Route path="clients/:clientId/jobs/:jobId/candidates/:candidateId/interviews" element={<InterviewPage />} />
+          
+          {/* Jobs Routes */}
           <Route path="jobs" element={<DashboardJobsPage />} />
+          <Route path="jobs/:jobId" element={<JobDetailPage />} />
+          <Route path="jobs/:jobId/candidates/:candidateId" element={<JobCandidateDetailPage />} />
+          <Route path="jobs/:jobId/candidates/:candidateId/interviews" element={<InterviewPage />} />
           <Route path="jobs/pipeline/:jobId" element={<JobPipelinePage />} />
+          
+          {/* Candidates Routes */}
           <Route path="candidates" element={<CandidatesPage />} />
+          <Route path="candidates/quick-import" element={<QuickImportPage />} />
           <Route path="candidates/:candidateId" element={<CandidateDetailsPage />} />
+          
+          {/* Other Routes */}
           <Route path="applications" element={<ApplicationsPage />} />
           <Route path="team" element={<TeamPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="team/:memberId" element={<TeamMemberDetailPage />} />
           <Route path="tags" element={<TagsPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="account" element={<AccountPage />} />

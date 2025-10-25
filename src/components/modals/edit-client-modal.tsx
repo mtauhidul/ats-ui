@@ -34,7 +34,7 @@ export function EditClientModal({ open, onClose, onSubmit, client }: EditClientM
     },
   });
   const [logoPreview, setLogoPreview] = useState<string>(client.logo || "");
-  const [logoFile, setLogoFile] = useState<File | null>(null);
+  // const [logoFile, setLogoFile] = useState<File | null>(null);
 
   useEffect(() => {
     setFormData({
@@ -55,13 +55,13 @@ export function EditClientModal({ open, onClose, onSubmit, client }: EditClientM
       },
     });
     setLogoPreview(client.logo || "");
-    setLogoFile(null);
+    // setLogoFile(null);
   }, [client]);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setLogoFile(file);
+      // setLogoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result as string);
@@ -71,7 +71,7 @@ export function EditClientModal({ open, onClose, onSubmit, client }: EditClientM
   };
 
   const handleRemoveLogo = () => {
-    setLogoFile(null);
+    // setLogoFile(null);
     setLogoPreview("");
   };
 

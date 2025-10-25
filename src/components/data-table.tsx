@@ -18,27 +18,24 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  IconArrowsSort,
+  IconCheck,
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
   IconCircleCheckFilled,
-  IconDotsVertical,
+  IconClockHour4,
   IconFileText,
-  IconGripVertical,
+  IconFilter,
   IconLayoutColumns,
   IconLoader,
-  IconCheck,
-  IconX,
-  IconDownload,
   IconSearch,
-  IconFilter,
-  IconArrowsSort,
-  IconUsers,
-  IconClockHour4,
   IconUserCheck,
+  IconUsers,
   IconUserX,
+  IconX,
 } from "@tabler/icons-react";
 import {
   flexRender,
@@ -99,36 +96,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { schema } from "./data-table-schema";
 
-// Create a separate component for the drag handle
-// Create a separate component for the drag handle
-function DragHandle({ id }: { id: number }) {
-  const { attributes, listeners } = useSortable({
-    id,
-  });
-
-  return (
-    <Button
-      {...attributes}
-      {...listeners}
-      variant="ghost"
-      size="icon"
-      className="text-muted-foreground size-7 hover:bg-transparent"
-    >
-      <IconGripVertical className="text-muted-foreground size-3" />
-      <span className="sr-only">Drag to reorder</span>
-    </Button>
-  );
-}
-
 const columns: ColumnDef<z.infer<typeof schema>>[] = [
-  {
-    id: "drag",
-    header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original.id} />,
-  },
   {
     id: "select",
     header: ({ table }) => (
@@ -169,7 +146,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "type",
-    header: "AI Recommendation",
+    header: "AI Check",
     cell: ({ row }) => (
       <div className="w-28">
         <Badge
@@ -236,7 +213,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     header: () => <div className="w-full text-left">Job ID</div>,
     cell: ({ row }) => {
       return (
-        <div className="text-left text-sm w-24">
+        <div className="text-left text-sm w-24 font-mono">
           {row.original.jobIdDisplay || "-"}
         </div>
       );
@@ -244,45 +221,54 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "reviewer",
-    header: "Reviewer",
+    header: "Team",
     cell: ({ row }) => {
-      const isAssigned =
-        row.original.reviewer !== "Unassigned" &&
-        row.original.reviewer !== "Assign reviewer";
+      const teamMembers = row.original.teamMembers || [];
+      const hasTeamMembers = teamMembers.length > 0;
 
       return (
-        <div className="w-40">
-          <Label htmlFor={`${row.original.id}-reviewer`} className="sr-only">
-            Reviewer
-          </Label>
-          <Select
-            defaultValue={isAssigned ? row.original.reviewer : undefined}
-            onValueChange={(value) => {
-              // Update the reviewer in the data
-              console.log(
-                `Assigning reviewer ${value} to application ${row.original.id}`
-              );
-              // In a real app, this would update the backend/state
-            }}
-          >
-            <SelectTrigger
-              className="w-full **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
-              size="sm"
-              id={`${row.original.id}-reviewer`}
+        <div className="w-48">
+          {hasTeamMembers ? (
+            <div className="flex flex-wrap gap-1">
+              {teamMembers.slice(0, 2).map((member: string, index: number) => (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="text-xs px-2 py-0.5"
+                >
+                  {member}
+                </Badge>
+              ))}
+              {teamMembers.length > 2 && (
+                <Badge variant="outline" className="text-xs px-2 py-0.5">
+                  +{teamMembers.length - 2}
+                </Badge>
+              )}
+            </div>
+          ) : (
+            <Select
+              defaultValue="assign"
+              onValueChange={(value) => {
+                console.log(
+                  `Assigning ${value} to application ${row.original.id}`
+                );
+              }}
             >
-              <SelectValue placeholder="Assign Reviewer" />
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value="Assign Reviewer" disabled>
-                Assign Reviewer
-              </SelectItem>
-              <SelectItem value="John Smith">John Smith</SelectItem>
-              <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
-              <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
-              <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
-              <SelectItem value="Tom Davis">Tom Davis</SelectItem>
-            </SelectContent>
-          </Select>
+              <SelectTrigger className="w-full h-7 text-xs" size="sm">
+                <SelectValue placeholder="Assign Team" />
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value="assign" disabled>
+                  Assign Team
+                </SelectItem>
+                <SelectItem value="John Smith">John Smith</SelectItem>
+                <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
+                <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
+                <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
+                <SelectItem value="Tom Davis">Tom Davis</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
       );
     },
@@ -297,59 +283,42 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 const createActionsColumn = (handlers: {
   onApprove: (id: number) => void;
   onReject: (id: number) => void;
-  onAssignReviewer: (id: number) => void;
-  onDownloadResume: (id: number) => void;
-  onDelete: (id: number) => void;
 }): ColumnDef<z.infer<typeof schema>> => ({
   id: "actions",
+  header: "Actions",
   cell: ({ row }) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-          size="icon"
-        >
-          <IconDotsVertical />
-          <span className="sr-only">Open menu</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <div className="px-2 py-1.5 text-xs font-semibold text-primary-foreground bg-primary">
-          ID #{row.original.id}
-        </div>
-        <DropdownMenuItem 
-          onClick={() => handlers.onApprove(row.original.id)}
-          disabled={row.original.status === "Approved"}
-        >
-          <IconCheck className="h-3 w-3 mr-2 text-green-600" />
-          Approve
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => handlers.onReject(row.original.id)}
-          disabled={row.original.status === "Rejected"}
-        >
-          <IconX className="h-3 w-3 mr-2 text-red-600" />
-          Reject
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => handlers.onAssignReviewer(row.original.id)}>
-          <IconUserCheck className="h-3 w-3 mr-2" />
-          Assign Reviewer
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handlers.onDownloadResume(row.original.id)}>
-          <IconDownload className="h-3 w-3 mr-2" />
-          Download Resume
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          variant="destructive"
-          onClick={() => handlers.onDelete(row.original.id)}
-        >
-          Delete Application
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <TooltipProvider>
+      <div className="flex items-center gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
+              onClick={() => handlers.onApprove(row.original.id)}
+              disabled={row.original.status === "Done"}
+            >
+              <IconCheck className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Approve Application</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+              onClick={() => handlers.onReject(row.original.id)}
+              disabled={row.original.status === "Rejected"}
+            >
+              <IconX className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Reject Application</TooltipContent>
+        </Tooltip>
+      </div>
+    </TooltipProvider>
   ),
 });
 
@@ -405,9 +374,11 @@ export function DataTable({
 
   // Bulk action handlers
   const handleBulkApprove = () => {
-    const selectedIds = table.getFilteredSelectedRowModel().rows.map(r => r.original.id);
-    setData(prevData => 
-      prevData.map(item => 
+    const selectedIds = table
+      .getFilteredSelectedRowModel()
+      .rows.map((r) => r.original.id);
+    setData((prevData) =>
+      prevData.map((item) =>
         selectedIds.includes(item.id) ? { ...item, status: "Approved" } : item
       )
     );
@@ -415,80 +386,32 @@ export function DataTable({
   };
 
   const handleBulkReject = () => {
-    const selectedIds = table.getFilteredSelectedRowModel().rows.map(r => r.original.id);
-    setData(prevData => 
-      prevData.map(item => 
+    const selectedIds = table
+      .getFilteredSelectedRowModel()
+      .rows.map((r) => r.original.id);
+    setData((prevData) =>
+      prevData.map((item) =>
         selectedIds.includes(item.id) ? { ...item, status: "Rejected" } : item
       )
     );
     table.resetRowSelection();
   };
 
-  const handleBulkAssignReviewer = () => {
-    const selectedIds = table.getFilteredSelectedRowModel().rows.map(r => r.original.id);
-    // In real app, this would open a modal to select reviewer
-    const reviewer = prompt("Enter reviewer name:");
-    if (reviewer) {
-      setData(prevData => 
-        prevData.map(item => 
-          selectedIds.includes(item.id) ? { ...item, reviewer } : item
-        )
-      );
-      table.resetRowSelection();
-    }
-  };
-
-  const handleBulkExport = () => {
-    const selectedData = table.getFilteredSelectedRowModel().rows.map(r => r.original);
-    console.log("Exporting data:", selectedData);
-    // In real app, this would trigger file download
-    alert(`Exporting ${selectedData.length} applications`);
-  };
-
   // Individual action handlers
   const handleApprove = (id: number) => {
-    setData(prevData => 
-      prevData.map(item => 
+    setData((prevData) =>
+      prevData.map((item) =>
         item.id === id ? { ...item, status: "Approved" } : item
       )
     );
   };
 
   const handleReject = (id: number) => {
-    setData(prevData => 
-      prevData.map(item => 
+    setData((prevData) =>
+      prevData.map((item) =>
         item.id === id ? { ...item, status: "Rejected" } : item
       )
     );
-  };
-
-  const handleAssignReviewer = (id: number) => {
-    const reviewer = prompt("Enter reviewer name:");
-    if (reviewer) {
-      setData(prevData => 
-        prevData.map(item => 
-          item.id === id ? { ...item, reviewer } : item
-        )
-      );
-    }
-  };
-
-  const handleDownloadResume = (id: number) => {
-    const application = data.find(item => item.id === id);
-    if (application?.resumeFilename) {
-      const link = document.createElement('a');
-      link.href = `/uploads/resumes/${application.resumeFilename}`;
-      link.download = application.resumeFilename;
-      link.click();
-    } else {
-      alert("No resume file available");
-    }
-  };
-
-  const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this application?")) {
-      setData(prevData => prevData.filter(item => item.id !== id));
-    }
   };
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
@@ -502,9 +425,6 @@ export function DataTable({
     const actionsColumn = createActionsColumn({
       onApprove: handleApprove,
       onReject: handleReject,
-      onAssignReviewer: handleAssignReviewer,
-      onDownloadResume: handleDownloadResume,
-      onDelete: handleDelete,
     });
     return [...baseColumns, actionsColumn];
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -547,8 +467,8 @@ export function DataTable({
         row.original.currentTitle,
         row.original.currentCompany,
       ];
-      
-      return searchFields.some(field => 
+
+      return searchFields.some((field) =>
         field?.toString().toLowerCase().includes(searchValue)
       );
     },
@@ -566,11 +486,19 @@ export function DataTable({
   }
 
   // Calculate statistics from filtered data
-  const filteredData = table.getFilteredRowModel().rows.map(row => row.original);
+  const filteredData = table
+    .getFilteredRowModel()
+    .rows.map((row) => row.original);
   const totalApplications = filteredData.length;
-  const approvedCount = filteredData.filter(item => item.status === "Approved").length;
-  const rejectedCount = filteredData.filter(item => item.status === "Rejected").length;
-  const inProcessCount = filteredData.filter(item => item.status === "In Process").length;
+  const approvedCount = filteredData.filter(
+    (item) => item.status === "Approved"
+  ).length;
+  const rejectedCount = filteredData.filter(
+    (item) => item.status === "Rejected"
+  ).length;
+  const inProcessCount = filteredData.filter(
+    (item) => item.status === "In Process"
+  ).length;
 
   return (
     <Tabs
@@ -585,7 +513,9 @@ export function DataTable({
               <div className="rounded-md bg-primary/10 p-1.5">
                 <IconUsers className="h-4 w-4 text-primary" />
               </div>
-              <span className="text-xs font-medium text-muted-foreground">Total</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                Total
+              </span>
             </div>
             <p className="text-xl font-bold">{totalApplications}</p>
             <p className="text-xs text-muted-foreground">Applications</p>
@@ -595,11 +525,18 @@ export function DataTable({
               <div className="rounded-md bg-green-500/10 p-1.5">
                 <IconUserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
               </div>
-              <span className="text-xs font-medium text-green-700 dark:text-green-400">Approved</span>
+              <span className="text-xs font-medium text-green-700 dark:text-green-400">
+                Approved
+              </span>
             </div>
-            <p className="text-xl font-bold text-green-600 dark:text-green-400">{approvedCount}</p>
+            <p className="text-xl font-bold text-green-600 dark:text-green-400">
+              {approvedCount}
+            </p>
             <p className="text-xs text-green-600/70 dark:text-green-400/70">
-              {totalApplications > 0 ? Math.round((approvedCount / totalApplications) * 100) : 0}% of total
+              {totalApplications > 0
+                ? Math.round((approvedCount / totalApplications) * 100)
+                : 0}
+              % of total
             </p>
           </div>
           <div className="rounded-lg border bg-gradient-to-br from-red-50 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10 p-3 shadow-sm">
@@ -607,11 +544,18 @@ export function DataTable({
               <div className="rounded-md bg-red-500/10 p-1.5">
                 <IconUserX className="h-4 w-4 text-red-600 dark:text-red-400" />
               </div>
-              <span className="text-xs font-medium text-red-700 dark:text-red-400">Rejected</span>
+              <span className="text-xs font-medium text-red-700 dark:text-red-400">
+                Rejected
+              </span>
             </div>
-            <p className="text-xl font-bold text-red-600 dark:text-red-400">{rejectedCount}</p>
+            <p className="text-xl font-bold text-red-600 dark:text-red-400">
+              {rejectedCount}
+            </p>
             <p className="text-xs text-red-600/70 dark:text-red-400/70">
-              {totalApplications > 0 ? Math.round((rejectedCount / totalApplications) * 100) : 0}% of total
+              {totalApplications > 0
+                ? Math.round((rejectedCount / totalApplications) * 100)
+                : 0}
+              % of total
             </p>
           </div>
           <div className="rounded-lg border bg-gradient-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
@@ -619,11 +563,18 @@ export function DataTable({
               <div className="rounded-md bg-amber-500/10 p-1.5">
                 <IconClockHour4 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               </div>
-              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Pending</span>
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                Pending
+              </span>
             </div>
-            <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{inProcessCount}</p>
+            <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+              {inProcessCount}
+            </p>
             <p className="text-xs text-amber-600/70 dark:text-amber-400/70">
-              {totalApplications > 0 ? Math.round((inProcessCount / totalApplications) * 100) : 0}% of total
+              {totalApplications > 0
+                ? Math.round((inProcessCount / totalApplications) * 100)
+                : 0}
+              % of total
             </p>
           </div>
         </div>
@@ -642,7 +593,7 @@ export function DataTable({
               />
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {/* Bulk Actions - Show when rows are selected */}
             {table.getFilteredSelectedRowModel().rows.length > 0 && (
@@ -667,16 +618,7 @@ export function DataTable({
                       Reject Selected
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleBulkAssignReviewer}>
-                      <IconUserCheck className="h-4 w-4 mr-2" />
-                      Assign Reviewer
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleBulkExport}>
-                      <IconDownload className="h-4 w-4 mr-2" />
-                      Export Selected
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => table.resetRowSelection()}
                       className="text-muted-foreground"
                     >
@@ -693,7 +635,10 @@ export function DataTable({
                   <IconFilter className="h-4 w-4" />
                   <span className="hidden sm:inline">Filter</span>
                   {columnFilters.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 h-5 w-5 rounded-full p-0 text-xs"
+                    >
                       {columnFilters.length}
                     </Badge>
                   )}
@@ -701,23 +646,33 @@ export function DataTable({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <div className="px-2 py-1.5 text-xs font-semibold">Filter by Status</div>
+                <div className="px-2 py-1.5 text-xs font-semibold">
+                  Filter by Status
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuCheckboxItem
-                  checked={!columnFilters.find(f => f.id === "status")}
+                  checked={!columnFilters.find((f) => f.id === "status")}
                   onCheckedChange={() => {
-                    setColumnFilters(prev => prev.filter(f => f.id !== "status"));
+                    setColumnFilters((prev) =>
+                      prev.filter((f) => f.id !== "status")
+                    );
                   }}
                 >
                   All Statuses
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
-                  checked={columnFilters.find(f => f.id === "status")?.value === "Approved"}
+                  checked={
+                    columnFilters.find((f) => f.id === "status")?.value ===
+                    "Approved"
+                  }
                   onCheckedChange={(checked) => {
-                    setColumnFilters(prev => 
-                      checked 
-                        ? [...prev.filter(f => f.id !== "status"), { id: "status", value: "Approved" }]
-                        : prev.filter(f => f.id !== "status")
+                    setColumnFilters((prev) =>
+                      checked
+                        ? [
+                            ...prev.filter((f) => f.id !== "status"),
+                            { id: "status", value: "Approved" },
+                          ]
+                        : prev.filter((f) => f.id !== "status")
                     );
                   }}
                 >
@@ -725,12 +680,18 @@ export function DataTable({
                   Approved
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
-                  checked={columnFilters.find(f => f.id === "status")?.value === "In Process"}
+                  checked={
+                    columnFilters.find((f) => f.id === "status")?.value ===
+                    "In Process"
+                  }
                   onCheckedChange={(checked) => {
-                    setColumnFilters(prev => 
-                      checked 
-                        ? [...prev.filter(f => f.id !== "status"), { id: "status", value: "In Process" }]
-                        : prev.filter(f => f.id !== "status")
+                    setColumnFilters((prev) =>
+                      checked
+                        ? [
+                            ...prev.filter((f) => f.id !== "status"),
+                            { id: "status", value: "In Process" },
+                          ]
+                        : prev.filter((f) => f.id !== "status")
                     );
                   }}
                 >
@@ -738,12 +699,18 @@ export function DataTable({
                   In Process
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
-                  checked={columnFilters.find(f => f.id === "status")?.value === "Rejected"}
+                  checked={
+                    columnFilters.find((f) => f.id === "status")?.value ===
+                    "Rejected"
+                  }
                   onCheckedChange={(checked) => {
-                    setColumnFilters(prev => 
-                      checked 
-                        ? [...prev.filter(f => f.id !== "status"), { id: "status", value: "Rejected" }]
-                        : prev.filter(f => f.id !== "status")
+                    setColumnFilters((prev) =>
+                      checked
+                        ? [
+                            ...prev.filter((f) => f.id !== "status"),
+                            { id: "status", value: "Rejected" },
+                          ]
+                        : prev.filter((f) => f.id !== "status")
                     );
                   }}
                 >
@@ -751,23 +718,33 @@ export function DataTable({
                   Rejected
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuSeparator />
-                <div className="px-2 py-1.5 text-xs font-semibold">Filter by AI</div>
+                <div className="px-2 py-1.5 text-xs font-semibold">
+                  Filter by AI
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuCheckboxItem
-                  checked={!columnFilters.find(f => f.id === "type")}
+                  checked={!columnFilters.find((f) => f.id === "type")}
                   onCheckedChange={() => {
-                    setColumnFilters(prev => prev.filter(f => f.id !== "type"));
+                    setColumnFilters((prev) =>
+                      prev.filter((f) => f.id !== "type")
+                    );
                   }}
                 >
                   All AI Results
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
-                  checked={columnFilters.find(f => f.id === "type")?.value === "valid"}
+                  checked={
+                    columnFilters.find((f) => f.id === "type")?.value ===
+                    "valid"
+                  }
                   onCheckedChange={(checked) => {
-                    setColumnFilters(prev => 
-                      checked 
-                        ? [...prev.filter(f => f.id !== "type"), { id: "type", value: "valid" }]
-                        : prev.filter(f => f.id !== "type")
+                    setColumnFilters((prev) =>
+                      checked
+                        ? [
+                            ...prev.filter((f) => f.id !== "type"),
+                            { id: "type", value: "valid" },
+                          ]
+                        : prev.filter((f) => f.id !== "type")
                     );
                   }}
                 >
@@ -775,12 +752,18 @@ export function DataTable({
                   AI Approved
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
-                  checked={columnFilters.find(f => f.id === "type")?.value === "invalid"}
+                  checked={
+                    columnFilters.find((f) => f.id === "type")?.value ===
+                    "invalid"
+                  }
                   onCheckedChange={(checked) => {
-                    setColumnFilters(prev => 
-                      checked 
-                        ? [...prev.filter(f => f.id !== "type"), { id: "type", value: "invalid" }]
-                        : prev.filter(f => f.id !== "type")
+                    setColumnFilters((prev) =>
+                      checked
+                        ? [
+                            ...prev.filter((f) => f.id !== "type"),
+                            { id: "type", value: "invalid" },
+                          ]
+                        : prev.filter((f) => f.id !== "type")
                     );
                   }}
                 >
@@ -810,22 +793,40 @@ export function DataTable({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => setSorting([{ id: "header", desc: false }])}>
+                <DropdownMenuItem
+                  onClick={() => setSorting([{ id: "header", desc: false }])}
+                >
                   Name (A → Z)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSorting([{ id: "header", desc: true }])}>
+                <DropdownMenuItem
+                  onClick={() => setSorting([{ id: "header", desc: true }])}
+                >
                   Name (Z → A)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSorting([{ id: "dateApplied", desc: true }])}>
+                <DropdownMenuItem
+                  onClick={() =>
+                    setSorting([{ id: "dateApplied", desc: true }])
+                  }
+                >
                   Date (Newest)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSorting([{ id: "dateApplied", desc: false }])}>
+                <DropdownMenuItem
+                  onClick={() =>
+                    setSorting([{ id: "dateApplied", desc: false }])
+                  }
+                >
                   Date (Oldest)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSorting([{ id: "status", desc: false }])}>
+                <DropdownMenuItem
+                  onClick={() => setSorting([{ id: "status", desc: false }])}
+                >
                   Status (A → Z)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSorting([{ id: "jobIdDisplay", desc: false }])}>
+                <DropdownMenuItem
+                  onClick={() =>
+                    setSorting([{ id: "jobIdDisplay", desc: false }])
+                  }
+                >
                   Job ID (Low → High)
                 </DropdownMenuItem>
                 {sorting.length > 0 && (
@@ -851,7 +852,9 @@ export function DataTable({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <div className="px-2 py-1.5 text-xs font-semibold">Toggle Columns</div>
+                <div className="px-2 py-1.5 text-xs font-semibold">
+                  Toggle Columns
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuCheckboxItem
                   checked={table.getColumn("header")?.getIsVisible()}
@@ -1059,26 +1062,32 @@ export function DataTable({
   );
 }
 
-
-
 function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   const isMobile = useIsMobile();
   const [showResumePreview, setShowResumePreview] = React.useState(false);
   const [showJobAssignDialog, setShowJobAssignDialog] = React.useState(false);
-  const [selectedJobId, setSelectedJobId] = React.useState<string>(item.jobIdDisplay || "");
+  const [selectedJobId, setSelectedJobId] = React.useState<string>(
+    item.jobIdDisplay || ""
+  );
   const [searchQuery, setSearchQuery] = React.useState("");
 
   // Load jobs data
-  const [jobs, setJobs] = React.useState<Array<{ id: string; title: string; clientId: string }>>([]);
+  const [jobs, setJobs] = React.useState<
+    Array<{ id: string; title: string; clientId: string }>
+  >([]);
 
   React.useEffect(() => {
     // Load jobs from mock data
     import("@/lib/mock-data/jobs.json").then((data) => {
-      setJobs(data.default.map((job: { id: string; title: string; clientId: string }) => ({
-        id: job.id,
-        title: job.title,
-        clientId: job.clientId
-      })));
+      setJobs(
+        data.default.map(
+          (job: { id: string; title: string; clientId: string }) => ({
+            id: job.id,
+            title: job.title,
+            clientId: job.clientId,
+          })
+        )
+      );
     });
   }, []);
 
@@ -1086,15 +1095,16 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   const filteredJobs = React.useMemo(() => {
     if (!searchQuery) return jobs;
     const query = searchQuery.toLowerCase();
-    return jobs.filter(job => 
-      job.title.toLowerCase().includes(query) || 
-      job.id.toLowerCase().includes(query)
+    return jobs.filter(
+      (job) =>
+        job.title.toLowerCase().includes(query) ||
+        job.id.toLowerCase().includes(query)
     );
   }, [jobs, searchQuery]);
 
   // Auto-hide resume preview when drawer closes
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
-  
+
   React.useEffect(() => {
     if (!isDrawerOpen && showResumePreview) {
       setShowResumePreview(false);
@@ -1104,15 +1114,15 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   // Helper function to get status badge
   const getStatusBadge = (status: string) => {
     const statusLower = status.toLowerCase();
-    
-    if (statusLower === 'approved') {
+
+    if (statusLower === "approved") {
       return (
         <Badge className="bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-400 border-green-500/20 hover:bg-green-500/20">
           <IconCircleCheckFilled className="h-3 w-3 mr-1" />
           Approved
         </Badge>
       );
-    } else if (statusLower === 'rejected') {
+    } else if (statusLower === "rejected") {
       return (
         <Badge className="bg-red-500/10 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-500/20 hover:bg-red-500/20">
           <IconX className="h-3 w-3 mr-1" />
@@ -1131,7 +1141,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 
   // Helper function to get AI status badge
   const getAIStatusBadge = (type: string) => {
-    const isValid = type === 'valid';
+    const isValid = type === "valid";
     return isValid ? (
       <Badge className="bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-400 border-green-500/20 hover:bg-green-500/20">
         <IconCircleCheckFilled className="h-3 w-3 mr-1" />
@@ -1146,7 +1156,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   };
 
   return (
-    <Drawer 
+    <Drawer
       direction={isMobile ? "bottom" : "right"}
       onOpenChange={setIsDrawerOpen}
     >
@@ -1162,20 +1172,25 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
             Review and manage applicant information
           </DrawerDescription>
         </DrawerHeader>
-        
+
         <div className="flex flex-col gap-5 overflow-y-auto px-6 py-5">
           {/* Applicant Header Card */}
           <div className="flex items-start gap-4 rounded-lg border bg-muted/30 p-4">
             <Avatar className="h-14 w-14 border-2 rounded-lg">
               <AvatarImage src={item.photo || ""} className="object-cover" />
               <AvatarFallback className="text-base font-semibold">
-                {item.header.split(' ').map(n => n[0]).join('')}
+                {item.header
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <h3 className="text-base font-semibold mb-1">{item.header}</h3>
               {item.email && (
-                <p className="text-sm text-muted-foreground truncate mb-0.5">{item.email}</p>
+                <p className="text-sm text-muted-foreground truncate mb-0.5">
+                  {item.email}
+                </p>
               )}
               {item.phone && (
                 <p className="text-xs text-muted-foreground">{item.phone}</p>
@@ -1190,27 +1205,44 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           {/* Quick Info Grid */}
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg border bg-card p-3">
-              <Label className="text-xs text-muted-foreground">Date Applied</Label>
-              <p className="text-sm font-medium mt-1">{item.dateApplied || 'N/A'}</p>
+              <Label className="text-xs text-muted-foreground">
+                Date Applied
+              </Label>
+              <p className="text-sm font-medium mt-1">
+                {item.dateApplied || "N/A"}
+              </p>
             </div>
             <div className="rounded-lg border bg-card p-3">
               <Label className="text-xs text-muted-foreground">Job ID</Label>
-              <p className="text-sm font-medium font-mono mt-1">{item.jobIdDisplay || 'N/A'}</p>
+              <p className="text-sm font-medium font-mono mt-1">
+                {item.jobIdDisplay || "N/A"}
+              </p>
             </div>
             <div className="rounded-lg border bg-lime-500/10 dark:bg-lime-500/10 border-lime-500/20 p-3">
-              <Label className="text-xs text-lime-700 dark:text-lime-400 font-medium">Reviewer</Label>
-              <p className="text-sm font-semibold text-lime-800 dark:text-lime-300 mt-1 truncate">{item.reviewer}</p>
+              <Label className="text-xs text-lime-700 dark:text-lime-400 font-medium">
+                Reviewer
+              </Label>
+              <p className="text-sm font-semibold text-lime-800 dark:text-lime-300 mt-1 truncate">
+                {item.reviewer}
+              </p>
             </div>
             {item.yearsOfExperience && (
               <div className="rounded-lg border bg-card p-3">
-                <Label className="text-xs text-muted-foreground">Experience</Label>
-                <p className="text-sm font-medium mt-1">{item.yearsOfExperience} years</p>
+                <Label className="text-xs text-muted-foreground">
+                  Experience
+                </Label>
+                <p className="text-sm font-medium mt-1">
+                  {item.yearsOfExperience} years
+                </p>
               </div>
             )}
           </div>
 
           {/* Professional Information */}
-          {(item.currentTitle || item.currentCompany || item.educationLevel || item.expectedSalary) && (
+          {(item.currentTitle ||
+            item.currentCompany ||
+            item.educationLevel ||
+            item.expectedSalary) && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold flex items-center gap-2">
                 Professional Information
@@ -1219,25 +1251,35 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 {item.currentTitle && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Position</span>
-                    <span className="font-medium text-right">{item.currentTitle}</span>
+                    <span className="font-medium text-right">
+                      {item.currentTitle}
+                    </span>
                   </div>
                 )}
                 {item.currentCompany && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Company</span>
-                    <span className="font-medium text-right">{item.currentCompany}</span>
+                    <span className="font-medium text-right">
+                      {item.currentCompany}
+                    </span>
                   </div>
                 )}
                 {item.educationLevel && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Education</span>
-                    <span className="font-medium text-right">{item.educationLevel}</span>
+                    <span className="font-medium text-right">
+                      {item.educationLevel}
+                    </span>
                   </div>
                 )}
                 {item.expectedSalary && (
                   <div className="flex items-center justify-between p-3 text-sm">
-                    <span className="text-muted-foreground">Salary Expectation</span>
-                    <span className="font-medium text-right">{item.expectedSalary}</span>
+                    <span className="text-muted-foreground">
+                      Salary Expectation
+                    </span>
+                    <span className="font-medium text-right">
+                      {item.expectedSalary}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1252,16 +1294,18 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 {item.location && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Location</span>
-                    <span className="font-medium text-right">{item.location}</span>
+                    <span className="font-medium text-right">
+                      {item.location}
+                    </span>
                   </div>
                 )}
                 {item.linkedinUrl && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">LinkedIn</span>
-                    <a 
-                      href={item.linkedinUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    <a
+                      href={item.linkedinUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-primary hover:underline font-medium"
                     >
                       View Profile
@@ -1271,10 +1315,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 {item.portfolioUrl && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Portfolio</span>
-                    <a 
-                      href={item.portfolioUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    <a
+                      href={item.portfolioUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-primary hover:underline font-medium"
                     >
                       View Website
@@ -1286,16 +1330,23 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
 
           {/* Skills & Languages */}
-          {((item.skills && item.skills.length > 0) || (item.languages && item.languages.length > 0)) && (
+          {((item.skills && item.skills.length > 0) ||
+            (item.languages && item.languages.length > 0)) && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Skills & Languages</h4>
               <div className="rounded-lg border bg-card p-4 space-y-3">
                 {item.skills && item.skills.length > 0 && (
                   <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Technical Skills</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      Technical Skills
+                    </Label>
                     <div className="flex flex-wrap gap-1.5">
                       {item.skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs font-normal">
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="text-xs font-normal"
+                        >
                           {skill}
                         </Badge>
                       ))}
@@ -1304,10 +1355,16 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 )}
                 {item.languages && item.languages.length > 0 && (
                   <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Languages</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      Languages
+                    </Label>
                     <div className="flex flex-wrap gap-1.5">
                       {item.languages.map((language, index) => (
-                        <Badge key={index} variant="outline" className="text-xs font-normal">
+                        <Badge
+                          key={index}
+                          variant="outline"
+                          className="text-xs font-normal"
+                        >
                           {language}
                         </Badge>
                       ))}
@@ -1332,9 +1389,13 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                           <IconFileText className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate">{item.resumeFilename}</p>
+                          <p className="text-sm font-medium truncate">
+                            {item.resumeFilename}
+                          </p>
                           {item.resumeFileSize && (
-                            <p className="text-xs text-muted-foreground">{item.resumeFileSize}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {item.resumeFileSize}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -1342,17 +1403,21 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setShowResumePreview(!showResumePreview)}
+                          onClick={() =>
+                            setShowResumePreview(!showResumePreview)
+                          }
                           className="h-8 px-3"
                         >
-                          <span className="text-xs">{showResumePreview ? 'Hide' : 'View'}</span>
+                          <span className="text-xs">
+                            {showResumePreview ? "Hide" : "View"}
+                          </span>
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => {
                             if (item.resumeFilename) {
-                              const link = document.createElement('a');
+                              const link = document.createElement("a");
                               link.href = `/uploads/resumes/${item.resumeFilename}`;
                               link.download = item.resumeFilename;
                               link.click();
@@ -1360,21 +1425,22 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                           }}
                           title="Download Resume"
                         >
-                          <IconDownload className="h-4 w-4" />
+                          <IconFileText className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                     {showResumePreview && (
                       <div className="border-t">
-                        {item.resumeFilename.toLowerCase().endsWith('.pdf') ? (
+                        {item.resumeFilename.toLowerCase().endsWith(".pdf") ? (
                           <div className="relative bg-muted/30">
                             <iframe
                               src={`/uploads/resumes/${item.resumeFilename}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                               className="w-full h-[500px]"
                               title="Resume Preview"
                               onError={(e) => {
-                                console.error('PDF preview failed:', e);
-                                (e.target as HTMLIFrameElement).style.display = 'none';
+                                console.error("PDF preview failed:", e);
+                                (e.target as HTMLIFrameElement).style.display =
+                                  "none";
                               }}
                             />
                           </div>
@@ -1387,23 +1453,31 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                         ) : (
                           <div className="p-12 text-center bg-muted/30">
                             <IconFileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
-                            <p className="text-sm text-muted-foreground mb-1">Preview not available</p>
-                            <p className="text-xs text-muted-foreground">Download the file to view</p>
+                            <p className="text-sm text-muted-foreground mb-1">
+                              Preview not available
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Download the file to view
+                            </p>
                           </div>
                         )}
                       </div>
                     )}
                   </div>
                 )}
-                
+
                 {/* Cover Letter */}
                 {item.coverLetter && (
                   <div className="rounded-lg border overflow-hidden">
                     <div className="px-4 py-2.5 bg-muted/50 border-b">
-                      <Label className="text-xs font-medium">Cover Letter</Label>
+                      <Label className="text-xs font-medium">
+                        Cover Letter
+                      </Label>
                     </div>
                     <div className="p-4 max-h-64 overflow-y-auto bg-card">
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{item.coverLetter}</p>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {item.coverLetter}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -1412,11 +1486,17 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 {item.videoIntroUrl && (
                   <div className="rounded-lg border overflow-hidden">
                     <div className="px-4 py-2.5 bg-muted/50 border-b flex items-center justify-between">
-                      <Label className="text-xs font-medium">Video Introduction</Label>
+                      <Label className="text-xs font-medium">
+                        Video Introduction
+                      </Label>
                       {(item.videoIntroDuration || item.videoIntroFileSize) && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          {item.videoIntroDuration && <span>{item.videoIntroDuration}</span>}
-                          {item.videoIntroFileSize && <span>• {item.videoIntroFileSize}</span>}
+                          {item.videoIntroDuration && (
+                            <span>{item.videoIntroDuration}</span>
+                          )}
+                          {item.videoIntroFileSize && (
+                            <span>• {item.videoIntroFileSize}</span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1469,11 +1549,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                   Assign to Job <span className="text-destructive">*</span>
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  {item.jobIdDisplay && item.jobIdDisplay !== '-' 
+                  {item.jobIdDisplay && item.jobIdDisplay !== "-"
                     ? `Current assignment: ${item.jobIdDisplay}. You can change it below.`
-                    : 'Select a job to assign this application to'}
+                    : "Select a job to assign this application to"}
                 </p>
-                
+
                 {/* Search Input */}
                 <div className="relative">
                   <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1490,7 +1570,9 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 <div className="border rounded-md max-h-[200px] overflow-y-auto">
                   {filteredJobs.length === 0 ? (
                     <div className="p-4 text-center text-sm text-muted-foreground">
-                      {searchQuery ? 'No jobs found matching your search' : 'No jobs available'}
+                      {searchQuery
+                        ? "No jobs found matching your search"
+                        : "No jobs available"}
                     </div>
                   ) : (
                     <div className="divide-y">
@@ -1500,13 +1582,19 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                           type="button"
                           onClick={() => setSelectedJobId(job.id)}
                           className={`w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors ${
-                            selectedJobId === job.id ? 'bg-primary/10 border-l-2 border-l-primary' : ''
+                            selectedJobId === job.id
+                              ? "bg-primary/10 border-l-2 border-l-primary"
+                              : ""
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm truncate">{job.title}</div>
-                              <div className="text-xs text-muted-foreground">ID: {job.id}</div>
+                              <div className="font-medium text-sm truncate">
+                                {job.title}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                ID: {job.id}
+                              </div>
                             </div>
                             {selectedJobId === job.id && (
                               <IconCircleCheckFilled className="h-5 w-5 text-primary flex-shrink-0" />
@@ -1522,23 +1610,31 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                   <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-md">
                     <IconCircleCheckFilled className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium">
-                      Selected: {jobs.find(j => j.id === selectedJobId)?.title || selectedJobId}
+                      Selected:{" "}
+                      {jobs.find((j) => j.id === selectedJobId)?.title ||
+                        selectedJobId}
                     </span>
                   </div>
                 )}
               </div>
               <div className="flex gap-2">
-                <Button 
+                <Button
                   onClick={() => {
                     if (!selectedJobId) {
                       alert("Please select a job before approving");
                       return;
                     }
-                    const selectedJob = jobs.find(j => j.id === selectedJobId);
-                    console.log(`Approving application for ${item.header} and assigning to job: ${selectedJobId}`);
+                    const selectedJob = jobs.find(
+                      (j) => j.id === selectedJobId
+                    );
+                    console.log(
+                      `Approving application for ${item.header} and assigning to job: ${selectedJobId}`
+                    );
                     setShowJobAssignDialog(false);
                     // In real app, this would update the backend
-                    alert(`Application approved and assigned to:\n${selectedJob?.title} (${selectedJobId})`);
+                    alert(
+                      `Application approved and assigned to:\n${selectedJob?.title} (${selectedJobId})`
+                    );
                   }}
                   className="flex-1"
                   size="default"
@@ -1547,7 +1643,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                   <IconCheck className="h-4 w-4 mr-2" />
                   Confirm Approval
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => {
                     setShowJobAssignDialog(false);
@@ -1563,10 +1659,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
             </div>
           ) : (
             <div className="flex gap-2">
-              <Button 
+              <Button
                 onClick={() => {
                   // Pre-select the current job if it exists
-                  if (item.jobIdDisplay && item.jobIdDisplay !== '-') {
+                  if (item.jobIdDisplay && item.jobIdDisplay !== "-") {
                     setSelectedJobId(item.jobIdDisplay);
                   } else {
                     setSelectedJobId("");
@@ -1581,7 +1677,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 Approve
               </Button>
               <DrawerClose asChild>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => {
                     console.log(`Rejecting application for ${item.header}`);

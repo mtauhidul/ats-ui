@@ -234,27 +234,27 @@ export function EditJobModal({
             className="flex flex-col flex-1 min-h-0"
           >
             <div className="px-6 pt-4 border-b flex-shrink-0">
-              <TabsList className="grid w-full grid-cols-3 h-auto p-1">
+              <TabsList className="h-11 p-1 bg-card border border-border mb-4 w-full md:w-fit">
                 <TabsTrigger
                   value="basic"
-                  className="flex flex-col items-center gap-1 py-3"
+                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
                 >
-                  <FileText className="h-4 w-4" />
-                  <span className="text-xs">Basic Info</span>
+                  <FileText className="h-4 w-4 mr-2" />
+                  <span className="text-sm md:text-base">Basic Info</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="requirements"
-                  className="flex flex-col items-center gap-1 py-3"
+                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
                 >
-                  <ListChecks className="h-4 w-4" />
-                  <span className="text-xs">Requirements</span>
+                  <ListChecks className="h-4 w-4 mr-2" />
+                  <span className="text-sm md:text-base">Requirements</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="details"
-                  className="flex flex-col items-center gap-1 py-3"
+                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
                 >
-                  <DollarSign className="h-4 w-4" />
-                  <span className="text-xs">Additional Details</span>
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  <span className="text-sm md:text-base">Details</span>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -362,7 +362,7 @@ export function EditJobModal({
                   </div>
 
                   {/* Job Type, Experience Level, Work Mode */}
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <Label className="text-base font-semibold">
                       Employment Details
                     </Label>
@@ -448,7 +448,7 @@ export function EditJobModal({
                   </div>
 
                   {/* Priority and Openings */}
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <Label className="text-base font-semibold">
                       Position Details
                     </Label>

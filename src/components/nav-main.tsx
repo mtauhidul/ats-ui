@@ -1,8 +1,6 @@
 import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react";
-import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
-import { QuickImportModal } from "@/components/modals/quick-import-modal";
 import { Button } from "@/components/ui/button";
 import {
   SidebarGroup,
@@ -22,7 +20,6 @@ export function NavMain({
   }[];
 }) {
   const location = useLocation();
-  const [isQuickImportOpen, setIsQuickImportOpen] = useState(false);
   const isMessagesActive = location.pathname === "/dashboard/messages";
 
   return (
@@ -33,11 +30,13 @@ export function NavMain({
             <SidebarMenuButton
               tooltip="Quick Import"
               className="bg-primary hover:!bg-accent active:!bg-accent min-w-8 duration-200 ease-linear [&]:!text-white [&:hover]:!text-foreground"
-              onClick={() => setIsQuickImportOpen(true)}
+              asChild
               style={{ color: "white" }}
             >
-              <IconCirclePlusFilled />
-              <span>Quick Import</span>
+              <Link to="/dashboard/candidates/quick-import">
+                <IconCirclePlusFilled />
+                <span className="text-white">Quick Import</span>
+              </Link>
             </SidebarMenuButton>
             <Button
               size="icon"
@@ -67,8 +66,8 @@ export function NavMain({
                   tooltip={item.title}
                   isActive={isActive}
                 >
-                  <Link to={item.url}>
-                    {item.icon && <item.icon />}
+                  <Link to={item.url} className="[&:hover]:!text-black dark:[&:hover]:!text-white [&:hover>svg]:!text-black dark:[&:hover>svg]:!text-white">
+                    {item.icon && <item.icon className="transition-colors" />}
                     <span>{item.title}</span>
                   </Link>
                 </SidebarMenuButton>
@@ -77,11 +76,6 @@ export function NavMain({
           })}
         </SidebarMenu>
       </SidebarGroupContent>
-
-      <QuickImportModal
-        open={isQuickImportOpen}
-        onOpenChange={setIsQuickImportOpen}
-      />
     </SidebarGroup>
   );
 }

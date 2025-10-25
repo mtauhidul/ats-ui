@@ -26,19 +26,42 @@
     ],
     "workExperience": [],
     "skills": [
-      { "name": "React", "level": "expert" },
-      { "name": "Node.js", "level": "advanced" },
-      { "name": "TypeScript", "level": "advanced" },
-      { "name": "PostgreSQL", "level": "intermediate" }
+      {
+        "name": "React",
+        "level": "expert"
+      },
+      {
+        "name": "Node.js",
+        "level": "advanced"
+      },
+      {
+        "name": "TypeScript",
+        "level": "advanced"
+      },
+      {
+        "name": "PostgreSQL",
+        "level": "intermediate"
+      }
     ],
     "languages": [
-      { "name": "English", "proficiency": "native" }
+      {
+        "name": "English",
+        "proficiency": "native"
+      }
     ],
-    "certifications": ["AWS Certified Developer"],
+    "certifications": [
+      "AWS Certified Developer"
+    ],
     "source": "linkedin",
-    "jobIds": ["job-1"],
-    "applicationIds": ["app-001"],
-    "clientIds": ["client-1"],
+    "jobIds": [
+      "job-1"
+    ],
+    "applicationIds": [
+      "app-001"
+    ],
+    "clientIds": [
+      "client-1"
+    ],
     "jobApplications": [
       {
         "jobId": "job-1",
@@ -61,7 +84,8 @@
     "categoryIds": [],
     "tagIds": [],
     "createdAt": "2025-10-05T00:00:00.000Z",
-    "updatedAt": "2025-10-15T00:00:00.000Z"
+    "updatedAt": "2025-10-15T00:00:00.000Z",
+    "assignedRecruiterId": "user-1"
   },
   {
     "id": "cand-2",
@@ -90,20 +114,44 @@
     ],
     "workExperience": [],
     "skills": [
-      { "name": "React", "level": "advanced" },
-      { "name": "Node.js", "level": "advanced" },
-      { "name": "GraphQL", "level": "intermediate" },
-      { "name": "AWS", "level": "intermediate" }
+      {
+        "name": "React",
+        "level": "advanced"
+      },
+      {
+        "name": "Node.js",
+        "level": "advanced"
+      },
+      {
+        "name": "GraphQL",
+        "level": "intermediate"
+      },
+      {
+        "name": "AWS",
+        "level": "intermediate"
+      }
     ],
     "languages": [
-      { "name": "English", "proficiency": "native" },
-      { "name": "Spanish", "proficiency": "fluent" }
+      {
+        "name": "English",
+        "proficiency": "native"
+      },
+      {
+        "name": "Spanish",
+        "proficiency": "fluent"
+      }
     ],
     "certifications": [],
     "source": "job_board",
-    "jobIds": ["job-1"],
-    "applicationIds": ["app-002"],
-    "clientIds": ["client-1"],
+    "jobIds": [
+      "job-1"
+    ],
+    "applicationIds": [
+      "app-002"
+    ],
+    "clientIds": [
+      "client-1"
+    ],
     "jobApplications": [
       {
         "jobId": "job-1",
@@ -126,7 +174,8 @@
     "categoryIds": [],
     "tagIds": [],
     "createdAt": "2025-10-08T00:00:00.000Z",
-    "updatedAt": "2025-10-12T00:00:00.000Z"
+    "updatedAt": "2025-10-12T00:00:00.000Z",
+    "assignedRecruiterId": "user-1"
   },
   {
     "id": "cand-3",
@@ -155,18 +204,36 @@
     ],
     "workExperience": [],
     "skills": [
-      { "name": "React", "level": "advanced" },
-      { "name": "JavaScript", "level": "expert" },
-      { "name": "CSS", "level": "advanced" }
+      {
+        "name": "React",
+        "level": "advanced"
+      },
+      {
+        "name": "JavaScript",
+        "level": "expert"
+      },
+      {
+        "name": "CSS",
+        "level": "advanced"
+      }
     ],
     "languages": [
-      { "name": "English", "proficiency": "native" }
+      {
+        "name": "English",
+        "proficiency": "native"
+      }
     ],
     "certifications": [],
     "source": "website",
-    "jobIds": ["job-1"],
-    "applicationIds": ["app-003"],
-    "clientIds": ["client-1"],
+    "jobIds": [
+      "job-1"
+    ],
+    "applicationIds": [
+      "app-003"
+    ],
+    "clientIds": [
+      "client-1"
+    ],
     "jobApplications": [
       {
         "jobId": "job-1",
@@ -190,7 +257,8 @@
     "categoryIds": [],
     "tagIds": [],
     "createdAt": "2025-10-03T00:00:00.000Z",
-    "updatedAt": "2025-10-10T00:00:00.000Z"
+    "updatedAt": "2025-10-10T00:00:00.000Z",
+    "assignedRecruiterId": "user-1"
   },
   {
     "id": "cand-4",
@@ -219,19 +287,41 @@
     ],
     "workExperience": [],
     "skills": [
-      { "name": "AWS", "level": "expert" },
-      { "name": "Kubernetes", "level": "advanced" },
-      { "name": "Docker", "level": "expert" },
-      { "name": "Terraform", "level": "advanced" }
+      {
+        "name": "AWS",
+        "level": "expert"
+      },
+      {
+        "name": "Kubernetes",
+        "level": "advanced"
+      },
+      {
+        "name": "Docker",
+        "level": "expert"
+      },
+      {
+        "name": "Terraform",
+        "level": "advanced"
+      }
     ],
     "languages": [
-      { "name": "English", "proficiency": "native" }
+      {
+        "name": "English",
+        "proficiency": "native"
+      }
     ],
-    "certifications": ["AWS Certified Solutions Architect", "Kubernetes Certified Administrator"],
+    "certifications": [
+      "AWS Certified Solutions Architect",
+      "Kubernetes Certified Administrator"
+    ],
     "source": "recruiter",
-    "jobIds": ["job-2"],
+    "jobIds": [
+      "job-2"
+    ],
     "applicationIds": [],
-    "clientIds": ["client-1"],
+    "clientIds": [
+      "client-1"
+    ],
     "jobApplications": [
       {
         "jobId": "job-2",
@@ -251,6 +341,7 @@
     "categoryIds": [],
     "tagIds": [],
     "createdAt": "2025-10-18T00:00:00.000Z",
-    "updatedAt": "2025-10-18T00:00:00.000Z"
+    "updatedAt": "2025-10-18T00:00:00.000Z",
+    "assignedRecruiterId": "user-1"
   }
 ]

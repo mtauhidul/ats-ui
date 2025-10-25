@@ -70,5 +70,113 @@
     "isSystem": false,
     "createdAt": "2024-04-15T10:00:00Z",
     "updatedAt": "2024-04-15T10:00:00Z"
+  },
+  {
+    "id": "tag-9",
+    "name": "Full-Time",
+    "description": "Full-time employment positions",
+    "color": "#0891b2",
+    "isSystem": true,
+    "createdAt": "2024-01-15T10:00:00Z",
+    "updatedAt": "2024-01-15T10:00:00Z"
+  },
+  {
+    "id": "tag-10",
+    "name": "Part-Time",
+    "description": "Part-time employment opportunities",
+    "color": "#06b6d4",
+    "isSystem": false,
+    "createdAt": "2024-05-01T10:00:00Z",
+    "updatedAt": "2024-05-01T10:00:00Z"
+  },
+  {
+    "id": "tag-11",
+    "name": "Hybrid",
+    "description": "Hybrid work arrangement (office + remote)",
+    "color": "#8b5cf6",
+    "isSystem": false,
+    "createdAt": "2024-05-10T10:00:00Z",
+    "updatedAt": "2024-05-10T10:00:00Z"
+  },
+  {
+    "id": "tag-12",
+    "name": "Relocation",
+    "description": "Relocation assistance available",
+    "color": "#d946ef",
+    "isSystem": false,
+    "createdAt": "2024-05-20T10:00:00Z",
+    "updatedAt": "2024-05-20T10:00:00Z"
+  },
+  {
+    "id": "tag-13",
+    "name": "Visa Sponsorship",
+    "description": "Visa sponsorship offered",
+    "color": "#f97316",
+    "isSystem": false,
+    "createdAt": "2024-06-01T10:00:00Z",
+    "updatedAt": "2024-06-01T10:00:00Z"
+  },
+  {
+    "id": "tag-14",
+    "name": "Leadership",
+    "description": "Leadership and management positions",
+    "color": "#dc2626",
+    "isSystem": false,
+    "createdAt": "2024-06-10T10:00:00Z",
+    "updatedAt": "2024-06-10T10:00:00Z"
+  },
+  {
+    "id": "tag-15",
+    "name": "Technical",
+    "description": "Technical roles requiring specialized skills",
+    "color": "#4f46e5",
+    "isSystem": false,
+    "createdAt": "2024-06-15T10:00:00Z",
+    "updatedAt": "2024-06-15T10:00:00Z"
+  },
+  {
+    "id": "tag-16",
+    "name": "High Salary",
+    "description": "Above market compensation",
+    "color": "#16a34a",
+    "isSystem": false,
+    "createdAt": "2024-07-01T10:00:00Z",
+    "updatedAt": "2024-07-01T10:00:00Z"
+  },
+  {
+    "id": "tag-17",
+    "name": "Stock Options",
+    "description": "Equity compensation available",
+    "color": "#ca8a04",
+    "isSystem": false,
+    "createdAt": "2024-07-10T10:00:00Z",
+    "updatedAt": "2024-07-10T10:00:00Z"
+  },
+  {
+    "id": "tag-18",
+    "name": "International",
+    "description": "International or global positions",
+    "color": "#0284c7",
+    "isSystem": false,
+    "createdAt": "2024-07-20T10:00:00Z",
+    "updatedAt": "2024-07-20T10:00:00Z"
+  },
+  {
+    "id": "tag-19",
+    "name": "Hot Job",
+    "description": "High demand position with quick filling timeline",
+    "color": "#dc2626",
+    "isSystem": true,
+    "createdAt": "2024-01-15T10:00:00Z",
+    "updatedAt": "2024-01-15T10:00:00Z"
+  },
+  {
+    "id": "tag-20",
+    "name": "Diversity Hire",
+    "description": "Part of diversity and inclusion initiative",
+    "color": "#7c3aed",
+    "isSystem": false,
+    "createdAt": "2024-08-01T10:00:00Z",
+    "updatedAt": "2024-08-01T10:00:00Z"
   }
 ]

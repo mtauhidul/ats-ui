@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmailTemplatesSettings } from "@/components/settings/email-templates-settings";
-import { Settings, Mail } from "lucide-react";
+import { EmailMonitoringSettings } from "@/components/settings/email-monitoring-settings";
+import { Settings, Mail, Activity } from "lucide-react";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("email-templates");
@@ -36,11 +37,21 @@ export default function SettingsPage() {
                   <Mail className="h-4 w-4 mr-2" />
                   Email Templates
                 </TabsTrigger>
-                {/* Future tabs can be added here */}
+                <TabsTrigger 
+                  value="email-monitoring" 
+                  className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                >
+                  <Activity className="h-4 w-4 mr-2" />
+                  Email Monitoring
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="email-templates" className="mt-6">
                 <EmailTemplatesSettings />
+              </TabsContent>
+
+              <TabsContent value="email-monitoring" className="mt-6">
+                <EmailMonitoringSettings />
               </TabsContent>
             </Tabs>
           </div>

@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CandidateEmailCommunication } from "@/components/candidate-email-communication";
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
 import { cn } from "@/lib/utils";
@@ -17,6 +16,8 @@ interface JobCandidateDetailsProps {
   job: Job;
   onBack: () => void;
   onStatusChange: (candidateId: string, jobId: string, newStatus: string) => void;
+  onInterviewClick?: () => void;
+  onEmailClick?: () => void;
 }
 
 const statusColors = {
@@ -38,26 +39,14 @@ const skillLevelColors = {
   expert: "bg-green-500/10 text-green-700 dark:text-green-400",
 } as const;
 
-export function JobCandidateDetails({ candidate, job, onBack, onStatusChange }: JobCandidateDetailsProps) {
+export function JobCandidateDetails({ candidate, job, onBack, onStatusChange, onInterviewClick, onEmailClick }: JobCandidateDetailsProps) {
   const [activeTab, setActiveTab] = useState("overview");
-  const [showEmailCommunication, setShowEmailCommunication] = useState(false);
   
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
   const initials = `${candidate.firstName[0]}${candidate.lastName[0]}`.toUpperCase();
   
   // Get the job application for this specific job
   const jobApplication = candidate.jobApplications.find(app => app.jobId === job.id);
-
-  // If showing email communication
-  if (showEmailCommunication) {
-    return (
-      <CandidateEmailCommunication
-        candidate={candidate}
-        job={job}
-        onBack={() => setShowEmailCommunication(false)}
-      />
-    );
-  }
   
   if (!jobApplication) {
     return (
@@ -118,7 +107,7 @@ export function JobCandidateDetails({ candidate, job, onBack, onStatusChange }: 
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Button variant="outline" size="sm" onClick={() => setShowEmailCommunication(true)}>
+          <Button variant="outline" size="sm" onClick={() => onEmailClick?.()}>
             <Mail className="h-4 w-4 lg:mr-2" />
             <span className="hidden lg:inline">Email</span>
           </Button>
@@ -241,6 +230,9 @@ export function JobCandidateDetails({ candidate, job, onBack, onStatusChange }: 
           </TabsTrigger>
           <TabsTrigger value="education" className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground">
             Education
+          </TabsTrigger>
+          <TabsTrigger value="interviews" className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground">
+            Interviews
           </TabsTrigger>
           <TabsTrigger value="timeline" className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground">
             Timeline
@@ -421,6 +413,26 @@ export function JobCandidateDetails({ candidate, job, onBack, onStatusChange }: 
                   <p className="text-sm text-muted-foreground">No education history available</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="interviews" className="space-y-4 mt-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-8">
+                <div className="rounded-full bg-primary/10 p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <Calendar className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Interview Management</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  View interview history and schedule new interviews with this candidate for {job.title}
+                </p>
+                <Button onClick={() => onInterviewClick?.()}>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Manage Interviews
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

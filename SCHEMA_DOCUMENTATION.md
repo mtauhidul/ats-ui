@@ -30,7 +30,28 @@ Client (Company)
 
 ## Database Collections
 
-### 1. Client Collection
+### 1. User Collection (NEW)
+**Purpose**: Stores user authentication and profile information
+
+**Key Fields**:
+- `id`: Unique identifier
+- `email`: User email (unique)
+- `firstName`, `lastName`: Name
+- `role`: TeamRole (admin, recruiter, etc.)
+- `status`: "active" | "inactive" | "suspended" | "pending"
+- `emailVerified`: boolean
+- `lastLoginAt`: Last login timestamp
+- `preferences`: User preferences object
+
+**Relationships**:
+- **Referenced By** TeamMember: TeamMember.userId references User.id
+- **Referenced By** Activity Logs: performedBy, createdBy, etc.
+
+**Collection Name**: `users`
+
+---
+
+### 2. Client Collection
 **Purpose**: Stores company/client information
 
 **Key Fields**:
@@ -50,7 +71,7 @@ Client (Company)
 
 ---
 
-### 2. Job Collection
+### 3. Job Collection
 **Purpose**: Stores job/position information
 
 **Key Fields**:

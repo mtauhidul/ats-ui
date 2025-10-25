@@ -21,8 +21,25 @@ import {
   IconPhone,
   IconUserCheck,
   IconUserX,
+  IconTag,
+  IconX,
 } from "@tabler/icons-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import applicationsData from "@/lib/mock-data/applications.json";
+import interviewsData from "@/lib/mock-data/interviews.json";
+import tagsData from "@/lib/mock-data/tags.json";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // Helper functions for status badges
 function getStatusBadge(status: string) {
@@ -109,6 +126,16 @@ export default function CandidateDetailsPage() {
   const navigate = useNavigate();
   const [showResumePreview, setShowResumePreview] = React.useState(false);
   const [showVideoPreview, setShowVideoPreview] = React.useState(false);
+  const [openTagPopover, setOpenTagPopover] = React.useState(false);
+  const [selectedTags, setSelectedTags] = React.useState<string[]>(["tag-1", "tag-3"]); // Mock initial tags
+
+  const toggleTag = (tagId: string) => {
+    setSelectedTags(prev =>
+      prev.includes(tagId)
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    );
+  };
 
   // Find the candidate data (mock)
   const candidateIndex = candidateId ? parseInt(candidateId) - 1 : 0;
@@ -286,6 +313,76 @@ export default function CandidateDetailsPage() {
                         )}
                       </div>
                     ) : null}
+                  </div>
+                </div>
+
+                {/* Tags Section */}
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex items-center gap-2 mb-3">
+                    <IconTag className="h-4 w-4 text-muted-foreground" />
+                    <Label className="text-sm font-medium">Tags</Label>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {selectedTags.map((tagId) => {
+                      const tag = tagsData.find((t) => t.id === tagId);
+                      if (!tag) return null;
+                      return (
+                        <Badge
+                          key={tag.id}
+                          variant="secondary"
+                          style={{ backgroundColor: `${tag.color}20`, color: tag.color, borderColor: tag.color }}
+                          className="px-2 py-1 text-xs border"
+                        >
+                          {tag.name}
+                          <button
+                            onClick={() => toggleTag(tag.id)}
+                            className="ml-1.5 hover:opacity-70"
+                          >
+                            <IconX className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                    <Popover open={openTagPopover} onOpenChange={setOpenTagPopover}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs border-dashed"
+                        >
+                          <IconTag className="h-3 w-3 mr-1" />
+                          Add Tag
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[200px] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search tags..." />
+                          <CommandEmpty>No tags found.</CommandEmpty>
+                          <CommandGroup className="max-h-[200px] overflow-auto">
+                            {tagsData.map((tag) => (
+                              <CommandItem
+                                key={tag.id}
+                                onSelect={() => {
+                                  toggleTag(tag.id);
+                                  setOpenTagPopover(false);
+                                }}
+                              >
+                                <div className="flex items-center gap-2 flex-1">
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: tag.color }}
+                                  />
+                                  <span>{tag.name}</span>
+                                </div>
+                                {selectedTags.includes(tag.id) && (
+                                  <IconCircleCheckFilled className="h-4 w-4 text-primary" />
+                                )}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               </CardContent>
@@ -930,6 +1027,201 @@ export default function CandidateDetailsPage() {
 
               {/* History Tab */}
               <TabsContent value="history" className="mt-6 space-y-6">
+                {/* Warning Banner for Previous Interactions */}
+                {historyData.length > 0 && (
+                  <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/30">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-md bg-amber-100 dark:bg-amber-900/30">
+                          <IconCalendar className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-1">
+                            Previous Client Interactions Found
+                          </p>
+                          <p className="text-sm text-amber-800 dark:text-amber-300 mb-3">
+                            This candidate has {historyData.length} previous application{historyData.length !== 1 ? 's' : ''} with {new Set(historyData.map(h => h.clientName)).size} client{new Set(historyData.map(h => h.clientName)).size !== 1 ? 's' : ''}.
+                            Please review their interview history below before submitting to the same clients.
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {Array.from(new Set(historyData.map(h => h.clientName))).map((clientName, idx) => (
+                              <Badge
+                                key={idx}
+                                variant="outline"
+                                className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/50 dark:text-amber-200 dark:border-amber-700"
+                              >
+                                {clientName}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Interview History */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Interview History</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Complete interview history with all clients - prevents re-submitting to clients who previously rejected this candidate
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    {(() => {
+                      // Filter interviews for this candidate
+                      const candidateInterviews = interviewsData.filter(
+                        (interview) => interview.candidateId === `cand-${candidateId}`
+                      );
+
+                      if (candidateInterviews.length === 0) {
+                        return (
+                          <div className="text-center py-12">
+                            <IconCalendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
+                            <p className="text-sm text-muted-foreground">No interview history</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              This candidate hasn't interviewed with any clients yet
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="space-y-3">
+                          {candidateInterviews.map((interview) => {
+                            const isCompleted = interview.status === "completed";
+                            const isPassed = interview.outcome === "passed";
+                            const isFailed = interview.outcome === "failed";
+                            const isNoShow = interview.status === "no_show";
+
+                            return (
+                              <div
+                                key={interview.id}
+                                className={`p-4 rounded-lg border ${
+                                  isPassed
+                                    ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800"
+                                    : isFailed
+                                    ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
+                                    : isNoShow
+                                    ? "bg-gray-100 dark:bg-gray-900/50 border-gray-300 dark:border-gray-700"
+                                    : "bg-card"
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-4 mb-3">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="font-semibold">{interview.jobTitle}</h4>
+                                      <Badge
+                                        variant="outline"
+                                        className={`text-xs ${
+                                          interview.interviewType === "technical"
+                                            ? "bg-purple-100 text-purple-700 border-purple-200"
+                                            : interview.interviewType === "final"
+                                            ? "bg-orange-100 text-orange-700 border-orange-200"
+                                            : "bg-blue-100 text-blue-700 border-blue-200"
+                                        }`}
+                                      >
+                                        {interview.interviewType.replace("_", " ")}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                      <IconBriefcase className="h-3 w-3" />
+                                      {interview.clientName}
+                                    </p>
+                                    {interview.interviewerName && (
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        Interviewed by: {interview.interviewerName}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="text-right">
+                                    {isCompleted ? (
+                                      isPassed ? (
+                                        <Badge className="bg-green-600">
+                                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                                          Passed
+                                        </Badge>
+                                      ) : isFailed ? (
+                                        <Badge variant="destructive">
+                                          <XCircle className="h-3 w-3 mr-1" />
+                                          Not Selected
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="secondary">Completed</Badge>
+                                      )
+                                    ) : isNoShow ? (
+                                      <Badge variant="outline" className="bg-gray-200 text-gray-700">
+                                        No Show
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                                        Scheduled
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-3">
+                                  <div>
+                                    <Label className="text-xs text-muted-foreground">
+                                      Interview Date
+                                    </Label>
+                                    <p className="text-xs mt-1 flex items-center gap-1">
+                                      <IconCalendar className="h-3 w-3" />
+                                      {new Date(interview.interviewDate).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs text-muted-foreground">Duration</Label>
+                                    <p className="text-xs mt-1">
+                                      {interview.duration ? `${interview.duration} min` : "N/A"}
+                                    </p>
+                                  </div>
+                                  {interview.rating && (
+                                    <div>
+                                      <Label className="text-xs text-muted-foreground">Rating</Label>
+                                      <p className="text-xs mt-1 flex items-center gap-1">
+                                        <span className="text-yellow-600">★</span>
+                                        {interview.rating}/5
+                                      </p>
+                                    </div>
+                                  )}
+                                  <div>
+                                    <Label className="text-xs text-muted-foreground">Status</Label>
+                                    <p className="text-xs mt-1 capitalize">
+                                      {interview.status.replace("_", " ")}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {interview.feedback && (
+                                  <div className="pt-3 border-t">
+                                    <Label className="text-xs text-muted-foreground">Feedback</Label>
+                                    <p className="text-sm mt-1 text-muted-foreground">
+                                      {interview.feedback}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {interview.notes && (
+                                  <div className="pt-2">
+                                    <Label className="text-xs text-muted-foreground">Notes</Label>
+                                    <p className="text-sm mt-1 text-muted-foreground italic">
+                                      {interview.notes}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+
+                {/* Application History */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Application History</CardTitle>

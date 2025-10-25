@@ -111,17 +111,21 @@ export interface Job extends BaseEntity {
   startDate?: Date;
   
   // Team assignment
-  hiringTeamId?: string; // Reference to Team collection
-  recruiterIds: string[]; // References to User/TeamMember collection
+  assignedRecruiterId?: string; // Primary recruiter assigned to this job (for UI filtering)
+  recruiterIds: string[]; // All recruiters who can work on this job
   hiringManagerIds: string[]; // References to User/TeamMember collection
   
   // Categorization
   categoryIds: string[]; // References to Category collection
   tagIds: string[]; // References to Tag collection
   
+  // Pipeline
+  pipelineId?: string; // Reference to Pipeline collection - if using custom pipeline (otherwise uses default)
+  
   // Relations (Database references - stored as IDs)
   // Note: Applications are independent and not directly under jobs
   // After approval, Applications become Candidates assigned to this job
+  applicationIds: string[]; // References to Application collection (all applications for this job)
   candidateIds: string[]; // References to Candidate collection (approved candidates assigned to this job)
   
   // Statistics (calculated from related data)

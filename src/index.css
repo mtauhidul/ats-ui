@@ -43,7 +43,7 @@
 
 /* Sequence — light-first theme (Helvetica + teal/green) */
 /* Key brand swatches from image:
-   Teal  #025864  | Green  #00D47E
+   Teal  #025864  | Green  #ABE7B2 (deep) / #CBF3BB (light)
    Light bg ~#E9EEF2 | Heading text ~#10232C
 */
 
@@ -72,7 +72,7 @@
   --muted: oklch(0.95 0.01 235); /* lighter subdued surface */
   --muted-foreground: oklch(0.32 0.03 235); /* secondary text - good contrast */
 
-  --accent: oklch(0.79 0.16 152); /* brand green ≈ #00D47E */
+  --accent: oklch(0.93 0.08 140); /* brand green (light) ≈ #CBF3BB */
   --accent-foreground: oklch(0.16 0.02 235); /* dark label on green */
 
   --destructive: oklch(0.62 0.18 27); /* warm red for errors */
@@ -82,19 +82,19 @@
   --ring: oklch(0.65 0.08 220); /* sky blue focus ring */
 
   /* Charts (sky blue → green with cool neutrals) */
-  --chart-1: oklch(0.6 0.08 220); /* sky blue muted */
-  --chart-2: oklch(0.79 0.16 152); /* vivid green */
-  --chart-3: oklch(0.64 0.04 235); /* slate line */
-  --chart-4: oklch(0.72 0.02 245); /* soft steel */
-  --chart-5: oklch(0.56 0.03 255); /* indigo-gray */
+  --chart-1: oklch(0.6 0.15 220); /* vibrant sky blue */
+  --chart-2: oklch(0.88 0.12 145); /* vibrant green ≈ #ABE7B2 */
+  --chart-3: oklch(0.64 0.14 235); /* vibrant slate blue */
+  --chart-4: oklch(0.72 0.13 190); /* vibrant teal */
+  --chart-5: oklch(0.56 0.15 270); /* vibrant purple */
 
   /* Sidebar (light) - Lighter colors for better button visibility */
   --sidebar: oklch(0.985 0.004 235);
   --sidebar-foreground: oklch(0.18 0.03 235);
   --sidebar-primary: oklch(0.65 0.08 220);
   --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.82 0.15 152);
-  --sidebar-accent-foreground: oklch(0.14 0.03 235);
+  --sidebar-accent: oklch(0.93 0.08 140); /* light green ≈ #CBF3BB */
+  --sidebar-accent-foreground: oklch(0.18 0.03 235); /* dark text for visibility */
   --sidebar-border: oklch(0.9 0.01 235);
   --sidebar-ring: oklch(0.65 0.08 220);
 }
@@ -119,7 +119,7 @@
   --muted: oklch(0.28 0.02 235);
   --muted-foreground: oklch(0.72 0.015 235);
 
-  --accent: oklch(0.82 0.17 152); /* glowing green */
+  --accent: oklch(0.88 0.1 145); /* green (deep) ≈ #ABE7B2 */
   --accent-foreground: oklch(0.16 0.02 235);
 
   --destructive: oklch(0.66 0.18 27);
@@ -128,18 +128,18 @@
   --input: oklch(0.34 0.015 235 / 45%);
   --ring: oklch(0.7 0.09 220);
 
-  --chart-1: oklch(0.7 0.09 220);
-  --chart-2: oklch(0.82 0.17 152);
-  --chart-3: oklch(0.7 0.05 235);
-  --chart-4: oklch(0.6 0.03 250);
-  --chart-5: oklch(0.74 0.02 240);
+  --chart-1: oklch(0.7 0.15 220); /* vibrant sky blue */
+  --chart-2: oklch(0.88 0.12 145); /* vibrant green ≈ #ABE7B2 */
+  --chart-3: oklch(0.7 0.14 235); /* vibrant slate blue */
+  --chart-4: oklch(0.6 0.13 190); /* vibrant teal */
+  --chart-5: oklch(0.74 0.15 270); /* vibrant purple */
 
   --sidebar: oklch(0.22 0.02 235);
   --sidebar-foreground: oklch(0.98 0 0);
   --sidebar-primary: oklch(0.7 0.09 220);
   --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.82 0.17 152);
-  --sidebar-accent-foreground: oklch(0.16 0.02 235);
+  --sidebar-accent: oklch(0.88 0.1 145); /* green (deep) ≈ #ABE7B2 */
+  --sidebar-accent-foreground: oklch(0.16 0.02 235); /* dark text for visibility on green */
   --sidebar-border: oklch(0.34 0.015 235 / 40%);
   --sidebar-ring: oklch(0.7 0.09 220);
 }
@@ -274,7 +274,11 @@ body,
   /* Fix messaging button contrast issues with Tailwind classes */
   /* Target the actual button with size-8 and outline variant classes */
   .size-8[class*="outline"]:hover {
-    background-color: color-mix(in oklch, var(--sidebar-primary) 20%, var(--sidebar)) !important;
+    background-color: color-mix(
+      in oklch,
+      var(--sidebar-primary) 20%,
+      var(--sidebar)
+    ) !important;
     color: var(--sidebar-primary) !important;
     border-color: var(--sidebar-primary) !important;
   }
@@ -288,7 +292,11 @@ body,
 
   .size-8.bg-sidebar-accent:hover,
   .size-8[class*="bg-sidebar-accent"]:hover {
-    background-color: color-mix(in oklch, var(--sidebar-accent) 85%, black 15%) !important;
+    background-color: color-mix(
+      in oklch,
+      var(--sidebar-accent) 85%,
+      black 15%
+    ) !important;
     color: var(--sidebar-accent-foreground) !important;
     border-color: var(--sidebar-accent) !important;
   }
@@ -305,7 +313,11 @@ body,
 
   /* Default state - ensure avatar and text are always visible with strong specificity */
   [data-sidebar="menu-button"][data-size="lg"] .h-8.w-8.rounded-lg {
-    background-color: color-mix(in oklch, var(--sidebar-foreground) 15%, var(--sidebar)) !important;
+    background-color: color-mix(
+      in oklch,
+      var(--sidebar-foreground) 15%,
+      var(--sidebar)
+    ) !important;
     color: var(--sidebar-foreground) !important;
   }
 
@@ -327,12 +339,20 @@ body,
   }
 
   * [data-sidebar="menu-button"][data-size="lg"] .h-8.w-8.rounded-lg {
-    background-color: color-mix(in oklch, var(--sidebar-foreground) 15%, var(--sidebar)) !important;
+    background-color: color-mix(
+      in oklch,
+      var(--sidebar-foreground) 15%,
+      var(--sidebar)
+    ) !important;
   }
 
   /* ONLY on direct hover of the nav-user button */
   [data-sidebar="menu-button"][data-size="lg"]:hover .h-8.w-8.rounded-lg {
-    background-color: color-mix(in oklch, var(--sidebar-accent-foreground) 90%, var(--sidebar-accent) 10%) !important;
+    background-color: color-mix(
+      in oklch,
+      var(--sidebar-accent-foreground) 90%,
+      var(--sidebar-accent) 10%
+    ) !important;
     color: var(--sidebar-foreground) !important;
   }
 
@@ -346,23 +366,35 @@ body,
   }
 
   /* ONLY on active/open state of the nav-user button */
-  [data-sidebar="menu-button"][data-size="lg"][data-state="open"] .h-8.w-8.rounded-lg {
-    background-color: color-mix(in oklch, var(--sidebar-accent-foreground) 90%, var(--sidebar-accent) 10%) !important;
+  [data-sidebar="menu-button"][data-size="lg"][data-state="open"]
+    .h-8.w-8.rounded-lg {
+    background-color: color-mix(
+      in oklch,
+      var(--sidebar-accent-foreground) 90%,
+      var(--sidebar-accent) 10%
+    ) !important;
     color: var(--sidebar-foreground) !important;
   }
 
-  [data-sidebar="menu-button"][data-size="lg"][data-state="open"] .truncate.font-medium,
-  [data-sidebar="menu-button"][data-size="lg"][data-state="open"] .truncate.text-xs {
+  [data-sidebar="menu-button"][data-size="lg"][data-state="open"]
+    .truncate.font-medium,
+  [data-sidebar="menu-button"][data-size="lg"][data-state="open"]
+    .truncate.text-xs {
     color: var(--sidebar-accent-foreground) !important;
   }
 
-  [data-sidebar="menu-button"][data-size="lg"][data-state="open"] .ml-auto.size-4 {
+  [data-sidebar="menu-button"][data-size="lg"][data-state="open"]
+    .ml-auto.size-4 {
     color: var(--sidebar-accent-foreground) !important;
   }
 
   /* Restore better sidebar menu button hover colors */
   [data-sidebar="menu-button"]:not([data-size="lg"]):hover {
-    background-color: color-mix(in oklch, var(--sidebar-accent) 12%, var(--sidebar)) !important;
+    background-color: color-mix(
+      in oklch,
+      var(--sidebar-accent) 12%,
+      var(--sidebar)
+    ) !important;
     color: var(--sidebar-accent) !important;
   }
 
@@ -381,7 +413,7 @@ body,
   /* Fix Quick Import button - keep background same, only change text/icon on hover */
   [data-sidebar="menu-button"].bg-primary {
     background-color: var(--primary) !important;
-    color: var(--primary-foreground) !important;
+    color: white !important;
   }
 
   [data-sidebar="menu-button"].bg-primary:hover {
@@ -428,6 +460,10 @@ body,
   }
 
   [data-sidebar="menu-button"][data-size="lg"] .h-8.w-8.rounded-lg {
-    background-color: color-mix(in oklch, var(--sidebar-foreground) 15%, var(--sidebar)) !important;
+    background-color: color-mix(
+      in oklch,
+      var(--sidebar-foreground) 15%,
+      var(--sidebar)
+    ) !important;
   }
 }

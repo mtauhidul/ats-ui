@@ -6,13 +6,17 @@ export const schema = z.object({
   type: z.string(),
   status: z.string(),
   target: z.number(),
-  limit: z.number(),
+  limit: z.union([z.number(), z.string()]),
   reviewer: z.string(),
   dateApplied: z.string().optional(),
   jobIdDisplay: z.string().optional(),
   // Candidates-specific fields
+  currentStage: z.string().optional(),
+  jobTitle: z.string().optional(),
+  clientName: z.string().optional(),
   clientLogo: z.string().optional(),
   teamMembers: z.array(z.string()).optional(),
+  candidateId: z.string().optional(),
   // Additional applicant fields
   photo: z.string().nullable().optional(),
   email: z.string().optional(),

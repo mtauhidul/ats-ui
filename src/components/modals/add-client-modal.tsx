@@ -44,12 +44,12 @@ export function AddClientModal({ open, onClose, onSubmit }: AddClientModalProps)
   });
 
   const [logoPreview, setLogoPreview] = useState<string>("");
-  const [logoFile, setLogoFile] = useState<File | null>(null);
+  // const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setLogoFile(file);
+      // setLogoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result as string);
@@ -59,7 +59,7 @@ export function AddClientModal({ open, onClose, onSubmit }: AddClientModalProps)
   };
 
   const handleRemoveLogo = () => {
-    setLogoFile(null);
+    // setLogoFile(null);
     setLogoPreview("");
   };
 

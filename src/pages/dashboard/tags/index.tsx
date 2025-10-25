@@ -157,114 +157,121 @@ export default function TagsPage() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mt-6">
-                <div className="rounded-lg border bg-gradient-to-br from-card to-muted/20 p-3 shadow-sm">
+              <div className="grid grid-cols-3 gap-3 mt-6">
+                <div className="rounded-lg border bg-card p-3 shadow-sm">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="rounded-md bg-primary/10 p-1.5">
                       <TagIcon className="h-4 w-4 text-primary" />
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Total
-                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">Total</span>
                   </div>
                   <p className="text-xl font-bold">{tags.length}</p>
                   <p className="text-xs text-muted-foreground">Tags</p>
                 </div>
-                <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100/20 dark:from-blue-950/20 dark:to-blue-900/10 p-3 shadow-sm">
+                <div className="rounded-lg border bg-card p-3 shadow-sm">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="rounded-md bg-blue-500/10 p-1.5">
-                      <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-500" />
                     </div>
-                    <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
-                      System
-                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">System</span>
                   </div>
-                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                  <p className="text-xl font-bold text-blue-600 dark:text-blue-500">
                     {systemTags.length}
                   </p>
-                  <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
-                    Built-in tags
-                  </p>
+                  <p className="text-xs text-muted-foreground">Built-in tags</p>
                 </div>
-                <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
+                <div className="rounded-lg border bg-card p-3 shadow-sm">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="rounded-md bg-green-500/10 p-1.5">
-                      <TagIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <TagIcon className="h-4 w-4 text-green-600 dark:text-green-500" />
                     </div>
-                    <span className="text-xs font-medium text-green-700 dark:text-green-400">
-                      Custom
-                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">Custom</span>
                   </div>
-                  <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                  <p className="text-xl font-bold text-green-600 dark:text-green-500">
                     {customTags.length}
                   </p>
-                  <p className="text-xs text-green-600/70 dark:text-green-400/70">
-                    User-created
-                  </p>
+                  <p className="text-xs text-muted-foreground">User-created</p>
                 </div>
               </div>
             </div>
 
-            {/* Tags Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredTags.map((tag) => (
-                <div
-                  key={tag.id}
-                  className="rounded-lg border bg-card p-4 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium"
-                          style={{
-                            backgroundColor: `${tag.color}20`,
-                            color: tag.color,
-                            border: `1px solid ${tag.color}40`,
-                          }}
-                        >
-                          {tag.name}
-                        </span>
-                      </div>
-                      {tag.description && (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {tag.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                    <div className="flex items-center gap-2">
-                      {tag.isSystem && (
-                        <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400">
-                          System
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setEditingTag(tag)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      {!tag.isSystem && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-950"
-                          onClick={() => handleDeleteTag(tag.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
+            {/* Tags Table */}
+            <div className="rounded-lg border bg-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Tag
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Description
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {filteredTags.map((tag) => (
+                      <tr key={tag.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-3">
+                          <span
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium"
+                            style={{
+                              backgroundColor: `${tag.color}20`,
+                              color: tag.color,
+                              border: `1px solid ${tag.color}40`,
+                            }}
+                          >
+                            {tag.name}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          {tag.description || "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          {tag.isSystem && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-500 border border-blue-500/20">
+                              System
+                            </span>
+                          )}
+                          {!tag.isSystem && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground border">
+                              Custom
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => setEditingTag(tag)}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            {!tag.isSystem && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-950"
+                                onClick={() => handleDeleteTag(tag.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {filteredTags.length === 0 && (

@@ -2,7 +2,6 @@ import {
   IconBookmark,
   IconBriefcase,
   IconBuilding,
-  IconChartBar,
   IconDashboard,
   IconFileText,
   IconHelp,
@@ -66,11 +65,6 @@ const data = {
       title: "Team",
       url: "/dashboard/team",
       icon: IconUsers,
-    },
-    {
-      title: "Analytics",
-      url: "/dashboard/analytics",
-      icon: IconChartBar,
     },
   ],
   navSecondary: [

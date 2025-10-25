@@ -1,8 +1,16 @@
 import { DataTable } from "@/components/data-table";
 import applicationsData from "@/lib/mock-data/applications.json";
+import jobsData from "@/lib/mock-data/jobs.json";
+import clientsData from "@/lib/mock-data/clients.json";
+
+const teamMembersPool = ["John Smith", "Sarah Wilson", "Mike Johnson", "Lisa Brown", "Tom Davis"];
 
 export default function ApplicationsPage() {
-  const transformedData = applicationsData.map((app, index) => ({
+  const transformedData = applicationsData.map((app, index) => {
+    const job = jobsData.find(j => j.id === app.targetJobId);
+    const client = clientsData.find(c => c.id === job?.clientId);
+
+    return {
     id: index + 1,
     header: `${app.firstName} ${app.lastName}`, // Application name
     type: app.aiAnalysis?.isValid ? "valid" : "invalid", // AI status
@@ -15,11 +23,14 @@ export default function ApplicationsPage() {
         ? "Rejected"
         : "In Process",
     target: new Date(app.submittedAt).getDate(), // Day number for sorting but we'll override display
-    limit: Number(app.targetJobId?.replace(/\D/g, "") || index + 1), // Job number for sorting but we'll override display
+    limit: app.targetJobId || `JOB-${String(index + 1).padStart(3, '0')}`, // Show actual job ID
     reviewer: app.reviewedByName || "Unassigned",
     // Add original data for display
     dateApplied: new Date(app.submittedAt).toLocaleDateString(),
-    jobIdDisplay: app.targetJobTitle || app.targetJobId || "-",
+    jobIdDisplay: app.targetJobId || `JOB-${String(index + 1).padStart(3, '0')}`,
+    clientName: client?.companyName || "Unknown Client",
+    clientLogo: client?.logo || `https://api.dicebear.com/7.x/initials/svg?seed=${client?.companyName || 'C'}`,
+    teamMembers: index % 3 === 0 ? [] : teamMembersPool.slice(0, Math.floor(Math.random() * 3) + 1),
     // Additional applicant details
     photo: app.photo || undefined,
     email: app.email,
@@ -45,7 +56,8 @@ export default function ApplicationsPage() {
     videoIntroFilename: index === 0 ? "sarah_johnson_intro.mp4" : undefined,
     videoIntroFileSize: index === 0 ? "15.2 MB" : undefined,
     videoIntroDuration: index === 0 ? "2:30" : undefined,
-  }));
+  };
+  });
 
   return (
     <div className="flex flex-1 flex-col">

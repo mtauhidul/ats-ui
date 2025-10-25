@@ -103,6 +103,7 @@ export interface Email extends BaseEntity {
   isRead: boolean;
   isStarred: boolean;
   isArchived: boolean;
+  labels?: string[]; // For categorization/tagging (e.g., "important", "follow-up", "offer")
   
   // Automation
   isAutomated: boolean;

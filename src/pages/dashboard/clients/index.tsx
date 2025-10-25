@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus, Search, Building2, Users, Briefcase, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,18 +15,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ClientCard } from "@/components/client-card";
-import { ClientDetails } from "@/components/client-details";
 import { AddClientModal } from "@/components/modals/add-client-modal";
 import type { Client, CommunicationNoteType, CreateClientRequest, ClientStatus } from "@/types/client";
-import type { Job, CreateJobRequest, JobStatus, JobType } from "@/types/job";
-import type { Candidate } from "@/types/candidate";
 import clientsData from "@/lib/mock-data/clients.json";
-import jobsData from "@/lib/mock-data/jobs.json";
-import candidatesData from "@/lib/mock-data/candidates.json";
 import { toast } from "sonner";
 
 export default function ClientsPage() {
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -55,102 +51,6 @@ export default function ClientsPage() {
       })),
     }))
   );
-
-  // Transform jobs data
-  const [jobs, setJobs] = useState<Job[]>(
-    jobsData.map((job) => ({
-      ...job,
-      status: job.status as JobStatus,
-      type: job.type as JobType,
-      experienceLevel: job.experienceLevel as Job["experienceLevel"],
-      workMode: job.workMode as Job["workMode"],
-      priority: job.priority as Job["priority"],
-      salaryRange: job.salaryRange ? {
-        ...job.salaryRange,
-        period: job.salaryRange.period as "yearly" | "hourly" | "daily" | "monthly",
-      } : undefined,
-      createdAt: new Date(job.createdAt),
-      updatedAt: new Date(job.updatedAt),
-    }))
-  );
-
-  // Transform candidates data
-  const [candidates] = useState<Candidate[]>(
-    candidatesData.map((candidate) => ({
-      ...candidate,
-      source: candidate.source as Candidate["source"],
-      createdAt: new Date(candidate.createdAt),
-      updatedAt: new Date(candidate.updatedAt),
-      education: candidate.education.map((edu) => ({
-        ...edu,
-        level: edu.level as Candidate["education"][0]["level"],
-        startDate: new Date(edu.startDate),
-        endDate: edu.endDate ? new Date(edu.endDate) : undefined,
-      })),
-      skills: candidate.skills.map((skill) => ({
-        ...skill,
-        level: skill.level as "beginner" | "intermediate" | "advanced" | "expert",
-      })),
-      languages: candidate.languages.map((lang) => ({
-        ...lang,
-        proficiency: lang.proficiency as "basic" | "conversational" | "fluent" | "native",
-      })),
-      jobApplications: candidate.jobApplications.map((app) => {
-        const appWithEmail = app as typeof app & { lastEmailDate?: string };
-        return {
-          ...app,
-          status: app.status as Candidate["jobApplications"][0]["status"],
-          appliedAt: new Date(app.appliedAt),
-          lastStatusChange: new Date(app.lastStatusChange),
-          lastEmailDate: appWithEmail.lastEmailDate ? new Date(appWithEmail.lastEmailDate) : undefined,
-        };
-      }),
-      lastEmailDate: (candidate as typeof candidate & { lastEmailDate?: string }).lastEmailDate 
-        ? new Date((candidate as typeof candidate & { lastEmailDate?: string }).lastEmailDate!) 
-        : undefined,
-      workExperience: [],
-      categoryIds: candidate.categoryIds || [],
-      tagIds: candidate.tagIds || [],
-      isActive: candidate.isActive ?? true,
-    }))
-  );
-
-  // Helper function to add activity to client's activity history
-  const addActivityToClient = (
-    clientId: string,
-    action: string,
-    description: string,
-    metadata?: Record<string, unknown>
-  ) => {
-    const newActivity = {
-      id: `activity-${Date.now()}-${Math.random()}`,
-      clientId,
-      action,
-      description,
-      performedBy: "current-user-id", // TODO: Replace with actual user ID from auth context
-      performedByName: "Current User", // TODO: Replace with actual user name from auth context
-      timestamp: new Date(),
-      metadata,
-    };
-
-    setClients(clients.map(c => 
-      c.id === clientId 
-        ? { 
-            ...c, 
-            activityHistory: [newActivity, ...(c.activityHistory || [])],
-            updatedAt: new Date()
-          }
-        : c
-    ));
-
-    if (selectedClient?.id === clientId) {
-      setSelectedClient({
-        ...selectedClient,
-        activityHistory: [newActivity, ...(selectedClient.activityHistory || [])],
-        updatedAt: new Date()
-      });
-    }
-  };
 
   const handleAddClient = (data: CreateClientRequest) => {
     const newClient: Client = {
@@ -193,113 +93,14 @@ export default function ClientsPage() {
     toast.success("Client created successfully");
   };
 
-  const handleDeleteClient = (clientId: string) => {
-    const client = clients.find(c => c.id === clientId);
-    
-    // Check if client has active jobs
-    if (client && client.statistics.activeJobs > 0) {
-      toast.error(
-        `Cannot delete client "${client.companyName}". This client has ${client.statistics.activeJobs} active job${client.statistics.activeJobs > 1 ? 's' : ''}. Please close or reassign all active jobs before deleting.`,
-        { duration: 5000 }
-      );
-      return;
-    }
-    
-    // If client can be deleted, show confirmation dialog
-    if (client) {
-      setClientToDelete(client);
-      setDeleteConfirmOpen(true);
-    }
-  };
-
   const confirmDeleteClient = () => {
     if (!clientToDelete) return;
     
     setClients(clients.filter(c => c.id !== clientToDelete.id));
     toast.success("Client deleted successfully");
-    if (selectedClient?.id === clientToDelete.id) {
-      setSelectedClient(null);
-    }
     
     setDeleteConfirmOpen(false);
     setClientToDelete(null);
-  };
-
-  const handleUpdateClient = (clientId: string, updates: Partial<Client>) => {
-    const client = clients.find(c => c.id === clientId);
-    const changedFields = Object.keys(updates).filter(key => 
-      key !== 'updatedAt' && key !== 'activityHistory'
-    );
-    
-    setClients(clients.map(c => 
-      c.id === clientId 
-        ? { ...c, ...updates, updatedAt: new Date() }
-        : c
-    ));
-    
-    if (selectedClient?.id === clientId) {
-      setSelectedClient({ ...selectedClient, ...updates, updatedAt: new Date() });
-    }
-    
-    // Track update activity
-    if (client && changedFields.length > 0) {
-      addActivityToClient(
-        clientId,
-        "client_updated",
-        `Client information was updated (${changedFields.join(', ')})`,
-        { updatedFields: changedFields, changes: updates }
-      );
-    }
-    
-    toast.success("Client updated successfully");
-  };
-
-  const handleAddJob = (data: CreateJobRequest) => {
-    const newJob: Job = {
-      id: `job-${Date.now()}`,
-      ...data,
-      status: "draft",
-      filledPositions: 0,
-      candidateIds: [], // This is correct - Jobs should have candidateIds
-      statistics: {
-        totalApplications: 0,
-        approvedApplications: 0,
-        rejectedApplications: 0,
-        totalCandidates: 0,
-        activeCandidates: 0,
-        hiredCandidates: 0,
-        rejectedCandidates: 0,
-        interviewingCandidates: 0,
-        offerExtendedCandidates: 0,
-        candidatesInPipeline: 0,
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    setJobs([newJob, ...jobs]);
-
-    // Update client statistics
-    if (selectedClient) {
-      const updatedStats = {
-        ...selectedClient.statistics,
-        totalJobs: selectedClient.statistics.totalJobs + 1,
-        draftJobs: selectedClient.statistics.draftJobs + 1,
-      };
-      
-      handleUpdateClient(selectedClient.id, { 
-        statistics: updatedStats,
-        jobIds: [...selectedClient.jobIds, newJob.id]
-      });
-
-      // Add activity
-      addActivityToClient(
-        selectedClient.id,
-        "job_created",
-        `New job "${data.title}" was created`,
-        { jobTitle: data.title, jobId: newJob.id }
-      );
-    }
   };
 
   // Filter clients based on search
@@ -336,22 +137,6 @@ export default function ClientsPage() {
           return 0;
       }
     });
-
-  if (selectedClient) {
-    return (
-      <div className="flex flex-1 flex-col">
-        <ClientDetails
-          client={selectedClient}
-          jobs={jobs}
-          candidates={candidates}
-          onBack={() => setSelectedClient(null)}
-          onUpdate={handleUpdateClient}
-          onDelete={handleDeleteClient}
-          onAddJob={handleAddJob}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-1 flex-col">
@@ -494,7 +279,7 @@ export default function ClientsPage() {
                 <ClientCard
                   key={client.id}
                   client={client}
-                  onClick={() => setSelectedClient(client)}
+                  onClick={() => navigate(`/dashboard/clients/${client.id}`)}
                 />
               ))}
             </div>

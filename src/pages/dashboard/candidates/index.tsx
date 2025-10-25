@@ -36,16 +36,20 @@ export default function CandidatesPage() {
     };
     
     return {
-      id: index + 1,
+      id: parseInt(candidate.id.replace(/\D/g, '')) || Math.abs(candidate.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)),
+      candidateId: candidate.id, // Actual candidate ID
       header: `${candidate.firstName} ${candidate.lastName}`, // Candidate name
-      type: firstJobApp?.jobId || "N/A", // Job ID Applied
+      type: job?.title || "General Applicant", // Job title they applied for
       status: getDisplayStatus(firstJobApp?.status || "new"),
-      target: new Date(candidate.createdAt).getDate(), // For sorting
+      target: new Date(candidate.createdAt).getTime(), // Timestamp for sorting
       limit: candidate.yearsOfExperience || 0, // For sorting
       reviewer: "Team", // Could be derived from job assignments
-      // Display data with realistic variations
-      dateApplied: stages[index % stages.length], // Current Stage
-      jobIdDisplay: client?.companyName || "Unknown Client", // Client name
+      // Properly mapped display data
+      dateApplied: firstJobApp?.appliedAt ? new Date(firstJobApp.appliedAt).toLocaleDateString() : new Date(candidate.createdAt).toLocaleDateString(), // Actual application date
+      currentStage: stages[index % stages.length], // Current pipeline stage
+      jobIdDisplay: job?.id || "N/A", // Actual job ID
+      jobTitle: job?.title || "General Applicant", // Job title
+      clientName: client?.companyName || "Unknown Client", // Client name
       clientLogo: client?.logo || `https://api.dicebear.com/7.x/initials/svg?seed=${client?.companyName || 'C'}`, // Client logo
       teamMembers: selectedTeamMembers, // Assigned team members
       // Additional candidate details
@@ -65,7 +69,7 @@ export default function CandidatesPage() {
       linkedinUrl: undefined,
       portfolioUrl: undefined,
       educationLevel: candidate.education?.[0]?.level || undefined,
-      expectedSalary: undefined,  
+      expectedSalary: undefined,
       languages: candidate.languages?.map(l => l.name) || undefined,
       notes: undefined,
       // Video introduction (demo data for first applicant)

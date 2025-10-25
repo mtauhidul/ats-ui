@@ -49,9 +49,10 @@ export interface Attachment {
   id: string;
   name: string;
   url: string;
-  type: string;
-  size: number;
+  size: number; // in bytes
+  type: string; // MIME type (e.g., 'application/pdf', 'image/png')
   uploadedAt: Date;
+  uploadedBy?: string; // User ID who uploaded
 }
 
 // Sorting and filtering

@@ -13,59 +13,41 @@ export type TeamRole = (typeof TeamRole)[keyof typeof TeamRole];
 
 // Team member interface
 export interface TeamMember extends BaseEntity {
+  userId?: string; // Reference to User collection (optional for now)
   firstName: string;
   lastName: string;
   email: string;
   phone?: string;
   role: TeamRole;
-  isActive: boolean;
+  status: "active" | "inactive"; // Using status instead of isActive for UI compatibility
   avatar?: string;
   department?: string;
-  position?: string;
+  title?: string; // Job title/position
   startDate?: Date;
   permissions: TeamPermissions;
+  statistics?: {
+    activeJobs: number;
+    placedCandidates: number;
+    pendingReviews: number;
+    emailsSent: number;
+  };
+  lastLoginAt?: string;
 }
 
-// Team permissions
+// Team permissions - aligned with actual implementation
 export interface TeamPermissions {
-  canCreateJobs: boolean;
-  canEditJobs: boolean;
-  canDeleteJobs: boolean;
-  canViewAllJobs: boolean;
-  canManageCandidates: boolean;
-  canScheduleInterviews: boolean;
-  canViewReports: boolean;
-  canManageTeam: boolean;
   canManageClients: boolean;
-}
-
-// Hiring team - Dynamic teams for specific hiring processes
-export interface HiringTeam extends BaseEntity {
-  name: string;
-  description?: string;
-  isActive: boolean;
-  members: HiringTeamMember[];
-  jobIds: string[]; // Jobs this team is responsible for
-  clientIds?: string[]; // Clients this team handles
-}
-
-// Hiring team member with specific role in the team
-export interface HiringTeamMember {
-  userId: string;
-  role: TeamRole;
-  isLead?: boolean;
-  joinedAt: Date;
+  canManageJobs: boolean;
+  canReviewApplications: boolean;
+  canManageCandidates: boolean;
+  canSendEmails: boolean;
+  canManageTeam: boolean;
+  canAccessAnalytics: boolean;
 }
 
 // Full team member info (for display)
 export interface TeamMemberInfo extends TeamMember {
   fullName: string;
-  hiringTeams: {
-    teamId: string;
-    teamName: string;
-    role: TeamRole;
-    isLead: boolean;
-  }[];
   assignedJobs: number;
   activeCandidates: number;
 }
@@ -90,51 +72,19 @@ export interface UpdateTeamMemberRequest {
   email?: string;
   phone?: string;
   role?: TeamRole;
-  isActive?: boolean;
+  status?: "active" | "inactive";
   avatar?: string;
   department?: string;
-  position?: string;
+  title?: string;
   permissions?: TeamPermissions;
-}
-
-// Create hiring team request
-export interface CreateHiringTeamRequest {
-  name: string;
-  description?: string;
-  members: {
-    userId: string;
-    role: TeamRole;
-    isLead?: boolean;
-  }[];
-}
-
-// Update hiring team request
-export interface UpdateHiringTeamRequest {
-  name?: string;
-  description?: string;
-  isActive?: boolean;
-  members?: {
-    userId: string;
-    role: TeamRole;
-    isLead?: boolean;
-  }[];
 }
 
 // Team filters
 export interface TeamMemberFilters {
   search?: string;
   role?: TeamRole[];
-  isActive?: boolean;
+  status?: "active" | "inactive";
   department?: string;
-  hiringTeamId?: string;
-}
-
-export interface HiringTeamFilters {
-  search?: string;
-  isActive?: boolean;
-  memberId?: string;
-  clientId?: string;
 }
 
 export type TeamMemberSortField = "firstName" | "lastName" | "email" | "role" | "startDate" | "createdAt";
-export type HiringTeamSortField = "name" | "createdAt" | "updatedAt";

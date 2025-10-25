@@ -187,7 +187,6 @@ export default function JobPipelinePage() {
                   onCandidateClick={handleCandidateClick}
                   onStatusChange={handleStatusChange}
                   onStageUpdate={handleStageUpdate}
-                  containerRef={kanbanContainerRef}
                 />
               </div>
             )
