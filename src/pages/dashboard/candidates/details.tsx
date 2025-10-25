@@ -25,9 +25,6 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { CheckCircle2, XCircle } from "lucide-react";
-import applicationsData from "@/lib/mock-data/applications.json";
-import interviewsData from "@/lib/mock-data/interviews.json";
-import tagsData from "@/lib/mock-data/tags.json";
 import {
   Command,
   CommandEmpty,
@@ -40,6 +37,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+
+// Mock data imports
+import applicationsData from "@/lib/mock-data/applications.json";
+import tagsData from "@/lib/mock-data/tags.json";
+import interviewsData from "@/lib/mock-data/interviews.json";
 
 // Helper functions for status badges
 function getStatusBadge(status: string) {

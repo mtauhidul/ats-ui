@@ -31,12 +31,22 @@ export interface Application extends BaseEntity {
   lastName: string;
   email: string;
   phone?: string;
-  
+  photo?: string; // Profile photo URL
+  address?: string; // Applicant address
+
   // Application details
   status: ApplicationStatus;
   priority?: ApplicationPriority;
   source: CandidateSource;
   referredBy?: string;
+
+  // AI Analysis (from resume parsing)
+  aiAnalysis?: {
+    isValid: boolean;
+    matchScore?: number;
+    summary?: string;
+  };
+  resumeText?: string; // Parsed resume text
   
   // Application content
   coverLetter?: string;

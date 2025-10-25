@@ -4,38 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessageSquare, Search, Send, MoreVertical, Plus, Paperclip, Smile } from "lucide-react";
-import messagesData from "@/lib/mock-data/messages.json";
-import teamData from "@/lib/mock-data/team.json";
+import { useMessages } from "@/store/hooks/useMessages";
+import { useTeam } from "@/store/hooks/useTeam";
 import { hasPermission, getRestrictedMessage } from "@/lib/rbac";
 import { toast } from "sonner";
-
-interface Message {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  senderName: string;
-  senderRole: string;
-  senderAvatar: string;
-  recipientId: string;
-  recipientName: string;
-  recipientRole: string;
-  recipientAvatar: string;
-  message: string;
-  read: boolean;
-  sentAt: string;
-}
-
-interface Conversation {
-  id: string;
-  participantId: string;
-  participantName: string;
-  participantAvatar: string;
-  participantRole: string;
-  lastMessage: string;
-  lastMessageTime: string;
-  unreadCount: number;
-  messages: Message[];
-}
 
 const getInitials = (name: string) => {
   return name
@@ -47,58 +19,16 @@ const getInitials = (name: string) => {
 };
 
 export default function MessagesPage() {
-  const currentUser = teamData[0];
+  const { teamMembers } = useTeam();
+  const { conversations, sendMessage, setCurrentConversation, currentConversation } = useMessages();
+  
+  const currentUser = teamMembers[0];
   const canSendMessages = hasPermission(currentUser, 'canSendEmails');
-  const currentUserId = currentUser.id;
+  const currentUserId = currentUser?.id || '';
 
-  const [messages] = useState<Message[]>(messagesData.map(m => ({ ...m })));
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Group messages by conversation
-  const conversations: Conversation[] = [];
-  const conversationMap = new Map<string, Message[]>();
-
-  messages.forEach(msg => {
-    if (!conversationMap.has(msg.conversationId)) {
-      conversationMap.set(msg.conversationId, []);
-    }
-    conversationMap.get(msg.conversationId)!.push(msg);
-  });
-
-  conversationMap.forEach((msgs, convId) => {
-    const sortedMsgs = msgs.sort((a, b) =>
-      new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime()
-    );
-
-    const lastMsg = sortedMsgs[sortedMsgs.length - 1];
-    const participant = lastMsg.senderId === currentUserId
-      ? { id: lastMsg.recipientId, name: lastMsg.recipientName, avatar: lastMsg.recipientAvatar, role: lastMsg.recipientRole }
-      : { id: lastMsg.senderId, name: lastMsg.senderName, avatar: lastMsg.senderAvatar, role: lastMsg.senderRole };
-
-    const unreadCount = sortedMsgs.filter(m =>
-      !m.read && m.recipientId === currentUserId
-    ).length;
-
-    conversations.push({
-      id: convId,
-      participantId: participant.id,
-      participantName: participant.name,
-      participantAvatar: participant.avatar,
-      participantRole: participant.role,
-      lastMessage: lastMsg.message,
-      lastMessageTime: lastMsg.sentAt,
-      unreadCount,
-      messages: sortedMsgs
-    });
-  });
-
-  // Sort by most recent (newest at top)
-  conversations.sort((a, b) =>
-    new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
-  );
 
   const filteredConversations = searchQuery
     ? conversations.filter(c =>
@@ -113,14 +43,14 @@ export default function MessagesPage() {
   };
 
   useEffect(() => {
-    if (selectedConversation) {
+    if (currentConversation) {
       scrollToBottom();
     }
-  }, [selectedConversation]);
+  }, [currentConversation]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [selectedConversation?.messages]);
+  }, [currentConversation?.messages]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -139,10 +69,23 @@ export default function MessagesPage() {
       return;
     }
 
-    if (!messageText.trim()) {
+    if (!messageText.trim() || !currentConversation) {
       return;
     }
 
+    sendMessage({
+      conversationId: currentConversation.id,
+      senderId: currentUserId,
+      senderName: `${currentUser.firstName} ${currentUser.lastName}`,
+      senderRole: currentUser.role,
+      senderAvatar: currentUser.avatar || '',
+      recipientId: currentConversation.participantId,
+      recipientName: currentConversation.participantName,
+      recipientRole: currentConversation.participantRole,
+      recipientAvatar: currentConversation.participantAvatar,
+      message: messageText,
+      read: false,
+    });
     toast.success("Message sent");
     setMessageText("");
   };
@@ -232,9 +175,9 @@ export default function MessagesPage() {
                       <div
                         key={conversation.id}
                         className={`p-3 border-b cursor-pointer transition-colors hover:bg-muted/50 ${
-                          selectedConversation?.id === conversation.id ? 'bg-muted' : ''
+                          currentConversation?.id === conversation.id ? 'bg-muted' : ''
                         }`}
-                        onClick={() => setSelectedConversation(conversation)}
+                        onClick={() => setCurrentConversation(conversation)}
                       >
                         <div className="flex gap-3">
                           <div className="relative flex-shrink-0">
@@ -274,7 +217,7 @@ export default function MessagesPage() {
 
               {/* Chat Area */}
               <Card className="flex flex-col overflow-hidden">
-                {selectedConversation ? (
+                {currentConversation ? (
                   <>
                     {/* Chat Header */}
                     <CardHeader className="pb-3 border-b shrink-0">
@@ -282,15 +225,15 @@ export default function MessagesPage() {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
                             <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                              {getInitials(selectedConversation.participantName)}
+                              {getInitials(currentConversation.participantName)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <CardTitle className="text-base">
-                              {selectedConversation.participantName}
+                              {currentConversation.participantName}
                             </CardTitle>
                             <p className="text-xs text-muted-foreground">
-                              {selectedConversation.participantRole}
+                              {currentConversation.participantRole}
                             </p>
                           </div>
                         </div>
@@ -304,7 +247,7 @@ export default function MessagesPage() {
                     <div className="flex-1 overflow-y-auto p-4 bg-muted/20 flex flex-col">
                       <div className="flex-1"></div>
                       <div className="space-y-4">
-                        {selectedConversation.messages.map((msg) => {
+                        {currentConversation.messages.map((msg) => {
                           const isCurrentUser = msg.senderId === currentUserId;
                           return (
                             <div

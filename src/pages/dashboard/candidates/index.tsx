@@ -1,7 +1,7 @@
+import { useEffect } from "react";
 import { CandidatesDataTable } from "@/components/candidates-data-table";
-import candidatesData from "@/lib/mock-data/candidates.json";
-import jobsData from "@/lib/mock-data/jobs.json";
-import clientsData from "@/lib/mock-data/clients.json";
+import { useCandidates, useJobs, useClients, useAppSelector } from "@/store/hooks/index";
+import { selectCandidates, selectJobs, selectClients } from "@/store/selectors";
 
 // Mock stages and clients for demonstration
 const stages = ["New Application", "Screening", "Interview", "Assessment", "Offer", "Hired"];
@@ -10,7 +10,21 @@ const stages = ["New Application", "Screening", "Interview", "Assessment", "Offe
 const teamMembersPool = ["John Smith", "Sarah Wilson", "Mike Johnson", "Lisa Brown", "Tom Davis", "Emma Davis", "Alex Chen"];
 
 export default function CandidatesPage() {
-  const transformedData = candidatesData.map((candidate, index) => {
+  const { fetchCandidates, isLoading: candidatesLoading } = useCandidates();
+  const { fetchJobs, isLoading: jobsLoading } = useJobs();
+  const { fetchClients, isLoading: clientsLoading } = useClients();
+  
+  const candidates = useAppSelector(selectCandidates);
+  const jobs = useAppSelector(selectJobs);
+  const clients = useAppSelector(selectClients);
+
+  useEffect(() => {
+    fetchCandidates();
+    fetchJobs();
+    fetchClients();
+  }, [fetchCandidates, fetchJobs, fetchClients]);
+
+  const transformedData = candidates.map((candidate, index) => {
     // Randomly assign 0-3 team members
     const teamMemberCount = Math.floor(Math.random() * 4);
     const shuffled = [...teamMembersPool].sort(() => 0.5 - Math.random());
@@ -18,8 +32,8 @@ export default function CandidatesPage() {
     
     // Get first job application details
     const firstJobApp = candidate.jobApplications[0];
-    const job = jobsData.find(j => j.id === firstJobApp?.jobId);
-    const client = clientsData.find(c => c.id === job?.clientId);
+    const job = jobs.find(j => j.id === firstJobApp?.jobId);
+    const client = clients.find(c => c.id === job?.clientId);
     
     // Map candidate status to display status
     const getDisplayStatus = (status: string) => {
@@ -79,6 +93,10 @@ export default function CandidatesPage() {
       videoIntroDuration: index === 0 ? "2:30" : undefined,
     };
   });
+
+  const isLoading = candidatesLoading || jobsLoading || clientsLoading;
+
+  if (isLoading) return <div className="flex items-center justify-center h-screen">Loading candidates...</div>;
 
   return (
     <div className="flex flex-1 flex-col">

@@ -8,28 +8,36 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import jobsData from "@/lib/mock-data/jobs.json";
-import candidatesData from "@/lib/mock-data/candidates.json";
-import applicationsData from "@/lib/mock-data/applications.json";
-import clientsData from "@/lib/mock-data/clients.json";
+import { useJobs } from "@/store/hooks/useJobs";
+import { useCandidates } from "@/store/hooks/useCandidates";
+import { useApplications } from "@/store/hooks/useApplications";
+import { useClients } from "@/store/hooks/useClients";
+import type { Job } from "@/types/job";
+import type { Candidate } from "@/types/candidate";
+import type { Application } from "@/types/application";
+import type { Client } from "@/types/client";
 
 export function SectionCards() {
-  // Calculate real statistics from mock data
-  const openJobs = jobsData.filter((job: any) => job.status === "open").length;
-  const totalJobs = jobsData.length;
+  const { jobs } = useJobs();
+  const { candidates } = useCandidates();
+  const { applications } = useApplications();
+  const { clients } = useClients();
 
-  const totalCandidates = candidatesData.length;
-  const activeCandidates = candidatesData.filter((c: any) =>
-    c.jobApplications?.some((app: any) =>
+  // Calculate real statistics from Redux data
+  const openJobs = jobs.filter((job: Job) => job.status === "open").length;
+  const totalJobs = jobs.length;
+
+  const totalCandidates = candidates.length;
+  const activeCandidates = candidates.filter((c: Candidate) =>
+    c.jobApplications?.some((app) =>
       app.status !== "hired" && app.status !== "rejected" && app.status !== "withdrawn"
     )
   ).length;
 
-  const pendingApplications = applicationsData.filter((app: any) => app.status === "pending").length;
-  const totalApplications = applicationsData.length;
+  const pendingApplications = applications.filter((app: Application) => app.status === "pending").length;
 
-  const activeClients = clientsData.filter((client: any) => client.status === "active").length;
-  const totalClients = clientsData.length;
+  const activeClients = clients.filter((client: Client) => client.status === "active").length;
+  const totalClients = clients.length;
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">

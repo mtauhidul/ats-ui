@@ -1,26 +1,28 @@
 import { useNavigate, useParams } from "react-router-dom";
+import { useEffect } from "react";
 import { CandidateEmailCommunication } from "@/components/candidate-email-communication";
-import candidatesData from "@/lib/mock-data/candidates.json";
-import jobsData from "@/lib/mock-data/jobs.json";
-import type { Candidate } from "@/types/candidate";
-import type { Job } from "@/types/job";
+import { useCandidates } from "@/store/hooks/useCandidates";
+import { useJobs } from "@/store/hooks/useJobs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
 export default function JobCandidateCommunicationPage() {
   const navigate = useNavigate();
   const { jobId, candidateId } = useParams<{ jobId: string; candidateId: string }>();
+  const { currentCandidate, fetchCandidateById } = useCandidates();
+  const { currentJob, fetchJobById } = useJobs();
 
-  // Find the job and candidate
-  const job = jobsData.find((j) => j.id === jobId) as Job | undefined;
-  const candidate = candidatesData.find((c) => c.id === candidateId) as Candidate | undefined;
+  useEffect(() => {
+    if (jobId) fetchJobById(jobId);
+    if (candidateId) fetchCandidateById(candidateId);
+  }, [jobId, candidateId, fetchJobById, fetchCandidateById]);
 
-  if (!job || !candidate) {
+  if (!currentJob || !currentCandidate) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-2">
-            {!job ? "Job not found" : "Candidate not found"}
+            {!currentJob ? "Job not found" : "Candidate not found"}
           </h2>
           <Button onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -37,8 +39,8 @@ export default function JobCandidateCommunicationPage() {
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
           <div className="px-4 lg:px-6">
             <CandidateEmailCommunication
-              candidate={candidate}
-              job={job}
+              candidate={currentCandidate}
+              job={currentJob}
               onBack={() => navigate(-1)}
             />
           </div>

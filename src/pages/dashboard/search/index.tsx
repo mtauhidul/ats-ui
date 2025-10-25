@@ -1,27 +1,33 @@
-import { useState, useMemo, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { hasPermission } from "@/lib/rbac";
+import { useAppSelector } from "@/store/hooks";
+import { useApplications } from "@/store/hooks/useApplications";
+import { useCandidates } from "@/store/hooks/useCandidates";
+import { useClients } from "@/store/hooks/useClients";
+import { useJobs } from "@/store/hooks/useJobs";
+import { useTeam } from "@/store/hooks/useTeam";
+import type { Application } from "@/types/application";
+import type { Candidate } from "@/types/candidate";
+import type { Client } from "@/types/client";
+import type { Job } from "@/types/job";
+import type { TeamMember } from "@/types/team";
 import {
-  Search,
   Briefcase,
-  Users,
-  UserCircle,
-  FileText,
   Building,
   Clock,
+  FileText,
+  Search,
+  TrendingUp,
+  UserCircle,
+  Users,
   X,
-  TrendingUp
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import jobsData from "@/lib/mock-data/jobs.json";
-import candidatesData from "@/lib/mock-data/candidates.json";
-import clientsData from "@/lib/mock-data/clients.json";
-import applicationsData from "@/lib/mock-data/applications.json";
-import teamData from "@/lib/mock-data/team.json";
-import { hasPermission } from "@/lib/rbac";
 
 type SearchResultType = "job" | "candidate" | "client" | "application" | "team";
 
@@ -39,7 +45,7 @@ interface SearchResult {
 
 // Simple fuzzy match scoring
 const fuzzyMatch = (text: string | undefined | null, query: string): number => {
-  if (!text || typeof text !== 'string') return 0;
+  if (!text || typeof text !== "string") return 0;
 
   text = text.toLowerCase();
   query = query.toLowerCase();
@@ -60,7 +66,6 @@ const fuzzyMatch = (text: string | undefined | null, query: string): number => {
   return queryIndex === query.length ? score : 0;
 };
 
-
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | SearchResultType>("all");
@@ -68,14 +73,46 @@ export default function SearchPage() {
     const saved = localStorage.getItem("recentSearches");
     return saved ? JSON.parse(saved) : [];
   });
+
+  const { fetchJobs } = useJobs();
+  const { fetchCandidates } = useCandidates();
+  const { fetchClients } = useClients();
+  const { fetchApplications } = useApplications();
+  const { fetchTeam } = useTeam();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const jobsData = useAppSelector((state) => (state.jobs as any).jobs);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const candidatesData = useAppSelector(
+    (state) => (state.candidates as any).candidates
+  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const clientsData = useAppSelector((state) => (state.clients as any).clients);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const applicationsData = useAppSelector(
+    (state) => (state.applications as any).applications
+  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const teamData = useAppSelector((state) => (state.team as any).teamMembers);
   const currentUser = teamData[0];
+
+  useEffect(() => {
+    fetchJobs();
+    fetchCandidates();
+    fetchClients();
+    fetchApplications();
+    fetchTeam();
+  }, [fetchJobs, fetchCandidates, fetchClients, fetchApplications, fetchTeam]);
 
   // Add to recent searches
   useEffect(() => {
     if (searchQuery.trim() && searchQuery.length > 2) {
       const timer = setTimeout(() => {
-        setRecentSearches(prev => {
-          const updated = [searchQuery, ...prev.filter(q => q !== searchQuery)].slice(0, 5);
+        setRecentSearches((prev) => {
+          const updated = [
+            searchQuery,
+            ...prev.filter((q) => q !== searchQuery),
+          ].slice(0, 5);
           localStorage.setItem("recentSearches", JSON.stringify(updated));
           return updated;
         });
@@ -87,13 +124,13 @@ export default function SearchPage() {
   // Keyboard shortcut for search
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        document.getElementById('global-search-input')?.focus();
+        document.getElementById("global-search-input")?.focus();
       }
     };
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
   }, []);
 
   const searchResults = useMemo(() => {
@@ -102,47 +139,65 @@ export default function SearchPage() {
     const query = searchQuery.toLowerCase();
     const results: SearchResult[] = [];
 
-    if (hasPermission(currentUser, 'canManageJobs')) {
-      jobsData.forEach((job: any) => {
+    if (hasPermission(currentUser, "canManageJobs")) {
+      jobsData.forEach((job: Job) => {
         let relevance = 0;
         relevance += fuzzyMatch(job.title, query);
         relevance += fuzzyMatch(job.description || "", query) * 0.3;
         relevance += fuzzyMatch(job.type || "", query) * 0.5;
         relevance += fuzzyMatch(job.status || "", query) * 0.3;
         relevance += fuzzyMatch(job.experienceLevel || "", query) * 0.3;
-        relevance += fuzzyMatch(job.location || "", query) * 0.4;
+        const locationStr = job.location
+          ? `${job.location.city || ""} ${job.location.state || ""} ${
+              job.location.country || ""
+            }`
+          : "";
+        relevance += fuzzyMatch(locationStr, query) * 0.4;
 
-        const salaryStr = `${job.salaryMin}-${job.salaryMax}`;
+        const salaryStr = job.salaryRange
+          ? `${job.salaryRange.min}-${job.salaryRange.max}`
+          : "";
         relevance += fuzzyMatch(salaryStr, query) * 0.2;
 
         if (relevance > 5) {
-          const client = clientsData.find(c => c.id === job.clientId);
+          const client = clientsData.find((c: Client) => c.id === job.clientId);
           results.push({
             id: job.id,
             type: "job",
             title: job.title,
-            subtitle: `${client?.companyName || "Unknown Client"} • ${job.location || "Remote"}`,
+            subtitle: `${client?.companyName || "Unknown Client"} • ${
+              job.location || "Remote"
+            }`,
             description: job.description || "No description available",
-            badges: [job.type || "Full-time", job.status, job.experienceLevel, `$${job.salaryMin}-${job.salaryMax}`],
+            badges: [
+              job.type || "Full-time",
+              job.status,
+              job.experienceLevel,
+              job.salaryRange
+                ? `$${job.salaryRange.min}-${job.salaryRange.max}`
+                : "",
+            ].filter(Boolean),
             link: `/dashboard/jobs/pipeline/${job.id}`,
-            relevance
+            relevance,
           });
         }
       });
     }
 
-    if (hasPermission(currentUser, 'canManageCandidates')) {
-      candidatesData.forEach(candidate => {
+    if (hasPermission(currentUser, "canManageCandidates")) {
+      candidatesData.forEach((candidate: Candidate) => {
         let relevance = 0;
         const fullName = `${candidate.firstName} ${candidate.lastName}`;
-        const location = candidate.address ? `${candidate.address.city}, ${candidate.address.country}` : "";
+        const location = candidate.address
+          ? `${candidate.address.city}, ${candidate.address.country}`
+          : "";
 
         relevance += fuzzyMatch(fullName, query) * 1.5;
         relevance += fuzzyMatch(candidate.email, query) * 1.2;
         relevance += fuzzyMatch(candidate.currentTitle || "", query);
         relevance += fuzzyMatch(location, query) * 0.4;
 
-        candidate.skills?.forEach(skill => {
+        candidate.skills?.forEach((skill) => {
           relevance += fuzzyMatch(skill.name, query) * 0.3;
         });
 
@@ -151,21 +206,25 @@ export default function SearchPage() {
             id: candidate.id,
             type: "candidate",
             title: fullName,
-            subtitle: `${candidate.currentTitle || "Candidate"} • ${location || "No location"}`,
-            description: `${candidate.email} • ${candidate.yearsOfExperience} years experience`,
-            avatar: undefined,
-            badges: candidate.skills?.slice(0, 3).map(s => s.name) || [],
+            subtitle: `${candidate.currentTitle || "Candidate"} • ${
+              location || "No location"
+            }`,
+            description: candidate.email,
+            avatar: candidate.avatar,
+            badges: candidate.skills?.slice(0, 3).map((s) => s.name) || [],
             link: `/dashboard/candidates/${candidate.id}`,
-            relevance
+            relevance,
           });
         }
       });
     }
 
-    if (hasPermission(currentUser, 'canManageClients')) {
-      clientsData.forEach(client => {
+    if (hasPermission(currentUser, "canManageClients")) {
+      clientsData.forEach((client: Client) => {
         let relevance = 0;
-        const location = client.address ? `${client.address.city}, ${client.address.country}` : "";
+        const location = client.address
+          ? `${client.address.city}, ${client.address.country}`
+          : "";
 
         relevance += fuzzyMatch(client.companyName, query) * 1.5;
         relevance += fuzzyMatch(client.industry, query);
@@ -180,18 +239,20 @@ export default function SearchPage() {
             type: "client",
             title: client.companyName,
             subtitle: `${client.industry} • ${location || "No location"}`,
-            description: `${client.email || ''} • ${client.companySize} • ${client.status}`,
+            description: `${client.email || ""} • ${client.companySize} • ${
+              client.status
+            }`,
             avatar: undefined,
             badges: [client.status, client.companySize],
             link: `/dashboard/clients`,
-            relevance
+            relevance,
           });
         }
       });
     }
 
-    if (hasPermission(currentUser, 'canReviewApplications')) {
-      applicationsData.forEach(app => {
+    if (hasPermission(currentUser, "canReviewApplications")) {
+      applicationsData.forEach((app: Application) => {
         let relevance = 0;
         const fullName = `${app.firstName} ${app.lastName}`;
         relevance += fuzzyMatch(fullName, query) * 1.5;
@@ -206,18 +267,20 @@ export default function SearchPage() {
             type: "application",
             title: fullName,
             subtitle: `${app.targetJobTitle || "Application"} • ${app.source}`,
-            description: `${app.email} • Applied ${new Date(app.submittedAt).toLocaleDateString()} • ${app.status}`,
+            description: `${app.email} • Applied ${new Date(
+              app.submittedAt
+            ).toLocaleDateString()} • ${app.status}`,
             avatar: undefined,
             badges: [app.status, app.source],
             link: `/dashboard/applications`,
-            relevance
+            relevance,
           });
         }
       });
     }
 
-    if (hasPermission(currentUser, 'canManageTeam')) {
-      teamData.forEach(member => {
+    if (hasPermission(currentUser, "canManageTeam")) {
+      teamData.forEach((member: TeamMember) => {
         let relevance = 0;
         const fullName = `${member.firstName} ${member.lastName}`;
         relevance += fuzzyMatch(fullName, query) * 1.5;
@@ -237,26 +300,35 @@ export default function SearchPage() {
             avatar: undefined,
             badges: [member.role, member.status],
             link: `/dashboard/team`,
-            relevance
+            relevance,
           });
         }
       });
     }
 
     return results.sort((a, b) => b.relevance - a.relevance);
-  }, [searchQuery, currentUser]);
+  }, [
+    searchQuery,
+    currentUser,
+    jobsData,
+    candidatesData,
+    clientsData,
+    applicationsData,
+    teamData,
+  ]);
 
-  const filteredResults = filterType === "all" 
-    ? searchResults 
-    : searchResults.filter(r => r.type === filterType);
+  const filteredResults =
+    filterType === "all"
+      ? searchResults
+      : searchResults.filter((r) => r.type === filterType);
 
   const resultCounts = {
     all: searchResults.length,
-    job: searchResults.filter(r => r.type === "job").length,
-    candidate: searchResults.filter(r => r.type === "candidate").length,
-    client: searchResults.filter(r => r.type === "client").length,
-    application: searchResults.filter(r => r.type === "application").length,
-    team: searchResults.filter(r => r.type === "team").length,
+    job: searchResults.filter((r) => r.type === "job").length,
+    candidate: searchResults.filter((r) => r.type === "candidate").length,
+    client: searchResults.filter((r) => r.type === "client").length,
+    application: searchResults.filter((r) => r.type === "application").length,
+    team: searchResults.filter((r) => r.type === "team").length,
   };
 
   const getTypeIcon = (type: SearchResultType) => {
@@ -304,9 +376,12 @@ export default function SearchPage() {
                   <Search className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">Global Search</h2>
+                  <h2 className="text-2xl font-bold text-foreground">
+                    Global Search
+                  </h2>
                   <p className="text-muted-foreground">
-                    Search across jobs, candidates, clients, applications, and team members
+                    Search across jobs, candidates, clients, applications, and
+                    team members
                   </p>
                 </div>
               </div>
@@ -368,56 +443,89 @@ export default function SearchPage() {
             {searchQuery && (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                  <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setFilterType("all")}>
+                  <Card
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setFilterType("all")}
+                  >
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">All Results</p>
-                          <p className="text-2xl font-bold">{resultCounts.all}</p>
+                          <p className="text-sm text-muted-foreground">
+                            All Results
+                          </p>
+                          <p className="text-2xl font-bold">
+                            {resultCounts.all}
+                          </p>
                         </div>
                         <Search className="h-8 w-8 text-muted-foreground" />
                       </div>
                     </CardContent>
                   </Card>
-                  <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setFilterType("job")}>
+                  <Card
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setFilterType("job")}
+                  >
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm text-muted-foreground">Jobs</p>
-                          <p className="text-2xl font-bold">{resultCounts.job}</p>
+                          <p className="text-2xl font-bold">
+                            {resultCounts.job}
+                          </p>
                         </div>
                         <Briefcase className="h-8 w-8 text-muted-foreground" />
                       </div>
                     </CardContent>
                   </Card>
-                  <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setFilterType("candidate")}>
+                  <Card
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setFilterType("candidate")}
+                  >
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">Candidates</p>
-                          <p className="text-2xl font-bold">{resultCounts.candidate}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Candidates
+                          </p>
+                          <p className="text-2xl font-bold">
+                            {resultCounts.candidate}
+                          </p>
                         </div>
                         <UserCircle className="h-8 w-8 text-muted-foreground" />
                       </div>
                     </CardContent>
                   </Card>
-                  <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setFilterType("client")}>
+                  <Card
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setFilterType("client")}
+                  >
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">Clients</p>
-                          <p className="text-2xl font-bold">{resultCounts.client}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Clients
+                          </p>
+                          <p className="text-2xl font-bold">
+                            {resultCounts.client}
+                          </p>
                         </div>
                         <Building className="h-8 w-8 text-muted-foreground" />
                       </div>
                     </CardContent>
                   </Card>
-                  <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setFilterType("application")}>
+                  <Card
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setFilterType("application")}
+                  >
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">Applications</p>
-                          <p className="text-2xl font-bold">{resultCounts.application}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Applications
+                          </p>
+                          <p className="text-2xl font-bold">
+                            {resultCounts.application}
+                          </p>
                         </div>
                         <FileText className="h-8 w-8 text-muted-foreground" />
                       </div>
@@ -431,9 +539,12 @@ export default function SearchPage() {
                       <CardContent className="py-12">
                         <div className="text-center text-muted-foreground">
                           <Search className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                          <p className="text-lg font-medium mb-1">No results found</p>
+                          <p className="text-lg font-medium mb-1">
+                            No results found
+                          </p>
                           <p className="text-sm">
-                            Try searching with different keywords or check your filters
+                            Try searching with different keywords or check your
+                            filters
                           </p>
                         </div>
                       </CardContent>
@@ -448,10 +559,16 @@ export default function SearchPage() {
                         <Card className="hover:shadow-md transition-all cursor-pointer hover:border-primary/50">
                           <CardContent className="p-4">
                             <div className="flex items-start gap-4">
-                              {(result.type === "candidate" || result.type === "team") ? (
+                              {result.type === "candidate" ||
+                              result.type === "team" ? (
                                 <Avatar className="h-12 w-12">
                                   <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                                    {result.title.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                    {result.title
+                                      .split(" ")
+                                      .map((n) => n[0])
+                                      .join("")
+                                      .slice(0, 2)
+                                      .toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                               ) : (
@@ -461,16 +578,22 @@ export default function SearchPage() {
                               )}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-semibold text-foreground">{result.title}</h4>
+                                  <h4 className="font-semibold text-foreground">
+                                    {result.title}
+                                  </h4>
                                   <Badge
                                     variant="outline"
-                                    className={`text-xs ${getTypeBadgeColor(result.type)}`}
+                                    className={`text-xs ${getTypeBadgeColor(
+                                      result.type
+                                    )}`}
                                   >
                                     {result.type}
                                   </Badge>
                                   <div className="flex items-center gap-1 ml-auto">
                                     <TrendingUp className="h-3 w-3 text-muted-foreground" />
-                                    <span className="text-xs text-muted-foreground">{Math.round(result.relevance)}% match</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {Math.round(result.relevance)}% match
+                                    </span>
                                   </div>
                                 </div>
                                 <p className="text-sm font-medium text-muted-foreground mb-2">
@@ -480,13 +603,22 @@ export default function SearchPage() {
                                   {result.description}
                                 </p>
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  {result.badges.slice(0, 4).map((badge, index) => (
-                                    <Badge key={index} variant="secondary" className="text-xs">
-                                      {badge}
-                                    </Badge>
-                                  ))}
+                                  {result.badges
+                                    .slice(0, 4)
+                                    .map((badge, index) => (
+                                      <Badge
+                                        key={index}
+                                        variant="secondary"
+                                        className="text-xs"
+                                      >
+                                        {badge}
+                                      </Badge>
+                                    ))}
                                   {result.badges.length > 4 && (
-                                    <Badge variant="secondary" className="text-xs">
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
                                       +{result.badges.length - 4} more
                                     </Badge>
                                   )}
@@ -509,7 +641,8 @@ export default function SearchPage() {
                     <Search className="h-16 w-16 mx-auto mb-4 opacity-50" />
                     <p className="text-lg font-medium mb-2">Start searching</p>
                     <p className="text-sm max-w-md mx-auto">
-                      Type in the search box above to find jobs, candidates, clients, applications, or team members
+                      Type in the search box above to find jobs, candidates,
+                      clients, applications, or team members
                     </p>
                   </div>
                 </CardContent>

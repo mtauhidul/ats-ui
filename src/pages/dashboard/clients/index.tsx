@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, Building2, Users, Briefcase, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,127 +16,47 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ClientCard } from "@/components/client-card";
 import { AddClientModal } from "@/components/modals/add-client-modal";
-import type { Client, CommunicationNoteType, CreateClientRequest, ClientStatus } from "@/types/client";
-import clientsData from "@/lib/mock-data/clients.json";
-import { toast } from "sonner";
+import type { Client, CreateClientRequest } from "@/types/client";
+import { useClients, useUI, useAppSelector } from "@/store/hooks/index";
+import { selectFilteredClients } from "@/store/selectors";
 
 export default function ClientsPage() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isAddClientOpen, setIsAddClientOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [industryFilter, setIndustryFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("name");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   
-  // Transform JSON data to match Client type
-  const [clients, setClients] = useState<Client[]>(
-    clientsData.map((client) => ({
-      ...client,
-      industry: client.industry as Client["industry"],
-      companySize: client.companySize as Client["companySize"],
-      status: client.status as ClientStatus,
-      createdAt: new Date(client.createdAt),
-      updatedAt: new Date(client.updatedAt),
-      communicationNotes: client.communicationNotes?.map((note) => ({
-        ...note,
-        type: note.type as CommunicationNoteType,
-        createdAt: new Date(note.createdAt),
-        updatedAt: new Date(note.updatedAt),
-      })),
-      activityHistory: client.activityHistory?.map((activity) => ({
-        ...activity,
-        timestamp: new Date(activity.timestamp),
-      })),
-    }))
-  );
+  // Redux state and actions
+  const {
+    filters,
+    fetchClients,
+    createClient,
+    deleteClient,
+    setFilters,
+  } = useClients();
+  
+  const { modals, openModal, closeModal } = useUI();
+  
+  // Use memoized selector for filtered clients
+  const filteredClients = useAppSelector(selectFilteredClients);
 
-  const handleAddClient = (data: CreateClientRequest) => {
-    const newClient: Client = {
-      id: `client-${Date.now()}`,
-      ...data,
-      logo: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.companyName)}&background=3b82f6&color=fff`,
-      status: "active" as ClientStatus,
-      statistics: {
-        totalJobs: 0,
-        activeJobs: 0,
-        closedJobs: 0,
-        draftJobs: 0,
-        totalCandidates: 0,
-        activeCandidates: 0,
-        hiredCandidates: 0,
-        rejectedCandidates: 0,
-        averageTimeToHire: 0,
-        successRate: 0,
-      },
-      jobIds: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      contacts: data.contacts.map((c, i) => ({
-        ...c,
-        id: `contact-${Date.now()}-${i}`,
-      })),
-      activityHistory: [{
-        id: `activity-${Date.now()}`,
-        clientId: `client-${Date.now()}`,
-        action: "client_created",
-        description: `Client "${data.companyName}" was created`,
-        performedBy: "current-user-id",
-        performedByName: "Current User",
-        timestamp: new Date(),
-        metadata: { companyName: data.companyName, industry: data.industry },
-      }],
-    };
+  // Fetch clients on mount
+  useEffect(() => {
+    fetchClients();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    setClients([newClient, ...clients]);
-    toast.success("Client created successfully");
+  const handleAddClient = async (data: CreateClientRequest) => {
+    await createClient(data);
+    closeModal("addClient");
   };
 
-  const confirmDeleteClient = () => {
+  const confirmDeleteClient = async () => {
     if (!clientToDelete) return;
     
-    setClients(clients.filter(c => c.id !== clientToDelete.id));
-    toast.success("Client deleted successfully");
-    
+    await deleteClient(clientToDelete.id);
     setDeleteConfirmOpen(false);
     setClientToDelete(null);
   };
-
-  // Filter clients based on search
-  const filteredClients = clients
-    .filter((client) => {
-      // Search filter
-      const matchesSearch =
-        client.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.industry.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.address.city.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Status filter
-      const matchesStatus = statusFilter === "all" || client.status === statusFilter;
-
-      // Industry filter
-      const matchesIndustry = industryFilter === "all" || client.industry === industryFilter;
-
-      return matchesSearch && matchesStatus && matchesIndustry;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "name":
-          return a.companyName.localeCompare(b.companyName);
-        case "newest":
-          return b.createdAt.getTime() - a.createdAt.getTime();
-        case "oldest":
-          return a.createdAt.getTime() - b.createdAt.getTime();
-        case "jobs":
-          return b.statistics.totalJobs - a.statistics.totalJobs;
-        case "candidates":
-          return b.statistics.totalCandidates - a.statistics.totalCandidates;
-        default:
-          return 0;
-      }
-    });
 
   return (
     <div className="flex flex-1 flex-col">
@@ -154,7 +74,7 @@ export default function ClientsPage() {
                     Manage your client companies and their hiring processes
                   </p>
                 </div>
-                <Button onClick={() => setIsAddClientOpen(true)}>
+                <Button onClick={() => openModal("addClient")}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Client
                 </Button>
@@ -166,12 +86,12 @@ export default function ClientsPage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search clients by name, email, industry, or location..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    value={filters.search}
+                    onChange={(e) => setFilters({ search: e.target.value })}
                     className="pl-10"
                   />
                 </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={filters.status} onValueChange={(value) => setFilters({ status: value })}>
                   <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
@@ -183,7 +103,7 @@ export default function ClientsPage() {
                     <SelectItem value="on_hold">On Hold</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={industryFilter} onValueChange={setIndustryFilter}>
+                <Select value={filters.industry} onValueChange={(value) => setFilters({ industry: value })}>
                   <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Industry" />
                   </SelectTrigger>
@@ -201,7 +121,7 @@ export default function ClientsPage() {
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={sortBy} onValueChange={setSortBy}>
+                <Select value={filters.sortBy} onValueChange={(value) => setFilters({ sortBy: value })}>
                   <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
@@ -224,7 +144,7 @@ export default function ClientsPage() {
                     </div>
                     <span className="text-xs font-medium text-muted-foreground">Total</span>
                   </div>
-                  <p className="text-xl font-bold">{clients.length}</p>
+                  <p className="text-xl font-bold">{filteredClients.length}</p>
                   <p className="text-xs text-muted-foreground">Clients</p>
                 </div>
                 <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
@@ -235,10 +155,10 @@ export default function ClientsPage() {
                     <span className="text-xs font-medium text-green-700 dark:text-green-400">Active</span>
                   </div>
                   <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                    {clients.filter((c) => c.status === "active").length}
+                    {filteredClients.filter((c) => c.status === "active").length}
                   </p>
                   <p className="text-xs text-green-600/70 dark:text-green-400/70">
-                    {clients.length > 0 ? Math.round((clients.filter((c) => c.status === "active").length / clients.length) * 100) : 0}% of total
+                    {filteredClients.length > 0 ? Math.round((filteredClients.filter((c) => c.status === "active").length / filteredClients.length) * 100) : 0}% of total
                   </p>
                 </div>
                 <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100/20 dark:from-blue-950/20 dark:to-blue-900/10 p-3 shadow-sm">
@@ -249,7 +169,7 @@ export default function ClientsPage() {
                     <span className="text-xs font-medium text-blue-700 dark:text-blue-400">Total Jobs</span>
                   </div>
                   <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                    {clients.reduce((acc, c) => acc + c.statistics.totalJobs, 0)}
+                    {filteredClients.reduce((acc, c) => acc + c.statistics.totalJobs, 0)}
                   </p>
                   <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
                     Across all clients
@@ -263,7 +183,7 @@ export default function ClientsPage() {
                     <span className="text-xs font-medium text-purple-700 dark:text-purple-400">Active Jobs</span>
                   </div>
                   <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                    {clients.reduce((acc, c) => acc + c.statistics.activeJobs, 0)}
+                    {filteredClients.reduce((acc, c) => acc + c.statistics.activeJobs, 0)}
                   </p>
                   <p className="text-xs text-purple-600/70 dark:text-purple-400/70">
                     Currently open
@@ -287,7 +207,7 @@ export default function ClientsPage() {
             {filteredClients.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">
-                  {searchQuery
+                  {filters.search
                     ? "No clients found matching your search"
                     : "No clients yet. Add your first client to get started."}
                 </p>
@@ -297,9 +217,10 @@ export default function ClientsPage() {
         </div>
       </div>
 
+            {/* Add Client Modal */}
       <AddClientModal
-        open={isAddClientOpen}
-        onClose={() => setIsAddClientOpen(false)}
+        open={modals.addClient}
+        onClose={() => closeModal("addClient")}
         onSubmit={handleAddClient}
       />
 

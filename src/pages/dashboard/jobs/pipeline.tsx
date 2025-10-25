@@ -7,22 +7,35 @@ import type { Job } from "@/types/job";
 import type { Pipeline, PipelineStage } from "@/types/pipeline";
 import { DEFAULT_PIPELINE_TEMPLATES } from "@/types/pipeline";
 import { ArrowLeft, Edit } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-
-// Mock data - replace with actual data fetching
-import candidatesData from "@/lib/mock-data/candidates.json";
-import jobsData from "@/lib/mock-data/jobs.json";
+import { useJobs, useCandidates, useAppSelector } from "@/store/hooks/index";
+import { selectJobById, selectCandidates } from "@/store/selectors";
 
 export default function JobPipelinePage() {
   const navigate = useNavigate();
   const { jobId } = useParams<{ jobId: string }>();
   const kanbanContainerRef = useRef<HTMLDivElement>(null);
 
-  // Find the job
-  const job = jobsData.find((j) => j.id === jobId) as Job | undefined;
-  const candidates = candidatesData as unknown as Candidate[];
+  // Redux hooks
+  const { fetchJobById } = useJobs();
+  const { fetchCandidates } = useCandidates();
+  
+  const job = useAppSelector(state => selectJobById(jobId || '')(state)) as Job | undefined;
+  const allCandidates = useAppSelector(selectCandidates);
+  
+  // Filter candidates for this job
+  const candidates = allCandidates.filter(c => 
+    c.jobApplications.some(app => app.jobId === jobId)
+  );
+
+  useEffect(() => {
+    if (jobId) {
+      fetchJobById(jobId);
+    }
+    fetchCandidates();
+  }, [jobId, fetchJobById, fetchCandidates]);
 
   // State
   const [pipeline, setPipeline] = useState<Pipeline | null>(null);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Plus,
   Search,
@@ -26,18 +26,17 @@ import type {
   UpdateCategoryRequest,
   CategoryTree,
 } from "@/types/category";
-import categoriesData from "@/lib/mock-data/categories.json";
+import { useCategories, useAppSelector } from "@/store/hooks/index";
+import { selectCategories } from "@/store/selectors";
 import { toast } from "sonner";
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>(
-    categoriesData.map((category) => ({
-      ...category,
-      parentId: category.parentId ?? undefined,
-      createdAt: new Date(category.createdAt),
-      updatedAt: new Date(category.updatedAt),
-    }))
-  );
+  const { fetchCategories, createCategory, updateCategory, deleteCategory } = useCategories();
+  const categories = useAppSelector(selectCategories);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -52,37 +51,20 @@ export default function CategoriesPage() {
   );
 
   const handleAddCategory = (data: CreateCategoryRequest) => {
-    const newCategory: Category = {
-      id: `cat-${Date.now()}`,
-      ...data,
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    setCategories([newCategory, ...categories]);
-    toast.success("Category created successfully");
+    createCategory(data);
   };
 
   const handleUpdateCategory = (data: UpdateCategoryRequest) => {
     if (!editingCategory) return;
-
-    setCategories(
-      categories.map((category) =>
-        category.id === editingCategory.id
-          ? { ...category, ...data, updatedAt: new Date() }
-          : category
-      )
-    );
-    toast.success("Category updated successfully");
+    updateCategory(editingCategory.id, data);
     setEditingCategory(null);
   };
 
   const handleDeleteCategory = (categoryId: string) => {
-    const category = categories.find((c) => c.id === categoryId);
+    const category = categories.find((c: { id: string }) => c.id === categoryId);
 
     // Check if category has children
-    const hasChildren = categories.some((c) => c.parentId === categoryId);
+    const hasChildren = categories.some((c: { parentId?: string }) => c.parentId === categoryId);
     if (hasChildren) {
       toast.error(
         `Cannot delete "${category?.name}". Please delete all subcategories first.`,
@@ -97,8 +79,7 @@ export default function CategoriesPage() {
 
     if (!confirmed) return;
 
-    setCategories(categories.filter((c) => c.id !== categoryId));
-    toast.success("Category deleted successfully");
+    deleteCategory(categoryId);
   };
 
   const toggleExpanded = (categoryId: string) => {
@@ -133,7 +114,7 @@ export default function CategoriesPage() {
   };
 
   // Filter categories
-  const filteredCategories = categories.filter((category) => {
+  const filteredCategories = categories.filter((category: Category) => {
     // Search filter
     const matchesSearch =
       category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -172,8 +153,8 @@ export default function CategoriesPage() {
     }
   });
 
-  const activeCategories = categories.filter((c) => c.isActive);
-  const parentCategories = categories.filter((c) => !c.parentId);
+  const activeCategories = categories.filter((c: Category) => c.isActive);
+  const parentCategories = categories.filter((c: Category) => !c.parentId);
 
   // Recursive tree renderer
   const renderCategoryTree = (tree: CategoryTree[]) => {

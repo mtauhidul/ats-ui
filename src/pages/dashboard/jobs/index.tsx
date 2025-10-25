@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, Briefcase, Users, TrendingUp, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,132 +7,53 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { JobCard } from "@/components/job-card";
 import { AddJobModal } from "@/components/modals/add-job-modal";
-import type { Job, JobStatus, JobType, CreateJobRequest } from "@/types/job";
-import type { Client } from "@/types/client";
-import jobsData from "@/lib/mock-data/jobs.json";
-import clientsData from "@/lib/mock-data/clients.json";
-import { toast } from "sonner";
+import type { CreateJobRequest } from "@/types/job";
+import { useJobs, useClients, useAppSelector } from "@/store/hooks/index";
+import { selectFilteredAndSortedJobs, selectJobStatistics } from "@/store/selectors/jobSelectors";
 
 export default function DashboardJobsPage() {
   const navigate = useNavigate();
+  const [isAddJobOpen, setIsAddJobOpen] = useState(false);
+  
+  // Local filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [clientFilter, setClientFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
-  const [isAddJobOpen, setIsAddJobOpen] = useState(false);
 
-  // Transform jobs data
-  const [jobs, setJobs] = useState<Job[]>(
-    jobsData.map((job) => ({
-      ...job,
-      status: job.status as JobStatus,
-      type: job.type as JobType,
-      experienceLevel: job.experienceLevel as Job["experienceLevel"],
-      workMode: job.workMode as Job["workMode"],
-      priority: job.priority as Job["priority"],
-      salaryRange: job.salaryRange ? {
-        ...job.salaryRange,
-        period: job.salaryRange.period as "yearly" | "hourly" | "daily" | "monthly",
-      } : undefined,
-      applicationIds: job.applicationIds || [],
-      createdAt: new Date(job.createdAt),
-      updatedAt: new Date(job.updatedAt),
-    }))
+  // Redux hooks
+  const { fetchJobs, createJob } = useJobs();
+  const { clients, fetchClients } = useClients();
+  
+  // Select filtered and sorted jobs
+  const filteredJobs = useAppSelector((state) => 
+    selectFilteredAndSortedJobs(state, {
+      search: searchQuery,
+      status: statusFilter,
+      type: typeFilter,
+      clientId: clientFilter,
+      sortBy,
+    })
   );
+  const stats = useAppSelector(selectJobStatistics);
 
-  // Transform clients data
-  const [clients] = useState<Client[]>(
-    clientsData.map((client) => ({
-      ...client,
-      industry: client.industry as Client["industry"],
-      companySize: client.companySize as Client["companySize"],
-      status: client.status as Client["status"],
-      createdAt: new Date(client.createdAt),
-      updatedAt: new Date(client.updatedAt),
-      communicationNotes: [],
-      activityHistory: [],
-    }))
-  );
+  // Fetch data on mount
+  useEffect(() => {
+    fetchJobs();
+    fetchClients();
+  }, [fetchJobs, fetchClients]);
 
   // Get client name helper
   const getClientName = (clientId: string) => {
-    const client = clients.find(c => c.id === clientId);
+    const client = clients.find((c) => c.id === clientId);
     return client?.companyName || "Unknown Client";
   };
 
   // Handle add job
   const handleAddJob = (data: CreateJobRequest) => {
-    const newJob: Job = {
-      id: `job-${Date.now()}`,
-      ...data,
-      status: "draft",
-      filledPositions: 0,
-      applicationIds: [],
-      candidateIds: [],
-      statistics: {
-        totalApplications: 0,
-        approvedApplications: 0,
-        rejectedApplications: 0,
-        totalCandidates: 0,
-        activeCandidates: 0,
-        hiredCandidates: 0,
-        rejectedCandidates: 0,
-        interviewingCandidates: 0,
-        offerExtendedCandidates: 0,
-        candidatesInPipeline: 0,
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    setJobs([newJob, ...jobs]);
-    toast.success("Job created successfully");
-  };
-
-  // Filter jobs
-  const filteredJobs = jobs.filter((job) => {
-    const matchesSearch = searchQuery === "" || 
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      getClientName(job.clientId).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || job.status === statusFilter;
-    const matchesType = typeFilter === "all" || job.type === typeFilter;
-    const matchesClient = clientFilter === "all" || job.clientId === clientFilter;
-
-    return matchesSearch && matchesStatus && matchesType && matchesClient;
-  });
-
-  // Sort jobs
-  const sortedJobs = [...filteredJobs].sort((a, b) => {
-    switch (sortBy) {
-      case "newest":
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      case "oldest":
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      case "title":
-        return a.title.localeCompare(b.title);
-      case "priority": {
-        const priorityOrder: Record<string, number> = { urgent: 4, high: 3, medium: 2, low: 1 };
-        return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
-      }
-      case "candidates":
-        return (b.candidateIds?.length || 0) - (a.candidateIds?.length || 0);
-      default:
-        return 0;
-    }
-  });
-
-  // Calculate statistics
-  const stats = {
-    total: jobs.length,
-    open: jobs.filter(j => j.status === "open").length,
-    closed: jobs.filter(j => j.status === "closed").length,
-    draft: jobs.filter(j => j.status === "draft").length,
-    totalCandidates: jobs.reduce((sum, j) => sum + (j.candidateIds?.length || 0), 0),
-    totalOpenings: jobs.reduce((sum, j) => sum + (j.openings || 0), 0),
-    filled: jobs.reduce((sum, j) => sum + (j.filledPositions || 0), 0),
+    createJob(data);
+    setIsAddJobOpen(false);
   };
 
   return (
@@ -317,12 +238,12 @@ export default function DashboardJobsPage() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-muted-foreground">
-                  Showing <span className="font-medium text-foreground">{sortedJobs.length}</span> of{" "}
+                  Showing <span className="font-medium text-foreground">{filteredJobs.length}</span> of{" "}
                   <span className="font-medium text-foreground">{stats.total}</span> jobs
                 </p>
               </div>
 
-              {sortedJobs.length === 0 ? (
+              {filteredJobs.length === 0 ? (
                 <Card>
                   <CardContent className="flex flex-col items-center justify-center py-16">
                     <Briefcase className="h-12 w-12 text-muted-foreground mb-4" />
@@ -342,7 +263,7 @@ export default function DashboardJobsPage() {
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {sortedJobs.map((job) => (
+                  {filteredJobs.map((job) => (
                     <JobCard
                       key={job.id}
                       job={job}

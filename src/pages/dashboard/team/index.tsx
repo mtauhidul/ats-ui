@@ -47,37 +47,9 @@ import {
   Building2,
 } from "lucide-react";
 import { toast } from "sonner";
-import teamData from "@/lib/mock-data/team.json";
-
-interface TeamMember {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  department: string;
-  title: string;
-  status: string;
-  phone?: string;
-  avatar?: string;
-  createdAt: string;
-  lastLoginAt?: string;
-  statistics: {
-    activeJobs: number;
-    placedCandidates: number;
-    pendingReviews: number;
-    emailsSent: number;
-  };
-  permissions: {
-    canManageJobs: boolean;
-    canReviewApplications: boolean;
-    canManageCandidates: boolean;
-    canManageTeam: boolean;
-    canAccessAnalytics: boolean;
-    canManageClients: boolean;
-    canSendEmails: boolean;
-  };
-}
+import { useTeam, useAppSelector } from "@/store/hooks/index";
+import { selectTeam } from "@/store/selectors";
+import type { TeamMember, TeamRole } from "@/types";
 
 const getInitials = (firstName: string, lastName: string) => {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -100,7 +72,14 @@ const roleLabels: Record<string, string> = {
 export default function TeamPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [members, setMembers] = useState<TeamMember[]>(teamData as TeamMember[]);
+  
+  const { fetchTeam, createTeamMember, updateTeamMember, deleteTeamMember } = useTeam();
+  const members = useAppSelector(selectTeam) as TeamMember[];
+
+  useEffect(() => {
+    fetchTeam();
+  }, [fetchTeam]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -121,12 +100,12 @@ export default function TeamPage() {
       // Clear the state
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state]);
+  }, [location.state, members]);
   const [formData, setFormData] = useState<Partial<TeamMember>>({
     firstName: "",
     lastName: "",
     email: "",
-    role: "recruiter",
+    role: "recruiter" as TeamRole,
     department: "",
     title: "",
     phone: "",
@@ -148,73 +127,32 @@ export default function TeamPage() {
       return;
     }
 
-    const newMember: TeamMember = {
-      id: `team-${Date.now()}`,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      role: formData.role || "recruiter",
-      department: formData.department || "",
-      title: formData.title || "",
-      phone: formData.phone,
-      status: "active",
-      createdAt: new Date().toISOString(),
-      statistics: {
-        activeJobs: 0,
-        placedCandidates: 0,
-        pendingReviews: 0,
-        emailsSent: 0,
-      },
-      permissions: formData.permissions!,
-    };
-
-    setMembers([...members, newMember]);
+    createTeamMember(formData);
     setIsAddDialogOpen(false);
     resetForm();
-    toast.success(`${formData.firstName} ${formData.lastName} has been added to the team`);
   };
 
   const handleEditMember = () => {
     if (!selectedMember) return;
 
-    setMembers(
-      members.map((m) =>
-        m.id === selectedMember.id
-          ? {
-              ...m,
-              ...formData,
-              firstName: formData.firstName || m.firstName,
-              lastName: formData.lastName || m.lastName,
-            }
-          : m
-      )
-    );
-
+    updateTeamMember(selectedMember.id, formData);
     setIsEditDialogOpen(false);
     setSelectedMember(null);
     resetForm();
-    toast.success("Team member updated successfully");
   };
 
   const handleDeleteMember = () => {
     if (!selectedMember) return;
 
-    setMembers(members.filter((m) => m.id !== selectedMember.id));
+    deleteTeamMember(selectedMember.id);
     setIsDeleteDialogOpen(false);
     setSelectedMember(null);
-    toast.success("Team member removed");
   };
 
   const handleUpdatePermissions = () => {
     if (!selectedMember) return;
 
-    setMembers(
-      members.map((m) =>
-        m.id === selectedMember.id
-          ? { ...m, permissions: formData.permissions || m.permissions }
-          : m
-      )
-    );
+    updateTeamMember(selectedMember.id, { permissions: formData.permissions });
 
     setIsPermissionsDialogOpen(false);
     setSelectedMember(null);
@@ -240,17 +178,10 @@ export default function TeamPage() {
   };
 
   const toggleMemberStatus = (member: TeamMember) => {
-    setMembers(
-      members.map((m) =>
-        m.id === member.id
-          ? { ...m, status: m.status === "active" ? "inactive" : "active" }
-          : m
-      )
-    );
+    const newStatus = member.status === "active" ? "inactive" : "active";
+    updateTeamMember(member.id, { status: newStatus });
     toast.success(
-      `${member.firstName} ${member.lastName} is now ${
-        member.status === "active" ? "inactive" : "active"
-      }`
+      `${member.firstName} ${member.lastName} is now ${newStatus}`
     );
   };
 
@@ -281,7 +212,7 @@ export default function TeamPage() {
     const matchesSearch =
       fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.department.toLowerCase().includes(searchQuery.toLowerCase());
+      member.department?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === "all" || member.role === roleFilter;
     const matchesStatus = statusFilter === "all" || member.status === statusFilter;
     return matchesSearch && matchesRole && matchesStatus;
@@ -289,9 +220,9 @@ export default function TeamPage() {
 
   const totalStats = members.reduce(
     (acc, member) => ({
-      activeJobs: acc.activeJobs + member.statistics.activeJobs,
-      totalReviews: acc.totalReviews + member.statistics.pendingReviews,
-      placedCandidates: acc.placedCandidates + member.statistics.placedCandidates,
+      activeJobs: acc.activeJobs + (member.statistics?.activeJobs || 0),
+      totalReviews: acc.totalReviews + (member.statistics?.pendingReviews || 0),
+      placedCandidates: acc.placedCandidates + (member.statistics?.placedCandidates || 0),
     }),
     { activeJobs: 0, totalReviews: 0, placedCandidates: 0 }
   );
@@ -539,15 +470,15 @@ export default function TeamPage() {
 
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
-                        <p className="text-lg font-bold">{member.statistics.activeJobs}</p>
+                        <p className="text-lg font-bold">{member.statistics?.activeJobs || 0}</p>
                         <p className="text-xs text-muted-foreground">Jobs</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold">{member.statistics.pendingReviews}</p>
+                        <p className="text-lg font-bold">{member.statistics?.pendingReviews || 0}</p>
                         <p className="text-xs text-muted-foreground">Reviews</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold">{member.statistics.placedCandidates}</p>
+                        <p className="text-lg font-bold">{member.statistics?.placedCandidates || 0}</p>
                         <p className="text-xs text-muted-foreground">Placements</p>
                       </div>
                     </div>
@@ -659,7 +590,7 @@ export default function TeamPage() {
                     <Label htmlFor="add-role">Role</Label>
                     <Select
                       value={formData.role}
-                      onValueChange={(value) => setFormData({ ...formData, role: value })}
+                      onValueChange={(value) => setFormData({ ...formData, role: value as TeamRole })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select role" />
@@ -795,7 +726,7 @@ export default function TeamPage() {
                     <Label htmlFor="edit-role">Role</Label>
                     <Select
                       value={formData.role}
-                      onValueChange={(value) => setFormData({ ...formData, role: value })}
+                      onValueChange={(value) => setFormData({ ...formData, role: value as TeamRole })}
                     >
                       <SelectTrigger>
                         <SelectValue />

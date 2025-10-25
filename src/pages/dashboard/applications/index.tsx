@@ -1,14 +1,31 @@
+import { useEffect } from "react";
 import { DataTable } from "@/components/data-table";
-import applicationsData from "@/lib/mock-data/applications.json";
-import jobsData from "@/lib/mock-data/jobs.json";
-import clientsData from "@/lib/mock-data/clients.json";
+import { useApplications, useJobs, useClients, useAppSelector } from "@/store/hooks/index";
+import { selectApplications, selectJobs, selectClients } from "@/store/selectors";
+import type { Application } from "@/types/application";
+import type { Job } from "@/types/job";
+import type { Client } from "@/types/client";
 
 const teamMembersPool = ["John Smith", "Sarah Wilson", "Mike Johnson", "Lisa Brown", "Tom Davis"];
 
 export default function ApplicationsPage() {
-  const transformedData = applicationsData.map((app, index) => {
-    const job = jobsData.find(j => j.id === app.targetJobId);
-    const client = clientsData.find(c => c.id === job?.clientId);
+  const { fetchApplications, isLoading: applicationsLoading } = useApplications();
+  const { fetchJobs, isLoading: jobsLoading } = useJobs();
+  const { fetchClients, isLoading: clientsLoading } = useClients();
+  
+  const applications = useAppSelector(selectApplications);
+  const jobs = useAppSelector(selectJobs);
+  const clients = useAppSelector(selectClients);
+
+  useEffect(() => {
+    fetchApplications();
+    fetchJobs();
+    fetchClients();
+  }, [fetchApplications, fetchJobs, fetchClients]);
+
+  const transformedData = applications.map((app: Application, index: number) => {
+    const job = jobs.find((j: Job) => j.id === app.targetJobId);
+    const client = clients.find((c: Client) => c.id === job?.clientId);
 
     return {
     id: index + 1,
@@ -41,7 +58,7 @@ export default function ApplicationsPage() {
     skills: app.skills,
     coverLetter: app.coverLetter,
     resumeText: app.resumeText,
-    resumeFilename: app.resume?.filename,
+    resumeFilename: app.resume?.name,
     resumeFileSize: app.resume?.size ? `${Math.round(app.resume.size / 1024)} KB` : undefined,
     // Personal details (using available fields or providing fallbacks)
     location: app.address || undefined,
@@ -58,6 +75,10 @@ export default function ApplicationsPage() {
     videoIntroDuration: index === 0 ? "2:30" : undefined,
   };
   });
+
+  const isLoading = applicationsLoading || jobsLoading || clientsLoading;
+
+  if (isLoading) return <div className="flex items-center justify-center h-screen">Loading applications...</div>;
 
   return (
     <div className="flex flex-1 flex-col">

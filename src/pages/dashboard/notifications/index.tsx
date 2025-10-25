@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,33 +23,22 @@ import {
   Plus,
   Megaphone
 } from "lucide-react";
-import notificationsData from "@/lib/mock-data/notifications.json";
-import teamData from "@/lib/mock-data/team.json";
+import { useNotifications } from "@/store/hooks/useNotifications";
+import { useTeam } from "@/store/hooks/useTeam";
 import { toast } from "sonner";
-
-type NotificationType = "application" | "interview" | "status_change" | "job" | "offer" | "team" | "reminder" | "client" | "system";
-
-interface Notification {
-  id: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
-  relatedEntity: {
-    type: string;
-    id: string;
-    name: string;
-  } | null;
-}
+import type { NotificationType } from "@/store/slices/notificationsSlice";
 
 export default function NotificationsPage() {
-  const currentUser = teamData[0]; // Get current logged-in user
-  const isAdmin = currentUser.role === "admin";
-
-  const [notifications, setNotifications] = useState<Notification[]>(
-    notificationsData.map(n => ({ ...n } as Notification))
-  );
+  const { notifications, fetchNotifications, markAsRead, markAllAsRead, deleteNotification, createNotification } = useNotifications();
+  const { teamMembers, fetchTeam } = useTeam();
+  
+  useEffect(() => {
+    fetchNotifications();
+    fetchTeam();
+  }, [fetchNotifications, fetchTeam]);
+  
+  const currentUser = teamMembers[0]; // Get current logged-in user
+  const isAdmin = currentUser?.role === "admin";
 
   const [activeTab, setActiveTab] = useState<string>("all");
   const [filterType, setFilterType] = useState<"all" | "unread" | "read">("all");
@@ -125,42 +114,35 @@ export default function NotificationsPage() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
+  const handleMarkAsRead = (id: string) => {
+    markAsRead(id);
     toast.success("Notification marked as read");
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(n => ({ ...n, read: true }))
-    );
+  const handleMarkAllAsRead = () => {
+    markAllAsRead();
     toast.success("All notifications marked as read");
   };
 
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  const handleDeleteNotification = (id: string) => {
+    deleteNotification(id);
     toast.success("Notification deleted");
   };
 
-  const createNotification = () => {
+  const handleCreateNotification = () => {
     if (!newNotification.title.trim() || !newNotification.message.trim()) {
       toast.error("Please fill in all fields");
       return;
     }
 
-    const notification: Notification = {
-      id: `notif-${Date.now()}`,
+    createNotification({
       type: newNotification.type,
       title: newNotification.title,
       message: newNotification.message,
       read: false,
       createdAt: new Date().toISOString(),
       relatedEntity: null,
-    };
-
-    setNotifications(prev => [notification, ...prev]);
+    });
     setNewNotification({ type: "system", title: "", message: "" });
     toast.success("Notification created and sent to all users!");
   };
@@ -195,7 +177,7 @@ export default function NotificationsPage() {
                   </div>
                 </div>
                 {unreadCount > 0 && (
-                  <Button onClick={markAllAsRead} variant="outline" size="sm">
+                  <Button onClick={handleMarkAllAsRead} variant="outline" size="sm">
                     <CheckCheck className="h-4 w-4 mr-2" />
                     Mark all as read
                   </Button>
@@ -341,7 +323,7 @@ export default function NotificationsPage() {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => markAsRead(notification.id)}
+                                    onClick={() => handleMarkAsRead(notification.id)}
                                   >
                                     <Check className="h-4 w-4 mr-1" />
                                     Mark as read
@@ -350,7 +332,7 @@ export default function NotificationsPage() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => deleteNotification(notification.id)}
+                                  onClick={() => handleDeleteNotification(notification.id)}
                                 >
                                   <Trash2 className="h-4 w-4 text-red-600" />
                                 </Button>
@@ -416,7 +398,7 @@ export default function NotificationsPage() {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => markAsRead(notification.id)}
+                                    onClick={() => handleMarkAsRead(notification.id)}
                                   >
                                     <Check className="h-4 w-4 mr-1" />
                                     Mark as read
@@ -425,7 +407,7 @@ export default function NotificationsPage() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => deleteNotification(notification.id)}
+                                  onClick={() => handleDeleteNotification(notification.id)}
                                 >
                                   <Trash2 className="h-4 w-4 text-red-600" />
                                 </Button>
@@ -491,7 +473,7 @@ export default function NotificationsPage() {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => markAsRead(notification.id)}
+                                    onClick={() => handleMarkAsRead(notification.id)}
                                   >
                                     <Check className="h-4 w-4 mr-1" />
                                     Mark as read
@@ -500,7 +482,7 @@ export default function NotificationsPage() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => deleteNotification(notification.id)}
+                                  onClick={() => handleDeleteNotification(notification.id)}
                                 >
                                   <Trash2 className="h-4 w-4 text-red-600" />
                                 </Button>
@@ -592,7 +574,7 @@ export default function NotificationsPage() {
                       </div>
 
                       <div className="flex justify-end">
-                        <Button onClick={createNotification}>
+                        <Button onClick={handleCreateNotification}>
                           <Plus className="h-4 w-4 mr-2" />
                           Create & Send Notification
                         </Button>

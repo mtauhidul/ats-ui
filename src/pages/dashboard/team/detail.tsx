@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +17,11 @@ import {
   Shield,
   Activity,
 } from "lucide-react";
-import teamData from "@/lib/mock-data/team.json";
-import jobsData from "@/lib/mock-data/jobs.json";
-import candidatesData from "@/lib/mock-data/candidates.json";
+import { useTeam } from "@/store/hooks/useTeam";
+import { useJobs } from "@/store/hooks/useJobs";
+import { useCandidates } from "@/store/hooks/useCandidates";
+import type { Job } from "@/types/job";
+import type { Candidate } from "@/types/candidate";
 
 const getInitials = (firstName: string, lastName: string) => {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -51,10 +54,17 @@ const formatRoleName = (role: string) => {
 export default function TeamMemberDetailPage() {
   const { memberId } = useParams();
   const navigate = useNavigate();
+  const { currentMember, fetchTeamMemberById } = useTeam();
+  const { jobs, fetchJobs } = useJobs();
+  const { candidates, fetchCandidates } = useCandidates();
 
-  const member = teamData.find((m) => m.id === memberId);
+  useEffect(() => {
+    if (memberId) fetchTeamMemberById(memberId);
+    fetchJobs();
+    fetchCandidates();
+  }, [memberId, fetchTeamMemberById, fetchJobs, fetchCandidates]);
 
-  if (!member) {
+  if (!currentMember) {
     return (
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
@@ -80,9 +90,8 @@ export default function TeamMemberDetailPage() {
     );
   }
 
-  // Get assigned jobs and candidates - filtered by assignedRecruiterId
-  const assignedJobs = jobsData.filter((job: any) => job.assignedRecruiterId === member.id);
-  const assignedCandidates = candidatesData.filter((candidate: any) => candidate.assignedRecruiterId === member.id);
+  const assignedJobs = jobs.filter((job: Job) => job.assignedRecruiterId === currentMember.id);
+  const assignedCandidates = candidates.filter((candidate: Candidate) => candidate.assignedRecruiterId === currentMember.id);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -112,14 +121,14 @@ export default function TeamMemberDetailPage() {
                   size="sm"
                   asChild
                 >
-                  <a href={`mailto:${member.email}`}>
+                  <a href={`mailto:${currentMember.email}`}>
                     <Mail className="h-4 w-4 mr-2" />
                     Send Email
                   </a>
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => navigate('/dashboard/team', { state: { editMemberId: member.id } })}
+                  onClick={() => navigate('/dashboard/team', { state: { editMemberId: currentMember.id } })}
                 >
                   <Edit2 className="h-4 w-4 mr-2" />
                   Edit Profile
@@ -134,24 +143,24 @@ export default function TeamMemberDetailPage() {
                   <div className="flex flex-col items-center md:items-start">
                     <Avatar className="h-24 w-24 mb-4">
                       <AvatarFallback className="text-2xl">
-                        {getInitials(member.firstName, member.lastName)}
+                        {getInitials(currentMember.firstName, currentMember.lastName)}
                       </AvatarFallback>
                     </Avatar>
                     <Badge
                       variant="outline"
-                      className={getRoleBadgeColor(member.role)}
+                      className={getRoleBadgeColor(currentMember.role)}
                     >
-                      {formatRoleName(member.role)}
+                      {formatRoleName(currentMember.role)}
                     </Badge>
                   </div>
 
                   <div className="flex-1">
                     <div className="mb-4">
                       <h3 className="text-2xl font-bold mb-1">
-                        {member.firstName} {member.lastName}
+                        {currentMember.firstName} {currentMember.lastName}
                       </h3>
                       <p className="text-lg text-muted-foreground">
-                        {member.title}
+                        {currentMember.title}
                       </p>
                     </div>
 
@@ -159,32 +168,32 @@ export default function TeamMemberDetailPage() {
                       <div className="flex items-center gap-2 text-sm">
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <a
-                          href={`mailto:${member.email}`}
+                          href={`mailto:${currentMember.email}`}
                           className="hover:underline"
                         >
-                          {member.email}
+                          {currentMember.email}
                         </a>
                       </div>
-                      {member.phone && (
+                      {currentMember.phone && (
                         <div className="flex items-center gap-2 text-sm">
                           <Phone className="h-4 w-4 text-muted-foreground" />
                           <a
-                            href={`tel:${member.phone}`}
+                            href={`tel:${currentMember.phone}`}
                             className="hover:underline"
                           >
-                            {member.phone}
+                            {currentMember.phone}
                           </a>
                         </div>
                       )}
                       <div className="flex items-center gap-2 text-sm">
                         <Briefcase className="h-4 w-4 text-muted-foreground" />
-                        <span>{member.department}</span>
+                        <span>{currentMember.department}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <span>
                           Joined{" "}
-                          {new Date(member.createdAt).toLocaleDateString()}
+                          {new Date(currentMember.createdAt).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
@@ -193,17 +202,17 @@ export default function TeamMemberDetailPage() {
                       <Activity className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">
                         Last active:{" "}
-                        {new Date(member.lastLoginAt).toLocaleString()}
+                        {currentMember.lastLoginAt ? new Date(currentMember.lastLoginAt).toLocaleString() : "Never"}
                       </span>
                       <Badge
                         variant="outline"
                         className={
-                          member.status === "active"
+                          currentMember.status === "active"
                             ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20 ml-2"
                             : "bg-muted text-muted-foreground border ml-2"
                         }
                       >
-                        {member.status}
+                        {currentMember.status}
                       </Badge>
                     </div>
                   </div>
@@ -219,7 +228,7 @@ export default function TeamMemberDetailPage() {
                     <Briefcase className="h-5 w-5 text-blue-600 dark:text-blue-500" />
                   </div>
                   <div className="text-2xl font-bold">
-                    {member.statistics.activeJobs}
+                    {currentMember.statistics?.activeJobs || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">Active Jobs</p>
                 </CardContent>
@@ -231,7 +240,7 @@ export default function TeamMemberDetailPage() {
                     <Users className="h-5 w-5 text-green-600 dark:text-green-500" />
                   </div>
                   <div className="text-2xl font-bold">
-                    {member.statistics.placedCandidates}
+                    {currentMember.statistics?.placedCandidates || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Placed Candidates
@@ -245,7 +254,7 @@ export default function TeamMemberDetailPage() {
                     <FileText className="h-5 w-5 text-orange-600 dark:text-orange-500" />
                   </div>
                   <div className="text-2xl font-bold">
-                    {member.statistics.pendingReviews}
+                    {currentMember.statistics?.pendingReviews || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Pending Reviews
@@ -259,7 +268,7 @@ export default function TeamMemberDetailPage() {
                     <Mail className="h-5 w-5 text-purple-600 dark:text-purple-500" />
                   </div>
                   <div className="text-2xl font-bold">
-                    {member.statistics.emailsSent}
+                    {currentMember.statistics?.emailsSent || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">Emails Sent</p>
                 </CardContent>
@@ -277,7 +286,7 @@ export default function TeamMemberDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {Object.entries(member.permissions).map(
+                    {Object.entries(currentMember.permissions).map(
                       ([key, value]) => (
                         <div
                           key={key}

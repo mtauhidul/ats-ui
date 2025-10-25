@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Search, Tag as TagIcon, Edit2, Trash2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,17 +6,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AddTagModal } from "@/components/modals/add-tag-modal";
 import { EditTagModal } from "@/components/modals/edit-tag-modal";
 import type { Tag, CreateTagRequest, UpdateTagRequest } from "@/types/tag";
-import tagsData from "@/lib/mock-data/tags.json";
+import { useTags, useAppSelector } from "@/store/hooks/index";
+import { selectTags } from "@/store/selectors";
 import { toast } from "sonner";
 
 export default function TagsPage() {
-  const [tags, setTags] = useState<Tag[]>(
-    tagsData.map((tag) => ({
-      ...tag,
-      createdAt: new Date(tag.createdAt),
-      updatedAt: new Date(tag.updatedAt),
-    }))
-  );
+  const { fetchTags, createTag, updateTag, deleteTag } = useTags();
+  const tags = useAppSelector(selectTags);
+
+  useEffect(() => {
+    fetchTags();
+  }, [fetchTags]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -25,34 +25,17 @@ export default function TagsPage() {
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
 
   const handleAddTag = (data: CreateTagRequest) => {
-    const newTag: Tag = {
-      id: `tag-${Date.now()}`,
-      ...data,
-      isSystem: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    setTags([newTag, ...tags]);
-    toast.success("Tag created successfully");
+    createTag(data);
   };
 
   const handleUpdateTag = (data: UpdateTagRequest) => {
     if (!editingTag) return;
-
-    setTags(
-      tags.map((tag) =>
-        tag.id === editingTag.id
-          ? { ...tag, ...data, updatedAt: new Date() }
-          : tag
-      )
-    );
-    toast.success("Tag updated successfully");
+    updateTag(editingTag.id, data);
     setEditingTag(null);
   };
 
   const handleDeleteTag = (tagId: string) => {
-    const tag = tags.find((t) => t.id === tagId);
+    const tag = tags.find((t: any) => t.id === tagId);
 
     if (tag?.isSystem) {
       toast.error("System tags cannot be deleted");
@@ -65,12 +48,11 @@ export default function TagsPage() {
 
     if (!confirmed) return;
 
-    setTags(tags.filter((t) => t.id !== tagId));
-    toast.success("Tag deleted successfully");
+    deleteTag(tagId);
   };
 
   // Filter and sort tags
-  const filteredTags = tags
+  const filteredTags = (tags as any[])
     .filter((tag) => {
       // Search filter
       const matchesSearch =
@@ -90,16 +72,16 @@ export default function TagsPage() {
         case "name":
           return a.name.localeCompare(b.name);
         case "newest":
-          return b.createdAt.getTime() - a.createdAt.getTime();
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         case "oldest":
-          return a.createdAt.getTime() - b.createdAt.getTime();
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         default:
           return 0;
       }
     });
 
-  const systemTags = tags.filter((t) => t.isSystem);
-  const customTags = tags.filter((t) => !t.isSystem);
+  const systemTags = tags.filter((t: Tag) => t.isSystem);
+  const customTags = tags.filter((t: Tag) => !t.isSystem);
 
   return (
     <div className="flex flex-1 flex-col">
