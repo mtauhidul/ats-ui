@@ -1,8 +1,9 @@
 import type { Interview } from "@/types";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { toast } from "sonner";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface InterviewsState {
   interviews: Interview[];
@@ -19,24 +20,24 @@ const initialState: InterviewsState = {
 export const fetchInterviews = createAsyncThunk(
   "interviews/fetchAll",
   async () => {
-    const response = await fetch(`${API_BASE_URL}/interviews`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/interviews`);
     if (!response.ok) throw new Error("Failed to fetch interviews");
-    return response.json();
+    const result = await response.json();
+    return result.data?.interviews || result.data || result;
   }
 );
 
 export const createInterview = createAsyncThunk(
   "interviews/create",
   async (interviewData: Partial<Interview>) => {
-    const response = await fetch(`${API_BASE_URL}/interviews`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/interviews`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(interviewData),
     });
     if (!response.ok) throw new Error("Failed to create interview");
-    const data = await response.json();
+    const result = await response.json();
     toast.success("Interview scheduled successfully");
-    return data;
+    return result.data || result;
   }
 );
 

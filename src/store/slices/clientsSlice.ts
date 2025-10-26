@@ -5,8 +5,9 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import { toast } from "sonner";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface ClientsState {
   clients: Client[];
@@ -36,59 +37,58 @@ const initialState: ClientsState = {
 
 // Async thunks
 export const fetchClients = createAsyncThunk("clients/fetchAll", async () => {
-  const response = await fetch(`${API_BASE_URL}/clients`);
+  const response = await authenticatedFetch(`${API_BASE_URL}/clients`);
   if (!response.ok) throw new Error("Failed to fetch clients");
-  const data = await response.json();
-  return data;
+  const result = await response.json();
+  return result.data?.clients || result.data || result;
 });
 
 export const fetchClientById = createAsyncThunk(
   "clients/fetchById",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/clients/${id}`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/clients/${id}`);
     if (!response.ok) throw new Error("Failed to fetch client");
-    const data = await response.json();
-    return data;
+    const result = await response.json();
+    return result.data || result;
   }
 );
 
 export const createClient = createAsyncThunk(
   "clients/create",
   async (clientData: CreateClientRequest) => {
-    const response = await fetch(`${API_BASE_URL}/clients`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/clients`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(clientData),
     });
     if (!response.ok) throw new Error("Failed to create client");
-    const data = await response.json();
+    const result = await response.json();
     toast.success("Client created successfully");
-    return data;
+    return result.data || result;
   }
 );
 
 export const updateClient = createAsyncThunk(
   "clients/update",
   async ({ id, data }: { id: string; data: UpdateClientRequest }) => {
-    const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/clients/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error("Failed to update client");
     const result = await response.json();
     toast.success("Client updated successfully");
-    return result;
+    return result.data || result;
   }
 );
 
 export const deleteClient = createAsyncThunk(
   "clients/delete",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/clients/${id}`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to delete client");
+    await response.json();
     toast.success("Client deleted successfully");
     return id;
   }

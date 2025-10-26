@@ -40,7 +40,9 @@ export default function AuthPage() {
                 dividerText: "text-muted-foreground",
               },
             }}
-            routing="hash"
+            routing="path"
+            path="/auth"
+            signUpUrl="/auth"
             afterSignInUrl="/dashboard"
             afterSignUpUrl="/dashboard"
           />

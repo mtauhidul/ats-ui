@@ -5,8 +5,9 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import { toast } from "sonner";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface CandidatesState {
   candidates: Candidate[];
@@ -26,55 +27,56 @@ const initialState: CandidatesState = {
 export const fetchCandidates = createAsyncThunk(
   "candidates/fetchAll",
   async () => {
-    const response = await fetch(`${API_BASE_URL}/candidates`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/candidates`);
     if (!response.ok) throw new Error("Failed to fetch candidates");
-    return response.json();
+    const result = await response.json();
+    // Extract data from wrapped response
+    return result.data?.candidates || result.data || result;
   }
 );
 
 export const fetchCandidateById = createAsyncThunk(
   "candidates/fetchById",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/candidates/${id}`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/candidates/${id}`);
     if (!response.ok) throw new Error("Failed to fetch candidate");
-    return response.json();
+    const result = await response.json();
+    return result.data || result;
   }
 );
 
 export const createCandidate = createAsyncThunk(
   "candidates/create",
   async (candidateData: Partial<Candidate>) => {
-    const response = await fetch(`${API_BASE_URL}/candidates`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/candidates`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(candidateData),
     });
     if (!response.ok) throw new Error("Failed to create candidate");
-    const data = await response.json();
+    const result = await response.json();
     toast.success("Candidate created successfully");
-    return data;
+    return result.data || result;
   }
 );
 
 export const updateCandidate = createAsyncThunk(
   "candidates/update",
   async ({ id, data }: { id: string; data: Partial<Candidate> }) => {
-    const response = await fetch(`${API_BASE_URL}/candidates/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/candidates/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error("Failed to update candidate");
     const result = await response.json();
     toast.success("Candidate updated successfully");
-    return result;
+    return result.data || result;
   }
 );
 
 export const deleteCandidate = createAsyncThunk(
   "candidates/delete",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/candidates/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/candidates/${id}`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to delete candidate");

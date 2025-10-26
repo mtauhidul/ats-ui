@@ -5,8 +5,9 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import { toast } from "sonner";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface CategoriesState {
   categories: Category[];
@@ -25,58 +26,59 @@ const initialState: CategoriesState = {
 export const fetchCategories = createAsyncThunk(
   "categories/fetchAll",
   async () => {
-    const response = await fetch(`${API_BASE_URL}/categories`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/categories`);
     if (!response.ok) throw new Error("Failed to fetch categories");
-    return response.json();
+    const result = await response.json();
+    return result.data?.categories || result.data || result;
   }
 );
 
 export const fetchCategoryById = createAsyncThunk(
   "categories/fetchById",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/categories/${id}`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/categories/${id}`);
     if (!response.ok) throw new Error("Failed to fetch category");
-    return response.json();
+    const result = await response.json();
+    return result.data || result;
   }
 );
 
 export const createCategory = createAsyncThunk(
   "categories/create",
   async (categoryData: Partial<Category>) => {
-    const response = await fetch(`${API_BASE_URL}/categories`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/categories`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(categoryData),
     });
     if (!response.ok) throw new Error("Failed to create category");
-    const data = await response.json();
+    const result = await response.json();
     toast.success("Category created successfully");
-    return data;
+    return result.data || result;
   }
 );
 
 export const updateCategory = createAsyncThunk(
   "categories/update",
   async ({ id, data }: { id: string; data: Partial<Category> }) => {
-    const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/categories/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error("Failed to update category");
     const result = await response.json();
     toast.success("Category updated successfully");
-    return result;
+    return result.data || result;
   }
 );
 
 export const deleteCategory = createAsyncThunk(
   "categories/delete",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/categories/${id}`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to delete category");
+    await response.json();
     toast.success("Category deleted successfully");
     return id;
   }

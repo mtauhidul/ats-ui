@@ -1,7 +1,8 @@
 import type { User } from "@/types";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface UsersState {
   users: User[];
@@ -16,9 +17,10 @@ const initialState: UsersState = {
 };
 
 export const fetchUsers = createAsyncThunk("users/fetchAll", async () => {
-  const response = await fetch(`${API_BASE_URL}/users`);
+  const response = await authenticatedFetch(`${API_BASE_URL}/users`);
   if (!response.ok) throw new Error("Failed to fetch users");
-  return response.json();
+  const result = await response.json();
+  return result.data?.users || result.data || result;
 });
 
 const usersSlice = createSlice({

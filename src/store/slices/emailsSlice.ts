@@ -5,8 +5,9 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import { toast } from "sonner";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface EmailsState {
   emails: Email[];
@@ -23,23 +24,23 @@ const initialState: EmailsState = {
 };
 
 export const fetchEmails = createAsyncThunk("emails/fetchAll", async () => {
-  const response = await fetch(`${API_BASE_URL}/emails`);
+  const response = await authenticatedFetch(`${API_BASE_URL}/emails`);
   if (!response.ok) throw new Error("Failed to fetch emails");
-  return response.json();
+  const result = await response.json();
+  return result.data?.emails || result.data || result;
 });
 
 export const sendEmail = createAsyncThunk(
   "emails/send",
   async (emailData: Partial<Email>) => {
-    const response = await fetch(`${API_BASE_URL}/emails`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/emails`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(emailData),
     });
     if (!response.ok) throw new Error("Failed to send email");
-    const data = await response.json();
+    const result = await response.json();
     toast.success("Email sent successfully");
-    return data;
+    return result.data || result;
   }
 );
 

@@ -15,6 +15,21 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, Loader2, CheckCircle2, ArrowLeft, X, Eye, Download, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
+
+interface Experience {
+  company: string;
+  title: string;
+  duration: string;
+  description?: string;
+}
+
+interface Education {
+  institution: string;
+  degree: string;
+  field?: string;
+  year?: string;
+}
 
 interface ParsedCandidate {
   firstName: string;
@@ -29,6 +44,11 @@ interface ParsedCandidate {
   skills: string[];
   summary: string;
   linkedinUrl: string;
+  website?: string;
+  experience: Experience[];
+  education: Education[];
+  certifications: string[];
+  languages: string[];
   resumeUrl?: string;
 }
 
@@ -51,7 +71,12 @@ export default function QuickImportPage() {
     skills: [],
     summary: "",
     linkedinUrl: "",
+    website: "",
     resumeUrl: "",
+    experience: [],
+    education: [],
+    certifications: [],
+    languages: [],
   });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,41 +137,64 @@ export default function QuickImportPage() {
     setIsUploading(true);
     setIsParsing(true);
 
-    // Simulate upload and parsing with mock data
-    setTimeout(() => {
-      setIsUploading(false);
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('resume', selectedFile); // Backend expects 'resume' field name
+      // Don't send extractSkills, extractEducation, extractExperience - they default to true
 
-      const mockParsedData: ParsedCandidate = {
-        firstName: "Sarah",
-        lastName: "Johnson",
-        email: "sarah.johnson@email.com",
-        phone: "+1 (555) 234-5678",
-        location: "New York, NY",
-        currentTitle: "Senior Product Manager",
-        currentCompany: "TechStart Inc.",
-        yearsOfExperience: 7,
-        educationLevel: "Master's Degree",
-        skills: [
-          "Product Management",
-          "Agile",
-          "Scrum",
-          "Roadmap Planning",
-          "Stakeholder Management",
-          "Data Analysis",
-          "UX Design",
-          "A/B Testing",
-        ],
-        summary:
-          "Results-driven Product Manager with 7+ years of experience leading cross-functional teams to deliver innovative products. Proven track record of launching successful products that drive user engagement and revenue growth. Strong analytical skills combined with a deep understanding of user needs and market trends.",
-        linkedinUrl: "https://linkedin.com/in/sarahjohnson",
+      // Call backend API to parse resume
+      const response = await authenticatedFetch('http://localhost:5001/api/resumes/parse', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Failed to parse resume' }));
+        throw new Error(error.message || 'Failed to parse resume');
+      }
+
+      const result = await response.json();
+      const data = result.data;
+
+      console.log('Backend API Response:', data); // Debug log
+
+      // Map backend response to frontend format
+      const mappedData: ParsedCandidate = {
+        firstName: data.personalInfo?.firstName || "",
+        lastName: data.personalInfo?.lastName || "",
+        email: data.personalInfo?.email || "",
+        phone: data.personalInfo?.phone || "",
+        location: data.personalInfo?.location || "",
+        linkedinUrl: data.personalInfo?.linkedin || "",
+        website: data.personalInfo?.website || "",
+        currentTitle: data.experience?.[0]?.title || "",
+        currentCompany: data.experience?.[0]?.company || "",
+        yearsOfExperience: data.experience?.length || 0,
+        educationLevel: data.education?.[0]?.degree || "",
+        skills: Array.isArray(data.skills) ? data.skills : [],
+        summary: data.summary || "",
+        experience: Array.isArray(data.experience) ? data.experience : [],
+        education: Array.isArray(data.education) ? data.education : [],
+        certifications: Array.isArray(data.certifications) ? data.certifications : [],
+        languages: Array.isArray(data.languages) ? data.languages : [],
         resumeUrl: URL.createObjectURL(selectedFile),
       };
 
-      setParsedData(mockParsedData);
-      setFormData(mockParsedData);
+      console.log('Mapped Data:', mappedData); // Debug log
+
+      setIsUploading(false);
+      setParsedData(mappedData);
+      setFormData(mappedData);
       setIsParsing(false);
       toast.success("Resume parsed successfully! Review the extracted information below.");
-    }, 2500);
+    } catch (error) {
+      setIsUploading(false);
+      setIsParsing(false);
+      console.error('Resume parsing error:', error);
+      const message = error instanceof Error ? error.message : "Failed to parse resume. Please try again.";
+      toast.error(message);
+    }
   };
 
   const handleSubmit = () => {
@@ -317,8 +365,11 @@ export default function QuickImportPage() {
                             Resume Parsed Successfully!
                           </p>
                           <p className="text-sm text-accent-foreground/80 mb-4">
-                            We've extracted <strong>{formData.skills.length} skills</strong> and comprehensive
-                            candidate information using AI. Review and edit the details before importing.
+                            We've extracted{" "}
+                            <strong>{formData.skills.length} skills</strong>,{" "}
+                            <strong>{formData.experience.length} work experiences</strong>, and{" "}
+                            <strong>{formData.education.length} education records</strong>{" "}
+                            using AI. Review and edit the details before importing.
                           </p>
                           <div className="flex gap-2">
                             <Button variant="outline" size="sm" className="bg-background hover:bg-background/80">
@@ -384,10 +435,10 @@ export default function QuickImportPage() {
                 </CardHeader>
                 <CardContent className="pt-6">
                   {parsedData ? (
-                    <div className="space-y-6 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+                    <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                       {/* Personal Information */}
                       <div className="space-y-4">
-                        <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2 pb-2 border-b">
+                        <h4 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2 pb-2 border-b">
                           Personal Information
                           <span className="text-xs text-red-500 font-normal">
                             (* required)
@@ -396,7 +447,7 @@ export default function QuickImportPage() {
                         <div className="space-y-4">
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="firstName">
+                              <Label htmlFor="firstName" className="text-sm font-medium">
                                 First Name <span className="text-red-500">*</span>
                               </Label>
                               <Input
@@ -406,11 +457,11 @@ export default function QuickImportPage() {
                                   setFormData({ ...formData, firstName: e.target.value })
                                 }
                                 placeholder="First name"
+                                className="mt-1.5"
                               />
                             </div>
-                          <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="lastName">
+                              <Label htmlFor="lastName" className="text-sm font-medium">
                                 Last Name <span className="text-red-500">*</span>
                               </Label>
                               <Input
@@ -420,13 +471,14 @@ export default function QuickImportPage() {
                                   setFormData({ ...formData, lastName: e.target.value })
                                 }
                                 placeholder="Last name"
+                                className="mt-1.5"
                               />
                             </div>
                           </div>
 
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="email">
+                              <Label htmlFor="email" className="text-sm font-medium">
                                 Email <span className="text-red-500">*</span>
                               </Label>
                               <Input
@@ -435,21 +487,23 @@ export default function QuickImportPage() {
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 placeholder="email@example.com"
+                                className="mt-1.5"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="phone">Phone</Label>
+                              <Label htmlFor="phone" className="text-sm font-medium">Phone</Label>
                               <Input
                                 id="phone"
                                 value={formData.phone}
                                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                 placeholder="+1 (555) 123-4567"
+                                className="mt-1.5"
                               />
                             </div>
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="location">Location</Label>
+                            <Label htmlFor="location" className="text-sm font-medium">Location</Label>
                             <Input
                               id="location"
                               value={formData.location}
@@ -457,20 +511,21 @@ export default function QuickImportPage() {
                                 setFormData({ ...formData, location: e.target.value })
                               }
                               placeholder="City, State"
+                              className="mt-1.5"
                             />
                           </div>
                         </div>
                       </div>
 
                       {/* Professional Information */}
-                      <div>
-                        <h4 className="text-sm font-semibold text-foreground mb-3">
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-bold text-foreground mb-4 pb-2 border-b">
                           Professional Information
                         </h4>
                         <div className="space-y-4">
                           <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="currentTitle">Current Title</Label>
+                            <div className="space-y-2">
+                              <Label htmlFor="currentTitle" className="text-sm font-medium">Current Title</Label>
                               <Input
                                 id="currentTitle"
                                 value={formData.currentTitle}
@@ -478,10 +533,11 @@ export default function QuickImportPage() {
                                   setFormData({ ...formData, currentTitle: e.target.value })
                                 }
                                 placeholder="Job title"
+                                className="mt-1.5"
                               />
                             </div>
-                            <div>
-                              <Label htmlFor="currentCompany">Current Company</Label>
+                            <div className="space-y-2">
+                              <Label htmlFor="currentCompany" className="text-sm font-medium">Current Company</Label>
                               <Input
                                 id="currentCompany"
                                 value={formData.currentCompany}
@@ -489,13 +545,14 @@ export default function QuickImportPage() {
                                   setFormData({ ...formData, currentCompany: e.target.value })
                                 }
                                 placeholder="Company name"
+                                className="mt-1.5"
                               />
                             </div>
                           </div>
 
                           <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="experience">Years of Experience</Label>
+                            <div className="space-y-2">
+                              <Label htmlFor="experience" className="text-sm font-medium">Years of Experience</Label>
                               <Input
                                 id="experience"
                                 type="number"
@@ -508,17 +565,18 @@ export default function QuickImportPage() {
                                 }
                                 placeholder="0"
                                 min="0"
+                                className="mt-1.5"
                               />
                             </div>
-                            <div>
-                              <Label htmlFor="education">Education Level</Label>
+                            <div className="space-y-2">
+                              <Label htmlFor="education" className="text-sm font-medium">Education Level</Label>
                               <Select
                                 value={formData.educationLevel}
                                 onValueChange={(value) =>
                                   setFormData({ ...formData, educationLevel: value })
                                 }
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="mt-1.5">
                                   <SelectValue placeholder="Select level" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -537,8 +595,8 @@ export default function QuickImportPage() {
                       </div>
 
                       {/* Skills */}
-                      <div>
-                        <h4 className="text-sm font-semibold text-foreground mb-3">Skills</h4>
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-bold text-foreground mb-4 pb-2 border-b">Skills</h4>
                         <div className="flex flex-wrap gap-2 mb-3">
                           {formData.skills.map((skill, index) => (
                             <Badge
@@ -573,25 +631,40 @@ export default function QuickImportPage() {
                       </div>
 
                       {/* Additional Information */}
-                      <div>
-                        <h4 className="text-sm font-semibold text-foreground mb-3">
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-bold text-foreground mb-4 pb-2 border-b">
                           Additional Information
                         </h4>
                         <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="linkedin">LinkedIn URL</Label>
-                            <Input
-                              id="linkedin"
-                              value={formData.linkedinUrl}
-                              onChange={(e) =>
-                                setFormData({ ...formData, linkedinUrl: e.target.value })
-                              }
-                              placeholder="https://linkedin.com/in/username"
-                            />
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="linkedin" className="text-sm font-medium">LinkedIn URL</Label>
+                              <Input
+                                id="linkedin"
+                                value={formData.linkedinUrl}
+                                onChange={(e) =>
+                                  setFormData({ ...formData, linkedinUrl: e.target.value })
+                                }
+                                placeholder="https://linkedin.com/in/username"
+                                className="mt-1.5"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="website" className="text-sm font-medium">Personal Website</Label>
+                              <Input
+                                id="website"
+                                value={formData.website || ""}
+                                onChange={(e) =>
+                                  setFormData({ ...formData, website: e.target.value })
+                                }
+                                placeholder="https://yourwebsite.com"
+                                className="mt-1.5"
+                              />
+                            </div>
                           </div>
 
-                          <div>
-                            <Label htmlFor="summary">Professional Summary</Label>
+                          <div className="space-y-2">
+                            <Label htmlFor="summary" className="text-sm font-medium">Professional Summary</Label>
                             <Textarea
                               id="summary"
                               value={formData.summary}
@@ -600,12 +673,88 @@ export default function QuickImportPage() {
                               }
                               placeholder="Brief professional summary"
                               rows={5}
+                              className="mt-1.5"
                             />
                           </div>
                         </div>
                       </div>
+
+                      {/* Work Experience */}
+                      {formData.experience && formData.experience.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-foreground mb-3">
+                            Work Experience
+                          </h4>
+                          <div className="space-y-3">
+                            {formData.experience.map((exp, index) => (
+                              <div key={index} className="p-3 border rounded-lg bg-muted/20">
+                                <div className="font-semibold text-sm">{exp.title}</div>
+                                <div className="text-sm text-muted-foreground">{exp.company}</div>
+                                <div className="text-xs text-muted-foreground">{exp.duration}</div>
+                                {exp.description && (
+                                  <div className="text-xs mt-2 text-muted-foreground">{exp.description}</div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Education */}
+                      {formData.education && formData.education.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-foreground mb-3">
+                            Education
+                          </h4>
+                          <div className="space-y-3">
+                            {formData.education.map((edu, index) => (
+                              <div key={index} className="p-3 border rounded-lg bg-muted/20">
+                                <div className="font-semibold text-sm">{edu.degree}</div>
+                                <div className="text-sm text-muted-foreground">{edu.institution}</div>
+                                {edu.field && (
+                                  <div className="text-xs text-muted-foreground">Field: {edu.field}</div>
+                                )}
+                                {edu.year && (
+                                  <div className="text-xs text-muted-foreground">Year: {edu.year}</div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Certifications */}
+                      {formData.certifications && formData.certifications.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-foreground mb-3">
+                            Certifications
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {formData.certifications.map((cert, index) => (
+                              <Badge key={index} variant="outline" className="text-sm">
+                                {cert}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Languages */}
+                      {formData.languages && formData.languages.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-foreground mb-3">
+                            Languages
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {formData.languages.map((lang, index) => (
+                              <Badge key={index} variant="outline" className="text-sm">
+                                {lang}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
                 ) : (
                     <div className="flex items-center justify-center h-96 border-2 border-dashed rounded-lg">
                       <div className="text-center text-muted-foreground">

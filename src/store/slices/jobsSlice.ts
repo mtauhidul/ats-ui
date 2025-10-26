@@ -5,8 +5,9 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import { toast } from "sonner";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface JobsState {
   jobs: Job[];
@@ -24,52 +25,52 @@ const initialState: JobsState = {
 
 // Async thunks
 export const fetchJobs = createAsyncThunk("jobs/fetchAll", async () => {
-  const response = await fetch(`${API_BASE_URL}/jobs`);
+  const response = await authenticatedFetch(`${API_BASE_URL}/jobs`);
   if (!response.ok) throw new Error("Failed to fetch jobs");
-  return response.json();
+  const result = await response.json();
+  return result.data?.jobs || result.data || result;
 });
 
 export const fetchJobById = createAsyncThunk(
   "jobs/fetchById",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/jobs/${id}`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/jobs/${id}`);
     if (!response.ok) throw new Error("Failed to fetch job");
-    return response.json();
+    const result = await response.json();
+    return result.data || result;
   }
 );
 
 export const createJob = createAsyncThunk(
   "jobs/create",
   async (jobData: Partial<Job>) => {
-    const response = await fetch(`${API_BASE_URL}/jobs`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/jobs`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(jobData),
     });
     if (!response.ok) throw new Error("Failed to create job");
-    const data = await response.json();
+    const result = await response.json();
     toast.success("Job created successfully");
-    return data;
+    return result.data || result;
   }
 );
 
 export const updateJob = createAsyncThunk(
   "jobs/update",
   async ({ id, data }: { id: string; data: Partial<Job> }) => {
-    const response = await fetch(`${API_BASE_URL}/jobs/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/jobs/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error("Failed to update job");
     const result = await response.json();
     toast.success("Job updated successfully");
-    return result;
+    return result.data || result;
   }
 );
 
 export const deleteJob = createAsyncThunk("jobs/delete", async (id: string) => {
-  const response = await fetch(`${API_BASE_URL}/jobs/${id}`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/jobs/${id}`, {
     method: "DELETE",
   });
   if (!response.ok) throw new Error("Failed to delete job");

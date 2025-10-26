@@ -2,27 +2,27 @@ import type { Candidate, CandidateStatus } from "@/types/candidate";
 
 // Map pipeline stage IDs to candidate status
 const stageToStatusMap: Record<string, CandidateStatus> = {
-  "new": "new",
-  "screening": "screening",
+  "new": "active",
+  "screening": "active",
   "interviewing": "interviewing",
-  "testing": "testing",
-  "technical_test": "testing",
+  "testing": "interviewing",
+  "technical_test": "interviewing",
   "technical_interview": "interviewing",
   "behavioral": "interviewing",
-  "phone_screen": "screening",
-  "sales_assessment": "testing",
+  "phone_screen": "active",
+  "sales_assessment": "interviewing",
   "manager_interview": "interviewing",
   "final_interview": "interviewing",
-  "reference_check": "reference_check",
-  "offer": "offer_extended",
-  "offer_extended": "offer_extended",
+  "reference_check": "interviewing",
+  "offer": "offered",
+  "offer_extended": "offered",
   "hired": "hired",
   "rejected": "rejected",
   "withdrawn": "withdrawn",
 };
 
 export function mapStageToStatus(stageId: string): CandidateStatus {
-  return stageToStatusMap[stageId] || "new";
+  return stageToStatusMap[stageId] || "active";
 }
 
 export function updateCandidateStatus(

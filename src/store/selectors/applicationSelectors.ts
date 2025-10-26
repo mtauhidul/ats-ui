@@ -26,7 +26,8 @@ export const selectApplicationById = (applicationId: string) =>
 export const selectApplicationStatistics = createSelector([selectApplications], (applications) => ({
   total: applications.length,
   pending: applications.filter((a) => a.status === "pending").length,
-  underReview: applications.filter((a) => a.status === "under_review").length,
+  reviewing: applications.filter((a) => a.status === "reviewing").length,
+  shortlisted: applications.filter((a) => a.status === "shortlisted").length,
   approved: applications.filter((a) => a.status === "approved").length,
   rejected: applications.filter((a) => a.status === "rejected").length,
   withdrawn: applications.filter((a) => a.status === "withdrawn").length,

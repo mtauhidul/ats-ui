@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import type { Job } from "@/types/job";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,12 +37,30 @@ export default function JobsPage() {
 
   const fetchJobs = async () => {
     try {
-      const response = await fetch("http://localhost:3001/jobs");
-      const data = await response.json();
-      setJobs(data.filter((job: Job) => job.status === "open"));
+      // Public endpoint - no authentication needed
+      const response = await fetch(`${API_BASE_URL}/jobs`);
+      
+      if (!response.ok) {
+        console.error('Failed to fetch jobs:', response.status);
+        setLoading(false);
+        return;
+      }
+      
+      const result = await response.json();
+      const jobsData = result.data?.jobs || result.data || result;
+      
+      // Ensure jobsData is an array before filtering
+      if (Array.isArray(jobsData)) {
+        setJobs(jobsData.filter((job: Job) => job.status === "open"));
+      } else {
+        console.error('Jobs data is not an array:', jobsData);
+        setJobs([]);
+      }
+      
       setLoading(false);
     } catch (error) {
       console.error("Error fetching jobs:", error);
+      setJobs([]);
       setLoading(false);
     }
   };

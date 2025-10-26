@@ -89,7 +89,7 @@ export function approveApplicationAndCreateCandidate(
     jobApplications: [{
       jobId: assignedJobId,
       applicationId: application.id,
-      status: "new",
+      status: "active",
       appliedAt: application.submittedAt,
       lastStatusChange: new Date(),
       emailIds: [],

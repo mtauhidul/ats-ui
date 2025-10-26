@@ -12,12 +12,9 @@ interface CandidateCardProps {
 }
 
 const statusColors = {
-  new: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
-  screening: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
+  active: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
   interviewing: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-  testing: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20",
-  reference_check: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20",
-  offer_extended: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
+  offered: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
   hired: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
   rejected: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
   withdrawn: "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20",

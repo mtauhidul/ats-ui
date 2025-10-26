@@ -92,7 +92,7 @@ export function calculateJobStatistics(
   ).length;
   
   const offerExtendedCandidates = jobCandidates.filter(c =>
-    c.jobApplications.some(app => app.jobId === jobId && app.status === "offer_extended")
+    c.jobApplications.some(app => app.jobId === jobId && app.status === "offered")
   ).length;
   
   const candidatesInPipeline = activeCandidates + interviewingCandidates + offerExtendedCandidates;

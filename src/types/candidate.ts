@@ -17,15 +17,12 @@ export type CandidateSource = (typeof CandidateSource)[keyof typeof CandidateSou
 
 // Candidate status in job pipeline
 export const CandidateStatus = {
-  NEW: "new",
-  SCREENING: "screening",
-  INTERVIEWING: "interviewing",
-  TESTING: "testing",
-  REFERENCE_CHECK: "reference_check",
-  OFFER_EXTENDED: "offer_extended",
-  HIRED: "hired",
-  REJECTED: "rejected",
-  WITHDRAWN: "withdrawn",
+  ACTIVE: "active", // Active candidate in pipeline
+  INTERVIEWING: "interviewing", // Currently in interview process
+  OFFERED: "offered", // Offer extended
+  HIRED: "hired", // Successfully hired
+  REJECTED: "rejected", // Rejected from this position
+  WITHDRAWN: "withdrawn", // Candidate withdrew
 } as const;
 
 export type CandidateStatus = (typeof CandidateStatus)[keyof typeof CandidateStatus];

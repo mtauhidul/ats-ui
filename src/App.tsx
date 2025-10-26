@@ -37,7 +37,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
-          <Route path="auth" element={<AuthPage />} />
+          <Route path="auth/*" element={<AuthPage />} />
           <Route path="jobs" element={<JobsPage />} />
           <Route path="jobs/:jobId" element={<PublicJobDetailPage />} />
         </Route>

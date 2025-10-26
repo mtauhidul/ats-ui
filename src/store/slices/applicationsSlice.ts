@@ -5,8 +5,9 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import { toast } from "sonner";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface ApplicationsState {
   applications: Application[];
@@ -26,58 +27,59 @@ const initialState: ApplicationsState = {
 export const fetchApplications = createAsyncThunk(
   "applications/fetchAll",
   async () => {
-    const response = await fetch(`${API_BASE_URL}/applications`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/applications`);
     if (!response.ok) throw new Error("Failed to fetch applications");
-    return response.json();
+    const result = await response.json();
+    return result.data?.applications || result.data || result;
   }
 );
 
 export const fetchApplicationById = createAsyncThunk(
   "applications/fetchById",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/applications/${id}`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/applications/${id}`);
     if (!response.ok) throw new Error("Failed to fetch application");
-    return response.json();
+    const result = await response.json();
+    return result.data || result;
   }
 );
 
 export const createApplication = createAsyncThunk(
   "applications/create",
   async (applicationData: Partial<Application>) => {
-    const response = await fetch(`${API_BASE_URL}/applications`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/applications`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(applicationData),
     });
     if (!response.ok) throw new Error("Failed to create application");
-    const data = await response.json();
+    const result = await response.json();
     toast.success("Application submitted successfully");
-    return data;
+    return result.data || result;
   }
 );
 
 export const updateApplication = createAsyncThunk(
   "applications/update",
   async ({ id, data }: { id: string; data: Partial<Application> }) => {
-    const response = await fetch(`${API_BASE_URL}/applications/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/applications/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error("Failed to update application");
     const result = await response.json();
     toast.success("Application updated successfully");
-    return result;
+    return result.data || result;
   }
 );
 
 export const deleteApplication = createAsyncThunk(
   "applications/delete",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/applications/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/applications/${id}`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to delete application");
+    await response.json();
     toast.success("Application deleted successfully");
     return id;
   }

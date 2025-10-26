@@ -5,8 +5,9 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import { toast } from "sonner";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface TagsState {
   tags: Tag[];
@@ -23,55 +24,56 @@ const initialState: TagsState = {
 };
 
 export const fetchTags = createAsyncThunk("tags/fetchAll", async () => {
-  const response = await fetch(`${API_BASE_URL}/tags`);
+  const response = await authenticatedFetch(`${API_BASE_URL}/tags`);
   if (!response.ok) throw new Error("Failed to fetch tags");
-  return response.json();
+  const result = await response.json();
+  return result.data?.tags || result.data || result;
 });
 
 export const fetchTagById = createAsyncThunk(
   "tags/fetchById",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/tags/${id}`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/tags/${id}`);
     if (!response.ok) throw new Error("Failed to fetch tag");
-    return response.json();
+    const result = await response.json();
+    return result.data || result;
   }
 );
 
 export const createTag = createAsyncThunk(
   "tags/create",
   async (tagData: Partial<Tag>) => {
-    const response = await fetch(`${API_BASE_URL}/tags`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/tags`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(tagData),
     });
     if (!response.ok) throw new Error("Failed to create tag");
-    const data = await response.json();
+    const result = await response.json();
     toast.success("Tag created successfully");
-    return data;
+    return result.data || result;
   }
 );
 
 export const updateTag = createAsyncThunk(
   "tags/update",
   async ({ id, data }: { id: string; data: Partial<Tag> }) => {
-    const response = await fetch(`${API_BASE_URL}/tags/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/tags/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error("Failed to update tag");
     const result = await response.json();
     toast.success("Tag updated successfully");
-    return result;
+    return result.data || result;
   }
 );
 
 export const deleteTag = createAsyncThunk("tags/delete", async (id: string) => {
-  const response = await fetch(`${API_BASE_URL}/tags/${id}`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/tags/${id}`, {
     method: "DELETE",
   });
   if (!response.ok) throw new Error("Failed to delete tag");
+  await response.json();
   toast.success("Tag deleted successfully");
   return id;
 });

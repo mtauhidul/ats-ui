@@ -4,7 +4,8 @@ import type { CandidateSource } from "./candidate";
 // Application status - initial stage before moving to candidate pipeline
 export const ApplicationStatus = {
   PENDING: "pending", // Newly submitted, awaiting review
-  UNDER_REVIEW: "under_review", // Being reviewed by recruiter/hiring manager
+  REVIEWING: "reviewing", // Being reviewed by recruiter/hiring manager
+  SHORTLISTED: "shortlisted", // Shortlisted for further consideration
   APPROVED: "approved", // Approved to move to candidate pipeline
   REJECTED: "rejected", // Rejected, will not proceed
   WITHDRAWN: "withdrawn", // Candidate withdrew their application
@@ -106,8 +107,17 @@ export interface Application extends BaseEntity {
   lastUpdated: Date;
 }
 
+// Backend-specific fields (email automation)
+export interface ApplicationBackendFields {
+  sourceEmail?: string; // Email address if from automation
+  sourceEmailAccountId?: string; // Reference to email account
+  pipelineStageId?: string; // Pipeline stage reference
+  appliedAt?: Date; // Timestamp when applied
+  rejectedAt?: Date; // Timestamp when rejected
+}
+
 // Application with related data for display
-export interface ApplicationWithRelations extends Application {
+export interface ApplicationWithRelations extends Application, ApplicationBackendFields {
   job: {
     id: string;
     title: string;
@@ -231,7 +241,8 @@ export type ApplicationSortField =
 export interface ApplicationStats {
   total: number;
   pending: number;
-  underReview: number;
+  reviewing: number;
+  shortlisted: number;
   approved: number;
   rejected: number;
   withdrawn: number;

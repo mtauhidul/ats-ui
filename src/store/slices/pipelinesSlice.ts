@@ -1,7 +1,8 @@
 import type { Pipeline } from "@/types";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface PipelinesState {
   pipelines: Pipeline[];
@@ -18,9 +19,10 @@ const initialState: PipelinesState = {
 export const fetchPipelines = createAsyncThunk(
   "pipelines/fetchAll",
   async () => {
-    const response = await fetch(`${API_BASE_URL}/pipelines`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/pipelines`);
     if (!response.ok) throw new Error("Failed to fetch pipelines");
-    return response.json();
+    const result = await response.json();
+    return result.data?.pipelines || result.data || result;
   }
 );
 

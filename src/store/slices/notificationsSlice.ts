@@ -3,8 +3,9 @@ import {
   createSlice,
   type PayloadAction,
 } from "@reduxjs/toolkit";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export type NotificationType =
   | "application"
@@ -47,37 +48,38 @@ const initialState: NotificationsState = {
 export const fetchNotifications = createAsyncThunk(
   "notifications/fetchAll",
   async () => {
-    const response = await fetch(`${API_BASE_URL}/notifications`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/notifications`);
     if (!response.ok) throw new Error("Failed to fetch notifications");
-    return response.json();
+    const result = await response.json();
+    return result.data?.notifications || result.data || result;
   }
 );
 
 export const markAsRead = createAsyncThunk(
   "notifications/markAsRead",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/notifications/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/notifications/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ read: true }),
     });
     if (!response.ok) throw new Error("Failed to mark notification as read");
-    return response.json();
+    const result = await response.json();
+    return result.data || result;
   }
 );
 
 export const markAllAsRead = createAsyncThunk(
   "notifications/markAllAsRead",
   async () => {
-    const response = await fetch(`${API_BASE_URL}/notifications`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/notifications`);
     if (!response.ok) throw new Error("Failed to fetch notifications");
-    const notifications = await response.json();
+    const result = await response.json();
+    const notifications = result.data?.notifications || result.data || result;
 
     await Promise.all(
       notifications.map((notif: Notification) =>
-        fetch(`${API_BASE_URL}/notifications/${notif.id}`, {
+        authenticatedFetch(`${API_BASE_URL}/notifications/${notif.id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ read: true }),
         })
       )
@@ -89,10 +91,11 @@ export const markAllAsRead = createAsyncThunk(
 export const deleteNotification = createAsyncThunk(
   "notifications/delete",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/notifications/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/notifications/${id}`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to delete notification");
+    await response.json();
     return id;
   }
 );
@@ -100,13 +103,13 @@ export const deleteNotification = createAsyncThunk(
 export const createNotification = createAsyncThunk(
   "notifications/create",
   async (notification: Omit<Notification, "id">) => {
-    const response = await fetch(`${API_BASE_URL}/notifications`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/notifications`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(notification),
     });
     if (!response.ok) throw new Error("Failed to create notification");
-    return response.json();
+    const result = await response.json();
+    return result.data || result;
   }
 );
 

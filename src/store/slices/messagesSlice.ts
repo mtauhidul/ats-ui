@@ -3,8 +3,9 @@ import {
   createSlice,
   type PayloadAction,
 } from "@reduxjs/toolkit";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface Message {
   id: string;
@@ -52,47 +53,49 @@ const initialState: MessagesState = {
 
 // Async thunks
 export const fetchMessages = createAsyncThunk("messages/fetchAll", async () => {
-  const response = await fetch(`${API_BASE_URL}/messages`);
+  const response = await authenticatedFetch(`${API_BASE_URL}/messages`);
   if (!response.ok) throw new Error("Failed to fetch messages");
-  return response.json();
+  const result = await response.json();
+  return result.data?.messages || result.data || result;
 });
 
 export const sendMessage = createAsyncThunk(
   "messages/send",
   async (message: Omit<Message, "id" | "sentAt">) => {
-    const response = await fetch(`${API_BASE_URL}/messages`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/messages`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...message,
         sentAt: new Date().toISOString(),
       }),
     });
     if (!response.ok) throw new Error("Failed to send message");
-    return response.json();
+    const result = await response.json();
+    return result.data || result;
   }
 );
 
 export const markMessageAsRead = createAsyncThunk(
   "messages/markAsRead",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/messages/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/messages/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ read: true }),
     });
     if (!response.ok) throw new Error("Failed to mark message as read");
-    return response.json();
+    const result = await response.json();
+    return result.data || result;
   }
 );
 
 export const deleteMessage = createAsyncThunk(
   "messages/delete",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/messages/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/messages/${id}`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to delete message");
+    await response.json();
     return id;
   }
 );

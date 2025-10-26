@@ -31,6 +31,8 @@ import {
 import type { Job } from "@/types/job";
 import { toast } from "sonner";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+
 export default function JobDetailPage() {
   const { jobId } = useParams();
   const [job, setJob] = useState<Job | null>(null);
@@ -55,9 +57,11 @@ export default function JobDetailPage() {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/jobs/${jobId}`);
-        const data = await response.json();
-        setJob(data);
+        // Public endpoint - no authentication needed
+        const response = await fetch(`${API_BASE_URL}/jobs/${jobId}`);
+        const result = await response.json();
+        const jobData = result.data || result;
+        setJob(jobData);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching job:", error);

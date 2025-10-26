@@ -5,8 +5,9 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import { toast } from "sonner";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface TeamState {
   teamMembers: TeamMember[];
@@ -23,57 +24,58 @@ const initialState: TeamState = {
 };
 
 export const fetchTeamMembers = createAsyncThunk("team/fetchAll", async () => {
-  const response = await fetch(`${API_BASE_URL}/team`);
+  const response = await authenticatedFetch(`${API_BASE_URL}/team`);
   if (!response.ok) throw new Error("Failed to fetch team members");
-  return response.json();
+  const result = await response.json();
+  return result.data?.teamMembers || result.data || result;
 });
 
 export const fetchTeamMemberById = createAsyncThunk(
   "team/fetchById",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/team/${id}`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/team/${id}`);
     if (!response.ok) throw new Error("Failed to fetch team member");
-    return response.json();
+    const result = await response.json();
+    return result.data || result;
   }
 );
 
 export const createTeamMember = createAsyncThunk(
   "team/create",
   async (data: Partial<TeamMember>) => {
-    const response = await fetch(`${API_BASE_URL}/team`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/team`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error("Failed to create team member");
     const result = await response.json();
     toast.success("Team member created successfully");
-    return result;
+    return result.data || result;
   }
 );
 
 export const updateTeamMember = createAsyncThunk(
   "team/update",
   async ({ id, data }: { id: string; data: Partial<TeamMember> }) => {
-    const response = await fetch(`${API_BASE_URL}/team/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/team/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error("Failed to update team member");
     const result = await response.json();
     toast.success("Team member updated successfully");
-    return result;
+    return result.data || result;
   }
 );
 
 export const deleteTeamMember = createAsyncThunk(
   "team/delete",
   async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/team/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/team/${id}`, {
       method: "DELETE",
     });
     if (!response.ok) throw new Error("Failed to delete team member");
+    await response.json();
     toast.success("Team member deleted successfully");
     return id;
   }

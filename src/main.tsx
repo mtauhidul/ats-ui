@@ -23,8 +23,8 @@ createRoot(document.getElementById("root")!).render(
         signUpUrl="/auth"
         signInFallbackRedirectUrl="/dashboard"
         signUpFallbackRedirectUrl="/dashboard"
-        signInForceRedirectUrl={undefined}
-        signUpForceRedirectUrl={undefined}
+        signInForceRedirectUrl="/dashboard"
+        signUpForceRedirectUrl="/dashboard"
       >
         <App />
         <Toaster />
