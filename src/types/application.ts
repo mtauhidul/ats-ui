@@ -114,6 +114,27 @@ export interface ApplicationBackendFields {
   pipelineStageId?: string; // Pipeline stage reference
   appliedAt?: Date; // Timestamp when applied
   rejectedAt?: Date; // Timestamp when rejected
+  resumeUrl?: string; // Cloudinary URL for resume
+  resumeOriginalName?: string; // Original filename
+  parsedData?: {
+    summary?: string;
+    skills?: string[];
+    experience?: Array<{
+      company: string;
+      title: string;
+      duration: string;
+      description?: string;
+    }>;
+    education?: Array<{
+      institution: string;
+      degree: string;
+      field?: string;
+      year?: string;
+    }>;
+    certifications?: string[];
+    languages?: string[];
+  };
+  notes?: string; // Internal notes
 }
 
 // Application with related data for display

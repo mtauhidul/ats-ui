@@ -33,13 +33,10 @@ export async function authenticatedFetch(
     try {
       const token = await getClerkToken();
       if (token) {
-        console.log('[Auth Debug] Token obtained, length:', token.length, 'first 20 chars:', token.substring(0, 20));
         (requestHeaders as Record<string, string>)['Authorization'] = `Bearer ${token}`;
-      } else {
-        console.warn('[Auth Debug] No token available from Clerk');
       }
     } catch (error) {
-      console.error('[Auth Debug] Failed to add auth token to request:', error);
+      console.error('Failed to add auth token to request:', error);
     }
   }
 

@@ -29,6 +29,7 @@ import {
   IconUser,
   IconFileText,
   IconRobot,
+  IconTrash,
 } from "@tabler/icons-react";
 import {
   flexRender,
@@ -46,6 +47,7 @@ import {
 } from "@tanstack/react-table";
 import * as React from "react";
 import { toast } from "sonner";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -434,14 +436,31 @@ function SortableRow({
 
 function DataTablePagination({
   table,
+  onBulkDelete,
 }: {
   table: ReturnType<typeof useReactTable<Application>>;
+  onBulkDelete: () => void;
 }) {
+  const selectedCount = table.getFilteredSelectedRowModel().rows.length;
+  
   return (
     <div className="flex items-center justify-between px-2">
-      <div className="flex-1 text-sm text-muted-foreground">
-        {table.getFilteredSelectedRowModel().rows.length} of{" "}
-        {table.getFilteredRowModel().rows.length} row(s) selected.
+      <div className="flex items-center gap-4">
+        <div className="text-sm text-muted-foreground">
+          {selectedCount} of{" "}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
+        </div>
+        {selectedCount > 0 && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={onBulkDelete}
+            className="h-8"
+          >
+            <IconTrash className="mr-2 h-4 w-4" />
+            Delete Selected ({selectedCount})
+          </Button>
+        )}
       </div>
       <div className="flex items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">
@@ -530,6 +549,69 @@ export function ApplicationsDataTable({ data }: ApplicationsDataTableProps) {
       )
     );
     toast.success(`Application ${status} successfully`);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this application? This will remove the application and all associated files from the system.")) {
+      return;
+    }
+
+    try {
+      const response = await authenticatedFetch(`http://localhost:5001/api/applications/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete application');
+      }
+
+      // Remove from local state
+      setApplications((prev) => prev.filter((app) => app.id !== id));
+      toast.success('Application deleted successfully');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete application';
+      toast.error(message);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const selectedIds = selectedRows.map(row => row.original.id);
+    
+    if (selectedIds.length === 0) {
+      toast.error("No applications selected");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${selectedIds.length} application(s)? This will remove all applications and their associated files from the system.`)) {
+      return;
+    }
+
+    try {
+      const response = await authenticatedFetch('http://localhost:5001/api/applications/bulk/delete', {
+        method: 'POST',
+        body: JSON.stringify({ applicationIds: selectedIds }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete applications');
+      }
+
+      const result = await response.json();
+      
+      // Remove deleted applications from local state
+      setApplications((prev) => prev.filter((app) => !selectedIds.includes(app.id)));
+      
+      // Clear selection
+      table.resetRowSelection();
+
+      toast.success(result.message || `Successfully deleted ${selectedIds.length} application(s)`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete applications';
+      toast.error(message);
+    }
   };
 
   const columns: ColumnDef<Application>[] = [
@@ -670,6 +752,13 @@ export function ApplicationsDataTable({ data }: ApplicationsDataTableProps) {
                 <IconX className="mr-2 h-4 w-4" />
                 Reject
               </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleDelete(application.id)}
+                className="text-destructive focus:text-destructive"
+              >
+                <IconTrash className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -803,7 +892,7 @@ export function ApplicationsDataTable({ data }: ApplicationsDataTableProps) {
         </Table>
       </div>
       <div className="py-4 px-4 lg:px-6">
-        <DataTablePagination table={table} />
+        <DataTablePagination table={table} onBulkDelete={handleBulkDelete} />
       </div>
     </div>
   );

@@ -27,13 +27,14 @@ import {
   IconChevronsRight,
   IconCircleCheckFilled,
   IconClockHour4,
+  IconDotsVertical,
   IconDownload,
   IconFileText,
   IconFilter,
+  IconGripVertical,
   IconLayoutColumns,
   IconLoader,
   IconSearch,
-  IconTrash,
   IconUserCheck,
   IconUsers,
   IconUserX,
@@ -58,7 +59,7 @@ import * as React from "react";
 
 import { z } from "zod";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -98,18 +99,36 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { authenticatedFetch } from "@/lib/authenticated-fetch";
-import { toast } from "sonner";
 import type { schema } from "./data-table-schema";
 
+// Create a separate component for the drag handle
+// Create a separate component for the drag handle
+function DragHandle({ id }: { id: number }) {
+  const { attributes, listeners } = useSortable({
+    id,
+  });
+
+  return (
+    <Button
+      {...attributes}
+      {...listeners}
+      variant="ghost"
+      size="icon"
+      className="text-muted-foreground size-7 hover:bg-transparent"
+    >
+      <IconGripVertical className="text-muted-foreground size-3" />
+      <span className="sr-only">Drag to reorder</span>
+    </Button>
+  );
+}
+
 const columns: ColumnDef<z.infer<typeof schema>>[] = [
+  {
+    id: "drag",
+    header: () => null,
+    cell: ({ row }) => <DragHandle id={row.original.id} />,
+  },
   {
     id: "select",
     header: ({ table }) => (
@@ -149,42 +168,8 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "limit",
-    header: () => <div className="w-full text-left">Application ID</div>,
-    cell: ({ row }) => {
-      const appId = row.original.jobIdDisplay || "-";
-      
-      const handleCopyId = () => {
-        navigator.clipboard.writeText(appId);
-        toast.success("Application ID copied to clipboard!");
-      };
-      
-      return (
-        <TooltipProvider>
-          <Tooltip delayDuration={300}>
-            <TooltipTrigger asChild>
-              <button
-                onClick={handleCopyId}
-                className="text-left text-xs font-mono min-w-[200px] bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 py-1 rounded hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors cursor-pointer border border-green-200 dark:border-green-800"
-              >
-                {appId}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent 
-              side="top" 
-              className="!bg-slate-900 !text-white !border-slate-700 px-3 py-2 font-medium"
-              sideOffset={5}
-            >
-              Click to copy ID
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    },
-  },
-  {
     accessorKey: "type",
-    header: "AI Check",
+    header: "AI Recommendation",
     cell: ({ row }) => (
       <div className="w-28">
         <Badge
@@ -236,55 +221,68 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     ),
   },
   {
-    accessorKey: "reviewer",
-    header: "Team",
+    accessorKey: "target",
+    header: () => <div className="w-full text-left">Date Applied</div>,
     cell: ({ row }) => {
-      const teamMembers = row.original.teamMembers || [];
-      const hasTeamMembers = teamMembers.length > 0;
+      return (
+        <div className="text-left text-sm w-32">
+          {row.original.dateApplied || new Date().toLocaleDateString()}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "limit",
+    header: () => <div className="w-full text-left">Job ID</div>,
+    cell: ({ row }) => {
+      return (
+        <div className="text-left text-sm w-24">
+          {row.original.jobIdDisplay || "-"}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "reviewer",
+    header: "Reviewer",
+    cell: ({ row }) => {
+      const isAssigned =
+        row.original.reviewer !== "Unassigned" &&
+        row.original.reviewer !== "Assign reviewer";
 
       return (
-        <div className="w-48">
-          {hasTeamMembers ? (
-            <div className="flex flex-wrap gap-1">
-              {teamMembers.slice(0, 2).map((member: string, index: number) => (
-                <Badge
-                  key={index}
-                  variant="secondary"
-                  className="text-xs px-2 py-0.5"
-                >
-                  {member}
-                </Badge>
-              ))}
-              {teamMembers.length > 2 && (
-                <Badge variant="outline" className="text-xs px-2 py-0.5">
-                  +{teamMembers.length - 2}
-                </Badge>
-              )}
-            </div>
-          ) : (
-            <Select
-              defaultValue="assign"
-              onValueChange={(value) => {
-                console.log(
-                  `Assigning ${value} to application ${row.original.id}`
-                );
-              }}
+        <div className="w-40">
+          <Label htmlFor={`${row.original.id}-reviewer`} className="sr-only">
+            Reviewer
+          </Label>
+          <Select
+            defaultValue={isAssigned ? row.original.reviewer : undefined}
+            onValueChange={(value) => {
+              // Update the reviewer in the data
+              console.log(
+                `Assigning reviewer ${value} to application ${row.original.id}`
+              );
+              // In a real app, this would update the backend/state
+            }}
+          >
+            <SelectTrigger
+              className="w-full **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
+              size="sm"
+              id={`${row.original.id}-reviewer`}
             >
-              <SelectTrigger className="w-full h-7 text-xs" size="sm">
-                <SelectValue placeholder="Assign Team" />
-              </SelectTrigger>
-              <SelectContent align="end">
-                <SelectItem value="assign" disabled>
-                  Assign Team
-                </SelectItem>
-                <SelectItem value="John Smith">John Smith</SelectItem>
-                <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
-                <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
-                <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
-                <SelectItem value="Tom Davis">Tom Davis</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
+              <SelectValue placeholder="Assign Reviewer" />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="Assign Reviewer" disabled>
+                Assign Reviewer
+              </SelectItem>
+              <SelectItem value="John Smith">John Smith</SelectItem>
+              <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
+              <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
+              <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
+              <SelectItem value="Tom Davis">Tom Davis</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       );
     },
@@ -297,44 +295,65 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 
 // Row actions column that needs access to handlers
 const createActionsColumn = (handlers: {
-  onApprove: (id: number | string) => void;
-  onReject: (id: number | string) => void;
+  onApprove: (id: number) => void;
+  onReject: (id: number) => void;
+  onAssignReviewer: (id: number) => void;
+  onDownloadResume: (id: number) => void;
+  onDelete: (id: number) => void;
 }): ColumnDef<z.infer<typeof schema>> => ({
   id: "actions",
-  header: "Actions",
   cell: ({ row }) => (
-    <TooltipProvider>
-      <div className="flex items-center gap-1">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
-              onClick={() => handlers.onApprove(row.original.id)}
-              disabled={row.original.status === "Done"}
-            >
-              <IconCheck className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Approve Application</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-              onClick={() => handlers.onReject(row.original.id)}
-              disabled={row.original.status === "Rejected"}
-            >
-              <IconX className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Reject Application</TooltipContent>
-        </Tooltip>
-      </div>
-    </TooltipProvider>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+          size="icon"
+        >
+          <IconDotsVertical />
+          <span className="sr-only">Open menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <div className="px-2 py-1.5 text-xs font-semibold text-primary-foreground bg-primary">
+          ID #{row.original.id}
+        </div>
+        <DropdownMenuItem
+          onClick={() => handlers.onApprove(row.original.id)}
+          disabled={row.original.status === "Approved"}
+        >
+          <IconCheck className="h-3 w-3 mr-2 text-green-600" />
+          Approve
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => handlers.onReject(row.original.id)}
+          disabled={row.original.status === "Rejected"}
+        >
+          <IconX className="h-3 w-3 mr-2 text-red-600" />
+          Reject
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => handlers.onAssignReviewer(row.original.id)}
+        >
+          <IconUserCheck className="h-3 w-3 mr-2" />
+          Assign Reviewer
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => handlers.onDownloadResume(row.original.id)}
+        >
+          <IconDownload className="h-3 w-3 mr-2" />
+          Download Resume
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={() => handlers.onDelete(row.original.id)}
+        >
+          Delete Application
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   ),
 });
 
@@ -413,55 +432,33 @@ export function DataTable({
     table.resetRowSelection();
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkAssignReviewer = () => {
     const selectedIds = table
       .getFilteredSelectedRowModel()
       .rows.map((r) => r.original.id);
-
-    if (selectedIds.length === 0) {
-      toast.error("No applications selected");
-      return;
-    }
-
-    try {
-      const response = await authenticatedFetch(
-        "http://localhost:5001/api/applications/bulk/delete",
-        {
-          method: "POST",
-          body: JSON.stringify({ applicationIds: selectedIds }),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to delete applications");
-      }
-
-      const result = await response.json();
-
-      // Remove deleted applications from local state
+    // In real app, this would open a modal to select reviewer
+    const reviewer = prompt("Enter reviewer name:");
+    if (reviewer) {
       setData((prevData) =>
-        prevData.filter((item) => !selectedIds.includes(item.id))
+        prevData.map((item) =>
+          selectedIds.includes(item.id) ? { ...item, reviewer } : item
+        )
       );
-
-      // Clear selection
       table.resetRowSelection();
-
-      toast.success(
-        result.message ||
-          `Successfully deleted ${selectedIds.length} application(s)`
-      );
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to delete applications";
-      toast.error(message);
     }
   };
 
+  const handleBulkExport = () => {
+    const selectedData = table
+      .getFilteredSelectedRowModel()
+      .rows.map((r) => r.original);
+    console.log("Exporting data:", selectedData);
+    // In real app, this would trigger file download
+    alert(`Exporting ${selectedData.length} applications`);
+  };
+
   // Individual action handlers
-  const handleApprove = (id: number | string) => {
+  const handleApprove = (id: number) => {
     setData((prevData) =>
       prevData.map((item) =>
         item.id === id ? { ...item, status: "Approved" } : item
@@ -469,12 +466,39 @@ export function DataTable({
     );
   };
 
-  const handleReject = (id: number | string) => {
+  const handleReject = (id: number) => {
     setData((prevData) =>
       prevData.map((item) =>
         item.id === id ? { ...item, status: "Rejected" } : item
       )
     );
+  };
+
+  const handleAssignReviewer = (id: number) => {
+    const reviewer = prompt("Enter reviewer name:");
+    if (reviewer) {
+      setData((prevData) =>
+        prevData.map((item) => (item.id === id ? { ...item, reviewer } : item))
+      );
+    }
+  };
+
+  const handleDownloadResume = (id: number) => {
+    const application = data.find((item) => item.id === id);
+    if (application?.resumeFilename) {
+      const link = document.createElement("a");
+      link.href = `/uploads/resumes/${application.resumeFilename}`;
+      link.download = application.resumeFilename;
+      link.click();
+    } else {
+      alert("No resume file available");
+    }
+  };
+
+  const handleDelete = (id: number) => {
+    if (confirm("Are you sure you want to delete this application?")) {
+      setData((prevData) => prevData.filter((item) => item.id !== id));
+    }
   };
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
@@ -488,6 +512,9 @@ export function DataTable({
     const actionsColumn = createActionsColumn({
       onApprove: handleApprove,
       onReject: handleReject,
+      onAssignReviewer: handleAssignReviewer,
+      onDownloadResume: handleDownloadResume,
+      onDelete: handleDelete,
     });
     return [...baseColumns, actionsColumn];
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -681,12 +708,13 @@ export function DataTable({
                       Reject Selected
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={handleBulkDelete}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <IconTrash className="h-4 w-4 mr-2" />
-                      Delete Selected
+                    <DropdownMenuItem onClick={handleBulkAssignReviewer}>
+                      <IconUserCheck className="h-4 w-4 mr-2" />
+                      Assign Reviewer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBulkExport}>
+                      <IconDownload className="h-4 w-4 mr-2" />
+                      Export Selected
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -952,6 +980,14 @@ export function DataTable({
                   Status
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
+                  checked={table.getColumn("target")?.getIsVisible()}
+                  onCheckedChange={(value) =>
+                    table.getColumn("target")?.toggleVisibility(!!value)
+                  }
+                >
+                  Date Applied
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
                   checked={table.getColumn("limit")?.getIsVisible()}
                   onCheckedChange={(value) =>
                     table.getColumn("limit")?.toggleVisibility(!!value)
@@ -1134,46 +1170,6 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   );
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  // Mock data to ensure all sections are visible - prioritize real data, fallback to mock
-  const mockItem = {
-    ...item,
-    // Use real data first, fallback to generated avatar
-    photo: item.photo || `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.header}`,
-    // Use real data first
-    email: item.email || "applicant@example.com",
-    phone: item.phone || "+1 (555) 123-4567",
-    currentTitle: item.currentTitle || "Not Specified",
-    currentCompany: item.currentCompany || "Not Specified",
-    yearsOfExperience: item.yearsOfExperience !== undefined ? item.yearsOfExperience : undefined,
-    // Education - use real data or fallback
-    educationLevel: item.educationLevel || undefined,
-    // Salary - keep real data only
-    expectedSalary: item.expectedSalary || undefined,
-    // Location - keep real data only, no mock
-    location: item.location || undefined,
-    // Social links - keep real data only, no mock
-    linkedinUrl: item.linkedinUrl || undefined,
-    portfolioUrl: item.portfolioUrl || undefined,
-    // Skills - use real data or provide example structure
-    skills: item.skills && item.skills.length > 0 ? item.skills : undefined,
-    // Languages - use real data only, no mock if empty
-    languages: item.languages && item.languages.length > 0 ? item.languages : undefined,
-    // Cover letter - use real data or provide placeholder
-    coverLetter: item.coverLetter || undefined,
-    // Resume - use real data
-    resumeFilename: item.resumeFilename || undefined,
-    resumeFileSize: item.resumeFileSize || undefined,
-    resumeText: item.resumeText || undefined,
-    resumeUrl: item.resumeUrl || undefined,
-    // Notes - use real data only
-    notes: item.notes || undefined,
-    // Video - use real data only, no mock videos
-    videoIntroUrl: item.videoIntroUrl || undefined,
-    videoIntroFilename: item.videoIntroFilename || undefined,
-    videoIntroFileSize: item.videoIntroFileSize || undefined,
-    videoIntroDuration: item.videoIntroDuration || undefined,
-  };
-
   // Load jobs data
   const [jobs, setJobs] = React.useState<
     Array<{ id: string; title: string; clientId: string }>
@@ -1264,16 +1260,8 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
       onOpenChange={setIsDrawerOpen}
     >
       <DrawerTrigger asChild>
-        <Button 
-          variant="link" 
-          className="w-fit px-0 text-left group hover:no-underline"
-        >
-          <span className="flex items-center gap-1.5 text-foreground group-hover:text-primary transition-colors">
-            <span className="group-hover:underline underline-offset-4">
-              {item.header}
-            </span>
-            <IconChevronRight className="h-3.5 w-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-          </span>
+        <Button variant="link" className="text-foreground w-fit px-0 text-left">
+          {item.header}
         </Button>
       </DrawerTrigger>
       <DrawerContent className="max-h-[96vh]">
@@ -1288,142 +1276,108 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           {/* Applicant Header Card */}
           <div className="flex items-start gap-4 rounded-lg border bg-muted/30 p-4">
             <Avatar className="h-14 w-14 border-2 rounded-lg">
+              <AvatarImage src={item.photo || ""} className="object-cover" />
               <AvatarFallback className="text-base font-semibold">
-                {(() => {
-                  const nameParts = mockItem.header.split(" ");
-                  const firstName = nameParts[0] || "";
-                  const lastName = nameParts[nameParts.length - 1] || "";
-                  return (firstName[0] || "") + (lastName[0] || "");
-                })()}
+                {item.header
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold mb-1">{mockItem.header}</h3>
-              {mockItem.email && (
+              <h3 className="text-base font-semibold mb-1">{item.header}</h3>
+              {item.email && (
                 <p className="text-sm text-muted-foreground truncate mb-0.5">
-                  {mockItem.email}
+                  {item.email}
                 </p>
               )}
-              {mockItem.phone && (
-                <p className="text-xs text-muted-foreground">{mockItem.phone}</p>
+              {item.phone && (
+                <p className="text-xs text-muted-foreground">{item.phone}</p>
               )}
               <div className="flex flex-wrap gap-1.5 mt-2">
-                {getStatusBadge(mockItem.status)}
-                {getAIStatusBadge(mockItem.type)}
+                {getStatusBadge(item.status)}
+                {getAIStatusBadge(item.type)}
               </div>
-              {/* Application ID with highlighting */}
-              {mockItem.jobIdDisplay && (
-                <div className="mt-2 inline-block">
-                  <div className="text-[10px] text-muted-foreground mb-0.5">APPLICATION ID</div>
-                  <div className="text-xs font-mono font-medium bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 py-1 rounded border border-green-200 dark:border-green-800 break-all">
-                    {mockItem.jobIdDisplay}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
           {/* Quick Info Grid */}
-          <div className="space-y-3">
-            {/* Reviewer - Full Width Selection */}
-            <div className="rounded-lg border bg-lime-500/10 dark:bg-lime-500/10 border-lime-500/20 p-3">
-              <Label className="text-xs text-lime-700 dark:text-lime-400 font-medium mb-2 block">
-                Assign Reviewer
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg border bg-card p-3">
+              <Label className="text-xs text-muted-foreground">
+                Date Applied
               </Label>
-              <Select 
-                defaultValue={mockItem.reviewer && mockItem.reviewer !== "Unassigned" ? mockItem.reviewer : "unassigned"}
-                onValueChange={(value) => {
-                  console.log('Reviewer changed to:', value);
-                  // TODO: Add API call to update reviewer
-                }}
-              >
-                <SelectTrigger className="w-full h-9 bg-background">
-                  <SelectValue placeholder="Select reviewer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                  <SelectItem value="John Smith">John Smith</SelectItem>
-                  <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
-                  <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
-                  <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
-                  <SelectItem value="Tom Davis">Tom Davis</SelectItem>
-                </SelectContent>
-              </Select>
+              <p className="text-sm font-medium mt-1">
+                {item.dateApplied || "N/A"}
+              </p>
             </div>
-
-            {/* Date Applied and Experience in 2 columns */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg border bg-card p-3">
+              <Label className="text-xs text-muted-foreground">Job ID</Label>
+              <p className="text-sm font-medium font-mono mt-1">
+                {item.jobIdDisplay || "N/A"}
+              </p>
+            </div>
+            <div className="rounded-lg border bg-lime-500/10 dark:bg-lime-500/10 border-lime-500/20 p-3">
+              <Label className="text-xs text-lime-700 dark:text-lime-400 font-medium">
+                Reviewer
+              </Label>
+              <p className="text-sm font-semibold text-lime-800 dark:text-lime-300 mt-1 truncate">
+                {item.reviewer}
+              </p>
+            </div>
+            {item.yearsOfExperience && (
               <div className="rounded-lg border bg-card p-3">
                 <Label className="text-xs text-muted-foreground">
-                  Date Applied
+                  Experience
                 </Label>
                 <p className="text-sm font-medium mt-1">
-                  {mockItem.dateApplied || "N/A"}
+                  {item.yearsOfExperience} years
                 </p>
               </div>
-              {mockItem.yearsOfExperience ? (
-                <div className="rounded-lg border bg-card p-3">
-                  <Label className="text-xs text-muted-foreground">
-                    Experience
-                  </Label>
-                  <p className="text-sm font-medium mt-1">
-                    {mockItem.yearsOfExperience} years
-                  </p>
-                </div>
-              ) : (
-                <div className="rounded-lg border bg-card p-3">
-                  <Label className="text-xs text-muted-foreground">
-                    Experience
-                  </Label>
-                  <p className="text-sm font-medium mt-1">
-                    Not Specified
-                  </p>
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
           {/* Professional Information */}
-          {(mockItem.currentTitle ||
-            mockItem.currentCompany ||
-            mockItem.educationLevel ||
-            mockItem.expectedSalary) && (
+          {(item.currentTitle ||
+            item.currentCompany ||
+            item.educationLevel ||
+            item.expectedSalary) && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold flex items-center gap-2">
                 Professional Information
               </h4>
               <div className="rounded-lg border divide-y">
-                {mockItem.currentTitle && (
+                {item.currentTitle && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Position</span>
                     <span className="font-medium text-right">
-                      {mockItem.currentTitle}
+                      {item.currentTitle}
                     </span>
                   </div>
                 )}
-                {mockItem.currentCompany && (
+                {item.currentCompany && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Company</span>
                     <span className="font-medium text-right">
-                      {mockItem.currentCompany}
+                      {item.currentCompany}
                     </span>
                   </div>
                 )}
-                {mockItem.educationLevel && (
+                {item.educationLevel && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Education</span>
                     <span className="font-medium text-right">
-                      {mockItem.educationLevel}
+                      {item.educationLevel}
                     </span>
                   </div>
                 )}
-                {mockItem.expectedSalary && (
+                {item.expectedSalary && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">
                       Salary Expectation
                     </span>
                     <span className="font-medium text-right">
-                      {mockItem.expectedSalary}
+                      {item.expectedSalary}
                     </span>
                   </div>
                 )}
@@ -1432,23 +1386,23 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
 
           {/* Contact Information */}
-          {(mockItem.location || mockItem.linkedinUrl || mockItem.portfolioUrl) && (
+          {(item.location || item.linkedinUrl || item.portfolioUrl) && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Contact Information</h4>
               <div className="rounded-lg border divide-y">
-                {mockItem.location && (
+                {item.location && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Location</span>
                     <span className="font-medium text-right">
-                      {mockItem.location}
+                      {item.location}
                     </span>
                   </div>
                 )}
-                {mockItem.linkedinUrl && (
+                {item.linkedinUrl && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">LinkedIn</span>
                     <a
-                      href={mockItem.linkedinUrl}
+                      href={item.linkedinUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline font-medium"
@@ -1457,11 +1411,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     </a>
                   </div>
                 )}
-                {mockItem.portfolioUrl && (
+                {item.portfolioUrl && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Portfolio</span>
                     <a
-                      href={mockItem.portfolioUrl}
+                      href={item.portfolioUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline font-medium"
@@ -1475,18 +1429,18 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
 
           {/* Skills & Languages */}
-          {((mockItem.skills && mockItem.skills.length > 0) ||
-            (mockItem.languages && mockItem.languages.length > 0)) && (
+          {((item.skills && item.skills.length > 0) ||
+            (item.languages && item.languages.length > 0)) && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Skills & Languages</h4>
               <div className="rounded-lg border bg-card p-4 space-y-3">
-                {mockItem.skills && mockItem.skills.length > 0 && (
+                {item.skills && item.skills.length > 0 && (
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">
                       Technical Skills
                     </Label>
                     <div className="flex flex-wrap gap-1.5">
-                      {mockItem.skills.map((skill, index) => (
+                      {item.skills.map((skill, index) => (
                         <Badge
                           key={index}
                           variant="secondary"
@@ -1498,13 +1452,13 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     </div>
                   </div>
                 )}
-                {mockItem.languages && mockItem.languages.length > 0 && (
+                {item.languages && item.languages.length > 0 && (
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">
                       Languages
                     </Label>
                     <div className="flex flex-wrap gap-1.5">
-                      {mockItem.languages.map((language, index) => (
+                      {item.languages.map((language, index) => (
                         <Badge
                           key={index}
                           variant="outline"
@@ -1521,12 +1475,12 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
 
           {/* Documents Section */}
-          {(mockItem.resumeFilename || mockItem.coverLetter) && (
+          {(item.resumeFilename || item.coverLetter) && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Documents</h4>
               <div className="space-y-3">
                 {/* Resume */}
-                {mockItem.resumeFilename && (
+                {item.resumeFilename && (
                   <div className="rounded-lg border overflow-hidden">
                     <div className="flex items-center justify-between gap-3 p-3 bg-muted/50">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1535,11 +1489,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium truncate">
-                            {mockItem.resumeFilename}
+                            {item.resumeFilename}
                           </p>
-                          {mockItem.resumeFileSize && (
+                          {item.resumeFileSize && (
                             <p className="text-xs text-muted-foreground">
-                              {mockItem.resumeFileSize}
+                              {item.resumeFileSize}
                             </p>
                           )}
                         </div>
@@ -1561,10 +1515,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => {
-                            if (mockItem.resumeFilename) {
+                            if (item.resumeFilename) {
                               const link = document.createElement("a");
-                              link.href = `/uploads/resumes/${mockItem.resumeFilename}`;
-                              link.download = mockItem.resumeFilename;
+                              link.href = `/uploads/resumes/${item.resumeFilename}`;
+                              link.download = item.resumeFilename;
                               link.click();
                             }
                           }}
@@ -1576,10 +1530,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     </div>
                     {showResumePreview && (
                       <div className="border-t">
-                        {mockItem.resumeFilename.toLowerCase().endsWith(".pdf") ? (
+                        {item.resumeFilename.toLowerCase().endsWith(".pdf") ? (
                           <div className="relative bg-muted/30">
                             <iframe
-                              src={`/uploads/resumes/${mockItem.resumeFilename}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                              src={`/uploads/resumes/${item.resumeFilename}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                               className="w-full h-[500px]"
                               title="Resume Preview"
                               onError={(e) => {
@@ -1589,10 +1543,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                               }}
                             />
                           </div>
-                        ) : mockItem.resumeText ? (
+                        ) : item.resumeText ? (
                           <div className="max-h-[500px] overflow-y-auto p-4 bg-muted/30">
                             <pre className="text-xs whitespace-pre-wrap leading-relaxed">
-                              {mockItem.resumeText}
+                              {item.resumeText}
                             </pre>
                           </div>
                         ) : (
@@ -1612,7 +1566,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 )}
 
                 {/* Cover Letter */}
-                {mockItem.coverLetter && (
+                {item.coverLetter && (
                   <div className="rounded-lg border overflow-hidden">
                     <div className="px-4 py-2.5 bg-muted/50 border-b">
                       <Label className="text-xs font-medium">
@@ -1621,26 +1575,26 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     </div>
                     <div className="p-4 max-h-64 overflow-y-auto bg-card">
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {mockItem.coverLetter}
+                        {item.coverLetter}
                       </p>
                     </div>
                   </div>
                 )}
 
                 {/* Video Introduction */}
-                {mockItem.videoIntroUrl && (
+                {item.videoIntroUrl && (
                   <div className="rounded-lg border overflow-hidden">
                     <div className="px-4 py-2.5 bg-muted/50 border-b flex items-center justify-between">
                       <Label className="text-xs font-medium">
                         Video Introduction
                       </Label>
-                      {(mockItem.videoIntroDuration || mockItem.videoIntroFileSize) && (
+                      {(item.videoIntroDuration || item.videoIntroFileSize) && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          {mockItem.videoIntroDuration && (
-                            <span>{mockItem.videoIntroDuration}</span>
+                          {item.videoIntroDuration && (
+                            <span>{item.videoIntroDuration}</span>
                           )}
-                          {mockItem.videoIntroFileSize && (
-                            <span>• {mockItem.videoIntroFileSize}</span>
+                          {item.videoIntroFileSize && (
+                            <span>• {item.videoIntroFileSize}</span>
                           )}
                         </div>
                       )}
@@ -1650,11 +1604,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                         controls
                         className="w-full max-h-80"
                         preload="metadata"
-                        poster={mockItem.photo || undefined}
+                        poster={item.photo || undefined}
                       >
-                        <source src={mockItem.videoIntroUrl} type="video/mp4" />
-                        <source src={mockItem.videoIntroUrl} type="video/webm" />
-                        <source src={mockItem.videoIntroUrl} type="video/ogg" />
+                        <source src={item.videoIntroUrl} type="video/mp4" />
+                        <source src={item.videoIntroUrl} type="video/webm" />
+                        <source src={item.videoIntroUrl} type="video/ogg" />
                       </video>
                     </div>
                   </div>
@@ -1664,22 +1618,22 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
 
           {/* Application Notes */}
-          {mockItem.notes && (
+          {item.notes && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Notes</h4>
               <div className="rounded-lg border bg-muted/30 p-4">
-                <p className="text-sm leading-relaxed">{mockItem.notes}</p>
+                <p className="text-sm leading-relaxed">{item.notes}</p>
               </div>
             </div>
           )}
 
           {/* Resume Full Text */}
-          {mockItem.resumeText && !showResumePreview && (
+          {item.resumeText && !showResumePreview && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Resume Full Text</h4>
               <div className="rounded-lg border bg-muted/30 p-4 max-h-96 overflow-y-auto">
                 <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed text-muted-foreground">
-                  {mockItem.resumeText}
+                  {item.resumeText}
                 </pre>
               </div>
             </div>

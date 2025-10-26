@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export const schema = z.object({
-  id: z.number(),
+  id: z.union([z.number(), z.string()]), // Support both number and string (MongoDB ObjectId)
   header: z.string(),
   type: z.string(),
   status: z.string(),
-  target: z.number(),
+  target: z.number().optional(), // Optional since not used as visible column
   limit: z.union([z.number(), z.string()]),
   reviewer: z.string(),
   dateApplied: z.string().optional(),

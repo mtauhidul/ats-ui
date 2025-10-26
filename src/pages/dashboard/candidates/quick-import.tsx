@@ -5,15 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, Loader2, CheckCircle2, ArrowLeft, X, Eye, Download, Sparkles } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle2, ArrowLeft, X, Eye, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
@@ -50,6 +43,11 @@ interface ParsedCandidate {
   certifications: string[];
   languages: string[];
   resumeUrl?: string;
+  aiValidation?: {
+    isValid: boolean;
+    matchScore: number;
+    summary: string;
+  };
 }
 
 export default function QuickImportPage() {
@@ -157,8 +155,6 @@ export default function QuickImportPage() {
       const result = await response.json();
       const data = result.data;
 
-      console.log('Backend API Response:', data); // Debug log
-
       // Map backend response to frontend format
       const mappedData: ParsedCandidate = {
         firstName: data.personalInfo?.firstName || "",
@@ -179,9 +175,8 @@ export default function QuickImportPage() {
         certifications: Array.isArray(data.certifications) ? data.certifications : [],
         languages: Array.isArray(data.languages) ? data.languages : [],
         resumeUrl: URL.createObjectURL(selectedFile),
+        aiValidation: data.aiValidation,
       };
-
-      console.log('Mapped Data:', mappedData); // Debug log
 
       setIsUploading(false);
       setParsedData(mappedData);
@@ -197,16 +192,52 @@ export default function QuickImportPage() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.firstName || !formData.lastName || !formData.email) {
       toast.error("Please fill in all required fields (First Name, Last Name, Email)");
       return;
     }
 
-    toast.success("Candidate imported successfully!");
-    setTimeout(() => {
-      navigate("/dashboard/candidates");
-    }, 1000);
+    try {
+      const applicationData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        source: 'manual',
+        status: 'pending',
+        parsedData: {
+          summary: formData.summary,
+          skills: formData.skills,
+          experience: formData.experience,
+          education: formData.education,
+          certifications: formData.certifications,
+          languages: formData.languages,
+        },
+        aiAnalysis: formData.aiValidation,
+      };
+
+      const response = await authenticatedFetch('http://localhost:5001/api/applications', {
+        method: 'POST',
+        body: JSON.stringify(applicationData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create application');
+      }
+
+      await response.json();
+      toast.success("Application created successfully!");
+      
+      // Navigate to applications list or detail page
+      setTimeout(() => {
+        navigate("/dashboard/applications");
+      }, 1000);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to create application";
+      toast.error(message);
+    }
   };
 
   const addSkill = (skill: string) => {
@@ -354,37 +385,87 @@ export default function QuickImportPage() {
                 </Card>
 
                 {parsedData && (
-                  <Card className="border-accent/50 bg-gradient-to-br from-accent/10 to-accent/5">
-                    <CardContent className="pt-6">
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-full bg-accent/20 p-2">
-                          <CheckCircle2 className="h-6 w-6 text-accent" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-bold text-accent-foreground text-lg mb-1">
-                            Resume Parsed Successfully!
-                          </p>
-                          <p className="text-sm text-accent-foreground/80 mb-4">
-                            We've extracted{" "}
-                            <strong>{formData.skills.length} skills</strong>,{" "}
-                            <strong>{formData.experience.length} work experiences</strong>, and{" "}
-                            <strong>{formData.education.length} education records</strong>{" "}
-                            using AI. Review and edit the details before importing.
-                          </p>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm" className="bg-background hover:bg-background/80">
-                              <Eye className="h-4 w-4 mr-2" />
-                              Preview Resume
-                            </Button>
-                            <Button variant="outline" size="sm" className="bg-background hover:bg-background/80">
-                              <Download className="h-4 w-4 mr-2" />
-                              Download
-                            </Button>
+                  <>
+                    <Card className="border-accent/50 bg-gradient-to-br from-accent/10 to-accent/5">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start gap-3">
+                          <div className="rounded-full bg-accent/20 p-2">
+                            <CheckCircle2 className="h-6 w-6 text-accent" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-bold text-accent-foreground text-lg mb-1">
+                              Resume Parsed Successfully!
+                            </p>
+                            <p className="text-sm text-accent-foreground/80 mb-4">
+                              We've extracted{" "}
+                              <strong>{formData.skills.length} skills</strong>,{" "}
+                              <strong>{formData.experience.length} work experiences</strong>, and{" "}
+                              <strong>{formData.education.length} education records</strong>{" "}
+                              using AI. Review and edit the details before importing.
+                            </p>
+                            {formData.resumeUrl && (
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="bg-background hover:bg-background/80"
+                                  onClick={() => window.open(formData.resumeUrl, '_blank')}
+                                >
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Preview Resume
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+
+                    {/* AI Validation Results */}
+                    {formData.aiValidation && (
+                      <Card className={`border-2 ${
+                        formData.aiValidation.isValid 
+                          ? 'border-green-500/50 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10' 
+                          : 'border-orange-500/50 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10'
+                      }`}>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start gap-3">
+                            <div className={`rounded-full p-2 ${
+                              formData.aiValidation.isValid 
+                                ? 'bg-green-500/20' 
+                                : 'bg-orange-500/20'
+                            }`}>
+                              <Sparkles className={`h-6 w-6 ${
+                                formData.aiValidation.isValid 
+                                  ? 'text-green-600 dark:text-green-400' 
+                                  : 'text-orange-600 dark:text-orange-400'
+                              }`} />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <p className="font-bold text-lg">AI Validation</p>
+                                <Badge 
+                                  variant={formData.aiValidation.isValid ? "default" : "secondary"}
+                                  className={formData.aiValidation.isValid 
+                                    ? "bg-green-500 hover:bg-green-600" 
+                                    : "bg-orange-500 hover:bg-orange-600"
+                                  }
+                                >
+                                  {formData.aiValidation.isValid ? "Valid" : "Needs Review"}
+                                </Badge>
+                                <Badge variant="outline" className="ml-2">
+                                  Score: {formData.aiValidation.matchScore}/100
+                                </Badge>
+                              </div>
+                              <p className="text-sm mb-3">
+                                {formData.aiValidation.summary}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
                 )}
 
                 {/* AI Info Card */}
@@ -513,83 +594,6 @@ export default function QuickImportPage() {
                               placeholder="City, State"
                               className="mt-1.5"
                             />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Professional Information */}
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-bold text-foreground mb-4 pb-2 border-b">
-                          Professional Information
-                        </h4>
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="currentTitle" className="text-sm font-medium">Current Title</Label>
-                              <Input
-                                id="currentTitle"
-                                value={formData.currentTitle}
-                                onChange={(e) =>
-                                  setFormData({ ...formData, currentTitle: e.target.value })
-                                }
-                                placeholder="Job title"
-                                className="mt-1.5"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="currentCompany" className="text-sm font-medium">Current Company</Label>
-                              <Input
-                                id="currentCompany"
-                                value={formData.currentCompany}
-                                onChange={(e) =>
-                                  setFormData({ ...formData, currentCompany: e.target.value })
-                                }
-                                placeholder="Company name"
-                                className="mt-1.5"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="experience" className="text-sm font-medium">Years of Experience</Label>
-                              <Input
-                                id="experience"
-                                type="number"
-                                value={formData.yearsOfExperience}
-                                onChange={(e) =>
-                                  setFormData({
-                                    ...formData,
-                                    yearsOfExperience: parseInt(e.target.value) || 0,
-                                  })
-                                }
-                                placeholder="0"
-                                min="0"
-                                className="mt-1.5"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="education" className="text-sm font-medium">Education Level</Label>
-                              <Select
-                                value={formData.educationLevel}
-                                onValueChange={(value) =>
-                                  setFormData({ ...formData, educationLevel: value })
-                                }
-                              >
-                                <SelectTrigger className="mt-1.5">
-                                  <SelectValue placeholder="Select level" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="High School">High School</SelectItem>
-                                  <SelectItem value="Associate's Degree">
-                                    Associate's Degree
-                                  </SelectItem>
-                                  <SelectItem value="Bachelor's Degree">Bachelor's Degree</SelectItem>
-                                  <SelectItem value="Master's Degree">Master's Degree</SelectItem>
-                                  <SelectItem value="Doctorate">Doctorate</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
                           </div>
                         </div>
                       </div>

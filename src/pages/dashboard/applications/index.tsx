@@ -23,12 +23,125 @@ export default function ApplicationsPage() {
     fetchClients();
   }, [fetchApplications, fetchJobs, fetchClients]);
 
+  // Log applications data
+  console.log('Applications data:', applications);
+  console.log('Jobs data:', jobs);
+  console.log('Clients data:', clients);
+
   const transformedData = applications.map((app: Application, index: number) => {
     const job = jobs.find((j: Job) => j.id === app.targetJobId);
     const client = clients.find((c: Client) => c.id === job?.clientId);
+    
+    // Type assertion to access backend-specific fields
+    const backendApp = app as Application & {
+      resumeUrl?: string;
+      resumeOriginalName?: string;
+      parsedData?: {
+        summary?: string;
+        skills?: string[];
+        experience?: Array<{ company: string; title: string; duration: string; description?: string }>;
+        education?: Array<{ institution: string; degree: string; field?: string; year?: string }>;
+        certifications?: string[];
+        languages?: string[];
+      };
+      notes?: string;
+      internalNotes?: string;
+    };
+
+    // Calculate years of experience from experience array
+    const calculateYearsOfExperience = () => {
+      if (!backendApp.parsedData?.experience || backendApp.parsedData.experience.length === 0) {
+        return undefined;
+      }
+      
+      // Sum up all experience durations (rough calculation)
+      let totalYears = 0;
+      backendApp.parsedData.experience.forEach(exp => {
+        const duration = exp.duration.toLowerCase();
+        // Simple parsing: look for "X years" or "X+ years"
+        const yearMatch = duration.match(/(\d+)\+?\s*years?/i);
+        if (yearMatch) {
+          totalYears += parseInt(yearMatch[1]);
+        } else if (duration.includes('present') || duration.includes('current')) {
+          // Rough estimate: if present/current, assume at least 1 year
+          totalYears += 1;
+        }
+      });
+      return totalYears > 0 ? totalYears : undefined;
+    };
+
+    // Format education
+    const formatEducation = () => {
+      const edu = backendApp.parsedData?.education?.[0];
+      if (!edu) return undefined;
+      
+      let formatted = edu.degree || 'Degree';
+      if (edu.field) {
+        formatted += ` in ${edu.field}`;
+      }
+      if (edu.institution) {
+        formatted += ` - ${edu.institution}`;
+      }
+      if (edu.year) {
+        formatted += ` (${edu.year})`;
+      }
+      return formatted;
+    };
+
+    // Build full resume text from parsed data
+    const buildResumeText = () => {
+      if (!backendApp.parsedData) return undefined;
+      
+      let text = '';
+      
+      // Summary
+      if (backendApp.parsedData.summary) {
+        text += 'PROFESSIONAL SUMMARY\n\n' + backendApp.parsedData.summary + '\n\n';
+      }
+      
+      // Skills
+      if (backendApp.parsedData.skills && backendApp.parsedData.skills.length > 0) {
+        text += 'TECHNICAL SKILLS\n\n' + backendApp.parsedData.skills.join(', ') + '\n\n';
+      }
+      
+      // Experience
+      if (backendApp.parsedData.experience && backendApp.parsedData.experience.length > 0) {
+        text += 'PROFESSIONAL EXPERIENCE\n\n';
+        backendApp.parsedData.experience.forEach(exp => {
+          text += `${exp.title} | ${exp.company} | ${exp.duration}\n`;
+          if (exp.description) {
+            text += exp.description + '\n';
+          }
+          text += '\n';
+        });
+      }
+      
+      // Education
+      if (backendApp.parsedData.education && backendApp.parsedData.education.length > 0) {
+        text += 'EDUCATION\n\n';
+        backendApp.parsedData.education.forEach(edu => {
+          text += `${edu.degree}`;
+          if (edu.field) text += ` in ${edu.field}`;
+          text += ` | ${edu.institution}`;
+          if (edu.year) text += ` | ${edu.year}`;
+          text += '\n';
+        });
+        text += '\n';
+      }
+      
+      // Certifications
+      if (backendApp.parsedData.certifications && backendApp.parsedData.certifications.length > 0) {
+        text += 'CERTIFICATIONS\n\n';
+        backendApp.parsedData.certifications.forEach(cert => {
+          text += '• ' + cert + '\n';
+        });
+      }
+      
+      return text.trim() || undefined;
+    };
 
     return {
-    id: index + 1,
+    id: app.id, // Use actual application ID from backend
     header: `${app.firstName} ${app.lastName}`, // Application name
     type: app.aiAnalysis?.isValid ? "valid" : "invalid", // AI status
     status:
@@ -40,11 +153,11 @@ export default function ApplicationsPage() {
         ? "Rejected"
         : "In Process",
     target: new Date(app.submittedAt).getDate(), // Day number for sorting but we'll override display
-    limit: app.targetJobId || `JOB-${String(index + 1).padStart(3, '0')}`, // Show actual job ID
+    limit: app.id, // Show actual application ID
     reviewer: app.reviewedByName || "Unassigned",
     // Add original data for display
     dateApplied: new Date(app.submittedAt).toLocaleDateString(),
-    jobIdDisplay: app.targetJobId || `JOB-${String(index + 1).padStart(3, '0')}`,
+    jobIdDisplay: app.id, // Show application ID instead of job ID
     clientName: client?.companyName || "Unknown Client",
     clientLogo: client?.logo || `https://api.dicebear.com/7.x/initials/svg?seed=${client?.companyName || 'C'}`,
     teamMembers: index % 3 === 0 ? [] : teamMembersPool.slice(0, Math.floor(Math.random() * 3) + 1),
@@ -52,27 +165,39 @@ export default function ApplicationsPage() {
     photo: app.photo || undefined,
     email: app.email,
     phone: app.phone,
-    currentTitle: app.currentTitle,
-    currentCompany: app.currentCompany,
-    yearsOfExperience: app.yearsOfExperience,
-    skills: app.skills,
+    currentTitle: backendApp.parsedData?.experience?.[0]?.title || app.currentTitle,
+    currentCompany: backendApp.parsedData?.experience?.[0]?.company || app.currentCompany,
+    yearsOfExperience: calculateYearsOfExperience() || app.yearsOfExperience,
+    skills: backendApp.parsedData?.skills || app.skills || [],
     coverLetter: app.coverLetter,
-    resumeText: app.resumeText,
-    resumeFilename: app.resume?.name,
-    resumeFileSize: app.resume?.size ? `${Math.round(app.resume.size / 1024)} KB` : undefined,
-    // Personal details (using available fields or providing fallbacks)
+    resumeText: buildResumeText(),
+    resumeFilename: backendApp.resumeOriginalName || undefined,
+    resumeFileSize: undefined, // Size not stored in backend
+    resumeUrl: backendApp.resumeUrl || undefined,
+    // Personal details
     location: app.address || undefined,
-    linkedinUrl: app.linkedInUrl || undefined, // Note: correct case in data
+    linkedinUrl: app.linkedInUrl || undefined,
     portfolioUrl: app.portfolioUrl || undefined,
-    educationLevel: undefined, // Not available in current data
-    expectedSalary: undefined, // Not available in current data  
-    languages: undefined, // Not available in current data
-    notes: undefined, // Not available in current data
-    // Video introduction (demo data for first applicant)
-    videoIntroUrl: index === 0 ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" : undefined,
-    videoIntroFilename: index === 0 ? "sarah_johnson_intro.mp4" : undefined,
-    videoIntroFileSize: index === 0 ? "15.2 MB" : undefined,
-    videoIntroDuration: index === 0 ? "2:30" : undefined,
+    githubUrl: app.githubUrl || undefined,
+    educationLevel: formatEducation(),
+    expectedSalary: app.expectedSalary 
+      ? `${app.expectedSalary.currency} ${app.expectedSalary.min.toLocaleString()} - ${app.expectedSalary.max.toLocaleString()} / ${app.expectedSalary.period}`
+      : undefined,
+    languages: backendApp.parsedData?.languages && backendApp.parsedData.languages.length > 0 
+      ? backendApp.parsedData.languages 
+      : undefined,
+    notes: backendApp.internalNotes || backendApp.notes || app.reviewNotes || undefined,
+    // Additional documents
+    additionalDocuments: app.additionalDocuments || [],
+    // Availability
+    availableStartDate: app.availableStartDate ? new Date(app.availableStartDate).toLocaleDateString() : undefined,
+    preferredWorkMode: app.preferredWorkMode,
+    willingToRelocate: app.willingToRelocate,
+    // Video introduction (only if available)
+    videoIntroUrl: undefined, // No video for manual uploads
+    videoIntroFilename: undefined,
+    videoIntroFileSize: undefined,
+    videoIntroDuration: undefined,
   };
   });
 
