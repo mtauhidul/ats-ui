@@ -27,6 +27,21 @@ const normalizeJob = (job: Job | Record<string, unknown>): Job => {
     clientId = clientIdValue as string;
   }
   
+  // If pipelineId is populated (object), extract the ID
+  const pipelineIdValue = jobAny.pipelineId;
+  let pipelineId: string | undefined;
+  
+  if (pipelineIdValue) {
+    if (typeof pipelineIdValue === 'object' && pipelineIdValue !== null) {
+      // Backend might return populated pipeline
+      const pipelineObj = pipelineIdValue as Record<string, unknown>;
+      pipelineId = (pipelineObj.id || pipelineObj._id) as string;
+    } else {
+      // Already a string ID
+      pipelineId = pipelineIdValue as string;
+    }
+  }
+  
   // Transform backend data structure to frontend format
   // Backend: requirements: string[], skills: string[], location: string, locationType
   // Frontend: requirements: object, location: Address, workMode
@@ -65,6 +80,8 @@ const normalizeJob = (job: Job | Record<string, unknown>): Job => {
   console.log("Normalizing job:", {
     originalClientId: jobAny.clientId,
     extractedClientId: clientId,
+    originalPipelineId: jobAny.pipelineId,
+    extractedPipelineId: pipelineId,
     jobTitle: jobAny.title,
     backendRequirements,
     backendSkills,
@@ -74,6 +91,7 @@ const normalizeJob = (job: Job | Record<string, unknown>): Job => {
   return {
     ...job,
     clientId: clientId,
+    pipelineId: pipelineId,
     id: (jobAny._id || jobAny.id) as string,
     location: locationObj,
     workMode: (jobAny.locationType as 'remote' | 'onsite' | 'hybrid') || 'hybrid',
@@ -269,6 +287,13 @@ const jobsSlice = createSlice({
       })
       .addCase(fetchJobById.fulfilled, (state, action) => {
         state.currentJob = action.payload;
+        // Also add or update the job in the jobs array
+        const index = state.jobs.findIndex((j) => j.id === action.payload.id);
+        if (index !== -1) {
+          state.jobs[index] = action.payload;
+        } else {
+          state.jobs.push(action.payload);
+        }
       })
       .addCase(createJob.fulfilled, (state, action) => {
         state.jobs.unshift(action.payload);

@@ -15,9 +15,9 @@ export interface PipelineStage {
 export interface Pipeline extends BaseEntity {
   name: string;
   description?: string;
-  jobId?: string; // Optional - can be job-specific or template
+  type?: 'candidate' | 'interview' | 'custom'; // Type from backend
   stages: PipelineStage[];
-  isTemplate: boolean;
+  isDefault?: boolean; // From backend - whether this is a default template
   isActive: boolean;
 }
 

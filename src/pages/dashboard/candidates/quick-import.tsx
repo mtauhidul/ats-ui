@@ -43,6 +43,7 @@ interface ParsedCandidate {
   certifications: string[];
   languages: string[];
   resumeUrl?: string;
+  extractedText?: string; // Full raw text from resume
   aiValidation?: {
     isValid: boolean;
     matchScore: number;
@@ -71,6 +72,7 @@ export default function QuickImportPage() {
     linkedinUrl: "",
     website: "",
     resumeUrl: "",
+    extractedText: "", // Full raw text
     experience: [],
     education: [],
     certifications: [],
@@ -175,6 +177,7 @@ export default function QuickImportPage() {
         certifications: Array.isArray(data.certifications) ? data.certifications : [],
         languages: Array.isArray(data.languages) ? data.languages : [],
         resumeUrl: URL.createObjectURL(selectedFile),
+        extractedText: data.extractedText || "", // Full raw text for validation
         aiValidation: data.aiValidation,
       };
 
@@ -198,23 +201,59 @@ export default function QuickImportPage() {
       return;
     }
 
+    if (!selectedFile) {
+      toast.error("Please upload a resume");
+      return;
+    }
+
+    // Show loading toast
+    const loadingToast = toast.loading("Importing application...");
+
     try {
+      setIsUploading(true);
+
+      // Step 1: Upload resume to Cloudinary
+      toast.loading("Uploading resume...", { id: loadingToast });
+      
+      const uploadFormData = new FormData();
+      uploadFormData.append('resume', selectedFile);
+
+      const uploadResponse = await authenticatedFetch('http://localhost:5001/api/resumes/upload', {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      if (!uploadResponse.ok) {
+        const error = await uploadResponse.json().catch(() => ({ message: 'Failed to upload resume' }));
+        throw new Error(error.message || 'Failed to upload resume');
+      }
+
+      const uploadResult = await uploadResponse.json();
+      const resumeUrl = uploadResult.data.url;
+
+      // Step 2: Create Application (not Candidate yet - that happens on approval)
+      toast.loading("Creating application...", { id: loadingToast });
+      
       const applicationData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        phone: formData.phone,
+        phone: formData.phone || '',
+        resumeUrl: resumeUrl,
+        resumeOriginalName: selectedFile.name,
+        resumeRawText: parsedData?.extractedText || '', // Full raw text for AI validation
         source: 'manual',
         status: 'pending',
         parsedData: {
-          summary: formData.summary,
-          skills: formData.skills,
-          experience: formData.experience,
-          education: formData.education,
-          certifications: formData.certifications,
-          languages: formData.languages,
+          summary: formData.summary || '',
+          skills: formData.skills || [],
+          experience: formData.experience || [],
+          education: formData.education || [],
+          certifications: formData.certifications || [],
+          languages: formData.languages || [],
         },
-        aiAnalysis: formData.aiValidation,
+        // jobId and clientId are optional at this stage
+        // They will be assigned when recruiter approves the application
       };
 
       const response = await authenticatedFetch('http://localhost:5001/api/applications', {
@@ -228,13 +267,23 @@ export default function QuickImportPage() {
       }
 
       await response.json();
-      toast.success("Application created successfully!");
+      setIsUploading(false);
       
-      // Navigate to applications list or detail page
+      // Dismiss loading and show success
+      toast.dismiss(loadingToast);
+      toast.success("Application created successfully! It will be reviewed and moved to candidates upon approval.", {
+        duration: 3000,
+      });
+      
+      // Navigate to applications list
       setTimeout(() => {
         navigate("/dashboard/applications");
-      }, 1000);
+      }, 1500);
     } catch (error) {
+      setIsUploading(false);
+      
+      // Dismiss loading and show error
+      toast.dismiss(loadingToast);
       const message = error instanceof Error ? error.message : "Failed to create application";
       toast.error(message);
     }
@@ -254,10 +303,10 @@ export default function QuickImportPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="@container/main flex flex-1 flex-col gap-2">
-        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <div className="px-4 lg:px-6">
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="@container/main flex flex-1 flex-col gap-2 overflow-hidden">
+        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 overflow-y-auto">
+          <div className="px-4 lg:px-6 max-w-[1600px] mx-auto w-full">
             {/* Header */}
             <div className="mb-8">
               <div className="flex items-center gap-4 mb-6">
@@ -279,7 +328,7 @@ export default function QuickImportPage() {
             </div>
 
             {/* Main Content */}
-            <div className="grid grid-cols-1 xl:grid-cols-[500px_1fr] gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column - Upload Section */}
               <div className="space-y-5">
                 <Card className="border-primary/20">
@@ -502,7 +551,7 @@ export default function QuickImportPage() {
               </div>
 
               {/* Right Column - Form Section */}
-              <Card className="border-primary/20">
+              <Card className="border-primary/20 min-w-0">
                 <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="h-5 w-5 text-primary" />
@@ -514,7 +563,7 @@ export default function QuickImportPage() {
                       : "Upload a resume to see extracted candidate information"}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 overflow-hidden">
                   {parsedData ? (
                     <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                       {/* Personal Information */}
@@ -526,7 +575,7 @@ export default function QuickImportPage() {
                           </span>
                         </h4>
                         <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label htmlFor="firstName" className="text-sm font-medium">
                                 First Name <span className="text-red-500">*</span>
@@ -557,7 +606,7 @@ export default function QuickImportPage() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label htmlFor="email" className="text-sm font-medium">
                                 Email <span className="text-red-500">*</span>
@@ -640,7 +689,7 @@ export default function QuickImportPage() {
                           Additional Information
                         </h4>
                         <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label htmlFor="linkedin" className="text-sm font-medium">LinkedIn URL</Label>
                               <Input

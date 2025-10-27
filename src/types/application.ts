@@ -48,11 +48,18 @@ export interface Application extends BaseEntity {
     summary?: string;
   };
   resumeText?: string; // Parsed resume text
+  resumeRawText?: string; // Full raw text from resume (for AI validation)
+  
+  // AI Resume Validation
+  isValidResume?: boolean | null; // AI determination if resume is legitimate
+  validationScore?: number | null; // 0-100 score of resume legitimacy
+  validationReason?: string; // Explanation of validation result
   
   // Application content
   coverLetter?: string;
   resume?: Attachment;
   additionalDocuments?: Attachment[];
+  videoIntroUrl?: string; // Optional video introduction
   
   // Candidate background (basic info from application)
   currentTitle?: string;

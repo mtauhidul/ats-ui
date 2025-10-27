@@ -8,6 +8,7 @@ export const schema = z.object({
   target: z.number().optional(), // Optional since not used as visible column
   limit: z.union([z.number(), z.string()]),
   reviewer: z.string(),
+  source: z.string().optional(), // Application source (manual/email/direct apply)
   dateApplied: z.string().optional(),
   jobIdDisplay: z.string().optional(),
   // Candidates-specific fields
@@ -27,8 +28,29 @@ export const schema = z.object({
   skills: z.array(z.string()).optional(),
   coverLetter: z.string().optional(),
   resumeText: z.string().optional(),
+  resumeRawText: z.string().optional(),
   resumeFilename: z.string().optional(),
   resumeFileSize: z.string().optional(),
+  resumeUrl: z.string().optional(),
+  // Parsed data from resume
+  parsedData: z.object({
+    summary: z.string().optional(),
+    skills: z.array(z.string()).optional(),
+    experience: z.array(z.object({
+      company: z.string(),
+      title: z.string(),
+      duration: z.string().optional(),
+      description: z.string().optional(),
+    })).optional(),
+    education: z.array(z.object({
+      institution: z.string(),
+      degree: z.string(),
+      field: z.string().optional(),
+      year: z.string().optional(),
+    })).optional(),
+    certifications: z.array(z.string()).optional(),
+    languages: z.array(z.string()).optional(),
+  }).optional(),
   // Personal details
   location: z.string().optional(),
   linkedinUrl: z.string().optional(),
@@ -42,4 +64,8 @@ export const schema = z.object({
   videoIntroFilename: z.string().optional(),
   videoIntroFileSize: z.string().optional(),
   videoIntroDuration: z.string().optional(),
+  // AI Resume Validation
+  isValidResume: z.boolean().nullable().optional(),
+  validationScore: z.number().min(0).max(100).nullable().optional(),
+  validationReason: z.string().optional(),
 });

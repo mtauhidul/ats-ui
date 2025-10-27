@@ -54,20 +54,69 @@ export default function ApplicationsPage() {
         return undefined;
       }
       
-      // Sum up all experience durations (rough calculation)
-      let totalYears = 0;
+      let totalMonths = 0;
+      
       backendApp.parsedData.experience.forEach(exp => {
-        const duration = exp.duration.toLowerCase();
-        // Simple parsing: look for "X years" or "X+ years"
+        const duration = exp.duration;
+        
+        // Try to extract years from text like "2 years", "3+ years"
         const yearMatch = duration.match(/(\d+)\+?\s*years?/i);
         if (yearMatch) {
-          totalYears += parseInt(yearMatch[1]);
-        } else if (duration.includes('present') || duration.includes('current')) {
-          // Rough estimate: if present/current, assume at least 1 year
-          totalYears += 1;
+          totalMonths += parseInt(yearMatch[1]) * 12;
+          return;
+        }
+        
+        // Try to parse date ranges like "July 2023 - October 2025" or "Nov 2020 - Jun 2023"
+        const dateRangeMatch = duration.match(/([a-z]+)\s+(\d{4})\s*[-–—]\s*([a-z]+)?\s*(\d{4}|present|current)/i);
+        if (dateRangeMatch) {
+          const [, startMonth, startYear, endMonth, endYear] = dateRangeMatch;
+          
+          const monthMap: { [key: string]: number } = {
+            jan: 0, january: 0,
+            feb: 1, february: 1,
+            mar: 2, march: 2,
+            apr: 3, april: 3,
+            may: 4,
+            jun: 5, june: 5,
+            jul: 6, july: 6,
+            aug: 7, august: 7,
+            sep: 8, sept: 8, september: 8,
+            oct: 9, october: 9,
+            nov: 10, november: 10,
+            dec: 11, december: 11
+          };
+          
+          const startMonthNum = monthMap[startMonth.toLowerCase()] ?? 0;
+          const startYearNum = parseInt(startYear);
+          
+          let endMonthNum: number;
+          let endYearNum: number;
+          
+          if (endYear.toLowerCase() === 'present' || endYear.toLowerCase() === 'current') {
+            // Use current date
+            const now = new Date();
+            endMonthNum = now.getMonth();
+            endYearNum = now.getFullYear();
+          } else {
+            endMonthNum = endMonth ? (monthMap[endMonth.toLowerCase()] ?? 11) : 11;
+            endYearNum = parseInt(endYear);
+          }
+          
+          // Calculate total months
+          const months = (endYearNum - startYearNum) * 12 + (endMonthNum - startMonthNum);
+          totalMonths += Math.max(0, months);
+          return;
+        }
+        
+        // If contains "present" or "current", assume at least 1 year
+        if (duration.toLowerCase().includes('present') || duration.toLowerCase().includes('current')) {
+          totalMonths += 12;
         }
       });
-      return totalYears > 0 ? totalYears : undefined;
+      
+      // Convert months to years (round to nearest integer)
+      const years = Math.round(totalMonths / 12);
+      return years > 0 ? years : undefined;
     };
 
     // Format education
@@ -143,7 +192,7 @@ export default function ApplicationsPage() {
     return {
     id: app.id, // Use actual application ID from backend
     header: `${app.firstName} ${app.lastName}`, // Application name
-    type: app.aiAnalysis?.isValid ? "valid" : "invalid", // AI status
+    type: backendApp.isValidResume === true ? "valid" : backendApp.isValidResume === false ? "invalid" : "pending", // AI status (kept for compatibility)
     status:
       app.status === "pending"
         ? "In Process"
@@ -155,6 +204,7 @@ export default function ApplicationsPage() {
     target: new Date(app.submittedAt).getDate(), // Day number for sorting but we'll override display
     limit: app.id, // Show actual application ID
     reviewer: app.reviewedByName || "Unassigned",
+    source: app.source || "direct_application", // Application source (manual/email/direct apply)
     // Add original data for display
     dateApplied: new Date(app.submittedAt).toLocaleDateString(),
     jobIdDisplay: app.id, // Show application ID instead of job ID
@@ -194,10 +244,18 @@ export default function ApplicationsPage() {
     preferredWorkMode: app.preferredWorkMode,
     willingToRelocate: app.willingToRelocate,
     // Video introduction (only if available)
-    videoIntroUrl: undefined, // No video for manual uploads
+    videoIntroUrl: backendApp.videoIntroUrl || undefined,
     videoIntroFilename: undefined,
     videoIntroFileSize: undefined,
     videoIntroDuration: undefined,
+    // Parsed data for experience calculation fallback
+    parsedData: backendApp.parsedData || undefined,
+    // AI Resume Validation
+    isValidResume: backendApp.isValidResume,
+    validationScore: backendApp.validationScore,
+    validationReason: backendApp.validationReason,
+    // Raw text for preview
+    resumeRawText: backendApp.resumeRawText || undefined,
   };
   });
 

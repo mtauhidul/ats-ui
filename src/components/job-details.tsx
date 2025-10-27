@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Briefcase, MapPin, DollarSign, Users, Clock, CheckCircle2, XCircle, UserCheck, Building2, Calendar, Target, Edit, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,7 @@ const statusColors = {
 } as const;
 
 export function JobDetails({ job, candidates, clients, clientName, onBack, onCandidateClick, onEditJob }: JobDetailsProps) {
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
@@ -294,7 +296,7 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
                   Use the dedicated Pipeline page to manage candidates through your hiring stages with drag & drop functionality.
                 </p>
-                <Button onClick={() => window.location.href = `/dashboard/jobs/pipeline/${job.id}`}>
+                <Button onClick={() => navigate(`/dashboard/jobs/pipeline/${job.id}`)}>
                   Go to Pipeline
                 </Button>
               </div>

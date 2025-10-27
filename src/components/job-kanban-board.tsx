@@ -41,6 +41,7 @@ import { CandidateCard, SortableCandidate } from "./sortable-candidate";
 
 interface JobKanbanBoardProps {
   pipeline: Pipeline;
+  jobId: string; // Job ID for filtering applications
   candidates: Candidate[];
   onCandidateClick: (candidate: Candidate) => void;
   onStatusChange: (candidateId: string, newStageId: string) => void;
@@ -50,6 +51,7 @@ interface JobKanbanBoardProps {
 
 export function JobKanbanBoard({
   pipeline,
+  jobId,
   candidates,
   onCandidateClick,
   onStatusChange,
@@ -155,7 +157,7 @@ export function JobKanbanBoard({
 
     candidates.forEach((candidate) => {
       const jobApplication = candidate.jobApplications.find(
-        (app) => app.jobId === pipeline.jobId
+        (app) => app.jobId === jobId
       );
 
       if (jobApplication?.currentStage) {
@@ -172,7 +174,7 @@ export function JobKanbanBoard({
     });
 
     return grouped;
-  }, [candidates, pipeline]);
+  }, [candidates, pipeline, jobId]);
 
   const getCandidatesForStage = useCallback(
     (stageId: string) => candidatesByStage[stageId] || [],
@@ -197,7 +199,7 @@ export function JobKanbanBoard({
     
     if (currentCandidate) {
       const currentApp = currentCandidate.jobApplications.find(
-        (app) => app.jobId === pipeline.jobId
+        (app) => app.jobId === jobId
       );
 
       if (currentApp?.currentStage !== newStageId) {
@@ -246,7 +248,7 @@ export function JobKanbanBoard({
           onDragEnd={handleDragEnd}
         >
           <div className="h-full flex gap-3 p-2">
-            {pipeline.stages
+            {[...pipeline.stages]
               .sort((a, b) => a.order - b.order)
               .map((stage, index) => (
                 <div

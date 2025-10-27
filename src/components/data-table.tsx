@@ -38,6 +38,10 @@ import {
   IconUsers,
   IconUserX,
   IconX,
+  IconMail,
+  IconWorld,
+  IconUpload,
+  IconBriefcase,
 } from "@tabler/icons-react";
 import {
   flexRender,
@@ -185,26 +189,34 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   {
     accessorKey: "type",
     header: "AI Check",
-    cell: ({ row }) => (
-      <div className="w-28">
-        <Badge
-          variant="outline"
-          className="text-muted-foreground px-2 py-1 flex items-center gap-1 text-xs"
-        >
-          {row.original.type === "valid" ? (
-            <>
-              <IconCircleCheckFilled className="size-3 fill-green-500 dark:fill-green-400" />
-              Valid
-            </>
-          ) : (
-            <>
-              <span className="size-3 text-red-500">✕</span>
-              Invalid
-            </>
-          )}
-        </Badge>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const isValid = row.original.isValidResume;
+      return (
+        <div className="w-28">
+          <Badge
+            variant="outline"
+            className="text-muted-foreground px-2 py-1 flex items-center gap-1 text-xs"
+          >
+            {isValid === true ? (
+              <>
+                <IconCircleCheckFilled className="size-3 fill-green-500 dark:fill-green-400" />
+                Valid
+              </>
+            ) : isValid === false ? (
+              <>
+                <span className="size-3 text-red-500">✕</span>
+                Invalid
+              </>
+            ) : (
+              <>
+                <IconLoader className="size-3 animate-spin" />
+                Pending
+              </>
+            )}
+          </Badge>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "status",
@@ -423,6 +435,9 @@ export function DataTable({
       return;
     }
 
+    // Show loading toast
+    const loadingToast = toast.loading(`Deleting ${selectedIds.length} application(s)...`);
+
     try {
       const response = await authenticatedFetch(
         "http://localhost:5001/api/applications/bulk/delete",
@@ -447,11 +462,15 @@ export function DataTable({
       // Clear selection
       table.resetRowSelection();
 
+      // Dismiss loading and show success
+      toast.dismiss(loadingToast);
       toast.success(
         result.message ||
           `Successfully deleted ${selectedIds.length} application(s)`
       );
     } catch (error) {
+      // Dismiss loading and show error
+      toast.dismiss(loadingToast);
       const message =
         error instanceof Error
           ? error.message
@@ -1134,46 +1153,6 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   );
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  // Mock data to ensure all sections are visible - prioritize real data, fallback to mock
-  const mockItem = {
-    ...item,
-    // Use real data first, fallback to generated avatar
-    photo: item.photo || `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.header}`,
-    // Use real data first
-    email: item.email || "applicant@example.com",
-    phone: item.phone || "+1 (555) 123-4567",
-    currentTitle: item.currentTitle || "Not Specified",
-    currentCompany: item.currentCompany || "Not Specified",
-    yearsOfExperience: item.yearsOfExperience !== undefined ? item.yearsOfExperience : undefined,
-    // Education - use real data or fallback
-    educationLevel: item.educationLevel || undefined,
-    // Salary - keep real data only
-    expectedSalary: item.expectedSalary || undefined,
-    // Location - keep real data only, no mock
-    location: item.location || undefined,
-    // Social links - keep real data only, no mock
-    linkedinUrl: item.linkedinUrl || undefined,
-    portfolioUrl: item.portfolioUrl || undefined,
-    // Skills - use real data or provide example structure
-    skills: item.skills && item.skills.length > 0 ? item.skills : undefined,
-    // Languages - use real data only, no mock if empty
-    languages: item.languages && item.languages.length > 0 ? item.languages : undefined,
-    // Cover letter - use real data or provide placeholder
-    coverLetter: item.coverLetter || undefined,
-    // Resume - use real data
-    resumeFilename: item.resumeFilename || undefined,
-    resumeFileSize: item.resumeFileSize || undefined,
-    resumeText: item.resumeText || undefined,
-    resumeUrl: item.resumeUrl || undefined,
-    // Notes - use real data only
-    notes: item.notes || undefined,
-    // Video - use real data only, no mock videos
-    videoIntroUrl: item.videoIntroUrl || undefined,
-    videoIntroFilename: item.videoIntroFilename || undefined,
-    videoIntroFileSize: item.videoIntroFileSize || undefined,
-    videoIntroDuration: item.videoIntroDuration || undefined,
-  };
-
   // Load jobs data
   const [jobs, setJobs] = React.useState<
     Array<{ id: string; title: string; clientId: string }>
@@ -1243,17 +1222,77 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   };
 
   // Helper function to get AI status badge
-  const getAIStatusBadge = (type: string) => {
-    const isValid = type === "valid";
-    return isValid ? (
-      <Badge className="bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-400 border-green-500/20 hover:bg-green-500/20">
-        <IconCircleCheckFilled className="h-3 w-3 mr-1" />
-        AI Approved
-      </Badge>
-    ) : (
-      <Badge className="bg-red-500/10 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-500/20 hover:bg-red-500/20">
-        <IconX className="h-3 w-3 mr-1" />
-        AI Rejected
+  const getAIStatusBadge = (isValid?: boolean | null) => {
+    if (isValid === true) {
+      return (
+        <Badge className="bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-400 border-green-500/20 hover:bg-green-500/20">
+          <IconCircleCheckFilled className="h-3 w-3 mr-1" />
+          AI Approved
+        </Badge>
+      );
+    } else if (isValid === false) {
+      return (
+        <Badge className="bg-red-500/10 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-500/20 hover:bg-red-500/20">
+          <IconX className="h-3 w-3 mr-1" />
+          AI Rejected
+        </Badge>
+      );
+    }
+    return null;
+  };
+
+  // Helper function to get source badge with icon
+  const getSourceBadge = (source?: string) => {
+    if (!source) return null;
+
+    const sourceConfig: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
+      direct_application: {
+        icon: <IconWorld className="h-3 w-3 mr-1" />,
+        label: "Direct Apply",
+        color: "bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/20",
+      },
+      recruiter: {
+        icon: <IconUpload className="h-3 w-3 mr-1" />,
+        label: "Manual Import",
+        color: "bg-purple-500/10 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400 border-purple-500/20",
+      },
+      website: {
+        icon: <IconWorld className="h-3 w-3 mr-1" />,
+        label: "Website",
+        color: "bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/20",
+      },
+      linkedin: {
+        icon: <IconBriefcase className="h-3 w-3 mr-1" />,
+        label: "LinkedIn",
+        color: "bg-sky-500/10 text-sky-700 dark:bg-sky-500/20 dark:text-sky-400 border-sky-500/20",
+      },
+      referral: {
+        icon: <IconUsers className="h-3 w-3 mr-1" />,
+        label: "Referral",
+        color: "bg-indigo-500/10 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400 border-indigo-500/20",
+      },
+      job_board: {
+        icon: <IconBriefcase className="h-3 w-3 mr-1" />,
+        label: "Job Board",
+        color: "bg-teal-500/10 text-teal-700 dark:bg-teal-500/20 dark:text-teal-400 border-teal-500/20",
+      },
+      email: {
+        icon: <IconMail className="h-3 w-3 mr-1" />,
+        label: "Email",
+        color: "bg-orange-500/10 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 border-orange-500/20",
+      },
+    };
+
+    const config = sourceConfig[source.toLowerCase()] || {
+      icon: <IconUpload className="h-3 w-3 mr-1" />,
+      label: source.replace(/_/g, " "),
+      color: "bg-gray-500/10 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400 border-gray-500/20",
+    };
+
+    return (
+      <Badge className={`${config.color} hover:opacity-80`}>
+        {config.icon}
+        {config.label}
       </Badge>
     );
   };
@@ -1290,7 +1329,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
             <Avatar className="h-14 w-14 border-2 rounded-lg">
               <AvatarFallback className="text-base font-semibold">
                 {(() => {
-                  const nameParts = mockItem.header.split(" ");
+                  const nameParts = item.header.split(" ");
                   const firstName = nameParts[0] || "";
                   const lastName = nameParts[nameParts.length - 1] || "";
                   return (firstName[0] || "") + (lastName[0] || "");
@@ -1298,25 +1337,26 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold mb-1">{mockItem.header}</h3>
-              {mockItem.email && (
+              <h3 className="text-base font-semibold mb-1">{item.header}</h3>
+              {item.email && (
                 <p className="text-sm text-muted-foreground truncate mb-0.5">
-                  {mockItem.email}
+                  {item.email}
                 </p>
               )}
-              {mockItem.phone && (
-                <p className="text-xs text-muted-foreground">{mockItem.phone}</p>
+              {item.phone && (
+                <p className="text-xs text-muted-foreground">{item.phone}</p>
               )}
               <div className="flex flex-wrap gap-1.5 mt-2">
-                {getStatusBadge(mockItem.status)}
-                {getAIStatusBadge(mockItem.type)}
+                {getSourceBadge(item.source)}
+                {getStatusBadge(item.status)}
+                {getAIStatusBadge(item.isValidResume)}
               </div>
               {/* Application ID with highlighting */}
-              {mockItem.jobIdDisplay && (
+              {item.jobIdDisplay && (
                 <div className="mt-2 inline-block">
                   <div className="text-[10px] text-muted-foreground mb-0.5">APPLICATION ID</div>
                   <div className="text-xs font-mono font-medium bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 py-1 rounded border border-green-200 dark:border-green-800 break-all">
-                    {mockItem.jobIdDisplay}
+                    {item.jobIdDisplay}
                   </div>
                 </div>
               )}
@@ -1331,7 +1371,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 Assign Reviewer
               </Label>
               <Select 
-                defaultValue={mockItem.reviewer && mockItem.reviewer !== "Unassigned" ? mockItem.reviewer : "unassigned"}
+                defaultValue={item.reviewer && item.reviewer !== "Unassigned" ? item.reviewer : "unassigned"}
                 onValueChange={(value) => {
                   console.log('Reviewer changed to:', value);
                   // TODO: Add API call to update reviewer
@@ -1358,72 +1398,63 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                   Date Applied
                 </Label>
                 <p className="text-sm font-medium mt-1">
-                  {mockItem.dateApplied || "N/A"}
+                  {item.dateApplied || "N/A"}
                 </p>
               </div>
-              {mockItem.yearsOfExperience ? (
-                <div className="rounded-lg border bg-card p-3">
-                  <Label className="text-xs text-muted-foreground">
-                    Experience
-                  </Label>
-                  <p className="text-sm font-medium mt-1">
-                    {mockItem.yearsOfExperience} years
-                  </p>
-                </div>
-              ) : (
-                <div className="rounded-lg border bg-card p-3">
-                  <Label className="text-xs text-muted-foreground">
-                    Experience
-                  </Label>
-                  <p className="text-sm font-medium mt-1">
-                    Not Specified
-                  </p>
-                </div>
-              )}
+              <div className="rounded-lg border bg-card p-3">
+                <Label className="text-xs text-muted-foreground">Experience</Label>
+                <p className="text-sm font-medium mt-1">
+                  {typeof item.yearsOfExperience === 'number' && item.yearsOfExperience > 0
+                    ? `${item.yearsOfExperience} years`
+                    : item.parsedData?.experience && item.parsedData.experience.length > 0
+                      ? `${item.parsedData.experience.length} position${item.parsedData.experience.length !== 1 ? 's' : ''}`
+                      : 'Not Specified'}
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Professional Information */}
-          {(mockItem.currentTitle ||
-            mockItem.currentCompany ||
-            mockItem.educationLevel ||
-            mockItem.expectedSalary) && (
+          {(item.currentTitle ||
+            item.currentCompany ||
+            item.educationLevel ||
+            item.expectedSalary) && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold flex items-center gap-2">
                 Professional Information
               </h4>
               <div className="rounded-lg border divide-y">
-                {mockItem.currentTitle && (
+                {item.currentTitle && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Position</span>
                     <span className="font-medium text-right">
-                      {mockItem.currentTitle}
+                      {item.currentTitle}
                     </span>
                   </div>
                 )}
-                {mockItem.currentCompany && (
+                {item.currentCompany && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Company</span>
                     <span className="font-medium text-right">
-                      {mockItem.currentCompany}
+                      {item.currentCompany}
                     </span>
                   </div>
                 )}
-                {mockItem.educationLevel && (
+                {item.educationLevel && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Education</span>
                     <span className="font-medium text-right">
-                      {mockItem.educationLevel}
+                      {item.educationLevel}
                     </span>
                   </div>
                 )}
-                {mockItem.expectedSalary && (
+                {item.expectedSalary && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">
                       Salary Expectation
                     </span>
                     <span className="font-medium text-right">
-                      {mockItem.expectedSalary}
+                      {item.expectedSalary}
                     </span>
                   </div>
                 )}
@@ -1432,23 +1463,23 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
 
           {/* Contact Information */}
-          {(mockItem.location || mockItem.linkedinUrl || mockItem.portfolioUrl) && (
+          {(item.location || item.linkedinUrl || item.portfolioUrl) && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Contact Information</h4>
               <div className="rounded-lg border divide-y">
-                {mockItem.location && (
+                {item.location && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Location</span>
                     <span className="font-medium text-right">
-                      {mockItem.location}
+                      {item.location}
                     </span>
                   </div>
                 )}
-                {mockItem.linkedinUrl && (
+                {item.linkedinUrl && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">LinkedIn</span>
                     <a
-                      href={mockItem.linkedinUrl}
+                      href={item.linkedinUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline font-medium"
@@ -1457,11 +1488,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     </a>
                   </div>
                 )}
-                {mockItem.portfolioUrl && (
+                {item.portfolioUrl && (
                   <div className="flex items-center justify-between p-3 text-sm">
                     <span className="text-muted-foreground">Portfolio</span>
                     <a
-                      href={mockItem.portfolioUrl}
+                      href={item.portfolioUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline font-medium"
@@ -1475,18 +1506,18 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
 
           {/* Skills & Languages */}
-          {((mockItem.skills && mockItem.skills.length > 0) ||
-            (mockItem.languages && mockItem.languages.length > 0)) && (
+          {((item.skills && item.skills.length > 0) ||
+            (item.languages && item.languages.length > 0)) && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Skills & Languages</h4>
               <div className="rounded-lg border bg-card p-4 space-y-3">
-                {mockItem.skills && mockItem.skills.length > 0 && (
+                {item.skills && item.skills.length > 0 && (
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">
                       Technical Skills
                     </Label>
                     <div className="flex flex-wrap gap-1.5">
-                      {mockItem.skills.map((skill, index) => (
+                      {item.skills.map((skill, index) => (
                         <Badge
                           key={index}
                           variant="secondary"
@@ -1498,13 +1529,13 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     </div>
                   </div>
                 )}
-                {mockItem.languages && mockItem.languages.length > 0 && (
+                {item.languages && item.languages.length > 0 && (
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">
                       Languages
                     </Label>
                     <div className="flex flex-wrap gap-1.5">
-                      {mockItem.languages.map((language, index) => (
+                      {item.languages.map((language, index) => (
                         <Badge
                           key={index}
                           variant="outline"
@@ -1521,12 +1552,12 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
 
           {/* Documents Section */}
-          {(mockItem.resumeFilename || mockItem.coverLetter) && (
+          {(item.resumeFilename || item.coverLetter) && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Documents</h4>
               <div className="space-y-3">
                 {/* Resume */}
-                {mockItem.resumeFilename && (
+                {item.resumeFilename && (
                   <div className="rounded-lg border overflow-hidden">
                     <div className="flex items-center justify-between gap-3 p-3 bg-muted/50">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1535,11 +1566,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium truncate">
-                            {mockItem.resumeFilename}
+                            {item.resumeFilename}
                           </p>
-                          {mockItem.resumeFileSize && (
+                          {item.resumeFileSize && (
                             <p className="text-xs text-muted-foreground">
-                              {mockItem.resumeFileSize}
+                              {item.resumeFileSize}
                             </p>
                           )}
                         </div>
@@ -1561,10 +1592,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => {
-                            if (mockItem.resumeFilename) {
+                            if (item.resumeUrl) {
                               const link = document.createElement("a");
-                              link.href = `/uploads/resumes/${mockItem.resumeFilename}`;
-                              link.download = mockItem.resumeFilename;
+                              link.href = item.resumeUrl;
+                              link.download = item.resumeFilename || 'resume.pdf';
+                              link.target = '_blank';
                               link.click();
                             }
                           }}
@@ -1576,10 +1608,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     </div>
                     {showResumePreview && (
                       <div className="border-t">
-                        {mockItem.resumeFilename.toLowerCase().endsWith(".pdf") ? (
+                        {item.resumeUrl ? (
                           <div className="relative bg-muted/30">
                             <iframe
-                              src={`/uploads/resumes/${mockItem.resumeFilename}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                              src={`${item.resumeUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                               className="w-full h-[500px]"
                               title="Resume Preview"
                               onError={(e) => {
@@ -1589,10 +1621,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                               }}
                             />
                           </div>
-                        ) : mockItem.resumeText ? (
+                        ) : item.resumeRawText ? (
                           <div className="max-h-[500px] overflow-y-auto p-4 bg-muted/30">
                             <pre className="text-xs whitespace-pre-wrap leading-relaxed">
-                              {mockItem.resumeText}
+                              {item.resumeRawText}
                             </pre>
                           </div>
                         ) : (
@@ -1612,7 +1644,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 )}
 
                 {/* Cover Letter */}
-                {mockItem.coverLetter && (
+                {item.coverLetter && (
                   <div className="rounded-lg border overflow-hidden">
                     <div className="px-4 py-2.5 bg-muted/50 border-b">
                       <Label className="text-xs font-medium">
@@ -1621,26 +1653,26 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     </div>
                     <div className="p-4 max-h-64 overflow-y-auto bg-card">
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {mockItem.coverLetter}
+                        {item.coverLetter}
                       </p>
                     </div>
                   </div>
                 )}
 
                 {/* Video Introduction */}
-                {mockItem.videoIntroUrl && (
+                {item.videoIntroUrl && (
                   <div className="rounded-lg border overflow-hidden">
                     <div className="px-4 py-2.5 bg-muted/50 border-b flex items-center justify-between">
                       <Label className="text-xs font-medium">
                         Video Introduction
                       </Label>
-                      {(mockItem.videoIntroDuration || mockItem.videoIntroFileSize) && (
+                      {(item.videoIntroDuration || item.videoIntroFileSize) && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          {mockItem.videoIntroDuration && (
-                            <span>{mockItem.videoIntroDuration}</span>
+                          {item.videoIntroDuration && (
+                            <span>{item.videoIntroDuration}</span>
                           )}
-                          {mockItem.videoIntroFileSize && (
-                            <span>• {mockItem.videoIntroFileSize}</span>
+                          {item.videoIntroFileSize && (
+                            <span>• {item.videoIntroFileSize}</span>
                           )}
                         </div>
                       )}
@@ -1650,11 +1682,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                         controls
                         className="w-full max-h-80"
                         preload="metadata"
-                        poster={mockItem.photo || undefined}
+                        poster={item.photo || undefined}
                       >
-                        <source src={mockItem.videoIntroUrl} type="video/mp4" />
-                        <source src={mockItem.videoIntroUrl} type="video/webm" />
-                        <source src={mockItem.videoIntroUrl} type="video/ogg" />
+                        <source src={item.videoIntroUrl} type="video/mp4" />
+                        <source src={item.videoIntroUrl} type="video/webm" />
+                        <source src={item.videoIntroUrl} type="video/ogg" />
                       </video>
                     </div>
                   </div>
@@ -1664,22 +1696,22 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
 
           {/* Application Notes */}
-          {mockItem.notes && (
+          {item.notes && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Notes</h4>
               <div className="rounded-lg border bg-muted/30 p-4">
-                <p className="text-sm leading-relaxed">{mockItem.notes}</p>
+                <p className="text-sm leading-relaxed">{item.notes}</p>
               </div>
             </div>
           )}
 
           {/* Resume Full Text */}
-          {mockItem.resumeText && !showResumePreview && (
+          {item.resumeRawText && !showResumePreview && (
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Resume Full Text</h4>
               <div className="rounded-lg border bg-muted/30 p-4 max-h-96 overflow-y-auto">
                 <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed text-muted-foreground">
-                  {mockItem.resumeText}
+                  {item.resumeRawText}
                 </pre>
               </div>
             </div>

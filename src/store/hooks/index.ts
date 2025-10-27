@@ -9,6 +9,7 @@ export { useTeam } from "./useTeam";
 export { useUI } from "./useUI";
 export { useNotifications } from "./useNotifications";
 export { useMessages } from "./useMessages";
+export { usePipelines } from "./usePipelines";
 
 // Re-export base hooks from parent
 export { useAppDispatch, useAppSelector } from "../hooks";

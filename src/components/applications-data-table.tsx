@@ -103,14 +103,14 @@ interface Application {
   source: string;
   currentTitle: string;
   currentCompany: string;
-  yearsOfExperience: number;
+  yearsOfExperience?: number; // Optional - may not be calculated
   skills: string[];
   linkedInUrl?: string;
   portfolioUrl?: string;
   submittedAt: string;
   lastUpdated: string;
   coverLetter: string;
-  resume: {
+  resume?: {
     id: string;
     filename: string;
     originalName: string;
@@ -119,10 +119,20 @@ interface Application {
     url: string;
   } | null;
   resumeText: string;
+  resumeUrl?: string; // Direct URL to resume file
+  resumeFilename?: string; // Original filename
   reviewedBy: string;
   aiAnalysis: {
     isValid: boolean;
     summary: string;
+  };
+  parsedData?: { // For fallback experience calculation
+    experience?: Array<{
+      company: string;
+      title: string;
+      duration: string;
+      description?: string;
+    }>;
   };
 }
 
@@ -327,7 +337,14 @@ function SortableRow({
                         <div className="mt-2 space-y-2">
                           <div><span className="text-sm text-muted-foreground">Current Title:</span> {application.currentTitle || "Not provided"}</div>
                           <div><span className="text-sm text-muted-foreground">Company:</span> {application.currentCompany || "Not provided"}</div>
-                          <div><span className="text-sm text-muted-foreground">Experience:</span> {application.yearsOfExperience} years</div>
+                          <div>
+                            <span className="text-sm text-muted-foreground">Experience:</span>{" "}
+                            {application.yearsOfExperience 
+                              ? `${application.yearsOfExperience} years` 
+                              : application.parsedData?.experience && application.parsedData.experience.length > 0
+                                ? `${application.parsedData.experience.length} position${application.parsedData.experience.length !== 1 ? 's' : ''}`
+                                : "Not specified"}
+                          </div>
                         </div>
                       </div>
                       <div className="col-span-2">
@@ -358,25 +375,62 @@ function SortableRow({
                   
                   <TabsContent value="resume" className="mt-6">
                     <div className="text-center py-8">
-                      {application.resume ? (
+                      {(application.resume || application.resumeUrl) ? (
                         <div className="space-y-4">
                           <div className="p-4 border rounded-lg bg-muted/50">
                             <IconFileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                            <h3 className="font-medium">{application.resume.originalName}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {(application.resume.size / 1024 / 1024).toFixed(2)} MB • {application.resume.mimeType}
-                            </p>
+                            <h3 className="font-medium">
+                              {application.resume?.originalName || application.resumeFilename || "Resume"}
+                            </h3>
+                            {application.resume?.size && (
+                              <p className="text-sm text-muted-foreground">
+                                {(application.resume.size / 1024 / 1024).toFixed(2)} MB • {application.resume.mimeType}
+                              </p>
+                            )}
                           </div>
                           <div className="flex justify-center space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                const url = application.resume?.url || application.resumeUrl;
+                                if (url) window.open(url, '_blank');
+                              }}
+                            >
                               <IconEye className="w-4 h-4 mr-2" />
                               Preview
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                const url = application.resume?.url || application.resumeUrl;
+                                const filename = application.resume?.originalName || application.resumeFilename || 'resume.pdf';
+                                if (url) {
+                                  const link = document.createElement('a');
+                                  link.href = url;
+                                  link.download = filename;
+                                  link.target = '_blank';
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }
+                              }}
+                            >
                               <IconDownload className="w-4 h-4 mr-2" />
                               Download
                             </Button>
                           </div>
+                          {/* PDF Preview */}
+                          {(application.resume?.url || application.resumeUrl) && (
+                            <div className="mt-4 border rounded-lg overflow-hidden">
+                              <iframe
+                                src={`${application.resume?.url || application.resumeUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                className="w-full h-[600px]"
+                                title="Resume Preview"
+                              />
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="text-muted-foreground">

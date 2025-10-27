@@ -1297,6 +1297,23 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {getStatusBadge(item.status)}
                 {getAIStatusBadge(item.type)}
+                {item.isValidResume !== undefined && item.isValidResume !== null && (
+                  item.isValidResume ? (
+                    <Badge className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 text-xs px-2 py-0.5">
+                      <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Valid
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20 text-xs px-2 py-0.5">
+                      <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      Invalid
+                    </Badge>
+                  )
+                )}
               </div>
             </div>
           </div>
@@ -1325,7 +1342,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 {item.reviewer}
               </p>
             </div>
-            {item.yearsOfExperience && (
+            {item.yearsOfExperience ? (
               <div className="rounded-lg border bg-card p-3">
                 <Label className="text-xs text-muted-foreground">
                   Experience
@@ -1334,8 +1351,67 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                   {item.yearsOfExperience} years
                 </p>
               </div>
-            )}
+            ) : item.parsedData?.experience && item.parsedData.experience.length > 0 ? (
+              <div className="rounded-lg border bg-card p-3">
+                <Label className="text-xs text-muted-foreground">
+                  Experience
+                </Label>
+                <p className="text-sm font-medium mt-1">
+                  {item.parsedData.experience.length} {item.parsedData.experience.length === 1 ? 'position' : 'positions'}
+                </p>
+              </div>
+            ) : null}
           </div>
+
+          {/* AI Resume Validation Status */}
+          {item.isValidResume !== undefined && item.isValidResume !== null && (
+            <div className="rounded-lg border p-4 space-y-2" 
+                 style={{
+                   borderColor: item.isValidResume ? 'rgb(34 197 94 / 0.2)' : 'rgb(239 68 68 / 0.2)',
+                   backgroundColor: item.isValidResume ? 'rgb(34 197 94 / 0.05)' : 'rgb(239 68 68 / 0.05)'
+                 }}>
+              <div className="flex items-center gap-2">
+                {item.isValidResume ? (
+                  <>
+                    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-green-500">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+                      Valid Resume
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-red-500">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-semibold text-red-700 dark:text-red-400">
+                      Invalid Resume
+                    </span>
+                  </>
+                )}
+                {item.validationScore !== undefined && item.validationScore !== null && (
+                  <span className="ml-auto text-xs font-mono font-medium px-2 py-0.5 rounded-full"
+                        style={{
+                          backgroundColor: item.isValidResume ? 'rgb(34 197 94 / 0.2)' : 'rgb(239 68 68 / 0.2)',
+                          color: item.isValidResume ? 'rgb(22 101 52)' : 'rgb(153 27 27)'
+                        }}>
+                    {item.validationScore}/100
+                  </span>
+                )}
+              </div>
+              {item.validationReason && (
+                <p className="text-xs leading-relaxed"
+                   style={{ color: item.isValidResume ? 'rgb(22 101 52)' : 'rgb(153 27 27)' }}>
+                  {item.validationReason}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Professional Information */}
           {(item.currentTitle ||
@@ -1515,10 +1591,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => {
-                            if (item.resumeFilename) {
+                            if (item.resumeUrl) {
                               const link = document.createElement("a");
-                              link.href = `/uploads/resumes/${item.resumeFilename}`;
-                              link.download = item.resumeFilename;
+                              link.href = item.resumeUrl;
+                              link.download = item.resumeFilename || 'resume.pdf';
+                              link.target = "_blank";
                               link.click();
                             }
                           }}
@@ -1528,12 +1605,12 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                         </Button>
                       </div>
                     </div>
-                    {showResumePreview && (
+                    {showResumePreview && item.resumeUrl && (
                       <div className="border-t">
-                        {item.resumeFilename.toLowerCase().endsWith(".pdf") ? (
+                        {item.resumeFilename?.toLowerCase().endsWith(".pdf") || item.resumeUrl.includes('.pdf') ? (
                           <div className="relative bg-muted/30">
                             <iframe
-                              src={`/uploads/resumes/${item.resumeFilename}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                              src={`${item.resumeUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                               className="w-full h-[500px]"
                               title="Resume Preview"
                               onError={(e) => {
@@ -1543,10 +1620,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                               }}
                             />
                           </div>
-                        ) : item.resumeText ? (
+                        ) : item.resumeText || item.resumeRawText ? (
                           <div className="max-h-[500px] overflow-y-auto p-4 bg-muted/30">
                             <pre className="text-xs whitespace-pre-wrap leading-relaxed">
-                              {item.resumeText}
+                              {item.resumeText || item.resumeRawText}
                             </pre>
                           </div>
                         ) : (
