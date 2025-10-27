@@ -55,15 +55,28 @@ export const fetchClientById = createAsyncThunk(
 
 export const createClient = createAsyncThunk(
   "clients/create",
-  async (clientData: CreateClientRequest) => {
-    const response = await authenticatedFetch(`${API_BASE_URL}/clients`, {
-      method: "POST",
-      body: JSON.stringify(clientData),
-    });
-    if (!response.ok) throw new Error("Failed to create client");
-    const result = await response.json();
-    toast.success("Client created successfully");
-    return result.data || result;
+  async (clientData: CreateClientRequest, { rejectWithValue }) => {
+    try {
+      const response = await authenticatedFetch(`${API_BASE_URL}/clients`, {
+        method: "POST",
+        body: JSON.stringify(clientData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || "Failed to create client";
+        toast.error(errorMessage);
+        return rejectWithValue(errorMessage);
+      }
+      
+      const result = await response.json();
+      toast.success("Client created successfully");
+      return result.data || result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to create client";
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
+    }
   }
 );
 

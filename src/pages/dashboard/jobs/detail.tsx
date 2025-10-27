@@ -11,7 +11,7 @@ export default function JobDetailPage() {
   const navigate = useNavigate();
   
   // Redux hooks
-  const { fetchJobs, fetchJobById } = useJobs();
+  const { fetchJobs, fetchJobById, updateJob } = useJobs();
   const { fetchClients } = useClients();
   const { fetchCandidates } = useCandidates();
   
@@ -26,7 +26,8 @@ export default function JobDetailPage() {
     fetchJobs();
     fetchClients();
     fetchCandidates();
-  }, [jobId, fetchJobs, fetchJobById, fetchClients, fetchCandidates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId]);
 
   const handleBack = () => {
     if (clientId) {
@@ -44,8 +45,14 @@ export default function JobDetailPage() {
     }
   };
 
-  const handleEditJob = (jobIdParam: string, data: UpdateJobRequest) => {
-    console.log("Edit job:", jobIdParam, data);
+  const handleEditJob = async (jobIdParam: string, data: UpdateJobRequest) => {
+    try {
+      await updateJob(jobIdParam, data);
+      // Refresh the job details after update
+      await fetchJobById(jobIdParam);
+    } catch (error) {
+      console.error("Failed to update job:", error);
+    }
   };
 
   // Get client name

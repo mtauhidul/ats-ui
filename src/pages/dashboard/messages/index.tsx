@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessageSquare, Search, Send, MoreVertical, Plus, Paperclip, Smile } from "lucide-react";
 import { useMessages } from "@/store/hooks/useMessages";
-import { useTeam } from "@/store/hooks/useTeam";
-import { hasPermission, getRestrictedMessage } from "@/lib/rbac";
+import { useUser } from "@clerk/clerk-react";
+import { useUserRole } from "@/lib/auth";
 import { toast } from "sonner";
 
 const getInitials = (name: string) => {
@@ -19,12 +19,17 @@ const getInitials = (name: string) => {
 };
 
 export default function MessagesPage() {
-  const { teamMembers } = useTeam();
+  const { user } = useUser();
+  const userRole = useUserRole();
   const { conversations, sendMessage, setCurrentConversation, currentConversation } = useMessages();
   
-  const currentUser = teamMembers[0];
-  const canSendMessages = hasPermission(currentUser, 'canSendEmails');
-  const currentUserId = currentUser?.id || '';
+  // Admin and recruiters can always send messages
+  const canSendMessages = userRole === 'admin' || userRole === 'recruiter' || userRole === 'hiring_manager';
+  const currentUserId = user?.id || '';
+  
+  // Get user display name from Clerk
+  const senderName = user?.fullName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User';
+  const senderAvatar = user?.imageUrl || '';
 
   const [searchQuery, setSearchQuery] = useState("");
   const [messageText, setMessageText] = useState("");
@@ -65,7 +70,7 @@ export default function MessagesPage() {
 
   const handleSendMessage = () => {
     if (!canSendMessages) {
-      toast.error(getRestrictedMessage("send messages"));
+      toast.error("You don't have permission to send messages. Please contact your administrator.");
       return;
     }
 
@@ -76,9 +81,9 @@ export default function MessagesPage() {
     sendMessage({
       conversationId: currentConversation.id,
       senderId: currentUserId,
-      senderName: `${currentUser.firstName} ${currentUser.lastName}`,
-      senderRole: currentUser.role,
-      senderAvatar: currentUser.avatar || '',
+      senderName: senderName,
+      senderRole: userRole,
+      senderAvatar: senderAvatar,
       recipientId: currentConversation.participantId,
       recipientName: currentConversation.participantName,
       recipientRole: currentConversation.participantRole,
@@ -107,7 +112,7 @@ export default function MessagesPage() {
                 <CardContent className="pt-6">
                   <div className="text-center py-8">
                     <p className="text-muted-foreground">
-                      {getRestrictedMessage("messages")}
+                      You don't have permission to access messages. Please contact your administrator.
                     </p>
                   </div>
                 </CardContent>

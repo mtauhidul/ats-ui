@@ -10,7 +10,7 @@ export default function ClientDetailPage() {
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
 
-  const { fetchClients, fetchClientById, deleteClient } = useClients();
+  const { fetchClients, fetchClientById, deleteClient, updateClient } = useClients();
   const { fetchJobs, createJob } = useJobs();
   const { fetchCandidates } = useCandidates();
   
@@ -30,7 +30,8 @@ export default function ClientDetailPage() {
     fetchClients();
     fetchJobs();
     fetchCandidates();
-  }, [clientId, fetchClients, fetchClientById, fetchJobs, fetchCandidates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId]);
 
   const handleBack = () => {
     navigate("/dashboard/clients");
@@ -46,9 +47,14 @@ export default function ClientDetailPage() {
     }
   };
 
-  const handleUpdate = (clientId: string, updates: Partial<Client>) => {
-    // Implementation for updating client
-    console.log("Update client:", clientId, updates);
+  const handleUpdate = async (clientId: string, updates: Partial<Client>) => {
+    try {
+      await updateClient(clientId, updates);
+      // Refresh client data after updating
+      await fetchClientById(clientId);
+    } catch (error) {
+      console.error("Failed to update client:", error);
+    }
   };
 
   const handleDelete = async (clientId: string) => {

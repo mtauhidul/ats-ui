@@ -132,7 +132,7 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
           </div>
           <div className="flex items-center gap-2">
             <Badge className={cn("border text-sm px-3 py-1 whitespace-nowrap", statusColors[job.status])}>
-              {job.status.replace(/_/g, ' ')}
+              {job.status?.replace(/_/g, ' ') || job.status}
             </Badge>
             <Button
               variant="outline"
@@ -168,7 +168,7 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
             </div>
             <p className="text-xs text-muted-foreground">Type</p>
           </div>
-          <p className="text-sm md:text-base font-semibold capitalize">{job.type.replace(/_/g, ' ')}</p>
+          <p className="text-sm md:text-base font-semibold capitalize">{job.type?.replace(/_/g, ' ') || 'Not specified'}</p>
         </div>
 
         <div className="rounded-lg border bg-card p-3 shadow-sm">
@@ -392,8 +392,10 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-medium mb-2">Experience</h4>
-                  <p className="text-sm text-muted-foreground">{job.requirements.experience}</p>
+                  <h4 className="text-sm font-medium mb-2">Experience Required</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {job.requirements?.experience || "Not specified"}
+                  </p>
                 </div>
                 <Separator />
                 <div>

@@ -51,7 +51,8 @@ import { useTeam, useAppSelector } from "@/store/hooks/index";
 import { selectTeam } from "@/store/selectors";
 import type { TeamMember, TeamRole } from "@/types";
 
-const getInitials = (firstName: string, lastName: string) => {
+const getInitials = (firstName?: string, lastName?: string) => {
+  if (!firstName || !lastName) return "?";
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 };
 

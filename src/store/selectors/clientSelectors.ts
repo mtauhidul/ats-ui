@@ -48,8 +48,9 @@ export const selectFilteredClients = createSelector(
   }
 );
 
-export const selectClientById = (clientId: string) =>
-  createSelector([selectClients], (clients) => clients.find((c) => c.id === clientId));
+// Memoized selector factory for finding client by ID
+export const selectClientById = (clientId: string) => (state: RootState) => 
+  (state.clients as ClientsState).clients.find((c) => c.id === clientId);
 
 export const selectClientStatistics = createSelector([selectClients], (clients) => ({
   total: clients.length,

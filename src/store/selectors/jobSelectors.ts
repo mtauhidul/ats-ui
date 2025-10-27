@@ -14,8 +14,9 @@ export const selectJobsByStatus = (status: string) =>
 export const selectJobsByClient = (clientId: string) =>
   createSelector([selectJobs], (jobs) => jobs.filter((job) => job.clientId === clientId));
 
-export const selectJobById = (jobId: string) =>
-  createSelector([selectJobs], (jobs) => jobs.find((j) => j.id === jobId));
+// Simple selector factory for finding job by ID
+export const selectJobById = (jobId: string) => (state: RootState) =>
+  (state.jobs as JobsState).jobs.find((j) => j.id === jobId);
 
 export const selectJobStatistics = createSelector([selectJobs], (jobs) => ({
   total: jobs.length,

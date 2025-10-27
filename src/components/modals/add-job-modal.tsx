@@ -64,6 +64,7 @@ export function AddJobModal({
     type: "full_time",
     experienceLevel: "mid",
     workMode: "hybrid",
+    location: { city: "", country: "" },
     requirements: {
       experience: "",
       skills: {
@@ -115,6 +116,12 @@ export function AddJobModal({
       newErrors.clientId = "Client is required";
       console.error("ClientId is missing:", { formData, prefilledClientId, hideClientSelector });
     }
+    if (!formData.location?.city?.trim()) {
+      newErrors.locationCity = "City is required";
+    }
+    if (!formData.location?.country?.trim()) {
+      newErrors.locationCountry = "Country is required";
+    }
     if (!formData.requirements.experience.trim()) {
       newErrors.experience = "Experience requirement is required";
     }
@@ -132,7 +139,7 @@ export function AddJobModal({
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       // Navigate to the first tab with errors
-      if (newErrors.title || newErrors.description || newErrors.clientId) {
+      if (newErrors.title || newErrors.description || newErrors.clientId || newErrors.locationCity || newErrors.locationCountry) {
         setCurrentTab("basic");
       } else if (newErrors.experience || newErrors.responsibilities || newErrors.requiredSkills) {
         setCurrentTab("requirements");
@@ -140,21 +147,47 @@ export function AddJobModal({
       return;
     }
 
-    // Filter out empty strings before submitting
-    const cleanedData = {
-      ...formData,
+    // Transform data to match backend schema
+    const requiredSkills = formData.requirements.skills.required.filter(s => s.trim());
+    const experience = formData.requirements.experience.trim();
+    
+    // Backend expects requirements as string array for general requirements
+    // We'll store the experience description in requirements array
+    const requirementsArray: string[] = [];
+    if (experience) {
+      requirementsArray.push(experience);
+    }
+    
+    // Backend expects location as string, not Address object
+    const locationString = typeof formData.location === 'string' 
+      ? formData.location 
+      : `${formData.location?.city || ""}, ${formData.location?.country || ""}`.trim();
+    
+    const transformedData = {
+      title: formData.title,
+      description: formData.description,
+      clientId: formData.clientId,
+      type: formData.type,
+      experienceLevel: formData.experienceLevel,
+      priority: formData.priority,
+      openings: formData.openings,
+      requirements: requirementsArray,
       responsibilities: formData.responsibilities.filter(r => r.trim()),
-      requirements: {
-        ...formData.requirements,
-        skills: {
-          required: formData.requirements.skills.required.filter(s => s.trim()),
-          preferred: formData.requirements.skills.preferred.filter(s => s.trim()),
-        },
-      },
-    };
+      skills: requiredSkills,
+      location: locationString,
+      locationType: formData.workMode, // Map workMode to locationType for backend
+      salaryRange: formData.salaryRange,
+      categoryIds: formData.categoryIds || [],
+      tagIds: formData.tagIds || [],
+      recruiterIds: formData.recruiterIds || [],
+    } as Record<string, unknown>;
 
-    console.log("Submitting job with clientId:", cleanedData.clientId);
-    onSubmit(cleanedData);
+    console.log("=== Submitting Job ===");
+    console.log("Experience input value:", formData.requirements.experience);
+    console.log("Requirements array being sent:", requirementsArray);
+    console.log("Full transformed data:", transformedData);
+    
+    onSubmit(transformedData as unknown as CreateJobRequest);
     handleClose();
   };
 
@@ -166,6 +199,7 @@ export function AddJobModal({
       type: "full_time",
       experienceLevel: "mid",
       workMode: "hybrid",
+      location: { city: "", country: "" },
       requirements: {
         experience: "",
         skills: {
@@ -279,6 +313,12 @@ export function AddJobModal({
         } else {
           console.error("ClientId missing even though selector is hidden:", prefilledClientId);
         }
+      }
+      if (!formData.location?.city?.trim()) {
+        newErrors.locationCity = "City is required";
+      }
+      if (!formData.location?.country?.trim()) {
+        newErrors.locationCountry = "Country is required";
       }
 
       if (Object.keys(newErrors).length > 0) {
@@ -561,6 +601,62 @@ export function AddJobModal({
                           <SelectItem value="hybrid">🔄 Hybrid</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">
+                    Location Details
+                  </Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="location-city"
+                        className="text-sm font-medium text-muted-foreground"
+                      >
+                        City <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="location-city"
+                        value={formData.location?.city || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            location: {
+                              ...(formData.location || { city: "", country: "" }),
+                              city: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="e.g., San Francisco"
+                        className="h-11"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="location-country"
+                        className="text-sm font-medium text-muted-foreground"
+                      >
+                        Country <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="location-country"
+                        value={formData.location?.country || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            location: {
+                              ...(formData.location || { city: "", country: "" }),
+                              country: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="e.g., USA"
+                        className="h-11"
+                      />
                     </div>
                   </div>
                 </div>
@@ -917,22 +1013,6 @@ export function AddJobModal({
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Department */}
-                <div className="space-y-2">
-                  <Label htmlFor="department" className="text-base font-semibold">
-                    Department (Optional)
-                  </Label>
-                  <Input
-                    id="department"
-                    value={formData.department || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, department: e.target.value })
-                    }
-                    placeholder="e.g., Engineering, Marketing, Sales"
-                    className="h-11"
-                  />
-                </div>
 
                 {/* Application Deadline */}
                 <div className="space-y-2">
