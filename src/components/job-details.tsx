@@ -430,7 +430,7 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                 <CardTitle>Additional Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {job.salaryRange && (
+                {job.salaryRange && job.salaryRange.min && job.salaryRange.max && (
                   <div className="flex items-start gap-3">
                     <div className="rounded-md bg-purple-500/10 p-2">
                       <DollarSign className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -438,7 +438,8 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                     <div className="flex-1">
                       <p className="text-sm font-medium">Salary Range</p>
                       <p className="text-sm text-muted-foreground">
-                        {job.salaryRange.currency} {job.salaryRange.min.toLocaleString()} - {job.salaryRange.max.toLocaleString()} / {job.salaryRange.period}
+                        {job.salaryRange.currency || 'USD'} {job.salaryRange.min.toLocaleString()} - {job.salaryRange.max.toLocaleString()}
+                        {job.salaryRange.period && ` / ${job.salaryRange.period}`}
                       </p>
                     </div>
                   </div>
@@ -451,7 +452,9 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                     <div className="flex-1">
                       <p className="text-sm font-medium">Location</p>
                       <p className="text-sm text-muted-foreground">
-                        {job.location.city}, {job.location.country}
+                        {typeof job.location === 'string'
+                          ? job.location
+                          : `${job.location.city || ''}, ${job.location.country || ''}`}
                       </p>
                     </div>
                   </div>

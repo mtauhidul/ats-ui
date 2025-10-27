@@ -9,6 +9,17 @@ import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
+// Helper function to normalize tag data from backend
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const normalizeTag = (tag: Record<string, any>): Tag => {
+  // If tag has _id but no id, use _id as id
+  if (tag._id && !tag.id) {
+    const { _id, ...rest } = tag;
+    return { ...rest, id: _id } as Tag;
+  }
+  return tag as Tag;
+};
+
 export interface TagsState {
   tags: Tag[];
   currentTag: Tag | null;
@@ -27,7 +38,9 @@ export const fetchTags = createAsyncThunk("tags/fetchAll", async () => {
   const response = await authenticatedFetch(`${API_BASE_URL}/tags`);
   if (!response.ok) throw new Error("Failed to fetch tags");
   const result = await response.json();
-  return result.data?.tags || result.data || result;
+  const tags = result.data?.tags || result.data || result;
+  // Normalize tags to ensure they have 'id' instead of '_id'
+  return Array.isArray(tags) ? tags.map(normalizeTag) : tags;
 });
 
 export const fetchTagById = createAsyncThunk(
@@ -36,7 +49,7 @@ export const fetchTagById = createAsyncThunk(
     const response = await authenticatedFetch(`${API_BASE_URL}/tags/${id}`);
     if (!response.ok) throw new Error("Failed to fetch tag");
     const result = await response.json();
-    return result.data || result;
+    return normalizeTag(result.data || result);
   }
 );
 
@@ -50,7 +63,7 @@ export const createTag = createAsyncThunk(
     if (!response.ok) throw new Error("Failed to create tag");
     const result = await response.json();
     toast.success("Tag created successfully");
-    return result.data || result;
+    return normalizeTag(result.data || result);
   }
 );
 
@@ -64,7 +77,7 @@ export const updateTag = createAsyncThunk(
     if (!response.ok) throw new Error("Failed to update tag");
     const result = await response.json();
     toast.success("Tag updated successfully");
-    return result.data || result;
+    return normalizeTag(result.data || result);
   }
 );
 

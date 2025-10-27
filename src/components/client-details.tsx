@@ -533,7 +533,7 @@ export function ClientDetails({
               value="jobs"
               className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
             >
-              Jobs ({client.statistics.totalJobs})
+              Jobs ({clientJobs.length})
             </TabsTrigger>
             <TabsTrigger
               value="contacts"

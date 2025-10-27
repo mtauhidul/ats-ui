@@ -9,6 +9,17 @@ import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
+// Helper function to normalize category data from backend
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const normalizeCategory = (category: Record<string, any>): Category => {
+  // If category has _id but no id, use _id as id
+  if (category._id && !category.id) {
+    const { _id, ...rest } = category;
+    return { ...rest, id: _id } as Category;
+  }
+  return category as Category;
+};
+
 export interface CategoriesState {
   categories: Category[];
   currentCategory: Category | null;
@@ -29,7 +40,11 @@ export const fetchCategories = createAsyncThunk(
     const response = await authenticatedFetch(`${API_BASE_URL}/categories`);
     if (!response.ok) throw new Error("Failed to fetch categories");
     const result = await response.json();
-    return result.data?.categories || result.data || result;
+    const categories = result.data?.categories || result.data || result;
+    // Normalize categories to ensure they have 'id' instead of '_id'
+    return Array.isArray(categories) 
+      ? categories.map(normalizeCategory)
+      : categories;
   }
 );
 
@@ -39,7 +54,7 @@ export const fetchCategoryById = createAsyncThunk(
     const response = await authenticatedFetch(`${API_BASE_URL}/categories/${id}`);
     if (!response.ok) throw new Error("Failed to fetch category");
     const result = await response.json();
-    return result.data || result;
+    return normalizeCategory(result.data || result);
   }
 );
 
@@ -53,7 +68,7 @@ export const createCategory = createAsyncThunk(
     if (!response.ok) throw new Error("Failed to create category");
     const result = await response.json();
     toast.success("Category created successfully");
-    return result.data || result;
+    return normalizeCategory(result.data || result);
   }
 );
 
@@ -67,7 +82,7 @@ export const updateCategory = createAsyncThunk(
     if (!response.ok) throw new Error("Failed to update category");
     const result = await response.json();
     toast.success("Category updated successfully");
-    return result.data || result;
+    return normalizeCategory(result.data || result);
   }
 );
 

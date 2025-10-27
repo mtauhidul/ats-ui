@@ -169,6 +169,7 @@ export interface CreateClientRequest {
   email: string;
   phone: string;
   website?: string;
+  logo?: string;
   industry: Industry;
   companySize: CompanySize;
   description?: string;

@@ -20,7 +20,7 @@ export function NavMain({
   }[];
 }) {
   const location = useLocation();
-  const isMessagesActive = location.pathname === "/dashboard/messages";
+  const isMessagesActive = location.pathname.startsWith("/dashboard/messages");
 
   return (
     <SidebarGroup>
@@ -55,9 +55,11 @@ export function NavMain({
         </SidebarMenu>
         <SidebarMenu>
           {items.map((item) => {
+            // Check if current path starts with the item's URL for nested route support
             const isActive =
-              location.pathname === item.url ||
-              (item.url === "/dashboard" && location.pathname === "/dashboard");
+              item.url === "/dashboard"
+                ? location.pathname === "/dashboard"
+                : location.pathname.startsWith(item.url);
 
             return (
               <SidebarMenuItem key={item.title}>

@@ -72,7 +72,11 @@ export function JobCard({ job, onClick, clientName }: JobCardProps) {
           {job.location && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="truncate">{job.location.city}, {job.location.country}</span>
+              <span className="truncate">
+                {typeof job.location === 'string'
+                  ? job.location
+                  : `${job.location.city || ''}, ${job.location.country || ''}`}
+              </span>
             </div>
           )}
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -83,11 +87,11 @@ export function JobCard({ job, onClick, clientName }: JobCardProps) {
             <Clock className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="truncate">{job.experienceLevel}</span>
           </div>
-          {job.salaryRange && (
+          {job.salaryRange && job.salaryRange.min && job.salaryRange.max && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <DollarSign className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="truncate">
-                {job.salaryRange.currency} {job.salaryRange.min.toLocaleString()} - {job.salaryRange.max.toLocaleString()}
+                {job.salaryRange.currency || 'USD'} {job.salaryRange.min.toLocaleString()} - {job.salaryRange.max.toLocaleString()}
               </span>
             </div>
           )}

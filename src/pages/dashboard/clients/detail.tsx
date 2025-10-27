@@ -9,9 +9,9 @@ import { selectClientById, selectJobs, selectCandidates } from "@/store/selector
 export default function ClientDetailPage() {
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
-  
-  const { fetchClients, fetchClientById } = useClients();
-  const { fetchJobs } = useJobs();
+
+  const { fetchClients, fetchClientById, deleteClient } = useClients();
+  const { fetchJobs, createJob } = useJobs();
   const { fetchCandidates } = useCandidates();
   
   const client = useAppSelector(state => selectClientById(clientId || '')(state));
@@ -36,9 +36,14 @@ export default function ClientDetailPage() {
     navigate("/dashboard/clients");
   };
 
-  const handleAddJob = (data: CreateJobRequest) => {
-    // Implementation for adding job
-    console.log("Add job:", data);
+  const handleAddJob = async (data: CreateJobRequest) => {
+    try {
+      await createJob(data);
+      // Refresh jobs after creating
+      fetchJobs();
+    } catch (error) {
+      console.error("Failed to create job:", error);
+    }
   };
 
   const handleUpdate = (clientId: string, updates: Partial<Client>) => {
@@ -46,10 +51,14 @@ export default function ClientDetailPage() {
     console.log("Update client:", clientId, updates);
   };
 
-  const handleDelete = (clientId: string) => {
-    // Implementation for deleting client
-    console.log("Delete client:", clientId);
-    navigate("/dashboard/clients");
+  const handleDelete = async (clientId: string) => {
+    try {
+      await deleteClient(clientId);
+      navigate("/dashboard/clients");
+    } catch (error) {
+      // Error is already handled in the Redux thunk with toast notification
+      console.error("Failed to delete client:", error);
+    }
   };
 
   const handleJobClick = (jobId: string) => {

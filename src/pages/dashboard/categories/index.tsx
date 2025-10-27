@@ -92,25 +92,57 @@ export default function CategoriesPage() {
     setExpandedCategories(newExpanded);
   };
 
-  // Build category tree
+  // Build category tree with circular reference protection
   const buildCategoryTree = (
     items: Category[],
     parentId: string | null | undefined = null,
-    level: number = 0
+    level: number = 0,
+    visitedIds: Set<string> = new Set()
   ): CategoryTree[] => {
+    // Prevent infinite recursion by limiting depth
+    if (level > 10) {
+      console.warn('Maximum category nesting depth (10) exceeded. Possible circular reference.');
+      return [];
+    }
+
     return items
       .filter((item) => {
+        // Validate that item has an ID
+        if (!item.id) {
+          console.error(`Category missing ID:`, item);
+          return false;
+        }
+        
         // Handle both null and undefined as "no parent"
         const itemParent = item.parentId ?? null;
         const targetParent = parentId ?? null;
+        
+        // Skip if this item was already processed in the current path (circular reference)
+        if (visitedIds.has(item.id)) {
+          console.warn(`Circular reference detected for category: ${item.name} (ID: ${item.id || 'undefined'})`);
+          return false;
+        }
+        
+        // Don't allow a category to be its own parent
+        if (item.id === item.parentId) {
+          console.warn(`Category cannot be its own parent: ${item.name} (ID: ${item.id || 'undefined'})`);
+          return false;
+        }
+        
         return itemParent === targetParent;
       })
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
-      .map((item) => ({
-        ...item,
-        level,
-        children: buildCategoryTree(items, item.id, level + 1),
-      }));
+      .map((item) => {
+        // Create a new visited set for this branch
+        const newVisitedIds = new Set(visitedIds);
+        newVisitedIds.add(item.id);
+        
+        return {
+          ...item,
+          level,
+          children: buildCategoryTree(items, item.id, level + 1, newVisitedIds),
+        };
+      });
   };
 
   // Filter categories
@@ -237,7 +269,11 @@ export default function CategoriesPage() {
               </div>
             </div>
           </div>
-          {hasChildren && isExpanded && renderCategoryTree(category.children!)}
+          {hasChildren && isExpanded && (
+            <div key={`children-${category.id}`}>
+              {renderCategoryTree(category.children!)}
+            </div>
+          )}
         </div>
       );
     });

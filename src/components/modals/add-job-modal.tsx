@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -82,8 +82,24 @@ export function AddJobModal({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Sync prefilledClientId when modal opens or clientId changes
+  useEffect(() => {
+    if (open && prefilledClientId) {
+      setFormData(prev => ({
+        ...prev,
+        clientId: prefilledClientId
+      }));
+    }
+  }, [open, prefilledClientId]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+
+    // CRITICAL: Only allow submission from details tab
+    if (currentTab !== "details") {
+      return;
+    }
 
     const newErrors: Record<string, string> = {};
 
@@ -94,25 +110,51 @@ export function AddJobModal({
     if (!formData.description.trim()) {
       newErrors.description = "Job description is required";
     }
+    // Always validate clientId - it's required whether selector is hidden or not
     if (!formData.clientId) {
       newErrors.clientId = "Client is required";
+      console.error("ClientId is missing:", { formData, prefilledClientId, hideClientSelector });
     }
     if (!formData.requirements.experience.trim()) {
       newErrors.experience = "Experience requirement is required";
     }
-    if (formData.responsibilities.length === 0) {
+    // Check for non-empty responsibilities
+    const validResponsibilities = formData.responsibilities.filter(r => r.trim());
+    if (validResponsibilities.length === 0) {
       newErrors.responsibilities = "At least one responsibility is required";
     }
-    if (formData.requirements.skills.required.length === 0) {
+    // Check for non-empty required skills
+    const validSkills = formData.requirements.skills.required.filter(s => s.trim());
+    if (validSkills.length === 0) {
       newErrors.requiredSkills = "At least one required skill is needed";
     }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      // Navigate to the first tab with errors
+      if (newErrors.title || newErrors.description || newErrors.clientId) {
+        setCurrentTab("basic");
+      } else if (newErrors.experience || newErrors.responsibilities || newErrors.requiredSkills) {
+        setCurrentTab("requirements");
+      }
       return;
     }
 
-    onSubmit(formData);
+    // Filter out empty strings before submitting
+    const cleanedData = {
+      ...formData,
+      responsibilities: formData.responsibilities.filter(r => r.trim()),
+      requirements: {
+        ...formData.requirements,
+        skills: {
+          required: formData.requirements.skills.required.filter(s => s.trim()),
+          preferred: formData.requirements.skills.preferred.filter(s => s.trim()),
+        },
+      },
+    };
+
+    console.log("Submitting job with clientId:", cleanedData.clientId);
+    onSubmit(cleanedData);
     handleClose();
   };
 
@@ -214,6 +256,64 @@ export function AddJobModal({
     });
   };
 
+  const handleNextStep = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    const newErrors: Record<string, string> = {};
+
+    // Validate current tab before proceeding
+    if (currentTab === "basic") {
+      if (!formData.title.trim()) {
+        newErrors.title = "Job title is required";
+      }
+      if (!formData.description.trim()) {
+        newErrors.description = "Job description is required";
+      }
+      // Always check clientId - show error only if selector is visible
+      if (!formData.clientId) {
+        if (!hideClientSelector) {
+          newErrors.clientId = "Client is required";
+        } else {
+          console.error("ClientId missing even though selector is hidden:", prefilledClientId);
+        }
+      }
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        return;
+      }
+
+      setCurrentTab("requirements");
+    } else if (currentTab === "requirements") {
+      if (!formData.requirements.experience.trim()) {
+        newErrors.experience = "Experience requirement is required";
+      }
+      // Check for non-empty responsibilities
+      const validResponsibilities = formData.responsibilities.filter(r => r.trim());
+      if (validResponsibilities.length === 0) {
+        newErrors.responsibilities = "At least one responsibility is required";
+      }
+      // Check for non-empty required skills
+      const validSkills = formData.requirements.skills.required.filter(s => s.trim());
+      if (validSkills.length === 0) {
+        newErrors.requiredSkills = "At least one required skill is needed";
+      }
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        return;
+      }
+
+      setCurrentTab("details");
+    }
+
+    // Clear errors when validation passes
+    setErrors({});
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] p-0 flex flex-col gap-0">
@@ -235,32 +335,40 @@ export function AddJobModal({
 
         <form
           onSubmit={handleSubmit}
+          onKeyDown={(e) => {
+            // Prevent Enter key from submitting unless on details tab
+            if (e.key === "Enter" && currentTab !== "details") {
+              e.preventDefault();
+            }
+          }}
           className="flex flex-col flex-1 min-h-0"
         >
           <Tabs
             value={currentTab}
-            onValueChange={setCurrentTab}
             className="flex flex-col flex-1 min-h-0"
           >
             <div className="px-6 pt-4 border-b flex-shrink-0">
               <TabsList className="h-11 p-1 bg-card border border-border mb-4 w-full md:w-fit">
                 <TabsTrigger
                   value="basic"
-                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                  disabled
+                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground cursor-default"
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   <span className="text-sm md:text-base">Basic Info</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="requirements"
-                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                  disabled
+                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground cursor-default"
                 >
                   <ListChecks className="h-4 w-4 mr-2" />
                   <span className="text-sm md:text-base">Requirements</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="details"
-                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                  disabled
+                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground cursor-default"
                 >
                   <DollarSign className="h-4 w-4 mr-2" />
                   <span className="text-sm md:text-base">Details</span>
@@ -874,14 +982,22 @@ export function AddJobModal({
               <Button type="button" variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
+              {currentTab !== "basic" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (currentTab === "requirements") setCurrentTab("basic");
+                    else if (currentTab === "details") setCurrentTab("requirements");
+                  }}
+                >
+                  Back
+                </Button>
+              )}
               {currentTab !== "details" ? (
                 <Button
                   type="button"
-                  onClick={() => {
-                    if (currentTab === "basic") setCurrentTab("requirements");
-                    else if (currentTab === "requirements")
-                      setCurrentTab("details");
-                  }}
+                  onClick={handleNextStep}
                 >
                   Next Step
                 </Button>

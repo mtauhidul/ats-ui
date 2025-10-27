@@ -1,4 +1,4 @@
-import type { Job } from "@/types";
+import type { Job, CreateJobRequest } from "@/types";
 import {
   createAsyncThunk,
   createSlice,
@@ -8,6 +8,37 @@ import { toast } from "sonner";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+
+// Helper function to normalize job data from backend
+const normalizeJob = (job: Job | Record<string, unknown>): Job => {
+  const jobAny = job as Record<string, unknown>;
+  
+  // If clientId is populated (object), extract the ID
+  const clientIdValue = jobAny.clientId;
+  let clientId: string;
+  
+  if (typeof clientIdValue === 'object' && clientIdValue !== null) {
+    // Backend might return populated client as {id: "...", companyName: "...", logo: "..."}
+    // or {_id: "...", companyName: "...", logo: "..."}
+    const clientObj = clientIdValue as Record<string, unknown>;
+    clientId = (clientObj.id || clientObj._id) as string;
+  } else {
+    // Already a string ID
+    clientId = clientIdValue as string;
+  }
+  
+  console.log("Normalizing job:", {
+    originalClientId: jobAny.clientId,
+    extractedClientId: clientId,
+    jobTitle: jobAny.title
+  });
+  
+  return {
+    ...job,
+    clientId: clientId,
+    id: (jobAny._id || jobAny.id) as string,
+  } as Job;
+};
 
 export interface JobsState {
   jobs: Job[];
@@ -28,7 +59,9 @@ export const fetchJobs = createAsyncThunk("jobs/fetchAll", async () => {
   const response = await authenticatedFetch(`${API_BASE_URL}/jobs`);
   if (!response.ok) throw new Error("Failed to fetch jobs");
   const result = await response.json();
-  return result.data?.jobs || result.data || result;
+  const jobs = result.data?.jobs || result.data || result;
+  // Normalize jobs to ensure clientId is always a string
+  return Array.isArray(jobs) ? jobs.map(normalizeJob) : [];
 });
 
 export const fetchJobById = createAsyncThunk(
@@ -37,21 +70,61 @@ export const fetchJobById = createAsyncThunk(
     const response = await authenticatedFetch(`${API_BASE_URL}/jobs/${id}`);
     if (!response.ok) throw new Error("Failed to fetch job");
     const result = await response.json();
-    return result.data || result;
+    const job = result.data || result;
+    return normalizeJob(job);
   }
 );
 
 export const createJob = createAsyncThunk(
   "jobs/create",
-  async (jobData: Partial<Job>) => {
+  async (jobData: CreateJobRequest) => {
+    // Transform frontend data structure to match backend expectations
+    const backendData = {
+      title: jobData.title,
+      clientId: jobData.clientId,
+      description: jobData.description,
+      requirements: jobData.requirements?.skills?.required || [],
+      responsibilities: jobData.responsibilities,
+      location: jobData.location
+        ? typeof jobData.location === 'string'
+          ? jobData.location
+          : `${jobData.location.city || ''}${jobData.location.city && jobData.location.country ? ', ' : ''}${jobData.location.country || ''}`.trim() || (jobData.workMode === 'remote' ? 'Remote' : 'To Be Determined')
+        : jobData.workMode === 'remote' ? 'Remote' : 'To Be Determined',
+      locationType: jobData.workMode,
+      jobType: jobData.type,
+      experienceLevel: jobData.experienceLevel,
+      salaryRange: jobData.salaryRange,
+      skills: [
+        ...(jobData.requirements?.skills?.required || []),
+        ...(jobData.requirements?.skills?.preferred || []),
+      ],
+      benefits: jobData.benefits ? Object.entries(jobData.benefits)
+        .filter(([_, value]) => value === true || (typeof value === 'string' && value))
+        .map(([key]) => key) : undefined,
+      pipelineId: undefined,
+      categoryIds: jobData.categoryIds,
+      tagIds: jobData.tagIds,
+      status: 'draft' as const,
+      openings: jobData.openings,
+      applicationDeadline: jobData.applicationDeadline,
+      startDate: jobData.startDate,
+      priority: jobData.priority,
+      hiringManagerId: jobData.hiringManagerIds?.[0],
+      recruiterIds: jobData.recruiterIds,
+    };
+
+    console.log("Redux: Sending to API with clientId:", backendData.clientId);
+    console.log("Redux: Full payload:", JSON.stringify(backendData, null, 2));
+
     const response = await authenticatedFetch(`${API_BASE_URL}/jobs`, {
       method: "POST",
-      body: JSON.stringify(jobData),
+      body: JSON.stringify(backendData),
     });
     if (!response.ok) throw new Error("Failed to create job");
     const result = await response.json();
+    const job = result.data || result;
     toast.success("Job created successfully");
-    return result.data || result;
+    return normalizeJob(job);
   }
 );
 
@@ -64,8 +137,9 @@ export const updateJob = createAsyncThunk(
     });
     if (!response.ok) throw new Error("Failed to update job");
     const result = await response.json();
+    const job = result.data || result;
     toast.success("Job updated successfully");
-    return result.data || result;
+    return normalizeJob(job);
   }
 );
 

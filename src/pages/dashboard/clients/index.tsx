@@ -52,10 +52,15 @@ export default function ClientsPage() {
 
   const confirmDeleteClient = async () => {
     if (!clientToDelete) return;
-    
-    await deleteClient(clientToDelete.id);
-    setDeleteConfirmOpen(false);
-    setClientToDelete(null);
+
+    try {
+      await deleteClient(clientToDelete.id);
+      setDeleteConfirmOpen(false);
+      setClientToDelete(null);
+    } catch (error) {
+      // Error is already handled in the Redux thunk with toast notification
+      console.error("Failed to delete client:", error);
+    }
   };
 
   return (

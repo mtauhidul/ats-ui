@@ -27,7 +27,8 @@ export function NavUtilities({
       <SidebarGroupLabel>Utilities</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
-          const isActive = location.pathname === item.url;
+          // Check if current path starts with the item's URL for nested route support
+          const isActive = location.pathname.startsWith(item.url);
           
           return (
             <SidebarMenuItem key={item.name}>

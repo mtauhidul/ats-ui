@@ -83,14 +83,27 @@ export const updateClient = createAsyncThunk(
 
 export const deleteClient = createAsyncThunk(
   "clients/delete",
-  async (id: string) => {
-    const response = await authenticatedFetch(`${API_BASE_URL}/clients/${id}`, {
-      method: "DELETE",
-    });
-    if (!response.ok) throw new Error("Failed to delete client");
-    await response.json();
-    toast.success("Client deleted successfully");
-    return id;
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await authenticatedFetch(`${API_BASE_URL}/clients/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || "Failed to delete client";
+        toast.error(errorMessage);
+        return rejectWithValue(errorMessage);
+      }
+
+      await response.json();
+      toast.success("Client deleted successfully");
+      return id;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete client";
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
+    }
   }
 );
 
@@ -156,11 +169,20 @@ const clientsSlice = createSlice({
         }
       })
       // Delete client
+      .addCase(deleteClient.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(deleteClient.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.clients = state.clients.filter((c) => c.id !== action.payload);
         if (state.currentClient?.id === action.payload) {
           state.currentClient = null;
         }
+      })
+      .addCase(deleteClient.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string || "Failed to delete client";
       });
   },
 });
