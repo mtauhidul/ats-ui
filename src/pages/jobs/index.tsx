@@ -18,14 +18,16 @@ import {
   DollarSign,
   Clock,
   Building2,
-  TrendingUp,
 } from "lucide-react";
 import type { Job } from "@/types/job";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
+// Extended type to handle locationType field from API
+type JobWithLocationType = Job & { locationType?: string };
+
 export default function JobsPage() {
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<JobWithLocationType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -67,8 +69,8 @@ export default function JobsPage() {
 
   const filteredJobs = jobs.filter((job) => {
     const matchesSearch =
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.description.toLowerCase().includes(searchQuery.toLowerCase());
+      job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = typeFilter === "all" || job.type === typeFilter;
     const matchesWorkMode =
       workModeFilter === "all" || job.workMode === workModeFilter;
@@ -76,22 +78,11 @@ export default function JobsPage() {
     return matchesSearch && matchesType && matchesWorkMode;
   });
 
-  const formatSalary = (salary?: { min: number; max: number; currency: string; period: string }) => {
+  const formatSalary = (salary?: { min: number; max: number; currency: string; period?: string }) => {
     if (!salary) return "Competitive";
     const format = (num: number) => new Intl.NumberFormat("en-US").format(num);
-    return `${salary.currency} ${format(salary.min)} - ${format(salary.max)} / ${salary.period}`;
-  };
-
-  const getExperienceBadgeVariant = (level: string) => {
-    const variants: { [key: string]: "default" | "secondary" | "outline" } = {
-      entry: "secondary",
-      junior: "secondary",
-      mid: "default",
-      senior: "default",
-      lead: "outline",
-      executive: "outline",
-    };
-    return variants[level] || "default";
+    const period = salary.period || "year";
+    return `${salary.currency} ${format(salary.min)} - ${format(salary.max)} / ${period}`;
   };
 
   if (loading) {
@@ -187,77 +178,88 @@ export default function JobsPage() {
             filteredJobs.map((job) => (
               <Card
                 key={job.id}
-                className="border-border/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1 group"
+                className="border bg-card shadow-sm hover:shadow-md transition-shadow duration-200"
               >
                 <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                    {/* Job Info */}
-                    <div className="flex-1 space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1">
-                            <Link to={`/jobs/${job.id}`}>
-                              <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-                                {job.title}
-                              </h3>
-                            </Link>
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                              {job.description}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Meta Info */}
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1.5">
-                            <Building2 className="h-4 w-4" />
-                            <span>{job.department || "Technology"}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="h-4 w-4" />
-                            <span>
-                              {job.location?.city}, {job.location?.country}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-4 w-4" />
-                            <span className="capitalize">{job.type.replace("_", " ")}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <DollarSign className="h-4 w-4" />
-                            <span>{formatSalary(job.salaryRange)}</span>
-                          </div>
-                        </div>
-
-                        {/* Skills & Tags */}
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant={getExperienceBadgeVariant(job.experienceLevel)} className="capitalize">
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            {job.experienceLevel}
-                          </Badge>
-                          <Badge variant="outline" className="capitalize">
-                            <Briefcase className="h-3 w-3 mr-1" />
-                            {job.workMode}
-                          </Badge>
-                          {job.requirements?.skills?.required.slice(0, 3).map((skill) => (
-                            <Badge key={skill} variant="secondary">
-                              {skill}
-                            </Badge>
-                          ))}
-                          {job.requirements?.skills?.required.length > 3 && (
-                            <Badge variant="secondary">
-                              +{job.requirements.skills.required.length - 3} more
-                            </Badge>
-                          )}
-                        </div>
+                  <div className="flex flex-col gap-4">
+                    {/* Header Section */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <Link to={`/jobs/${job.id}`}>
+                          <h3 className="text-lg font-semibold text-foreground hover:text-primary transition-colors mb-1">
+                            {job.title}
+                          </h3>
+                        </Link>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                          {job.description}
+                        </p>
                       </div>
+                      <Button asChild size="sm" className="shrink-0">
+                        <Link to={`/jobs/${job.id}`}>Apply Now</Link>
+                      </Button>
                     </div>
 
-                    {/* CTA */}
-                    <div className="flex lg:flex-col items-center gap-3">
-                      <Button asChild className="w-full lg:w-auto">
-                        <Link to={`/jobs/${job.id}`}>View Details</Link>
-                      </Button>
+                    {/* Info Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {job.location?.city && job.location?.country && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="rounded-md bg-muted p-1.5">
+                            <MapPin className="h-3.5 w-3.5" />
+                          </div>
+                          <span className="truncate">{job.location.city}, {job.location.country}</span>
+                        </div>
+                      )}
+                      
+                      {job.type && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="rounded-md bg-muted p-1.5">
+                            <Clock className="h-3.5 w-3.5" />
+                          </div>
+                          <span className="capitalize truncate">{job.type.replace(/_/g, " ")}</span>
+                        </div>
+                      )}
+                      
+                      {(job.workMode || job.locationType) && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="rounded-md bg-muted p-1.5">
+                            <Briefcase className="h-3.5 w-3.5" />
+                          </div>
+                          <span className="capitalize truncate">{(job.workMode || job.locationType)?.replace(/_/g, " ")}</span>
+                        </div>
+                      )}
+                      
+                      {job.salaryRange && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="rounded-md bg-muted p-1.5">
+                            <DollarSign className="h-3.5 w-3.5" />
+                          </div>
+                          <span className="truncate">{formatSalary(job.salaryRange)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tags Section */}
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
+                      {job.experienceLevel && (
+                        <Badge variant="secondary" className="text-xs">
+                          {job.experienceLevel}
+                        </Badge>
+                      )}
+                      {job.requirements?.skills?.required?.slice(0, 3).map((skill) => (
+                        <Badge key={skill} variant="outline" className="text-xs">
+                          {skill}
+                        </Badge>
+                      ))}
+                      {job.requirements?.skills?.required && job.requirements.skills.required.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{job.requirements.skills.required.length - 3} more
+                        </Badge>
+                      )}
+                      {job.openings && (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {job.openings} {job.openings === 1 ? 'opening' : 'openings'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </CardContent>

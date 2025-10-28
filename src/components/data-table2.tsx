@@ -104,7 +104,7 @@ import type { schema } from "./data-table-schema";
 
 // Create a separate component for the drag handle
 // Create a separate component for the drag handle
-function DragHandle({ id }: { id: number }) {
+function DragHandle({ id }: { id: UniqueIdentifier }) {
   const { attributes, listeners } = useSortable({
     id,
   });
@@ -295,11 +295,11 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 
 // Row actions column that needs access to handlers
 const createActionsColumn = (handlers: {
-  onApprove: (id: number) => void;
-  onReject: (id: number) => void;
-  onAssignReviewer: (id: number) => void;
-  onDownloadResume: (id: number) => void;
-  onDelete: (id: number) => void;
+  onApprove: (id: UniqueIdentifier) => void;
+  onReject: (id: UniqueIdentifier) => void;
+  onAssignReviewer: (id: UniqueIdentifier) => void;
+  onDownloadResume: (id: UniqueIdentifier) => void;
+  onDelete: (id: UniqueIdentifier) => void;
 }): ColumnDef<z.infer<typeof schema>> => ({
   id: "actions",
   cell: ({ row }) => (
@@ -411,10 +411,12 @@ export function DataTable({
   const handleBulkApprove = () => {
     const selectedIds = table
       .getFilteredSelectedRowModel()
-      .rows.map((r) => r.original.id);
+      .rows.map((r) => String(r.original.id));
     setData((prevData) =>
       prevData.map((item) =>
-        selectedIds.includes(item.id) ? { ...item, status: "Approved" } : item
+        selectedIds.includes(String(item.id))
+          ? { ...item, status: "Approved" }
+          : item
       )
     );
     table.resetRowSelection();
@@ -423,10 +425,12 @@ export function DataTable({
   const handleBulkReject = () => {
     const selectedIds = table
       .getFilteredSelectedRowModel()
-      .rows.map((r) => r.original.id);
+      .rows.map((r) => String(r.original.id));
     setData((prevData) =>
       prevData.map((item) =>
-        selectedIds.includes(item.id) ? { ...item, status: "Rejected" } : item
+        selectedIds.includes(String(item.id))
+          ? { ...item, status: "Rejected" }
+          : item
       )
     );
     table.resetRowSelection();
@@ -435,13 +439,13 @@ export function DataTable({
   const handleBulkAssignReviewer = () => {
     const selectedIds = table
       .getFilteredSelectedRowModel()
-      .rows.map((r) => r.original.id);
+      .rows.map((r) => String(r.original.id));
     // In real app, this would open a modal to select reviewer
     const reviewer = prompt("Enter reviewer name:");
     if (reviewer) {
       setData((prevData) =>
         prevData.map((item) =>
-          selectedIds.includes(item.id) ? { ...item, reviewer } : item
+          selectedIds.includes(String(item.id)) ? { ...item, reviewer } : item
         )
       );
       table.resetRowSelection();
@@ -458,33 +462,35 @@ export function DataTable({
   };
 
   // Individual action handlers
-  const handleApprove = (id: number) => {
+  const handleApprove = (id: UniqueIdentifier) => {
     setData((prevData) =>
       prevData.map((item) =>
-        item.id === id ? { ...item, status: "Approved" } : item
+        String(item.id) === String(id) ? { ...item, status: "Approved" } : item
       )
     );
   };
 
-  const handleReject = (id: number) => {
+  const handleReject = (id: UniqueIdentifier) => {
     setData((prevData) =>
       prevData.map((item) =>
-        item.id === id ? { ...item, status: "Rejected" } : item
+        String(item.id) === String(id) ? { ...item, status: "Rejected" } : item
       )
     );
   };
 
-  const handleAssignReviewer = (id: number) => {
+  const handleAssignReviewer = (id: UniqueIdentifier) => {
     const reviewer = prompt("Enter reviewer name:");
     if (reviewer) {
       setData((prevData) =>
-        prevData.map((item) => (item.id === id ? { ...item, reviewer } : item))
+        prevData.map((item) =>
+          String(item.id) === String(id) ? { ...item, reviewer } : item
+        )
       );
     }
   };
 
-  const handleDownloadResume = (id: number) => {
-    const application = data.find((item) => item.id === id);
+  const handleDownloadResume = (id: UniqueIdentifier) => {
+    const application = data.find((item) => String(item.id) === String(id));
     if (application?.resumeFilename) {
       const link = document.createElement("a");
       link.href = `/uploads/resumes/${application.resumeFilename}`;
@@ -495,9 +501,11 @@ export function DataTable({
     }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: UniqueIdentifier) => {
     if (confirm("Are you sure you want to delete this application?")) {
-      setData((prevData) => prevData.filter((item) => item.id !== id));
+      setData((prevData) =>
+        prevData.filter((item) => String(item.id) !== String(id))
+      );
     }
   };
 
@@ -1297,23 +1305,43 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {getStatusBadge(item.status)}
                 {getAIStatusBadge(item.type)}
-                {item.isValidResume !== undefined && item.isValidResume !== null && (
-                  item.isValidResume ? (
+                {item.isValidResume !== undefined &&
+                  item.isValidResume !== null &&
+                  (item.isValidResume ? (
                     <Badge className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 text-xs px-2 py-0.5">
-                      <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-3 h-3 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                       Valid
                     </Badge>
                   ) : (
                     <Badge className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20 text-xs px-2 py-0.5">
-                      <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      <svg
+                        className="w-3 h-3 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
                       </svg>
                       Invalid
                     </Badge>
-                  )
-                )}
+                  ))}
               </div>
             </div>
           </div>
@@ -1351,13 +1379,17 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                   {item.yearsOfExperience} years
                 </p>
               </div>
-            ) : item.parsedData?.experience && item.parsedData.experience.length > 0 ? (
+            ) : item.parsedData?.experience &&
+              item.parsedData.experience.length > 0 ? (
               <div className="rounded-lg border bg-card p-3">
                 <Label className="text-xs text-muted-foreground">
                   Experience
                 </Label>
                 <p className="text-sm font-medium mt-1">
-                  {item.parsedData.experience.length} {item.parsedData.experience.length === 1 ? 'position' : 'positions'}
+                  {item.parsedData.experience.length}{" "}
+                  {item.parsedData.experience.length === 1
+                    ? "position"
+                    : "positions"}
                 </p>
               </div>
             ) : null}
@@ -1365,17 +1397,33 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 
           {/* AI Resume Validation Status */}
           {item.isValidResume !== undefined && item.isValidResume !== null && (
-            <div className="rounded-lg border p-4 space-y-2" 
-                 style={{
-                   borderColor: item.isValidResume ? 'rgb(34 197 94 / 0.2)' : 'rgb(239 68 68 / 0.2)',
-                   backgroundColor: item.isValidResume ? 'rgb(34 197 94 / 0.05)' : 'rgb(239 68 68 / 0.05)'
-                 }}>
+            <div
+              className="rounded-lg border p-4 space-y-2"
+              style={{
+                borderColor: item.isValidResume
+                  ? "rgb(34 197 94 / 0.2)"
+                  : "rgb(239 68 68 / 0.2)",
+                backgroundColor: item.isValidResume
+                  ? "rgb(34 197 94 / 0.05)"
+                  : "rgb(239 68 68 / 0.05)",
+              }}
+            >
               <div className="flex items-center gap-2">
                 {item.isValidResume ? (
                   <>
                     <div className="flex items-center justify-center w-5 h-5 rounded-full bg-green-500">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-3 h-3 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                     </div>
                     <span className="text-sm font-semibold text-green-700 dark:text-green-400">
@@ -1385,8 +1433,18 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 ) : (
                   <>
                     <div className="flex items-center justify-center w-5 h-5 rounded-full bg-red-500">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        className="w-3 h-3 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </div>
                     <span className="text-sm font-semibold text-red-700 dark:text-red-400">
@@ -1394,19 +1452,32 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     </span>
                   </>
                 )}
-                {item.validationScore !== undefined && item.validationScore !== null && (
-                  <span className="ml-auto text-xs font-mono font-medium px-2 py-0.5 rounded-full"
-                        style={{
-                          backgroundColor: item.isValidResume ? 'rgb(34 197 94 / 0.2)' : 'rgb(239 68 68 / 0.2)',
-                          color: item.isValidResume ? 'rgb(22 101 52)' : 'rgb(153 27 27)'
-                        }}>
-                    {item.validationScore}/100
-                  </span>
-                )}
+                {item.validationScore !== undefined &&
+                  item.validationScore !== null && (
+                    <span
+                      className="ml-auto text-xs font-mono font-medium px-2 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: item.isValidResume
+                          ? "rgb(34 197 94 / 0.2)"
+                          : "rgb(239 68 68 / 0.2)",
+                        color: item.isValidResume
+                          ? "rgb(22 101 52)"
+                          : "rgb(153 27 27)",
+                      }}
+                    >
+                      {item.validationScore}/100
+                    </span>
+                  )}
               </div>
               {item.validationReason && (
-                <p className="text-xs leading-relaxed"
-                   style={{ color: item.isValidResume ? 'rgb(22 101 52)' : 'rgb(153 27 27)' }}>
+                <p
+                  className="text-xs leading-relaxed"
+                  style={{
+                    color: item.isValidResume
+                      ? "rgb(22 101 52)"
+                      : "rgb(153 27 27)",
+                  }}
+                >
                   {item.validationReason}
                 </p>
               )}
@@ -1594,7 +1665,8 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                             if (item.resumeUrl) {
                               const link = document.createElement("a");
                               link.href = item.resumeUrl;
-                              link.download = item.resumeFilename || 'resume.pdf';
+                              link.download =
+                                item.resumeFilename || "resume.pdf";
                               link.target = "_blank";
                               link.click();
                             }
@@ -1607,7 +1679,8 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     </div>
                     {showResumePreview && item.resumeUrl && (
                       <div className="border-t">
-                        {item.resumeFilename?.toLowerCase().endsWith(".pdf") || item.resumeUrl.includes('.pdf') ? (
+                        {item.resumeFilename?.toLowerCase().endsWith(".pdf") ||
+                        item.resumeUrl.includes(".pdf") ? (
                           <div className="relative bg-muted/30">
                             <iframe
                               src={`${item.resumeUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
