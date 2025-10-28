@@ -100,6 +100,14 @@ export interface Application extends BaseEntity {
   reviewNotes?: string;
   rejectionReason?: string;
   
+  // Team Assignment
+  teamMembers?: Array<{
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  }> | string[]; // Array of user objects or user IDs
+  
   // Assignment information (after approval)
   // When approved, application is assigned to a job and candidate is created
   assignedJobId?: string; // Job assigned to after approval (may differ from targetJobId)

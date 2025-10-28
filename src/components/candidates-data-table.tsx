@@ -67,7 +67,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import type { schema } from "./data-table-schema";
+import type { schema } from "./data-table-schema.tsx";
 
 // Table cell viewer component
 function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
@@ -354,11 +354,11 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 
 // Row actions column
 const createActionsColumn = (handlers: {
-  onHire: (id: number) => void;
-  onReject: (id: number) => void;
-  onAssignTeam: (id: number) => void;
-  onDownloadResume: (id: number) => void;
-  onDelete: (id: number) => void;
+  onHire: (id: string | number) => void;
+  onReject: (id: string | number) => void;
+  onAssignTeam: (id: string | number) => void;
+  onDownloadResume: (id: string | number) => void;
+  onDelete: (id: string | number) => void;
 }): ColumnDef<z.infer<typeof schema>> => ({
   id: "actions",
   cell: ({ row }) => (
@@ -418,8 +418,10 @@ const createActionsColumn = (handlers: {
 
 export function CandidatesDataTable({
   data: initialData,
+  onDeleteCandidate,
 }: {
   data: z.infer<typeof schema>[];
+  onDeleteCandidate?: (candidateId: string) => void;
 }) {
   const [data, setData] = React.useState(() => initialData);
   const [rowSelection, setRowSelection] = React.useState({});
@@ -486,7 +488,7 @@ export function CandidatesDataTable({
   };
 
   // Individual action handlers
-  const handleHire = (id: number) => {
+  const handleHire = (id: string | number) => {
     setData((prevData) =>
       prevData.map((item) =>
         item.id === id ? { ...item, status: "Hired" } : item
@@ -494,7 +496,7 @@ export function CandidatesDataTable({
     );
   };
 
-  const handleReject = (id: number) => {
+  const handleReject = (id: string | number) => {
     setData((prevData) =>
       prevData.map((item) =>
         item.id === id ? { ...item, status: "Rejected" } : item
@@ -502,7 +504,7 @@ export function CandidatesDataTable({
     );
   };
 
-  const handleAssignTeam = (id: number) => {
+  const handleAssignTeam = (id: string | number) => {
     const teamMember = prompt("Enter team member name:");
     if (teamMember) {
       setData((prevData) =>
@@ -513,7 +515,7 @@ export function CandidatesDataTable({
     }
   };
 
-  const handleDownloadResume = (id: number) => {
+  const handleDownloadResume = (id: string | number) => {
     const candidate = data.find((item) => item.id === id);
     if (candidate?.resumeFilename) {
       const link = document.createElement("a");
@@ -525,9 +527,16 @@ export function CandidatesDataTable({
     }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string | number) => {
     if (confirm("Are you sure you want to delete this candidate?")) {
-      setData((prevData) => prevData.filter((item) => item.id !== id));
+      // Find the actual candidate ID from the data
+      const candidate = data.find((item) => item.id === id);
+      if (candidate && candidate.candidateId && onDeleteCandidate) {
+        onDeleteCandidate(candidate.candidateId);
+      } else {
+        // Fallback to local state update if no callback provided
+        setData((prevData) => prevData.filter((item) => item.id !== id));
+      }
     }
   };
 

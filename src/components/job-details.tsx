@@ -41,9 +41,17 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Filter candidates for this job
-  const jobCandidates = candidates.filter(candidate => 
-    candidate.jobApplications.some(app => app.jobId === job.id)
-  );
+  const jobCandidates = candidates.filter(candidate => {
+    // Backend uses jobIds array, not jobApplications
+    if (!candidate.jobIds || !Array.isArray(candidate.jobIds)) return false;
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return candidate.jobIds.some((jobId: any) => {
+      // Handle both populated objects and string IDs
+      const id = typeof jobId === 'object' ? (jobId._id || jobId.id) : jobId;
+      return id === job.id;
+    });
+  });
 
   // Handle status change for candidate
   const handleStatusChange = (candidateId: string, jobId: string, newStatus: string) => {
@@ -72,27 +80,22 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
 
   // Apply filters
   const filteredCandidates = jobCandidates.filter(candidate => {
-    const jobApp = candidate.jobApplications.find(app => app.jobId === job.id);
-    if (!jobApp) return false;
-    
+    // Backend has status at candidate level, not per-job
     if (statusFilter === "all") return true;
-    return jobApp.status === statusFilter;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (candidate as any).status === statusFilter;
   });
 
   // Apply sorting
   const sortedCandidates = [...filteredCandidates].sort((a, b) => {
-    const appA = a.jobApplications.find(app => app.jobId === job.id);
-    const appB = b.jobApplications.find(app => app.jobId === job.id);
-    
-    if (!appA || !appB) return 0;
-    
     switch (sortBy) {
       case "newest":
-        return new Date(appB.appliedAt).getTime() - new Date(appA.appliedAt).getTime();
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       case "oldest":
-        return new Date(appA.appliedAt).getTime() - new Date(appB.appliedAt).getTime();
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       case "rating":
-        return (appB.rating || 0) - (appA.rating || 0);
+        // Backend doesn't have per-job rating, skip for now
+        return 0;
       case "name":
         return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
       default:
@@ -100,25 +103,21 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
     }
   });
 
-  // Calculate statistics by status
+  // Calculate statistics by status (use candidate-level status)
   const stats = {
     total: jobCandidates.length,
-    active: jobCandidates.filter(c => {
-      const app = c.jobApplications.find(a => a.jobId === job.id);
-      return app && !['hired', 'rejected', 'withdrawn'].includes(app.status);
-    }).length,
-    interviewing: jobCandidates.filter(c => {
-      const app = c.jobApplications.find(a => a.jobId === job.id);
-      return app && app.status === 'interviewing';
-    }).length,
-    hired: jobCandidates.filter(c => {
-      const app = c.jobApplications.find(a => a.jobId === job.id);
-      return app && app.status === 'hired';
-    }).length,
-    rejected: jobCandidates.filter(c => {
-      const app = c.jobApplications.find(a => a.jobId === job.id);
-      return app && app.status === 'rejected';
-    }).length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    active: jobCandidates.filter((c: any) => 
+      c.status && !['hired', 'rejected', 'withdrawn'].includes(c.status)
+    ).length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    interviewing: jobCandidates.filter((c: any) => c.status === 'interviewing').length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    hired: jobCandidates.filter((c: any) => c.status === 'hired').length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rejected: jobCandidates.filter((c: any) => c.status === 'rejected').length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    withdrawn: jobCandidates.filter((c: any) => c.status === 'withdrawn').length,
   };
 
   return (
@@ -356,17 +355,21 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {sortedCandidates.map((candidate) => (
-                    <CandidateCard
-                      key={candidate.id}
-                      candidate={candidate}
-                      jobId={job.id}
-                      onClick={() => {
-                        setSelectedCandidate(candidate);
-                        onCandidateClick(candidate);
-                      }}
-                    />
-                  ))}
+                  {sortedCandidates.map((candidate) => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const key = (candidate as any)._id || candidate.id || candidate.email;
+                    return (
+                      <CandidateCard
+                        key={key}
+                        candidate={candidate}
+                        jobId={job.id}
+                        onClick={() => {
+                          setSelectedCandidate(candidate);
+                          onCandidateClick(candidate);
+                        }}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

@@ -10,7 +10,7 @@ const stages = ["New Application", "Screening", "Interview", "Assessment", "Offe
 const teamMembersPool = ["John Smith", "Sarah Wilson", "Mike Johnson", "Lisa Brown", "Tom Davis", "Emma Davis", "Alex Chen"];
 
 export default function CandidatesPage() {
-  const { fetchCandidates, isLoading: candidatesLoading } = useCandidates();
+  const { fetchCandidates, deleteCandidate, isLoading: candidatesLoading } = useCandidates();
   const { fetchJobs, isLoading: jobsLoading } = useJobs();
   const { fetchClients, isLoading: clientsLoading } = useClients();
   
@@ -23,25 +23,46 @@ export default function CandidatesPage() {
     fetchJobs();
     fetchClients();
   }, [fetchCandidates, fetchJobs, fetchClients]);
+  
+  const handleDeleteCandidate = async (candidateId: string) => {
+    try {
+      await deleteCandidate(candidateId);
+      // Refresh candidates list after deletion
+      fetchCandidates();
+    } catch (error) {
+      console.error('Failed to delete candidate:', error);
+    }
+  };
 
-  const transformedData = candidates.map((candidate, index) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const transformedData = candidates.map((candidate: any, index) => {
     // Randomly assign 0-3 team members
     const teamMemberCount = Math.floor(Math.random() * 4);
     const shuffled = [...teamMembersPool].sort(() => 0.5 - Math.random());
     const selectedTeamMembers = teamMemberCount > 0 ? shuffled.slice(0, teamMemberCount) : [];
     
-    // Get first job application details
-    const firstJobApp = candidate.jobApplications[0];
-    const job = jobs.find(j => j.id === firstJobApp?.jobId);
-    const client = clients.find(c => c.id === job?.clientId);
+    // Get first job details - jobIds can be populated objects or strings
+    const firstJobId = candidate.jobIds?.[0];
+    let job = null;
+    
+    if (firstJobId) {
+      // Check if it's already a populated object
+      if (typeof firstJobId === 'object' && 'title' in firstJobId) {
+        job = firstJobId;
+      } else {
+        // It's just an ID string, find in jobs array
+        job = jobs.find(j => j.id === firstJobId);
+      }
+    }
+    
+    const client = job ? clients.find(c => c.id === job.clientId) : null;
     
     // Map candidate status to display status
     const getDisplayStatus = (status: string) => {
       switch(status) {
-        case "new": return "In Process";
-        case "screening": return "In Process";
+        case "active": return "In Process";
         case "interviewing": return "In Process";
-        case "offer_extended": return "In Process";
+        case "offered": return "In Process";
         case "hired": return "Hired";
         case "rejected": return "Rejected";
         case "withdrawn": return "Rejected";
@@ -49,17 +70,20 @@ export default function CandidatesPage() {
       }
     };
     
+    // Get candidate ID (handle both _id and id)
+    const candidateId = candidate._id || candidate.id || '';
+    
     return {
-      id: parseInt(candidate.id.replace(/\D/g, '')) || Math.abs(candidate.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)),
-      candidateId: candidate.id, // Actual candidate ID
+      id: candidateId, // Use the actual candidate ID (string)
+      candidateId: candidateId, // Actual candidate ID for API calls
       header: `${candidate.firstName} ${candidate.lastName}`, // Candidate name
       type: job?.title || "General Applicant", // Job title they applied for
-      status: getDisplayStatus(firstJobApp?.status || "new"),
+      status: getDisplayStatus(candidate.status || "active"),
       target: new Date(candidate.createdAt).getTime(), // Timestamp for sorting
       limit: candidate.yearsOfExperience || 0, // For sorting
       reviewer: "Team", // Could be derived from job assignments
       // Properly mapped display data
-      dateApplied: firstJobApp?.appliedAt ? new Date(firstJobApp.appliedAt).toLocaleDateString() : new Date(candidate.createdAt).toLocaleDateString(), // Actual application date
+      dateApplied: new Date(candidate.createdAt).toLocaleDateString(), // Candidate creation date
       currentStage: stages[index % stages.length], // Current pipeline stage
       jobIdDisplay: job?.id || "N/A", // Actual job ID
       jobTitle: job?.title || "General Applicant", // Job title
@@ -73,7 +97,8 @@ export default function CandidatesPage() {
       currentTitle: candidate.currentTitle,
       currentCompany: candidate.currentCompany,
       yearsOfExperience: candidate.yearsOfExperience,
-      skills: candidate.skills?.map(s => s.name) || [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      skills: candidate.skills?.map((s: any) => s.name) || [],
       coverLetter: undefined,
       resumeText: undefined,
       resumeFilename: undefined,
@@ -84,7 +109,8 @@ export default function CandidatesPage() {
       portfolioUrl: undefined,
       educationLevel: candidate.education?.[0]?.level || undefined,
       expectedSalary: undefined,
-      languages: candidate.languages?.map(l => l.name) || undefined,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      languages: candidate.languages?.map((l: any) => l.name) || undefined,
       notes: undefined,
       // Video introduction (demo data for first applicant)
       videoIntroUrl: index === 0 ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" : undefined,
@@ -112,7 +138,10 @@ export default function CandidatesPage() {
               </p>
             </div>
           </div>
-          <CandidatesDataTable data={transformedData} />
+          <CandidatesDataTable 
+            data={transformedData} 
+            onDeleteCandidate={handleDeleteCandidate}
+          />
         </div>
       </div>
     </div>

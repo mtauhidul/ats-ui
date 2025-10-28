@@ -68,7 +68,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -110,10 +109,12 @@ import {
 } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import { JobSelectionModal } from "@/components/modals/job-selection-modal";
 import { toast } from "sonner";
 import type { schema } from "./data-table-schema";
 
-const columns: ColumnDef<z.infer<typeof schema>>[] = [
+// Create columns function
+const createColumns = (): ColumnDef<z.infer<typeof schema>>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -221,81 +222,49 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => (
-      <div className="w-32">
-        <Badge
-          variant="outline"
-          className="text-muted-foreground px-2 py-1 flex items-center gap-1"
-        >
-          {row.original.status === "Approved" ? (
-            <>
-              <IconCircleCheckFilled className="size-3 fill-green-500 dark:fill-green-400" />
-              Approved
-            </>
-          ) : row.original.status === "Rejected" ? (
-            <>
-              <span className="size-3 text-red-500">✕</span>
-              Rejected
-            </>
-          ) : (
-            <>
-              <IconLoader className="size-3" />
-              In Process
-            </>
-          )}
-        </Badge>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const status = row.original.status?.toLowerCase();
+      return (
+        <div className="w-32">
+          <Badge
+            variant="outline"
+            className="text-muted-foreground px-2 py-1 flex items-center gap-1"
+          >
+            {status === "approved" ? (
+              <>
+                <IconCircleCheckFilled className="size-3 fill-green-500 dark:fill-green-400" />
+                Approved
+              </>
+            ) : status === "rejected" ? (
+              <>
+                <span className="size-3 text-red-500">✕</span>
+                Rejected
+              </>
+            ) : (
+              <>
+                <IconLoader className="size-3" />
+                Pending
+              </>
+            )}
+          </Badge>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "reviewer",
-    header: "Team",
+    header: "Reviewed By",
     cell: ({ row }) => {
-      const teamMembers = row.original.teamMembers || [];
-      const hasTeamMembers = teamMembers.length > 0;
-
+      const reviewerName = row.original.reviewer;
+      
       return (
-        <div className="w-48">
-          {hasTeamMembers ? (
-            <div className="flex flex-wrap gap-1">
-              {teamMembers.slice(0, 2).map((member: string, index: number) => (
-                <Badge
-                  key={index}
-                  variant="secondary"
-                  className="text-xs px-2 py-0.5"
-                >
-                  {member}
-                </Badge>
-              ))}
-              {teamMembers.length > 2 && (
-                <Badge variant="outline" className="text-xs px-2 py-0.5">
-                  +{teamMembers.length - 2}
-                </Badge>
-              )}
-            </div>
+        <div className="flex items-center gap-2 min-w-[120px]">
+          {reviewerName && reviewerName !== "Not Reviewed" ? (
+            <Badge variant="outline" className="text-xs px-2 py-0.5">
+              {reviewerName}
+            </Badge>
           ) : (
-            <Select
-              defaultValue="assign"
-              onValueChange={(value) => {
-                console.log(
-                  `Assigning ${value} to application ${row.original.id}`
-                );
-              }}
-            >
-              <SelectTrigger className="w-full h-7 text-xs" size="sm">
-                <SelectValue placeholder="Assign Team" />
-              </SelectTrigger>
-              <SelectContent align="end">
-                <SelectItem value="assign" disabled>
-                  Assign Team
-                </SelectItem>
-                <SelectItem value="John Smith">John Smith</SelectItem>
-                <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
-                <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
-                <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
-                <SelectItem value="Tom Davis">Tom Davis</SelectItem>
-              </SelectContent>
-            </Select>
+            <span className="text-xs text-muted-foreground">Not Reviewed</span>
           )}
         </div>
       );
@@ -314,40 +283,49 @@ const createActionsColumn = (handlers: {
 }): ColumnDef<z.infer<typeof schema>> => ({
   id: "actions",
   header: "Actions",
-  cell: ({ row }) => (
-    <TooltipProvider>
-      <div className="flex items-center gap-1">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
-              onClick={() => handlers.onApprove(row.original.id)}
-              disabled={row.original.status === "Done"}
-            >
-              <IconCheck className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Approve Application</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-              onClick={() => handlers.onReject(row.original.id)}
-              disabled={row.original.status === "Rejected"}
-            >
-              <IconX className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Reject Application</TooltipContent>
-        </Tooltip>
-      </div>
-    </TooltipProvider>
-  ),
+  cell: ({ row }) => {
+    const status = row.original.status?.toLowerCase();
+    const isProcessed = status === "approved" || status === "rejected";
+    
+    return (
+      <TooltipProvider>
+        <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
+                onClick={() => handlers.onApprove(row.original.id)}
+                disabled={isProcessed}
+              >
+                <IconCheck className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isProcessed ? "Application already processed" : "Approve Application"}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                onClick={() => handlers.onReject(row.original.id)}
+                disabled={isProcessed}
+              >
+                <IconX className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isProcessed ? "Application already processed" : "Reject Application"}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
+    );
+  },
 });
 
 function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
@@ -393,6 +371,10 @@ export function DataTable({
     pageSize: 10,
   });
   const [globalFilter, setGlobalFilter] = React.useState("");
+  const [jobs, setJobs] = React.useState<Array<{ _id: string; title: string; clientId: string | { _id: string; companyName: string } }>>([]);
+  const [showJobSelectionModal, setShowJobSelectionModal] = React.useState(false);
+  const [currentApprovingId, setCurrentApprovingId] = React.useState<number | string | null>(null);
+  const [currentApprovingName, setCurrentApprovingName] = React.useState<string>("");
   const sortableId = React.useId();
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -400,29 +382,94 @@ export function DataTable({
     useSensor(KeyboardSensor, {})
   );
 
+  // Fetch jobs for approval flow
+  React.useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await authenticatedFetch(
+          "http://localhost:5001/api/jobs?limit=100&status=open",
+          { method: "GET" }
+        );
+        if (response.ok) {
+          const result = await response.json();
+          setJobs(result.data?.jobs || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch jobs:", error);
+      }
+    };
+    fetchJobs();
+  }, []);
+
+  // Generate columns
+  const columns = React.useMemo(
+    () => createColumns(),
+    []
+  );
+
   // Bulk action handlers
-  const handleBulkApprove = () => {
-    const selectedIds = table
-      .getFilteredSelectedRowModel()
-      .rows.map((r) => r.original.id);
-    setData((prevData) =>
-      prevData.map((item) =>
-        selectedIds.includes(item.id) ? { ...item, status: "Approved" } : item
-      )
-    );
+  const handleBulkApprove = async () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const selectedIds = selectedRows.map((r) => r.original.id);
+    
+    if (selectedIds.length === 0) {
+      toast.error("No applications selected");
+      return;
+    }
+
+    // For now, show that bulk approve needs job selection for each
+    toast.info("Please approve applications individually to select jobs");
     table.resetRowSelection();
   };
 
-  const handleBulkReject = () => {
+  const handleBulkReject = async () => {
     const selectedIds = table
       .getFilteredSelectedRowModel()
       .rows.map((r) => r.original.id);
-    setData((prevData) =>
-      prevData.map((item) =>
-        selectedIds.includes(item.id) ? { ...item, status: "Rejected" } : item
-      )
-    );
-    table.resetRowSelection();
+    
+    if (selectedIds.length === 0) {
+      toast.error("No applications selected");
+      return;
+    }
+
+    const loadingToast = toast.loading(`Rejecting ${selectedIds.length} application(s)...`);
+
+    try {
+      const response = await authenticatedFetch(
+        "http://localhost:5001/api/applications/bulk/status",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            applicationIds: selectedIds,
+            status: "rejected"
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to reject applications");
+      }
+
+      // Update local state
+      setData((prevData) =>
+        prevData.map((item) =>
+          selectedIds.includes(item.id) ? { ...item, status: "Rejected" } : item
+        )
+      );
+
+      table.resetRowSelection();
+      toast.dismiss(loadingToast);
+      toast.success(`Successfully rejected ${selectedIds.length} application(s)`);
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to reject applications";
+      toast.error(message);
+    }
   };
 
   const handleBulkDelete = async () => {
@@ -481,19 +528,85 @@ export function DataTable({
 
   // Individual action handlers
   const handleApprove = (id: number | string) => {
-    setData((prevData) =>
-      prevData.map((item) =>
-        item.id === id ? { ...item, status: "Approved" } : item
-      )
-    );
+    const application = data.find((item) => item.id === id);
+    if (!application) return;
+    
+    setCurrentApprovingId(id);
+    setCurrentApprovingName(application.header || "this candidate");
+    setShowJobSelectionModal(true);
   };
 
-  const handleReject = (id: number | string) => {
-    setData((prevData) =>
-      prevData.map((item) =>
-        item.id === id ? { ...item, status: "Rejected" } : item
-      )
-    );
+  const handleJobConfirmation = async (jobId: string, clientId: string) => {
+    if (!currentApprovingId) return;
+
+    const loadingToast = toast.loading("Approving application...");
+
+    try {
+      const response = await authenticatedFetch(
+        `http://localhost:5001/api/applications/${currentApprovingId}/approve`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId, clientId }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to approve application");
+      }
+
+      await response.json();
+
+      toast.dismiss(loadingToast);
+      toast.success("Application approved and candidate created successfully");
+      
+      // Reload the page to fetch updated data
+      window.location.reload();
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      const message =
+        error instanceof Error ? error.message : "Failed to approve application";
+      toast.error(message);
+    } finally {
+      setCurrentApprovingId(null);
+      setCurrentApprovingName("");
+    }
+  };
+
+  const handleReject = async (id: number | string) => {
+    const loadingToast = toast.loading("Rejecting application...");
+
+    try {
+      const response = await authenticatedFetch(
+        `http://localhost:5001/api/applications/${id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "rejected" }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to reject application");
+      }
+
+      // Update local state
+      setData((prevData) =>
+        prevData.map((item) =>
+          item.id === id ? { ...item, status: "Rejected" } : item
+        )
+      );
+
+      toast.dismiss(loadingToast);
+      toast.success("Application rejected successfully");
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      const message =
+        error instanceof Error ? error.message : "Failed to reject application";
+      toast.error(message);
+    }
   };
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
@@ -583,10 +696,11 @@ export function DataTable({
   ).length;
 
   return (
-    <Tabs
-      defaultValue="outline"
-      className="w-full flex-col justify-start gap-6"
-    >
+    <>
+      <Tabs
+        defaultValue="outline"
+        className="w-full flex-col justify-start gap-6"
+      >
       <div className="flex flex-col gap-4 px-4 lg:px-6">
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1141,48 +1255,130 @@ export function DataTable({
         <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
       </TabsContent>
     </Tabs>
+    
+    {/* Job Selection Modal for Approval */}
+    <JobSelectionWrapper
+      open={showJobSelectionModal}
+      onClose={() => {
+        setShowJobSelectionModal(false);
+        setCurrentApprovingId(null);
+        setCurrentApprovingName("");
+      }}
+      onConfirm={handleJobConfirmation}
+      jobs={jobs}
+      currentJobId={undefined}
+      applicationName={currentApprovingName}
+    />
+    </>
   );
 }
 
-function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
+// Job Selection Modal wrapper for approval
+function JobSelectionWrapper({
+  open,
+  onClose,
+  onConfirm,
+  jobs,
+  currentJobId,
+  applicationName,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: (jobId: string, clientId: string) => void;
+  jobs: Array<{ _id: string; title: string; clientId: string | { _id: string; companyName: string } }>;
+  currentJobId?: string;
+  applicationName: string;
+}) {
+  // Jobs are already in the correct format, no transformation needed
+  return (
+    <JobSelectionModal
+      open={open}
+      onClose={onClose}
+      onConfirm={onConfirm}
+      jobs={jobs}
+      currentJobId={currentJobId}
+      applicationName={applicationName}
+    />
+  );
+}
+
+function TableCellViewer({ 
+  item
+}: { 
+  item: z.infer<typeof schema>;
+}) {
   const isMobile = useIsMobile();
   const [showResumePreview, setShowResumePreview] = React.useState(false);
-  const [showJobAssignDialog, setShowJobAssignDialog] = React.useState(false);
-  const [selectedJobId, setSelectedJobId] = React.useState<string>(
-    item.jobIdDisplay || ""
-  );
-  const [searchQuery, setSearchQuery] = React.useState("");
+  const [showJobSelectionModal, setShowJobSelectionModal] = React.useState(false);
+  const [approvalAction, setApprovalAction] = React.useState<'approve' | 'reject' | null>(null);
 
-  // Load jobs data
-  const [jobs, setJobs] = React.useState<
-    Array<{ id: string; title: string; clientId: string }>
-  >([]);
+  // Load jobs data from API
+  const [jobs, setJobs] = React.useState<Array<{ _id?: string; id?: string; title: string; clientId: string | { _id: string; companyName: string } }>>([]);
 
   React.useEffect(() => {
-    // Load jobs from mock data
-    import("@/lib/mock-data/jobs.json").then((data) => {
-      setJobs(
-        data.default.map(
-          (job: { id: string; title: string; clientId: string }) => ({
-            id: job.id,
-            title: job.title,
-            clientId: job.clientId,
-          })
-        )
-      );
-    });
+    const fetchJobs = async () => {
+      try {
+        const response = await authenticatedFetch(
+          "http://localhost:5001/api/jobs?limit=100&status=open",
+          { method: "GET" }
+        );
+        if (response.ok) {
+          const result = await response.json();
+          setJobs(result.data?.jobs || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch jobs:", error);
+      }
+    };
+    fetchJobs();
   }, []);
 
-  // Filter jobs based on search query
-  const filteredJobs = React.useMemo(() => {
-    if (!searchQuery) return jobs;
-    const query = searchQuery.toLowerCase();
-    return jobs.filter(
-      (job) =>
-        job.title.toLowerCase().includes(query) ||
-        job.id.toLowerCase().includes(query)
-    );
-  }, [jobs, searchQuery]);
+  // Handler for job selection and approval
+  const handleJobConfirmation = async (jobId: string, clientId: string) => {
+    try {
+      if (approvalAction === 'approve') {
+        const response = await authenticatedFetch(
+          `http://localhost:5001/api/applications/${item.id}/approve`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ jobId, clientId }),
+          }
+        );
+
+        if (response.ok) {
+          toast.success('Application approved successfully');
+          window.location.reload();
+        } else {
+          const error = await response.json();
+          toast.error(error.message || 'Failed to approve application');
+        }
+      } else if (approvalAction === 'reject') {
+        const response = await authenticatedFetch(
+          `http://localhost:5001/api/applications/${item.id}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "rejected", jobId, clientId }),
+          }
+        );
+
+        if (response.ok) {
+          toast.success('Application rejected successfully');
+          window.location.reload();
+        } else {
+          const error = await response.json();
+          toast.error(error.message || 'Failed to reject application');
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to ${approvalAction} application:`, error);
+      toast.error(`Failed to ${approvalAction} application`);
+    } finally {
+      setShowJobSelectionModal(false);
+      setApprovalAction(null);
+    }
+  };
 
   // Auto-hide resume preview when drawer closes
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
@@ -1214,8 +1410,8 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
     } else {
       return (
         <Badge className="bg-amber-500/10 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20">
-          <IconLoader className="h-3 w-3 mr-1 animate-spin" />
-          In Process
+          <IconLoader className="h-3 w-3 mr-1" />
+          Pending
         </Badge>
       );
     }
@@ -1365,30 +1561,20 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 
           {/* Quick Info Grid */}
           <div className="space-y-3">
-            {/* Reviewer - Full Width Selection */}
-            <div className="rounded-lg border bg-lime-500/10 dark:bg-lime-500/10 border-lime-500/20 p-3">
-              <Label className="text-xs text-lime-700 dark:text-lime-400 font-medium mb-2 block">
-                Assign Reviewer
+            {/* Reviewed By - Read Only */}
+            <div className="rounded-lg border bg-blue-500/10 dark:bg-blue-500/10 border-blue-500/20 p-3">
+              <Label className="text-xs text-blue-700 dark:text-blue-400 font-medium mb-2 block">
+                Reviewed By
               </Label>
-              <Select 
-                defaultValue={item.reviewer && item.reviewer !== "Unassigned" ? item.reviewer : "unassigned"}
-                onValueChange={(value) => {
-                  console.log('Reviewer changed to:', value);
-                  // TODO: Add API call to update reviewer
-                }}
-              >
-                <SelectTrigger className="w-full h-9 bg-background">
-                  <SelectValue placeholder="Select reviewer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                  <SelectItem value="John Smith">John Smith</SelectItem>
-                  <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
-                  <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
-                  <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
-                  <SelectItem value="Tom Davis">Tom Davis</SelectItem>
-                </SelectContent>
-              </Select>
+              {item.reviewer && item.reviewer !== "Not Reviewed" ? (
+                <Badge variant="outline" className="text-sm px-3 py-1.5">
+                  {item.reviewer}
+                </Badge>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Not reviewed yet
+                </p>
+              )}
             </div>
 
             {/* Date Applied and Experience in 2 columns */}
@@ -1719,157 +1905,54 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
         </div>
 
         <DrawerFooter className="border-t gap-2">
-          {showJobAssignDialog ? (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="job-select" className="text-sm font-semibold">
-                  Assign to Job <span className="text-destructive">*</span>
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {item.jobIdDisplay && item.jobIdDisplay !== "-"
-                    ? `Current assignment: ${item.jobIdDisplay}. You can change it below.`
-                    : "Select a job to assign this application to"}
-                </p>
-
-                {/* Search Input */}
-                <div className="relative">
-                  <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Search jobs by title or ID..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-
-                {/* Jobs List */}
-                <div className="border rounded-md max-h-[200px] overflow-y-auto">
-                  {filteredJobs.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                      {searchQuery
-                        ? "No jobs found matching your search"
-                        : "No jobs available"}
-                    </div>
-                  ) : (
-                    <div className="divide-y">
-                      {filteredJobs.map((job) => (
-                        <button
-                          key={job.id}
-                          type="button"
-                          onClick={() => setSelectedJobId(job.id)}
-                          className={`w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors ${
-                            selectedJobId === job.id
-                              ? "bg-primary/10 border-l-2 border-l-primary"
-                              : ""
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm truncate">
-                                {job.title}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                ID: {job.id}
-                              </div>
-                            </div>
-                            {selectedJobId === job.id && (
-                              <IconCircleCheckFilled className="h-5 w-5 text-primary flex-shrink-0" />
-                            )}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {selectedJobId && (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-md">
-                    <IconCircleCheckFilled className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">
-                      Selected:{" "}
-                      {jobs.find((j) => j.id === selectedJobId)?.title ||
-                        selectedJobId}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => {
-                    if (!selectedJobId) {
-                      alert("Please select a job before approving");
-                      return;
-                    }
-                    const selectedJob = jobs.find(
-                      (j) => j.id === selectedJobId
-                    );
-                    console.log(
-                      `Approving application for ${item.header} and assigning to job: ${selectedJobId}`
-                    );
-                    setShowJobAssignDialog(false);
-                    // In real app, this would update the backend
-                    alert(
-                      `Application approved and assigned to:\n${selectedJob?.title} (${selectedJobId})`
-                    );
-                  }}
-                  className="flex-1"
-                  size="default"
-                  disabled={!selectedJobId}
-                >
-                  <IconCheck className="h-4 w-4 mr-2" />
-                  Confirm Approval
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowJobAssignDialog(false);
-                    setSearchQuery("");
-                  }}
-                  className="flex-1"
-                  size="default"
-                >
-                  <IconX className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <Button
-                onClick={() => {
-                  // Pre-select the current job if it exists
-                  if (item.jobIdDisplay && item.jobIdDisplay !== "-") {
-                    setSelectedJobId(item.jobIdDisplay);
-                  } else {
-                    setSelectedJobId("");
-                  }
-                  setShowJobAssignDialog(true);
-                }}
-                className="flex-1"
-                size="default"
-                disabled={item.status === "Done"}
-              >
-                <IconCheck className="h-4 w-4" />
-                Approve
-              </Button>
-              <DrawerClose asChild>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    console.log(`Rejecting application for ${item.header}`);
-                  }}
-                  className="flex-1"
-                  size="default"
-                  disabled={item.status === "Rejected"}
-                >
-                  <IconX className="h-4 w-4" />
-                  Reject
-                </Button>
-              </DrawerClose>
-            </div>
-          )}
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                setApprovalAction('approve');
+                setShowJobSelectionModal(true);
+              }}
+              className="flex-1"
+              size="default"
+              disabled={
+                item.status?.toLowerCase() === "approved" || 
+                item.status?.toLowerCase() === "rejected"
+              }
+            >
+              <IconCheck className="h-4 w-4" />
+              Approve
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setApprovalAction('reject');
+                setShowJobSelectionModal(true);
+              }}
+              className="flex-1"
+              size="default"
+              disabled={
+                item.status?.toLowerCase() === "approved" || 
+                item.status?.toLowerCase() === "rejected"
+              }
+            >
+              <IconX className="h-4 w-4" />
+              Reject
+            </Button>
+          </div>
         </DrawerFooter>
+        
+        {/* Job Selection Modal */}
+        {showJobSelectionModal && (
+          <JobSelectionModal
+            open={showJobSelectionModal}
+            onClose={() => {
+              setShowJobSelectionModal(false);
+              setApprovalAction(null);
+            }}
+            onConfirm={handleJobConfirmation}
+            jobs={jobs}
+            applicationName={item.header}
+          />
+        )}
       </DrawerContent>
     </Drawer>
   );

@@ -7,6 +7,8 @@ import AuthPage from "./pages/auth";
 import HomePage from "./pages/home";
 import JobsPage from "./pages/jobs";
 import PublicJobDetailPage from "./pages/jobs/detail";
+import PublicApplyPage from "./pages/apply";
+import ApplySuccessPage from "./pages/apply/success";
 import DashboardMainPage from "./pages/dashboard/dashboard-main";
 import ClientsPage from "./pages/dashboard/clients";
 import ClientDetailPage from "./pages/dashboard/clients/detail";
@@ -40,6 +42,8 @@ function App() {
           <Route path="auth/*" element={<AuthPage />} />
           <Route path="jobs" element={<JobsPage />} />
           <Route path="jobs/:jobId" element={<PublicJobDetailPage />} />
+          <Route path="apply/:jobId" element={<PublicApplyPage />} />
+          <Route path="apply/success" element={<ApplySuccessPage />} />
         </Route>
         
         {/* Protected Dashboard Routes */}

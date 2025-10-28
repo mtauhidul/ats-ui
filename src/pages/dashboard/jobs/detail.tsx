@@ -38,10 +38,14 @@ export default function JobDetailPage() {
   };
 
   const handleCandidateClick = (candidate: Candidate) => {
+    // Backend returns _id, frontend types expect id
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const candidateId = (candidate as any)._id || candidate.id;
+    
     if (clientId) {
-      navigate(`/dashboard/clients/${clientId}/jobs/${jobId}/candidates/${candidate.id}`);
+      navigate(`/dashboard/clients/${clientId}/jobs/${jobId}/candidates/${candidateId}`);
     } else {
-      navigate(`/dashboard/jobs/${jobId}/candidates/${candidate.id}`);
+      navigate(`/dashboard/jobs/${jobId}/candidates/${candidateId}`);
     }
   };
 

@@ -6,8 +6,6 @@ import type { Application } from "@/types/application";
 import type { Job } from "@/types/job";
 import type { Client } from "@/types/client";
 
-const teamMembersPool = ["John Smith", "Sarah Wilson", "Mike Johnson", "Lisa Brown", "Tom Davis"];
-
 export default function ApplicationsPage() {
   const { fetchApplications, isLoading: applicationsLoading } = useApplications();
   const { fetchJobs, isLoading: jobsLoading } = useJobs();
@@ -28,7 +26,7 @@ export default function ApplicationsPage() {
   console.log('Jobs data:', jobs);
   console.log('Clients data:', clients);
 
-  const transformedData = applications.map((app: Application, index: number) => {
+  const transformedData = applications.map((app: Application) => {
     const job = jobs.find((j: Job) => j.id === app.targetJobId);
     const client = clients.find((c: Client) => c.id === job?.clientId);
     
@@ -193,24 +191,32 @@ export default function ApplicationsPage() {
     id: app.id, // Use actual application ID from backend
     header: `${app.firstName} ${app.lastName}`, // Application name
     type: backendApp.isValidResume === true ? "valid" : backendApp.isValidResume === false ? "invalid" : "pending", // AI status (kept for compatibility)
-    status:
-      app.status === "pending"
-        ? "In Process"
-        : app.status === "approved"
-        ? "Done"
-        : app.status === "rejected"
-        ? "Rejected"
-        : "In Process",
+    status: app.status || "pending", // Use raw status from backend: approved, rejected, or pending
     target: new Date(app.submittedAt).getDate(), // Day number for sorting but we'll override display
     limit: app.id, // Show actual application ID
-    reviewer: app.reviewedByName || "Unassigned",
+    reviewer: (() => {
+      if (!app.reviewedBy) return "Not Reviewed";
+      if (typeof app.reviewedBy === 'object' && 'firstName' in app.reviewedBy) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const reviewer = app.reviewedBy as any;
+        return `${reviewer.firstName} ${reviewer.lastName}`;
+      }
+      return app.reviewedByName || "Unknown";
+    })(),
     source: app.source || "direct_application", // Application source (manual/email/direct apply)
     // Add original data for display
     dateApplied: new Date(app.submittedAt).toLocaleDateString(),
     jobIdDisplay: app.id, // Show application ID instead of job ID
     clientName: client?.companyName || "Unknown Client",
     clientLogo: client?.logo || `https://api.dicebear.com/7.x/initials/svg?seed=${client?.companyName || 'C'}`,
-    teamMembers: index % 3 === 0 ? [] : teamMembersPool.slice(0, Math.floor(Math.random() * 3) + 1),
+    // Use real team member data from backend
+    teamMembers: Array.isArray(app.teamMembers) 
+      ? app.teamMembers.map((tm: string | { firstName: string; lastName: string }) => 
+          typeof tm === 'string' 
+            ? tm 
+            : `${tm.firstName} ${tm.lastName}`
+        )
+      : [],
     // Additional applicant details
     photo: app.photo || undefined,
     email: app.email,
