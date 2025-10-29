@@ -9,6 +9,21 @@ import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
+// Helper function to normalize candidate data (ensure id field exists)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const normalizeCandidate = (candidate: any): Candidate => {
+  // Ensure id field exists (backend returns _id, we need id)
+  if (!candidate.id && candidate._id) {
+    candidate.id = candidate._id;
+  }
+  return candidate;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const normalizeCandidates = (candidates: any[]): Candidate[] => {
+  return candidates.map(normalizeCandidate);
+};
+
 export interface CandidatesState {
   candidates: Candidate[];
   currentCandidate: Candidate | null;
@@ -30,8 +45,9 @@ export const fetchCandidates = createAsyncThunk(
     const response = await authenticatedFetch(`${API_BASE_URL}/candidates`);
     if (!response.ok) throw new Error("Failed to fetch candidates");
     const result = await response.json();
-    // Extract data from wrapped response
-    return result.data?.candidates || result.data || result;
+    // Extract data from wrapped response and normalize
+    const candidates = result.data?.candidates || result.data || result;
+    return normalizeCandidates(candidates);
   }
 );
 
@@ -41,7 +57,7 @@ export const fetchCandidateById = createAsyncThunk(
     const response = await authenticatedFetch(`${API_BASE_URL}/candidates/${id}`);
     if (!response.ok) throw new Error("Failed to fetch candidate");
     const result = await response.json();
-    return result.data || result;
+    return normalizeCandidate(result.data || result);
   }
 );
 
@@ -55,7 +71,7 @@ export const createCandidate = createAsyncThunk(
     if (!response.ok) throw new Error("Failed to create candidate");
     const result = await response.json();
     toast.success("Candidate created successfully");
-    return result.data || result;
+    return normalizeCandidate(result.data || result);
   }
 );
 
@@ -69,7 +85,7 @@ export const updateCandidate = createAsyncThunk(
     if (!response.ok) throw new Error("Failed to update candidate");
     const result = await response.json();
     toast.success("Candidate updated successfully");
-    return result.data || result;
+    return normalizeCandidate(result.data || result);
   }
 );
 
@@ -91,6 +107,23 @@ const candidatesSlice = createSlice({
   reducers: {
     setCurrentCandidate: (state, action: PayloadAction<Candidate | null>) => {
       state.currentCandidate = action.payload;
+    },
+    // Optimistic update for candidate stage change
+    updateCandidateStageOptimistic: (state, action: PayloadAction<{ candidateId: string; newStageId: string; newStageData?: { id: string; name: string; color: string; order: number } }>) => {
+      const { candidateId, newStageId, newStageData } = action.payload;
+      const index = state.candidates.findIndex((c) => c.id === candidateId);
+      if (index !== -1) {
+        state.candidates[index].currentPipelineStageId = newStageId;
+        if (newStageData) {
+          state.candidates[index].currentStage = newStageData;
+        }
+      }
+      if (state.currentCandidate?.id === candidateId) {
+        state.currentCandidate.currentPipelineStageId = newStageId;
+        if (newStageData) {
+          state.currentCandidate.currentStage = newStageData;
+        }
+      }
     },
   },
   extraReducers: (builder) => {
@@ -135,5 +168,5 @@ const candidatesSlice = createSlice({
   },
 });
 
-export const { setCurrentCandidate } = candidatesSlice.actions;
+export const { setCurrentCandidate, updateCandidateStageOptimistic } = candidatesSlice.actions;
 export default candidatesSlice.reducer;

@@ -3,9 +3,6 @@ import { CandidatesDataTable } from "@/components/candidates-data-table";
 import { useCandidates, useJobs, useClients, useAppSelector } from "@/store/hooks/index";
 import { selectCandidates, selectJobs, selectClients } from "@/store/selectors";
 
-// Mock stages and clients for demonstration
-const stages = ["New Application", "Screening", "Interview", "Assessment", "Offer", "Hired"];
-
 // Mock team members pool
 const teamMembersPool = ["John Smith", "Sarah Wilson", "Mike Johnson", "Lisa Brown", "Tom Davis", "Emma Davis", "Alex Chen"];
 
@@ -23,6 +20,16 @@ export default function CandidatesPage() {
     fetchJobs();
     fetchClients();
   }, [fetchCandidates, fetchJobs, fetchClients]);
+
+  // Listen for refetch events from AssignedSelector
+  useEffect(() => {
+    const handleRefetch = () => {
+      fetchCandidates();
+    };
+    
+    window.addEventListener('refetchCandidates', handleRefetch);
+    return () => window.removeEventListener('refetchCandidates', handleRefetch);
+  }, [fetchCandidates]);
   
   const handleDeleteCandidate = async (candidateId: string) => {
     try {
@@ -43,19 +50,34 @@ export default function CandidatesPage() {
     
     // Get first job details - jobIds can be populated objects or strings
     const firstJobId = candidate.jobIds?.[0];
-    let job = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let job: any = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let client: any = null;
     
     if (firstJobId) {
       // Check if it's already a populated object
       if (typeof firstJobId === 'object' && 'title' in firstJobId) {
-        job = firstJobId;
+        // Create a mutable copy since backend objects are frozen
+        job = { ...firstJobId, id: firstJobId.id || firstJobId._id };
+        
+        // Check if clientId is populated within the job (this is the key fix!)
+        if (job.clientId && typeof job.clientId === 'object' && 'companyName' in job.clientId) {
+          // Client is already populated within the job - create mutable copy
+          client = { ...job.clientId, id: job.clientId.id || job.clientId._id };
+        } else if (job.clientId) {
+          // Client is just an ID, look it up in clients array (fallback)
+          const clientIdStr = typeof job.clientId === 'object' ? job.clientId._id || job.clientId.id : job.clientId;
+          client = clients.find(c => c.id === clientIdStr);
+        }
       } else {
-        // It's just an ID string, find in jobs array
+        // It's just an ID string, find in jobs array (shouldn't happen with our backend setup)
         job = jobs.find(j => j.id === firstJobId);
+        if (job) {
+          client = clients.find(c => c.id === job.clientId);
+        }
       }
     }
-    
-    const client = job ? clients.find(c => c.id === job.clientId) : null;
     
     // Map candidate status to display status
     const getDisplayStatus = (status: string) => {
@@ -70,11 +92,16 @@ export default function CandidatesPage() {
       }
     };
     
-    // Get candidate ID (handle both _id and id)
-    const candidateId = candidate._id || candidate.id || '';
+    // Use normalized id field (backend now returns both id and _id)
+    const candidateId = candidate.id || candidate._id || '';
+    
+    // Get current stage from backend (can be string or object)
+    const currentStage = typeof candidate.currentStage === 'object' && candidate.currentStage?.name
+      ? candidate.currentStage.name
+      : (candidate.currentStage || "Not Started");
     
     return {
-      id: candidateId, // Use the actual candidate ID (string)
+      id: candidateId, // Use the normalized candidate ID (string)
       candidateId: candidateId, // Actual candidate ID for API calls
       header: `${candidate.firstName} ${candidate.lastName}`, // Candidate name
       type: job?.title || "General Applicant", // Job title they applied for
@@ -84,12 +111,13 @@ export default function CandidatesPage() {
       reviewer: "Team", // Could be derived from job assignments
       // Properly mapped display data
       dateApplied: new Date(candidate.createdAt).toLocaleDateString(), // Candidate creation date
-      currentStage: stages[index % stages.length], // Current pipeline stage
+      currentStage: currentStage, // Current pipeline stage from backend
       jobIdDisplay: job?.id || "N/A", // Actual job ID
       jobTitle: job?.title || "General Applicant", // Job title
       clientName: client?.companyName || "Unknown Client", // Client name
       clientLogo: client?.logo || `https://api.dicebear.com/7.x/initials/svg?seed=${client?.companyName || 'C'}`, // Client logo
       teamMembers: selectedTeamMembers, // Assigned team members
+      assignedTo: candidate.assignedTo, // Assigned team member (can be ID or populated User object)
       // Additional candidate details
       photo: candidate.avatar || undefined,
       email: candidate.email,

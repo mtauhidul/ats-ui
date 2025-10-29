@@ -30,6 +30,16 @@ export const fetchEmails = createAsyncThunk("emails/fetchAll", async () => {
   return result.data?.emails || result.data || result;
 });
 
+export const fetchCandidateEmails = createAsyncThunk(
+  "emails/fetchByCandidate",
+  async (candidateId: string) => {
+    const response = await authenticatedFetch(`${API_BASE_URL}/emails/candidate/${candidateId}`);
+    if (!response.ok) throw new Error("Failed to fetch candidate emails");
+    const result = await response.json();
+    return result.data?.emails || result.data || result;
+  }
+);
+
 export const sendEmail = createAsyncThunk(
   "emails/send",
   async (emailData: Partial<Email>) => {
@@ -64,6 +74,17 @@ const emailsSlice = createSlice({
       .addCase(fetchEmails.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to fetch emails";
+      })
+      .addCase(fetchCandidateEmails.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchCandidateEmails.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.emails = action.payload;
+      })
+      .addCase(fetchCandidateEmails.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to fetch candidate emails";
       })
       .addCase(sendEmail.fulfilled, (state, action) => {
         state.emails.unshift(action.payload);

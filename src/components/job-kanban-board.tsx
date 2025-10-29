@@ -51,7 +51,7 @@ interface JobKanbanBoardProps {
 
 export function JobKanbanBoard({
   pipeline,
-  jobId,
+  jobId: _jobId, // Kept for interface compatibility, but not used (backend uses currentPipelineStageId)
   candidates,
   onCandidateClick,
   onStatusChange,
@@ -149,32 +149,55 @@ export function JobKanbanBoard({
 
   // Group candidates by stage
   const candidatesByStage = useMemo(() => {
+    console.log('=== KANBAN BOARD: Grouping Candidates ===');
+    console.log('Total candidates received:', candidates.length);
+    console.log('Pipeline stages:', pipeline.stages.map(s => ({ id: s.id, name: s.name })));
+    
     const grouped: Record<string, Candidate[]> = {};
 
     pipeline.stages.forEach((stage) => {
       grouped[stage.id] = [];
     });
 
-    candidates.forEach((candidate) => {
-      const jobApplication = candidate.jobApplications.find(
-        (app) => app.jobId === jobId
-      );
-
-      if (jobApplication?.currentStage) {
-        const stageId = jobApplication.currentStage;
-        if (grouped[stageId]) {
-          grouped[stageId].push(candidate);
-        }
+    candidates.forEach((candidate, index) => {
+      const candidateWithStage = candidate as {currentPipelineStageId?: string | {toString(): string}; currentStage?: {id: string}};
+      
+      console.log(`\nCandidate ${index + 1}:`, {
+        name: `${candidate.firstName} ${candidate.lastName}`,
+        id: candidate.id,
+        currentPipelineStageId: candidateWithStage.currentPipelineStageId,
+        currentStage: candidateWithStage.currentStage,
+      });
+      
+      // Backend uses currentPipelineStageId, not jobApplications
+      const currentStageId = candidateWithStage.currentPipelineStageId?.toString() || 
+                            candidateWithStage.currentStage?.id;
+      
+      console.log(`  -> Current stage ID: ${currentStageId}`);
+      console.log(`  -> Stage exists in grouped: ${!!grouped[currentStageId || '']}`);
+      
+      if (currentStageId && grouped[currentStageId]) {
+        grouped[currentStageId].push(candidate);
+        console.log(`  -> Added to stage: ${currentStageId}`);
       } else {
+        // If no stage assigned, put in first stage
         const firstStage = pipeline.stages[0];
         if (firstStage) {
           grouped[firstStage.id].push(candidate);
+          console.log(`  -> No stage assigned, added to first stage: ${firstStage.name} (${firstStage.id})`);
         }
       }
     });
 
+    console.log('\n=== Final grouped candidates by stage: ===');
+    Object.entries(grouped).forEach(([stageId, stageCandidates]) => {
+      const stage = pipeline.stages.find(s => s.id === stageId);
+      console.log(`${stage?.name} (${stageId}): ${stageCandidates.length} candidates`);
+    });
+    console.log('=========================================\n');
+
     return grouped;
-  }, [candidates, pipeline, jobId]);
+  }, [candidates, pipeline]);
 
   const getCandidatesForStage = useCallback(
     (stageId: string) => candidatesByStage[stageId] || [],
@@ -198,11 +221,12 @@ export function JobKanbanBoard({
     const currentCandidate = candidates.find((c) => c.id === candidateId);
     
     if (currentCandidate) {
-      const currentApp = currentCandidate.jobApplications.find(
-        (app) => app.jobId === jobId
-      );
+      // Backend uses currentPipelineStageId
+      const candidateWithStage = currentCandidate as {currentPipelineStageId?: string | {toString(): string}; currentStage?: {id: string}};
+      const currentStageId = candidateWithStage.currentPipelineStageId?.toString() || 
+                            candidateWithStage.currentStage?.id;
 
-      if (currentApp?.currentStage !== newStageId) {
+      if (currentStageId !== newStageId) {
         onStatusChange(candidateId, newStageId);
       }
     }

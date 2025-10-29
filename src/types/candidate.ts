@@ -156,8 +156,18 @@ export interface Candidate extends BaseEntity {
   // Candidates are created from approved Applications that are assigned to a job
   jobApplications: CandidatePipeline[]; // Must have at least one entry
   
+  // Pipeline tracking (backend populates these fields)
+  currentPipelineStageId?: string; // Reference to Pipeline.stages subdocument
+  currentStage?: {
+    id: string;
+    name: string;
+    color: string;
+    order: number;
+  }; // Populated stage object from backend
+  
   // Relations (Database references - stored as IDs)
   assignedRecruiterId?: string; // Primary recruiter managing this candidate (for UI filtering)
+  assignedTo?: string | null; // Assigned team member (User ID) - can be populated with User object by backend
   jobIds: string[]; // MANDATORY: All jobs this candidate has applied to - References to Job collection (at least one)
   applicationIds: string[]; // References to original Application collection (if created from application)
   clientIds: string[]; // All clients this candidate has interacted with (derived from jobs) - References to Client collection

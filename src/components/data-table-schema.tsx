@@ -18,6 +18,16 @@ export const schema = z.object({
   clientLogo: z.string().optional(),
   teamMembers: z.array(z.string()).optional(),
   candidateId: z.string().optional(),
+  assignedTo: z.union([
+    z.string(),
+    z.object({
+      id: z.string().optional(),
+      _id: z.string().optional(),
+      firstName: z.string().optional(),
+      lastName: z.string().optional(),
+      email: z.string().optional(),
+    })
+  ]).nullable().optional(), // Can be string ID or populated User object
   // Additional applicant fields
   photo: z.string().nullable().optional(),
   email: z.string().optional(),

@@ -7,6 +7,7 @@ import {
   updateCandidate,
   deleteCandidate,
   setCurrentCandidate,
+  updateCandidateStageOptimistic,
 } from "../slices/candidatesSlice";
 import type { CandidatesState } from "../slices/candidatesSlice";
 
@@ -25,6 +26,8 @@ export const useCandidates = () => {
   const deleteCandidateCallback = useCallback((id: string) => dispatch(deleteCandidate(id)), [dispatch]);
   const setCurrentCandidateCallback = useCallback((candidate: Parameters<typeof setCurrentCandidate>[0]) => 
     dispatch(setCurrentCandidate(candidate)), [dispatch]);
+  const updateCandidateStageOptimisticCallback = useCallback((payload: Parameters<typeof updateCandidateStageOptimistic>[0]) => 
+    dispatch(updateCandidateStageOptimistic(payload)), [dispatch]);
 
   return {
     candidates,
@@ -37,5 +40,6 @@ export const useCandidates = () => {
     updateCandidate: updateCandidateCallback,
     deleteCandidate: deleteCandidateCallback,
     setCurrentCandidate: setCurrentCandidateCallback,
+    updateCandidateStageOptimistic: updateCandidateStageOptimisticCallback,
   };
 };

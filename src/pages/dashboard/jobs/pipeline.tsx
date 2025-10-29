@@ -20,7 +20,7 @@ export default function JobPipelinePage() {
 
   // Redux hooks
   const { fetchJobById, fetchJobs, updateJob, isLoading: jobsLoading } = useJobs();
-  const { fetchCandidates } = useCandidates();
+  const { fetchCandidates, updateCandidate, updateCandidateStageOptimistic } = useCandidates();
   const { 
     fetchPipelineById, 
     createPipeline, 
@@ -37,11 +37,23 @@ export default function JobPipelinePage() {
   const allCandidates = useAppSelector(selectCandidates);
   
   // Filter candidates for this job
-  const candidates = allCandidates.filter(c => 
-    c.jobApplications.some(app => app.jobId === jobId)
-  );
-
-  // State
+  // Backend populates jobIds with full Job objects, so we need to access the id property
+  const candidates = allCandidates.filter((c: Candidate) => {
+    const jobIdsList = c.jobIds || [];
+    
+    const matches = jobIdsList.some((jobIdOrObject: string | { id?: string; _id?: string; toString?: () => string }) => {
+      // If it's a populated object with an id property, use that
+      const idString = typeof jobIdOrObject === 'string' 
+        ? jobIdOrObject 
+        : jobIdOrObject?.id || jobIdOrObject?._id || jobIdOrObject?.toString?.();
+      
+      return idString === jobId;
+    });
+    
+    return matches;
+  });
+  
+  console.log(`Pipeline page: ${candidates.length} candidates for job ${jobId}`);  // State
   const [isBuilding, setIsBuilding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [hasFetchedJob, setHasFetchedJob] = useState(false);
@@ -248,10 +260,41 @@ export default function JobPipelinePage() {
     navigate(`/dashboard/candidates/${candidate.id}`);
   };
 
-  const handleStatusChange = (candidateId: string, newStageId: string) => {
+  const handleStatusChange = async (candidateId: string, newStageId: string) => {
     console.log("Status change:", { candidateId, newStageId });
-    // TODO: Implement application status update
-    toast.success("Candidate moved to new stage!");
+    
+    // Find the new stage details for optimistic update
+    const newStage = currentPipeline?.stages.find(s => s.id === newStageId);
+    
+    // Optimistic update - update UI immediately
+    if (newStage) {
+      updateCandidateStageOptimistic({
+        candidateId,
+        newStageId,
+        newStageData: {
+          id: newStage.id,
+          name: newStage.name,
+          color: newStage.color,
+          order: newStage.order,
+        }
+      });
+    }
+    
+    try {
+      // Update candidate's pipeline stage in backend
+      await updateCandidate(candidateId, { currentPipelineStageId: newStageId });
+      
+      // Refresh candidates to ensure consistency with backend
+      await fetchCandidates();
+      
+      toast.success("Candidate moved to new stage!");
+    } catch (error) {
+      console.error("Failed to update candidate stage:", error);
+      toast.error("Failed to move candidate");
+      
+      // Revert optimistic update by refreshing from backend
+      await fetchCandidates();
+    }
   };
 
   const handleStageUpdate = async (stage: PipelineStage) => {

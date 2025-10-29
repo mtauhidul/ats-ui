@@ -8,6 +8,7 @@ import {
   IconChevronsRight,
   IconCircleCheckFilled,
   IconClockHour4,
+  IconCopy,
   IconDotsVertical,
   IconDownload,
   IconFilter,
@@ -35,6 +36,7 @@ import {
 } from "@tanstack/react-table";
 import * as React from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 import { z } from "zod";
 
@@ -68,16 +70,148 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import type { schema } from "./data-table-schema.tsx";
+import { useTeam } from "@/store/hooks/index";
+import { useCandidates } from "@/store/hooks/index";
 
-// Table cell viewer component
+// Table cell viewer component for candidate name - decorated like applications table
 function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   return (
     <Link
       to={`/dashboard/candidates/${item.id}`}
-      className="text-foreground hover:text-primary transition-colors font-medium"
+      className="group flex flex-col transition-all duration-200 cursor-pointer relative py-1 px-2 -mx-2 rounded-md hover:bg-primary/5"
     >
-      {item.header}
+      <span className="font-medium text-foreground group-hover:text-primary transition-all duration-200 flex items-center gap-1.5">
+        {item.header}
+        <IconChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transform -translate-x-1 group-hover:translate-x-0 transition-all duration-200" />
+      </span>
+      <span className="text-xs text-muted-foreground group-hover:text-primary/70 transition-colors duration-200">
+        {item.email}
+      </span>
     </Link>
+  );
+}
+
+// Assigned team member selector component
+function AssignedSelector({
+  candidateId,
+  initialAssignee,
+  onUpdate,
+}: {
+  candidateId: string | number;
+  initialAssignee?: string | null;
+  onUpdate?: () => void;
+}) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [selectedMember, setSelectedMember] = React.useState<string | null>(
+    initialAssignee || null
+  );
+
+  // Fetch real team members from Redux
+  const { teamMembers, fetchTeam } = useTeam();
+  const { updateCandidate } = useCandidates();
+
+  // Fetch team members on mount
+  React.useEffect(() => {
+    fetchTeam();
+  }, [fetchTeam]);
+
+  // Update selected member when initialAssignee changes (e.g., after data refresh)
+  React.useEffect(() => {
+    setSelectedMember(initialAssignee || null);
+  }, [initialAssignee]);
+
+  const handleValueChange = async (value: string) => {
+    if (value === "unassign") {
+      // Handle unassign
+      const previousAssignee = selectedMember;
+      setSelectedMember(null);
+      
+      try {
+        await updateCandidate(candidateId.toString(), { assignedTo: null });
+        onUpdate?.(); // Trigger parent refresh
+        toast.success("Team member unassigned");
+      } catch (error) {
+        console.error('Failed to unassign candidate:', error);
+        toast.error('Failed to unassign team member');
+        setSelectedMember(previousAssignee);
+      }
+    } else {
+      // Find the team member by ID (value is the member ID)
+      const member = teamMembers.find(m => m.id === value);
+      if (member) {
+        const memberName = `${member.firstName} ${member.lastName}`.trim() || member.email;
+        setSelectedMember(memberName);
+        
+        try {
+          // Use userId (the actual user's ID), not id (the team member document ID)
+          const userIdToAssign = member.userId || member.id;
+          await updateCandidate(candidateId.toString(), { assignedTo: userIdToAssign });
+          onUpdate?.(); // Trigger parent refresh
+          toast.success(`Assigned ${memberName} to candidate`);
+        } catch (error) {
+          console.error('Failed to assign candidate:', error);
+          toast.error('Failed to assign team member');
+          setSelectedMember(initialAssignee || null);
+        }
+      }
+    }
+  };
+
+  // Get the current value for the Select component
+  const currentValue = React.useMemo(() => {
+    if (!selectedMember) return "unassigned";
+    // Find member ID by name
+    const member = teamMembers.find(m => {
+      const name = `${m.firstName} ${m.lastName}`.trim() || m.email;
+      return name === selectedMember;
+    });
+    return member?.id || "unassigned";
+  }, [selectedMember, teamMembers]);
+
+  return (
+    <Select
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      value={currentValue}
+      onValueChange={handleValueChange}
+    >
+      <SelectTrigger className="h-8 text-sm w-full">
+        <SelectValue>{selectedMember || "Assign someone"}</SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        <div className="p-1">
+          <div className="text-xs font-semibold text-muted-foreground px-2 py-1.5">
+            Select Team Member
+          </div>
+          {teamMembers.map((member) => {
+            const memberName = `${member.firstName} ${member.lastName}`.trim() || member.email;
+            return (
+              <SelectItem
+                key={member.id}
+                value={member.id}
+                className="text-sm"
+              >
+                {memberName}
+              </SelectItem>
+            );
+          })}
+          {selectedMember && (
+            <>
+              <div className="border-t my-1" />
+              <SelectItem
+                value="unassign"
+                className="text-sm text-destructive hover:text-destructive"
+              >
+                <div className="flex items-center">
+                  <IconX className="h-3 w-3 mr-2" />
+                  Unassign
+                </div>
+              </SelectItem>
+            </>
+          )}
+        </div>
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -107,6 +241,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     ),
     enableSorting: false,
     enableHiding: false,
+    size: 50,
+    minSize: 50,
+    maxSize: 50,
   },
   {
     id: "candidateName",
@@ -129,12 +266,15 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     accessorFn: (row) => row.header,
     cell: ({ row }) => {
       return (
-        <div className="w-48">
+        <div className="min-w-[180px] max-w-[180px]">
           <TableCellViewer item={row.original} />
         </div>
       );
     },
     enableHiding: false,
+    size: 180,
+    minSize: 180,
+    maxSize: 180,
   },
   {
     accessorKey: "jobIdDisplay",
@@ -154,15 +294,45 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => (
-      <div className="w-24">
-        <span className="text-sm font-mono">{row.original.jobIdDisplay}</span>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const jobId = row.original.jobIdDisplay || "N/A";
+      const handleCopy = async () => {
+        if (jobId === "N/A") return;
+        try {
+          await navigator.clipboard.writeText(jobId);
+          toast.success("Job ID copied to clipboard!");
+        } catch {
+          toast.error("Failed to copy Job ID");
+        }
+      };
+
+      return (
+        <div className="min-w-[200px] max-w-[200px]">
+          <div className="group flex items-center">
+            <span className="text-xs font-mono font-semibold text-foreground bg-muted pr-2 py-1 rounded">
+              {jobId}
+            </span>
+            {jobId !== "N/A" && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                onClick={handleCopy}
+              >
+                <IconCopy className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </div>
+      );
+    },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
     },
     enableHiding: true,
+    size: 200,
+    minSize: 200,
+    maxSize: 200,
   },
   {
     accessorKey: "status",
@@ -183,10 +353,10 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       );
     },
     cell: ({ row }) => (
-      <div className="w-32">
+      <div className="min-w-[110px] max-w-[110px]">
         <Badge
           variant="outline"
-          className="text-muted-foreground px-2 py-1 flex items-center gap-1"
+          className="text-muted-foreground px-2.5 py-1 flex items-center gap-1 w-fit whitespace-nowrap text-xs"
         >
           {row.original.status === "Hired" ? (
             <>
@@ -208,9 +378,16 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       </div>
     ),
     filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id));
+      // Support both single value and array of values
+      if (Array.isArray(value)) {
+        return value.includes(row.getValue(id));
+      }
+      return row.getValue(id) === value;
     },
     enableHiding: true,
+    size: 110,
+    minSize: 110,
+    maxSize: 110,
   },
   {
     accessorKey: "target",
@@ -229,17 +406,26 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       </Button>
     ),
     cell: ({ row }) => {
-      const stage = row.original.currentStage || "Not Started";
+      // currentStage can be either a string or an object { id, name, color, order }
+      const currentStage = row.original.currentStage as string | { name?: string } | undefined;
+      const stageName = typeof currentStage === 'string' 
+        ? currentStage 
+        : currentStage?.name || "Not Started";
 
       // Define stage colors
       const getStageColor = (stage: string) => {
         switch (stage.toLowerCase()) {
+          case "new applications":
           case "new application":
             return "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400 border-blue-200 dark:border-blue-800";
+          case "resume screening":
           case "screening":
             return "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400 border-purple-200 dark:border-purple-800";
+          case "technical interview":
+          case "behavioral interview":
           case "interview":
             return "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border-amber-200 dark:border-amber-800";
+          case "technical test":
           case "assessment":
             return "bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800";
           case "offer":
@@ -252,11 +438,13 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       };
 
       return (
-        <div className="text-left w-32">
+        <div className="min-w-[120px] max-w-[120px]">
           <Badge
-            className={`px-2 py-1 text-xs font-medium ${getStageColor(stage)}`}
+            className={`px-2.5 py-1 text-xs font-medium w-fit ${getStageColor(
+              stageName
+            )}`}
           >
-            {stage}
+            {stageName}
           </Badge>
         </div>
       );
@@ -265,6 +453,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       return value.includes(row.original.dateApplied);
     },
     enableHiding: true,
+    size: 120,
+    minSize: 120,
+    maxSize: 120,
   },
   {
     accessorKey: "limit",
@@ -287,68 +478,65 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       const clientLogo = row.original.clientLogo;
 
       return (
-        <div className="text-left w-40 flex items-center gap-2">
+        <div className="min-w-[150px] max-w-[150px] flex items-center gap-1">
           {clientLogo && (
-            <Avatar className="size-6 rounded">
+            <Avatar className="size-6 rounded flex-shrink-0">
               <AvatarImage src={clientLogo} alt={clientName} />
               <AvatarFallback className="text-xs rounded">
                 {clientName.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
           )}
-          <span className="text-sm truncate">{clientName}</span>
+          <span className="text-xs truncate">{clientName}</span>
         </div>
       );
     },
     enableHiding: true,
+    size: 150,
+    minSize: 150,
+    maxSize: 150,
   },
   {
     accessorKey: "reviewer",
-    header: "Team",
+    header: "Assigned",
     cell: ({ row }) => {
-      const teamMembers = row.original.teamMembers || [];
-      const hasTeamMembers = teamMembers.length > 0;
-
+      // Get assignedTo - can be a string (ID) or populated object
+      const assignedTo = row.original.assignedTo as string | { id?: string; _id?: string; firstName?: string; lastName?: string; email?: string } | null | undefined;
+      let assignedName: string | null = null;
+      
+      if (assignedTo) {
+        if (typeof assignedTo === 'object') {
+          // Populated user object
+          assignedName = `${assignedTo.firstName || ''} ${assignedTo.lastName || ''}`.trim() || assignedTo.email || null;
+        }
+      }
+      
       return (
-        <div className="w-48">
-          {hasTeamMembers ? (
-            <div className="flex flex-wrap gap-1">
-              {teamMembers.slice(0, 2).map((member, index) => (
-                <Badge
-                  key={index}
-                  variant="secondary"
-                  className="text-xs px-2 py-0.5"
-                >
-                  {member}
-                </Badge>
-              ))}
-              {teamMembers.length > 2 && (
-                <Badge variant="outline" className="text-xs px-2 py-0.5">
-                  +{teamMembers.length - 2}
-                </Badge>
-              )}
-            </div>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => {
-                console.log(`Assign team to candidate ${row.original.id}`);
-              }}
-            >
-              Assign Team
-            </Button>
-          )}
+        <div className="min-w-[160px] max-w-[160px]">
+          <AssignedSelector
+            candidateId={row.original.id}
+            initialAssignee={assignedName}
+            onUpdate={() => {
+              // Trigger a refetch of candidates when assignment changes
+              // This will be handled by the parent component
+              window.dispatchEvent(new CustomEvent('refetchCandidates'));
+            }}
+          />
         </div>
       );
     },
     enableHiding: true,
+    size: 160,
+    minSize: 160,
+    maxSize: 160,
   },
   {
     id: "actions",
     cell: () => null,
     enableHiding: false,
+    size: 60,
+    minSize: 60,
+    maxSize: 60,
   },
 ];
 
@@ -362,58 +550,63 @@ const createActionsColumn = (handlers: {
 }): ColumnDef<z.infer<typeof schema>> => ({
   id: "actions",
   cell: ({ row }) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-          size="icon"
-        >
-          <IconDotsVertical />
-          <span className="sr-only">Open menu</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <div className="px-2 py-1.5 text-xs font-semibold text-primary-foreground bg-primary">
-          ID #{row.original.id}
-        </div>
-        <DropdownMenuItem
-          onClick={() => handlers.onHire(row.original.id)}
-          disabled={row.original.status === "Hired"}
-        >
-          <IconCheck className="h-3 w-3 mr-2 text-green-600" />
-          Mark as Hired
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handlers.onReject(row.original.id)}
-          disabled={row.original.status === "Rejected"}
-        >
-          <IconX className="h-3 w-3 mr-2 text-red-600" />
-          Reject
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => handlers.onAssignTeam(row.original.id)}
-        >
-          <IconUserCheck className="h-3 w-3 mr-2" />
-          Assign Team Member
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handlers.onDownloadResume(row.original.id)}
-        >
-          <IconDownload className="h-3 w-3 mr-2" />
-          Download Resume
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          variant="destructive"
-          onClick={() => handlers.onDelete(row.original.id)}
-        >
-          Delete Candidate
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="min-w-[60px] max-w-[60px] flex justify-start">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="data-[state=open]:bg-muted text-foreground hover:text-foreground hover:bg-muted/50 flex size-8 px-0"
+            size="icon"
+          >
+            <IconDotsVertical className="h-5 w-5" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <div className="px-2 py-1.5 text-xs font-semibold text-primary-foreground bg-primary">
+            ID #{row.original.id}
+          </div>
+          <DropdownMenuItem
+            onClick={() => handlers.onHire(row.original.id)}
+            disabled={row.original.status === "Hired"}
+          >
+            <IconCheck className="h-3 w-3 mr-2 text-green-600" />
+            Mark as Hired
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => handlers.onReject(row.original.id)}
+            disabled={row.original.status === "Rejected"}
+          >
+            <IconX className="h-3 w-3 mr-2 text-red-600" />
+            Reject
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => handlers.onAssignTeam(row.original.id)}
+          >
+            <IconUserCheck className="h-3 w-3 mr-2" />
+            Assign Team Member
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => handlers.onDownloadResume(row.original.id)}
+          >
+            <IconDownload className="h-3 w-3 mr-2" />
+            Download Resume
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => handlers.onDelete(row.original.id)}
+          >
+            Delete Candidate
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   ),
+  size: 60,
+  minSize: 60,
+  maxSize: 60,
 });
 
 export function CandidatesDataTable({
@@ -436,6 +629,11 @@ export function CandidatesDataTable({
     pageSize: 10,
   });
   const [globalFilter, setGlobalFilter] = React.useState("");
+
+  // Sync local data state with prop changes (important for when candidates are loaded/updated)
+  React.useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
 
   // Bulk action handlers
   const handleBulkHire = () => {
@@ -585,14 +783,17 @@ export function CandidatesDataTable({
       if (!searchValue) return true;
 
       const searchFields = [
-        row.original.header,
+        row.original.header, // Candidate name
         row.original.email,
         row.original.phone,
         row.original.status,
         row.original.reviewer,
-        row.original.jobIdDisplay,
+        row.original.jobIdDisplay, // Job ID
+        row.original.jobTitle, // Job title
+        row.original.clientName, // Client name
         row.original.currentTitle,
         row.original.currentCompany,
+        row.original.currentStage, // Pipeline stage
         row.original.dateApplied,
         row.original.location,
         row.original.educationLevel,
@@ -889,12 +1090,12 @@ export function CandidatesDataTable({
                 <DropdownMenuItem
                   onClick={() => setSorting([{ id: "target", desc: true }])}
                 >
-                  Stage (Newest)
+                  Date Applied (Newest)
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setSorting([{ id: "target", desc: false }])}
                 >
-                  Stage (Oldest)
+                  Date Applied (Oldest)
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setSorting([{ id: "status", desc: false }])}
@@ -902,9 +1103,9 @@ export function CandidatesDataTable({
                   Status (A → Z)
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => setSorting([{ id: "type", desc: false }])}
+                  onClick={() => setSorting([{ id: "jobIdDisplay", desc: false }])}
                 >
-                  Job ID (Low → High)
+                  Job ID (A → Z)
                 </DropdownMenuItem>
                 {sorting.length > 0 && (
                   <>
@@ -979,7 +1180,7 @@ export function CandidatesDataTable({
                     table.getColumn("reviewer")?.toggleVisibility(!!value)
                   }
                 >
-                  Team
+                  Assigned
                 </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -988,14 +1189,17 @@ export function CandidatesDataTable({
       </div>
 
       <TabsContent value="outline" className="m-0 border-0">
-        <div className="rounded-lg border overflow-hidden mx-4 lg:mx-6">
+        <div className="rounded-lg border overflow-x-auto mx-4 lg:mx-6">
           <Table>
             <TableHeader className="bg-muted sticky top-0 z-10">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead key={header.id}>
+                      <TableHead
+                        key={header.id}
+                        style={{ width: header.getSize() }}
+                      >
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -1016,7 +1220,10 @@ export function CandidatesDataTable({
                     data-state={row.getIsSelected() && "selected"}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell
+                        key={cell.id}
+                        style={{ width: cell.column.getSize() }}
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()

@@ -1,15 +1,39 @@
-import * as React from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import tagsData from "@/lib/mock-data/tags.json";
+import {
+  useAppDispatch,
+  useAppSelector,
+  useCandidates,
+  useClients,
+  useJobs,
+} from "@/store/hooks/index";
+import {
+  selectCandidateById,
+  selectClients,
+  selectJobs,
+} from "@/store/selectors";
+import { fetchCandidateEmails } from "@/store/slices/emailsSlice";
+import {
+  IconArrowDown,
   IconArrowLeft,
   IconArrowUp,
-  IconArrowDown,
   IconBriefcase,
   IconCalendar,
   IconCircleCheckFilled,
@@ -19,29 +43,14 @@ import {
   IconMail,
   IconMapPin,
   IconPhone,
+  IconTag,
   IconUserCheck,
   IconUserX,
-  IconTag,
   IconX,
 } from "@tabler/icons-react";
 import { CheckCircle2, XCircle } from "lucide-react";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
-// Mock data imports
-import applicationsData from "@/lib/mock-data/applications.json";
-import tagsData from "@/lib/mock-data/tags.json";
-import interviewsData from "@/lib/mock-data/interviews.json";
+import * as React from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 // Helper functions for status badges
 function getStatusBadge(status: string) {
@@ -66,6 +75,36 @@ function getStatusBadge(status: string) {
           Rejected
         </Badge>
       );
+    case "Withdrawn":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800"
+        >
+          <IconUserX className="h-3 w-3 mr-1" />
+          Withdrawn
+        </Badge>
+      );
+    case "Offered":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-400 dark:border-purple-800"
+        >
+          <IconUserCheck className="h-3 w-3 mr-1" />
+          Offered
+        </Badge>
+      );
+    case "Interviewing":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
+        >
+          <IconClockHour4 className="h-3 w-3 mr-1" />
+          Interviewing
+        </Badge>
+      );
     case "In Process":
       return (
         <Badge
@@ -81,147 +120,292 @@ function getStatusBadge(status: string) {
   }
 }
 
-// Mock stages and clients for demonstration
-const stages = ["New Application", "Screening", "Interview", "Assessment", "Offer", "Hired"];
-const clients = [
-  { name: "Tech Corp Inc.", logo: "https://api.dicebear.com/7.x/initials/svg?seed=TC" },
-  { name: "Innovation Labs", logo: "https://api.dicebear.com/7.x/initials/svg?seed=IL" },
-  { name: "Global Solutions", logo: "https://api.dicebear.com/7.x/initials/svg?seed=GS" },
-  { name: "StartUp Hub", logo: "https://api.dicebear.com/7.x/initials/svg?seed=SH" },
-  { name: "Enterprise Co.", logo: "https://api.dicebear.com/7.x/initials/svg?seed=EC" },
-];
-
-// Mock communications data
-const mockCommunications = [
-  {
-    id: 1,
-    type: "email",
-    subject: "Application Received - Acknowledgment",
-    date: "2024-01-15 10:30 AM",
-    direction: "outbound",
-  },
-  {
-    id: 2,
-    type: "email",
-    subject: "Interview Invitation - Technical Round",
-    date: "2024-01-18 02:15 PM",
-    direction: "outbound",
-  },
-  {
-    id: 3,
-    type: "email",
-    subject: "Re: Interview Confirmation",
-    date: "2024-01-18 03:45 PM",
-    direction: "inbound",
-  },
-  {
-    id: 4,
-    type: "email",
-    subject: "Follow-up After Interview",
-    date: "2024-01-22 09:00 AM",
-    direction: "outbound",
-  },
-];
-
 export default function CandidateDetailsPage() {
   const { candidateId } = useParams<{ candidateId: string }>();
   const navigate = useNavigate();
   const [showResumePreview, setShowResumePreview] = React.useState(false);
   const [showVideoPreview, setShowVideoPreview] = React.useState(false);
   const [openTagPopover, setOpenTagPopover] = React.useState(false);
-  const [selectedTags, setSelectedTags] = React.useState<string[]>(["tag-1", "tag-3"]); // Mock initial tags
+  const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
+
+  // Fetch data from Redux store
+  const dispatch = useAppDispatch();
+  const { fetchCandidateById, isLoading: candidatesLoading } = useCandidates();
+  const { fetchJobs, isLoading: jobsLoading } = useJobs();
+  const { fetchClients, isLoading: clientsLoading } = useClients();
+
+  const candidateData = useAppSelector(selectCandidateById(candidateId || ""));
+  const jobs = useAppSelector(selectJobs);
+  const clients = useAppSelector(selectClients);
+  const emails = useAppSelector((state: any) => state.emails.emails || []);
+
+  React.useEffect(() => {
+    if (candidateId) {
+      fetchCandidateById(candidateId);
+      // Fetch candidate emails
+      dispatch(fetchCandidateEmails(candidateId));
+    }
+    fetchJobs();
+    fetchClients();
+  }, [candidateId, fetchCandidateById, fetchJobs, fetchClients, dispatch]);
+
+  // Log candidate data for debugging
+  React.useEffect(() => {
+    if (candidateData) {
+      console.log("=== CANDIDATE DATA ===");
+      console.log("Full candidate object:", candidateData);
+      console.log("Job IDs:", candidateData.jobIds);
+      console.log("Job Applications:", candidateData.jobApplications);
+      console.log("Skills:", candidateData.skills);
+      console.log("Education:", candidateData.education);
+      // Backend uses 'experience' field, frontend type has 'workExperience'
+      console.log(
+        "Work Experience (experience field):",
+        (candidateData as unknown as Record<string, unknown>).experience
+      );
+      console.log(
+        "Work Experience (workExperience field):",
+        candidateData.workExperience
+      );
+      console.log("Resume:", candidateData.resume);
+      console.log("=====================");
+    }
+  }, [candidateData]);
 
   const toggleTag = (tagId: string) => {
-    setSelectedTags(prev =>
+    setSelectedTags((prev) =>
       prev.includes(tagId)
-        ? prev.filter(id => id !== tagId)
+        ? prev.filter((id) => id !== tagId)
         : [...prev, tagId]
     );
   };
 
-  // Find the candidate data (mock)
-  const candidateIndex = candidateId ? parseInt(candidateId) - 1 : 0;
-  const app = applicationsData[candidateIndex] || applicationsData[0];
-  
-  const clientIndex = candidateIndex % clients.length;
-  
-  // Mock job titles
-  const jobTitles = [
-    "Senior Full Stack Developer",
-    "Product Manager",
-    "UX/UI Designer",
-    "Data Scientist",
-    "DevOps Engineer",
-  ];
-  
-  // Mock team members
-  const teamMembersPool = ["John Smith", "Sarah Wilson", "Mike Johnson", "Lisa Brown", "Tom Davis"];
-  const teamMemberCount = Math.floor(Math.random() * 3) + 1;
-  const shuffled = [...teamMembersPool].sort(() => 0.5 - Math.random());
-  const assignedTeamMembers = shuffled.slice(0, teamMemberCount);
-  
+  // Loading state
+  const isLoading = candidatesLoading || jobsLoading || clientsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="text-lg font-semibold mb-2">
+            Loading candidate details...
+          </div>
+          <div className="text-sm text-muted-foreground">Please wait</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!candidateData) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="text-lg font-semibold mb-2">Candidate not found</div>
+          <Button
+            onClick={() => navigate("/dashboard/candidates")}
+            className="mt-4"
+          >
+            <IconArrowLeft className="h-4 w-4 mr-2" />
+            Back to Candidates
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Get job and client details
+  const firstJobId = candidateData.jobIds?.[0];
+  let job: (typeof jobs)[0] | null = null;
+  let client: (typeof clients)[0] | null = null;
+
+  if (firstJobId) {
+    if (typeof firstJobId === "object" && "title" in firstJobId) {
+      // Create a mutable copy and normalize the ID
+      job = {
+        ...firstJobId,
+        id: firstJobId.id || firstJobId._id,
+      } as (typeof jobs)[0];
+      if (
+        job?.clientId &&
+        typeof job.clientId === "object" &&
+        "companyName" in job.clientId
+      ) {
+        // Normalize client ID too
+        client = {
+          ...job.clientId,
+          id: job.clientId.id || job.clientId._id,
+        } as (typeof clients)[0];
+      } else if (job?.clientId) {
+        const clientIdStr =
+          typeof job.clientId === "object"
+            ? job.clientId._id || job.clientId.id
+            : job.clientId;
+        client = clients.find((c) => c.id === clientIdStr) || null;
+      }
+    } else {
+      job = jobs.find((j) => j.id === firstJobId) || null;
+      if (job?.clientId) {
+        client = clients.find((c) => c.id === job?.clientId) || null;
+      }
+    }
+  }
+
+  // Log job and client data
+  console.log("=== JOB & CLIENT DATA ===");
+  console.log("First Job ID:", firstJobId);
+  console.log("Job:", job);
+  console.log("Client:", client);
+  console.log("All Jobs:", jobs);
+  console.log("All Clients:", clients);
+  console.log("========================");
+
   const candidate = {
-    id: candidateId || "1",
-    firstName: app.firstName,
-    lastName: app.lastName,
-    fullName: `${app.firstName} ${app.lastName}`,
-    email: app.email,
-    phone: app.phone,
-    photo: app.photo,
-    currentTitle: app.currentTitle,
-    currentCompany: app.currentCompany,
-    yearsOfExperience: app.yearsOfExperience,
-    skills: app.skills,
-    coverLetter: app.coverLetter,
-    resumeText: app.resumeText,
-    resumeFilename: app.resume?.filename,
-    resumeFileSize: app.resume?.size ? `${Math.round(app.resume.size / 1024)} KB` : undefined,
-    location: app.address,
-    linkedInUrl: app.linkedInUrl,
-    portfolioUrl: app.portfolioUrl,
-    status: app.status === "pending" ? "In Process" : app.status === "approved" ? "Hired" : "Rejected",
-    jobId: app.targetJobId || `JOB-${String(candidateIndex + 1).padStart(3, '0')}`,
-    jobTitle: jobTitles[candidateIndex % jobTitles.length],
-    currentStage: stages[candidateIndex % stages.length],
-    clientName: clients[clientIndex].name,
-    clientLogo: clients[clientIndex].logo,
-    appliedDate: new Date(app.submittedAt).toLocaleDateString(),
-    lastStatusChange: new Date(Date.now() - Math.floor(Math.random() * 10) * 24 * 60 * 60 * 1000).toLocaleDateString(),
-    rating: candidateIndex % 2 === 0 ? 4.5 : undefined,
-    reviewedBy: app.reviewedBy || "John Smith",
-    teamMembers: assignedTeamMembers,
-    interviewScheduled: candidateIndex < 3 ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString() : undefined,
-    totalEmails: Math.floor(Math.random() * 10) + 4,
-    // Video introduction data (for first candidate)
-    videoIntroUrl: candidateIndex === 0 ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" : undefined,
-    videoIntroFilename: candidateIndex === 0 ? "video_introduction.mp4" : undefined,
-    videoIntroFileSize: candidateIndex === 0 ? "15.2 MB" : undefined,
-    videoIntroDuration: candidateIndex === 0 ? "2:30" : undefined,
+    id: candidateData.id || "",
+    firstName: candidateData.firstName,
+    lastName: candidateData.lastName,
+    fullName: `${candidateData.firstName} ${candidateData.lastName}`,
+    email: candidateData.email,
+    phone: candidateData.phone || "N/A",
+    photo: candidateData.avatar,
+    currentTitle: candidateData.currentTitle,
+    currentCompany: candidateData.currentCompany,
+    yearsOfExperience: candidateData.yearsOfExperience || 0,
+    skills: candidateData.skills || [],
+    coverLetter: candidateData.coverLetter?.url || candidateData.notes,
+    resumeText: candidateData.notes,
+    resumeFilename:
+      (candidateData as { resumeOriginalName?: string }).resumeOriginalName ||
+      candidateData.resume?.name ||
+      "resume.pdf",
+    resumeFileSize: candidateData.resume?.size
+      ? `${Math.round(candidateData.resume.size / 1024)} KB`
+      : "N/A",
+    resumeUrl:
+      (candidateData as { resumeUrl?: string }).resumeUrl ||
+      candidateData.resume?.url,
+    location: candidateData.address
+      ? `${candidateData.address.city}, ${candidateData.address.country}`
+      : undefined,
+    linkedInUrl: candidateData.linkedInUrl,
+    portfolioUrl: candidateData.portfolioUrl,
+    githubUrl: candidateData.githubUrl,
+    // Use actual status from backend model
+    status: (() => {
+      const backendStatus = (
+        candidateData as {
+          status?:
+            | "active"
+            | "interviewing"
+            | "offered"
+            | "hired"
+            | "rejected"
+            | "withdrawn";
+        }
+      ).status;
+      if (!backendStatus) return "In Process";
+
+      switch (backendStatus) {
+        case "hired":
+          return "Hired";
+        case "rejected":
+          return "Rejected";
+        case "offered":
+          return "Offered";
+        case "interviewing":
+          return "Interviewing";
+        case "withdrawn":
+          return "Withdrawn";
+        case "active":
+        default:
+          return "In Process";
+      }
+    })(),
+    jobId: job?.id || "N/A",
+    jobTitle: job?.title || "N/A",
+    currentStage:
+      (candidateData as { currentStage?: { name: string } }).currentStage
+        ?.name || "Not Assigned",
+    clientName: client?.companyName || "N/A",
+    clientLogo:
+      client?.logo ||
+      `https://api.dicebear.com/7.x/initials/svg?seed=${
+        client?.companyName || "C"
+      }`,
+    appliedDate: new Date(candidateData.createdAt).toLocaleDateString(),
+    lastStatusChange: new Date(candidateData.updatedAt).toLocaleDateString(),
+    rating: undefined as number | undefined, // Backend doesn't have rating in Candidate model
+    reviewedBy: (() => {
+      const assignedTo = (
+        candidateData as {
+          assignedTo?: { firstName?: string; lastName?: string };
+        }
+      ).assignedTo;
+      if (assignedTo && typeof assignedTo === "object") {
+        return (
+          `${assignedTo.firstName || ""} ${assignedTo.lastName || ""}`.trim() ||
+          "N/A"
+        );
+      }
+      return "N/A";
+    })(),
+    teamMembers: [] as string[],
+    interviewScheduled: undefined as Date | undefined, // Backend doesn't have this in Candidate model
+    totalEmails:
+      (candidateData.totalEmailsSent || 0) +
+      (candidateData.totalEmailsReceived || 0),
+    videoIntroUrl: undefined,
+    videoIntroFilename: undefined,
+    videoIntroFileSize: undefined,
+    videoIntroDuration: undefined,
+    // Additional fields from backend - use 'experience' field from backend
+    experience:
+      (
+        candidateData as {
+          experience?: Array<{
+            company: string;
+            title: string;
+            duration: string;
+            description?: string;
+          }>;
+        }
+      ).experience ||
+      candidateData.workExperience ||
+      [],
+    education: candidateData.education || [],
+    certifications: candidateData.certifications || [],
+    languages: candidateData.languages || [],
+    aiScore: (
+      candidateData as {
+        aiScore?: {
+          overallScore: number;
+          skillsMatch: number;
+          experienceMatch: number;
+          educationMatch: number;
+          summary: string;
+          strengths: string[];
+          concerns: string[];
+          recommendation: string;
+        };
+      }
+    ).aiScore,
   };
 
-  // Mock history data - simulate past applications
-  const historyData = [
-    {
-      id: "1",
-      jobTitle: "Senior Software Engineer",
-      jobId: "JOB-001",
-      clientName: "Tech Corp Inc.",
-      appliedDate: "2023-08-15",
-      status: "Rejected",
-      stage: "Interview",
-      lastUpdated: "2023-09-02",
-    },
-    {
-      id: "2",
-      jobTitle: "Frontend Developer",
-      jobId: "JOB-045",
-      clientName: "StartUp Hub",
-      appliedDate: "2023-11-20",
-      status: "Hired",
-      stage: "Hired",
-      lastUpdated: "2023-12-15",
-    },
-  ];
+  // Log transformed candidate object
+  console.log("=== TRANSFORMED CANDIDATE ===");
+  console.log("Transformed candidate:", candidate);
+  console.log("============================");
+
+  // TODO: Replace with real history data from backend - multiple job applications for this candidate
+  const historyData: Array<{
+    id: string;
+    jobTitle: string;
+    jobId: string;
+    clientName: string;
+    appliedDate: string;
+    status: string;
+    stage: string;
+    lastUpdated: string;
+  }> = [];
 
   return (
     <div className="flex flex-1 flex-col">
@@ -246,75 +430,137 @@ export default function CandidateDetailsPage() {
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row gap-6">
                   <Avatar className="h-24 w-24 border-2 rounded-lg flex-shrink-0">
-                    <AvatarImage src={candidate.photo || ""} className="object-cover" />
+                    <AvatarImage
+                      src={candidate.photo || ""}
+                      className="object-cover"
+                    />
                     <AvatarFallback className="text-2xl font-semibold rounded-lg">
                       {candidate.firstName[0]}
                       {candidate.lastName[0]}
                     </AvatarFallback>
                   </Avatar>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
                       <div>
-                        <h1 className="text-2xl font-bold mb-1">{candidate.fullName}</h1>
+                        <h1 className="text-2xl font-bold mb-1">
+                          {candidate.fullName}
+                        </h1>
                         {candidate.currentTitle && (
                           <p className="text-muted-foreground flex items-center gap-2">
                             <IconBriefcase className="h-4 w-4" />
                             {candidate.currentTitle}
-                            {candidate.currentCompany && ` at ${candidate.currentCompany}`}
+                            {candidate.currentCompany &&
+                              ` at ${candidate.currentCompany}`}
                           </p>
                         )}
                       </div>
-                      {getStatusBadge(candidate.status)}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <IconMail className="h-4 w-4" />
-                        <a href={`mailto:${candidate.email}`} className="hover:text-foreground">
-                          {candidate.email}
-                        </a>
+                      <div className="flex flex-col items-end gap-2">
+                        {getStatusBadge(candidate.status)}
+                        {candidate.rating && candidate.rating > 0 && (
+                          <div className="flex items-center gap-1 text-amber-500">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <svg
+                                key={i}
+                                className={`h-4 w-4 ${
+                                  i < candidate.rating!
+                                    ? "fill-amber-500"
+                                    : "fill-muted"
+                                }`}
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      {candidate.phone && (
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="space-y-2">
                         <div className="flex items-center gap-2 text-muted-foreground">
-                          <IconPhone className="h-4 w-4" />
-                          <a href={`tel:${candidate.phone}`} className="hover:text-foreground">
-                            {candidate.phone}
+                          <IconMail className="h-4 w-4" />
+                          <a
+                            href={`mailto:${candidate.email}`}
+                            className="hover:text-foreground truncate"
+                          >
+                            {candidate.email}
                           </a>
                         </div>
-                      )}
-                      {candidate.location && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <IconMapPin className="h-4 w-4" />
-                          <span>{candidate.location}</span>
-                        </div>
-                      )}
-                      {candidate.yearsOfExperience && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <IconBriefcase className="h-4 w-4" />
-                          <span>{candidate.yearsOfExperience} years experience</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {candidate.linkedInUrl || candidate.portfolioUrl ? (
-                      <div className="flex gap-2 mt-4">
-                        {candidate.linkedInUrl && (
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={candidate.linkedInUrl} target="_blank" rel="noopener noreferrer">
-                              LinkedIn Profile
+                        {candidate.phone && candidate.phone !== "N/A" && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <IconPhone className="h-4 w-4" />
+                            <a
+                              href={`tel:${candidate.phone}`}
+                              className="hover:text-foreground"
+                            >
+                              {candidate.phone}
                             </a>
+                          </div>
+                        )}
+                        {candidate.location && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <IconMapPin className="h-4 w-4" />
+                            <span>{candidate.location}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>{" "}
+                    {/* Social Links */}
+                    {(candidate.linkedInUrl ||
+                      candidate.githubUrl ||
+                      candidate.portfolioUrl) && (
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {candidate.linkedInUrl && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              window.open(candidate.linkedInUrl, "_blank")
+                            }
+                          >
+                            <svg
+                              className="h-4 w-4 mr-1.5"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                            >
+                              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                            </svg>
+                            LinkedIn
+                          </Button>
+                        )}
+                        {candidate.githubUrl && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              window.open(candidate.githubUrl, "_blank")
+                            }
+                          >
+                            <svg
+                              className="h-4 w-4 mr-1.5"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                            >
+                              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                            </svg>
+                            GitHub
                           </Button>
                         )}
                         {candidate.portfolioUrl && (
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={candidate.portfolioUrl} target="_blank" rel="noopener noreferrer">
-                              Portfolio
-                            </a>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              window.open(candidate.portfolioUrl, "_blank")
+                            }
+                          >
+                            <IconBriefcase className="h-4 w-4 mr-1.5" />
+                            Portfolio
                           </Button>
                         )}
                       </div>
-                    ) : null}
+                    )}
                   </div>
                 </div>
 
@@ -332,7 +578,11 @@ export default function CandidateDetailsPage() {
                         <Badge
                           key={tag.id}
                           variant="secondary"
-                          style={{ backgroundColor: `${tag.color}20`, color: tag.color, borderColor: tag.color }}
+                          style={{
+                            backgroundColor: `${tag.color}20`,
+                            color: tag.color,
+                            borderColor: tag.color,
+                          }}
                           className="px-2 py-1 text-xs border"
                         >
                           {tag.name}
@@ -345,7 +595,10 @@ export default function CandidateDetailsPage() {
                         </Badge>
                       );
                     })}
-                    <Popover open={openTagPopover} onOpenChange={setOpenTagPopover}>
+                    <Popover
+                      open={openTagPopover}
+                      onOpenChange={setOpenTagPopover}
+                    >
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
@@ -395,84 +648,34 @@ export default function CandidateDetailsPage() {
           <div className="px-4 lg:px-6">
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="h-11 p-1 bg-card border border-border w-full inline-flex">
-                <TabsTrigger value="overview" className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground">
+                <TabsTrigger
+                  value="overview"
+                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                >
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="candidacy" className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground">
+                <TabsTrigger
+                  value="candidacy"
+                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                >
                   Current Candidacy
                 </TabsTrigger>
-                <TabsTrigger value="communications" className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground">
+                <TabsTrigger
+                  value="communications"
+                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                >
                   Communications
                 </TabsTrigger>
-                <TabsTrigger value="history" className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground">
+                <TabsTrigger
+                  value="history"
+                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                >
                   History
                 </TabsTrigger>
               </TabsList>
 
               {/* Overview Tab */}
               <TabsContent value="overview" className="mt-6 space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Professional Information */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Professional Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {candidate.currentTitle && (
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Current Position</Label>
-                          <p className="text-sm font-medium mt-1">{candidate.currentTitle}</p>
-                        </div>
-                      )}
-                      {candidate.currentCompany && (
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Current Company</Label>
-                          <p className="text-sm font-medium mt-1">{candidate.currentCompany}</p>
-                        </div>
-                      )}
-                      {candidate.yearsOfExperience && (
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Years of Experience</Label>
-                          <p className="text-sm font-medium mt-1">{candidate.yearsOfExperience} years</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Contact Information */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Contact Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Email</Label>
-                        <p className="text-sm font-medium mt-1">
-                          <a href={`mailto:${candidate.email}`} className="text-primary hover:underline">
-                            {candidate.email}
-                          </a>
-                        </p>
-                      </div>
-                      {candidate.phone && (
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Phone</Label>
-                          <p className="text-sm font-medium mt-1">
-                            <a href={`tel:${candidate.phone}`} className="text-primary hover:underline">
-                              {candidate.phone}
-                            </a>
-                          </p>
-                        </div>
-                      )}
-                      {candidate.location && (
-                        <div>
-                          <Label className="text-xs text-muted-foreground">Location</Label>
-                          <p className="text-sm font-medium mt-1">{candidate.location}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-
                 {/* Skills */}
                 {candidate.skills && candidate.skills.length > 0 && (
                   <Card>
@@ -482,11 +685,340 @@ export default function CandidateDetailsPage() {
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
                         {candidate.skills.map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="text-sm font-normal">
-                            {skill}
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="text-sm font-normal"
+                          >
+                            {typeof skill === "string" ? skill : skill.name}
                           </Badge>
                         ))}
                       </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Work Experience */}
+                {candidate.experience && candidate.experience.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">
+                        Work Experience
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {candidate.experience.map((exp, index) => {
+                          const workExp = exp as {
+                            company?: string;
+                            title?: string;
+                            position?: string;
+                            duration?: string;
+                            description?: string;
+                          };
+                          const title =
+                            workExp.title ||
+                            workExp.position ||
+                            "Position Not Specified";
+
+                          return (
+                            <div
+                              key={index}
+                              className={`pb-4 ${
+                                index !== candidate.experience.length - 1
+                                  ? "border-b"
+                                  : ""
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3 mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-sm">
+                                    {title}
+                                  </h4>
+                                  {workExp.company && (
+                                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                      <IconBriefcase className="h-3 w-3" />
+                                      {workExp.company}
+                                    </p>
+                                  )}
+                                </div>
+                                {workExp.duration && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs whitespace-nowrap"
+                                  >
+                                    {workExp.duration}
+                                  </Badge>
+                                )}
+                              </div>
+                              {workExp.description && (
+                                <p className="text-sm text-muted-foreground mt-2 whitespace-pre-line leading-relaxed">
+                                  {workExp.description}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Education */}
+                {candidate.education && candidate.education.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Education</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {candidate.education.map((edu, index) => {
+                          const education = edu as {
+                            institution?: string;
+                            degree?: string;
+                            field?: string;
+                            year?: string;
+                          };
+
+                          return (
+                            <div
+                              key={index}
+                              className={`pb-4 ${
+                                index !== candidate.education.length - 1
+                                  ? "border-b"
+                                  : ""
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3 mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-sm">
+                                    {education.degree || "Degree Not Specified"}
+                                  </h4>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {education.institution ||
+                                      "Institution Not Specified"}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  {education.year && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      {education.year}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              {education.field && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Field: {education.field}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Additional Qualifications */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Certifications */}
+                  {candidate.certifications &&
+                    candidate.certifications.length > 0 && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">
+                            Certifications
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ul className="space-y-2">
+                            {candidate.certifications.map((cert, index) => (
+                              <li
+                                key={index}
+                                className="flex items-start gap-2 text-sm"
+                              >
+                                <IconCircleCheckFilled className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                                <span>{cert}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                  {/* Languages */}
+                  {candidate.languages && candidate.languages.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Languages</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-2">
+                          {candidate.languages.map((lang, index) => (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="text-sm font-normal"
+                            >
+                              {typeof lang === "string" ? lang : lang.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
+                {/* AI Score & Analysis */}
+                {candidate.aiScore && (
+                  <Card className="border-purple-200 dark:border-purple-800">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">
+                          AI Candidate Analysis
+                        </CardTitle>
+                        <Badge
+                          variant="outline"
+                          className={`${
+                            candidate.aiScore.overallScore >= 80
+                              ? "bg-green-100 text-green-700 border-green-200"
+                              : candidate.aiScore.overallScore >= 60
+                              ? "bg-blue-100 text-blue-700 border-blue-200"
+                              : candidate.aiScore.overallScore >= 40
+                              ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+                              : "bg-red-100 text-red-700 border-red-200"
+                          }`}
+                        >
+                          {candidate.aiScore.recommendation
+                            .replace("_", " ")
+                            .toUpperCase()}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Overall Score */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <Label className="text-sm font-medium">
+                            Overall Match Score
+                          </Label>
+                          <span className="text-2xl font-bold text-primary">
+                            {candidate.aiScore.overallScore}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${
+                              candidate.aiScore.overallScore >= 80
+                                ? "bg-green-600"
+                                : candidate.aiScore.overallScore >= 60
+                                ? "bg-blue-600"
+                                : candidate.aiScore.overallScore >= 40
+                                ? "bg-yellow-600"
+                                : "bg-red-600"
+                            }`}
+                            style={{
+                              width: `${candidate.aiScore.overallScore}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Detailed Scores */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="p-3 rounded-lg border bg-card">
+                          <Label className="text-xs text-muted-foreground">
+                            Skills Match
+                          </Label>
+                          <p className="text-xl font-bold mt-1">
+                            {candidate.aiScore.skillsMatch}%
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-lg border bg-card">
+                          <Label className="text-xs text-muted-foreground">
+                            Experience Match
+                          </Label>
+                          <p className="text-xl font-bold mt-1">
+                            {candidate.aiScore.experienceMatch}%
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-lg border bg-card">
+                          <Label className="text-xs text-muted-foreground">
+                            Education Match
+                          </Label>
+                          <p className="text-xl font-bold mt-1">
+                            {candidate.aiScore.educationMatch}%
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Summary */}
+                      {candidate.aiScore.summary && (
+                        <div className="p-3 rounded-lg bg-muted/50 border">
+                          <Label className="text-xs text-muted-foreground mb-1.5 block">
+                            AI Summary
+                          </Label>
+                          <p className="text-sm leading-relaxed">
+                            {candidate.aiScore.summary}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Strengths */}
+                      {candidate.aiScore.strengths &&
+                        candidate.aiScore.strengths.length > 0 && (
+                          <div>
+                            <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                              <IconCircleCheckFilled className="h-4 w-4 text-green-600" />
+                              Strengths
+                            </Label>
+                            <ul className="space-y-1.5">
+                              {candidate.aiScore.strengths.map(
+                                (strength, index) => (
+                                  <li
+                                    key={index}
+                                    className="flex items-start gap-2 text-sm"
+                                  >
+                                    <span className="text-green-600 mt-0.5">
+                                      •
+                                    </span>
+                                    <span>{strength}</span>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        )}
+
+                      {/* Concerns */}
+                      {candidate.aiScore.concerns &&
+                        candidate.aiScore.concerns.length > 0 && (
+                          <div>
+                            <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                              <IconX className="h-4 w-4 text-amber-600" />
+                              Areas for Consideration
+                            </Label>
+                            <ul className="space-y-1.5">
+                              {candidate.aiScore.concerns.map(
+                                (concern, index) => (
+                                  <li
+                                    key={index}
+                                    className="flex items-start gap-2 text-sm"
+                                  >
+                                    <span className="text-amber-600 mt-0.5">
+                                      •
+                                    </span>
+                                    <span>{concern}</span>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        )}
                     </CardContent>
                   </Card>
                 )}
@@ -495,7 +1027,9 @@ export default function CandidateDetailsPage() {
                 {(candidate.resumeFilename || candidate.videoIntroUrl) && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-base">Documents & Media</CardTitle>
+                      <CardTitle className="text-base">
+                        Documents & Media
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {/* Resume */}
@@ -507,38 +1041,61 @@ export default function CandidateDetailsPage() {
                                 <IconFileText className="h-5 w-5 text-muted-foreground" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{candidate.resumeFilename}</p>
-                                {candidate.resumeFileSize && (
-                                  <p className="text-xs text-muted-foreground">{candidate.resumeFileSize}</p>
-                                )}
+                                <p className="text-sm font-medium truncate">
+                                  {candidate.resumeFilename}
+                                </p>
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setShowResumePreview(!showResumePreview)}
+                                onClick={() =>
+                                  setShowResumePreview(!showResumePreview)
+                                }
                                 className="h-8 px-3"
                               >
                                 <span className="text-xs">
                                   {showResumePreview ? "Hide" : "View"}
                                 </span>
                               </Button>
-                              <Button variant="ghost" size="sm">
-                                <IconDownload className="h-4 w-4" />
-                              </Button>
+                              {candidate.resumeUrl && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    window.open(candidate.resumeUrl, "_blank")
+                                  }
+                                >
+                                  <IconDownload className="h-4 w-4" />
+                                </Button>
+                              )}
                             </div>
                           </div>
                           {showResumePreview && (
                             <div className="border-t">
-                              {candidate.resumeFilename.toLowerCase().endsWith(".pdf") ? (
-                                <div className="relative bg-muted/30">
-                                  <iframe
-                                    src={`/uploads/resumes/${candidate.resumeFilename}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                                    className="w-full h-[600px]"
-                                    title="Resume Preview"
-                                  />
-                                </div>
+                              {candidate.resumeUrl ? (
+                                candidate.resumeUrl
+                                  .toLowerCase()
+                                  .endsWith(".pdf") ? (
+                                  <div className="relative bg-muted/30">
+                                    <iframe
+                                      src={`${candidate.resumeUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                      className="w-full h-[600px]"
+                                      title="Resume Preview"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="p-12 text-center bg-muted/30">
+                                    <IconFileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
+                                    <p className="text-sm text-muted-foreground mb-1">
+                                      PDF Preview Only
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Download the file to view
+                                    </p>
+                                  </div>
+                                )
                               ) : candidate.resumeText ? (
                                 <div className="max-h-[600px] overflow-y-auto p-4 bg-muted/30">
                                   <pre className="text-xs whitespace-pre-wrap leading-relaxed">
@@ -571,7 +1128,8 @@ export default function CandidateDetailsPage() {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium truncate">
-                                  {candidate.videoIntroFilename || "Video Introduction"}
+                                  {candidate.videoIntroFilename ||
+                                    "Video Introduction"}
                                 </p>
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                                   {candidate.videoIntroDuration && (
@@ -580,7 +1138,9 @@ export default function CandidateDetailsPage() {
                                   {candidate.videoIntroFileSize && (
                                     <>
                                       <span>•</span>
-                                      <span>{candidate.videoIntroFileSize}</span>
+                                      <span>
+                                        {candidate.videoIntroFileSize}
+                                      </span>
                                     </>
                                   )}
                                 </div>
@@ -590,7 +1150,9 @@ export default function CandidateDetailsPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setShowVideoPreview(!showVideoPreview)}
+                                onClick={() =>
+                                  setShowVideoPreview(!showVideoPreview)
+                                }
                                 className="h-8 px-3"
                               >
                                 <span className="text-xs">
@@ -610,9 +1172,18 @@ export default function CandidateDetailsPage() {
                                 preload="metadata"
                                 poster={candidate.photo || undefined}
                               >
-                                <source src={candidate.videoIntroUrl} type="video/mp4" />
-                                <source src={candidate.videoIntroUrl} type="video/webm" />
-                                <source src={candidate.videoIntroUrl} type="video/ogg" />
+                                <source
+                                  src={candidate.videoIntroUrl}
+                                  type="video/mp4"
+                                />
+                                <source
+                                  src={candidate.videoIntroUrl}
+                                  type="video/webm"
+                                />
+                                <source
+                                  src={candidate.videoIntroUrl}
+                                  type="video/ogg"
+                                />
                                 Your browser does not support the video tag.
                               </video>
                             </div>
@@ -650,11 +1221,16 @@ export default function CandidateDetailsPage() {
                         <Avatar className="h-12 w-12 rounded-md border-2">
                           <AvatarImage src={candidate.clientLogo} />
                           <AvatarFallback className="rounded-md">
-                            {candidate.clientName.split(" ").map((n) => n[0]).join("")}
+                            {candidate.clientName
+                              .split(" ")
+                              .map((n: string) => n[0])
+                              .join("")}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <CardTitle className="text-lg">{candidate.jobTitle}</CardTitle>
+                          <CardTitle className="text-lg">
+                            {candidate.jobTitle}
+                          </CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
                             {candidate.clientName}
                           </p>
@@ -666,44 +1242,76 @@ export default function CandidateDetailsPage() {
                   <CardContent className="space-y-6">
                     {/* Job Information Grid */}
                     <div>
-                      <h4 className="text-sm font-semibold mb-3">Job Information</h4>
+                      <h4 className="text-sm font-semibold mb-3">
+                        Job Information
+                      </h4>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div className="p-3 rounded-lg border bg-muted/30">
-                          <Label className="text-xs text-muted-foreground">Job ID</Label>
-                          <p className="text-sm font-medium font-mono mt-1">{candidate.jobId}</p>
+                          <Label className="text-xs text-muted-foreground">
+                            Job ID
+                          </Label>
+                          <p className="text-sm font-medium font-mono mt-1">
+                            {candidate.jobId}
+                          </p>
                         </div>
                         <div className="p-3 rounded-lg border bg-muted/30">
-                          <Label className="text-xs text-muted-foreground">Client</Label>
-                          <p className="text-sm font-medium mt-1">{candidate.clientName}</p>
+                          <Label className="text-xs text-muted-foreground">
+                            Client
+                          </Label>
+                          <p className="text-sm font-medium mt-1">
+                            {candidate.clientName}
+                          </p>
                         </div>
                         <div className="p-3 rounded-lg border bg-muted/30">
-                          <Label className="text-xs text-muted-foreground">Job Title</Label>
-                          <p className="text-sm font-medium mt-1">{candidate.jobTitle}</p>
+                          <Label className="text-xs text-muted-foreground">
+                            Job Title
+                          </Label>
+                          <p className="text-sm font-medium mt-1">
+                            {candidate.jobTitle}
+                          </p>
                         </div>
                       </div>
                     </div>
 
                     {/* Application Progress */}
                     <div>
-                      <h4 className="text-sm font-semibold mb-3">Application Progress</h4>
+                      <h4 className="text-sm font-semibold mb-3">
+                        Application Progress
+                      </h4>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="p-3 rounded-lg border bg-card">
-                          <Label className="text-xs text-muted-foreground">Current Stage</Label>
-                          <p className="text-sm font-semibold mt-1 text-primary">{candidate.currentStage}</p>
+                          <Label className="text-xs text-muted-foreground">
+                            Current Stage
+                          </Label>
+                          <p className="text-sm font-semibold mt-1 text-primary">
+                            {candidate.currentStage}
+                          </p>
                         </div>
                         <div className="p-3 rounded-lg border bg-card">
-                          <Label className="text-xs text-muted-foreground">Applied Date</Label>
-                          <p className="text-sm font-medium mt-1">{candidate.appliedDate}</p>
+                          <Label className="text-xs text-muted-foreground">
+                            Applied Date
+                          </Label>
+                          <p className="text-sm font-medium mt-1">
+                            {candidate.appliedDate}
+                          </p>
                         </div>
                         <div className="p-3 rounded-lg border bg-card">
-                          <Label className="text-xs text-muted-foreground">Last Updated</Label>
-                          <p className="text-sm font-medium mt-1">{candidate.lastStatusChange}</p>
+                          <Label className="text-xs text-muted-foreground">
+                            Last Updated
+                          </Label>
+                          <p className="text-sm font-medium mt-1">
+                            {candidate.lastStatusChange}
+                          </p>
                         </div>
                         {candidate.interviewScheduled && (
                           <div className="p-3 rounded-lg border bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
-                            <Label className="text-xs text-amber-700 dark:text-amber-400">Next Interview</Label>
+                            <Label className="text-xs text-amber-700 dark:text-amber-400">
+                              Next Interview
+                            </Label>
                             <p className="text-sm font-semibold mt-1 text-amber-800 dark:text-amber-300">
-                              {candidate.interviewScheduled}
+                              {new Date(
+                                candidate.interviewScheduled
+                              ).toLocaleDateString()}
                             </p>
                           </div>
                         )}
@@ -713,7 +1321,9 @@ export default function CandidateDetailsPage() {
                     {/* Rating & Feedback */}
                     {candidate.rating && (
                       <div>
-                        <h4 className="text-sm font-semibold mb-3">Rating & Feedback</h4>
+                        <h4 className="text-sm font-semibold mb-3">
+                          Rating & Feedback
+                        </h4>
                         <div className="p-4 rounded-lg border bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/30 dark:to-orange-950/30 border-yellow-200 dark:border-yellow-800">
                           <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1">
@@ -731,7 +1341,9 @@ export default function CandidateDetailsPage() {
                             <span className="text-lg font-bold text-yellow-700 dark:text-yellow-400">
                               {candidate.rating.toFixed(1)}
                             </span>
-                            <span className="text-sm text-muted-foreground">/ 5.0</span>
+                            <span className="text-sm text-muted-foreground">
+                              / 5.0
+                            </span>
                           </div>
                           <p className="text-xs text-muted-foreground mt-2">
                             Based on interview feedback and assessments
@@ -742,36 +1354,25 @@ export default function CandidateDetailsPage() {
 
                     {/* Team Assignment */}
                     <div>
-                      <h4 className="text-sm font-semibold mb-3">Team Assignment</h4>
+                      <h4 className="text-sm font-semibold mb-3">
+                        Team Assignment
+                      </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-3 rounded-lg border bg-card">
-                          <Label className="text-xs text-muted-foreground mb-2 block">Reviewed By</Label>
+                          <Label className="text-xs text-muted-foreground mb-2 block">
+                            Reviewed By
+                          </Label>
                           <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8">
                               <AvatarFallback className="text-xs">
-                                {candidate.reviewedBy.split(" ").map((n) => n[0]).join("")}
+                                {candidate.reviewedBy
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="text-sm font-medium">{candidate.reviewedBy}</span>
-                          </div>
-                        </div>
-                        <div className="p-3 rounded-lg border bg-card">
-                          <Label className="text-xs text-muted-foreground mb-2 block">Assigned Team Members</Label>
-                          <div className="flex items-center gap-1">
-                            {candidate.teamMembers.slice(0, 3).map((member, idx) => (
-                              <Avatar key={idx} className="h-8 w-8 border-2 border-background">
-                                <AvatarFallback className="text-xs">
-                                  {member.split(" ").map((n) => n[0]).join("")}
-                                </AvatarFallback>
-                              </Avatar>
-                            ))}
-                            {candidate.teamMembers.length > 3 && (
-                              <div className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-                                <span className="text-xs font-medium">+{candidate.teamMembers.length - 3}</span>
-                              </div>
-                            )}
-                            <span className="text-xs text-muted-foreground ml-2">
-                              {candidate.teamMembers.length} member{candidate.teamMembers.length !== 1 ? 's' : ''}
+                            <span className="text-sm font-medium">
+                              {candidate.reviewedBy}
                             </span>
                           </div>
                         </div>
@@ -780,20 +1381,30 @@ export default function CandidateDetailsPage() {
 
                     {/* Communication Stats */}
                     <div>
-                      <h4 className="text-sm font-semibold mb-3">Communication Statistics</h4>
+                      <h4 className="text-sm font-semibold mb-3">
+                        Communication Statistics
+                      </h4>
                       <div className="grid grid-cols-3 gap-4">
                         <div className="p-3 rounded-lg border bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-                          <Label className="text-xs text-blue-700 dark:text-blue-400">Total Emails</Label>
-                          <p className="text-2xl font-bold mt-1 text-blue-800 dark:text-blue-300">{candidate.totalEmails}</p>
+                          <Label className="text-xs text-blue-700 dark:text-blue-400">
+                            Total Emails
+                          </Label>
+                          <p className="text-2xl font-bold mt-1 text-blue-800 dark:text-blue-300">
+                            {candidate.totalEmails}
+                          </p>
                         </div>
                         <div className="p-3 rounded-lg border bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
-                          <Label className="text-xs text-green-700 dark:text-green-400">Sent</Label>
+                          <Label className="text-xs text-green-700 dark:text-green-400">
+                            Sent
+                          </Label>
                           <p className="text-2xl font-bold mt-1 text-green-800 dark:text-green-300">
                             {Math.floor(candidate.totalEmails * 0.6)}
                           </p>
                         </div>
                         <div className="p-3 rounded-lg border bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800">
-                          <Label className="text-xs text-purple-700 dark:text-purple-400">Received</Label>
+                          <Label className="text-xs text-purple-700 dark:text-purple-400">
+                            Received
+                          </Label>
                           <p className="text-2xl font-bold mt-1 text-purple-800 dark:text-purple-300">
                             {Math.ceil(candidate.totalEmails * 0.4)}
                           </p>
@@ -803,27 +1414,60 @@ export default function CandidateDetailsPage() {
 
                     {/* Communication Timeline */}
                     <div className="pt-4 border-t">
-                      <h4 className="text-sm font-semibold mb-3">Communication History</h4>
+                      <h4 className="text-sm font-semibold mb-3">
+                        Communication History
+                      </h4>
                       <div className="space-y-3">
-                        {mockCommunications.map((comm) => (
-                          <div key={comm.id} className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30">
-                            <div className={`p-2 rounded-md ${comm.direction === 'outbound' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
-                              <IconMail className={`h-4 w-4 ${comm.direction === 'outbound' ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'}`} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2">
-                                <p className="text-sm font-medium">{comm.subject}</p>
-                                <Badge variant="outline" className="text-xs">
-                                  {comm.direction === 'outbound' ? 'Sent' : 'Received'}
-                                </Badge>
+                        {emails && emails.length > 0 ? (
+                          emails.slice(0, 3).map((email: any) => (
+                            <div
+                              key={email._id || email.id}
+                              className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30"
+                            >
+                              <div
+                                className={`p-2 rounded-md ${
+                                  email.direction === "outbound"
+                                    ? "bg-blue-100 dark:bg-blue-900/30"
+                                    : "bg-green-100 dark:bg-green-900/30"
+                                }`}
+                              >
+                                <IconMail
+                                  className={`h-4 w-4 ${
+                                    email.direction === "outbound"
+                                      ? "text-blue-600 dark:text-blue-400"
+                                      : "text-green-600 dark:text-green-400"
+                                  }`}
+                                />
                               </div>
-                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                <IconCalendar className="h-3 w-3" />
-                                {comm.date}
-                              </p>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="text-sm font-medium">
+                                    {email.subject}
+                                  </p>
+                                  <Badge variant="outline" className="text-xs">
+                                    {email.direction === "outbound"
+                                      ? "Sent"
+                                      : "Received"}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                  <IconCalendar className="h-3 w-3" />
+                                  {email.sentAt
+                                    ? new Date(email.sentAt).toLocaleString()
+                                    : email.receivedAt
+                                    ? new Date(
+                                        email.receivedAt
+                                      ).toLocaleString()
+                                    : "N/A"}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            No communications yet
+                          </p>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -857,9 +1501,12 @@ export default function CandidateDetailsPage() {
               <TabsContent value="communications" className="mt-6 space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Email Communication History</CardTitle>
+                    <CardTitle className="text-base">
+                      Email Communication History
+                    </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      All email communications with this candidate across all jobs
+                      All email communications with this candidate across all
+                      jobs
                     </p>
                   </CardHeader>
                   <CardContent>
@@ -868,26 +1515,37 @@ export default function CandidateDetailsPage() {
                       <div className="p-4 rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 border-blue-200 dark:border-blue-800">
                         <div className="flex items-center gap-2 mb-2">
                           <IconMail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          <Label className="text-xs text-blue-700 dark:text-blue-400">Total Emails</Label>
+                          <Label className="text-xs text-blue-700 dark:text-blue-400">
+                            Total Emails
+                          </Label>
                         </div>
-                        <p className="text-2xl font-bold text-blue-800 dark:text-blue-300">{candidate.totalEmails}</p>
+                        <p className="text-2xl font-bold text-blue-800 dark:text-blue-300">
+                          {emails?.length || 0}
+                        </p>
                       </div>
                       <div className="p-4 rounded-lg border bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 border-green-200 dark:border-green-800">
                         <div className="flex items-center gap-2 mb-2">
                           <IconArrowUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          <Label className="text-xs text-green-700 dark:text-green-400">Sent</Label>
+                          <Label className="text-xs text-green-700 dark:text-green-400">
+                            Sent
+                          </Label>
                         </div>
                         <p className="text-2xl font-bold text-green-800 dark:text-green-300">
-                          {Math.floor(candidate.totalEmails * 0.6)}
+                          {emails?.filter(
+                            (e: any) => e.direction === "outbound"
+                          ).length || 0}
                         </p>
                       </div>
                       <div className="p-4 rounded-lg border bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 border-purple-200 dark:border-purple-800">
                         <div className="flex items-center gap-2 mb-2">
                           <IconArrowDown className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                          <Label className="text-xs text-purple-700 dark:text-purple-400">Received</Label>
+                          <Label className="text-xs text-purple-700 dark:text-purple-400">
+                            Received
+                          </Label>
                         </div>
                         <p className="text-2xl font-bold text-purple-800 dark:text-purple-300">
-                          {Math.ceil(candidate.totalEmails * 0.4)}
+                          {emails?.filter((e: any) => e.direction === "inbound")
+                            .length || 0}
                         </p>
                       </div>
                     </div>
@@ -901,37 +1559,65 @@ export default function CandidateDetailsPage() {
                             <Avatar className="h-10 w-10 rounded-md border-2 border-primary/20 flex-shrink-0">
                               <AvatarImage src={candidate.clientLogo} />
                               <AvatarFallback className="rounded-md text-xs">
-                                {candidate.clientName.split(" ").map((n) => n[0]).join("")}
+                                {candidate.clientName
+                                  .split(" ")
+                                  .map((n: string) => n[0])
+                                  .join("")}
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
                               <h4 className="font-semibold text-sm mb-1 flex items-center gap-2">
                                 {candidate.jobTitle}
-                                <Badge variant="default" className="text-xs">Current</Badge>
+                                <Badge variant="default" className="text-xs">
+                                  Current
+                                </Badge>
                               </h4>
-                              <p className="text-sm text-muted-foreground mb-2">{candidate.clientName}</p>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                {candidate.clientName}
+                              </p>
                               <div className="grid grid-cols-3 gap-3 text-xs mt-3">
                                 <div className="p-2 rounded-md bg-background/60 border">
-                                  <Label className="text-xs text-muted-foreground">Job ID</Label>
-                                  <p className="font-mono mt-0.5">{candidate.jobId}</p>
+                                  <Label className="text-xs text-muted-foreground">
+                                    Job ID
+                                  </Label>
+                                  <p className="font-mono mt-0.5">
+                                    {candidate.jobId}
+                                  </p>
                                 </div>
                                 <div className="p-2 rounded-md bg-background/60 border">
-                                  <Label className="text-xs text-muted-foreground">Total Emails</Label>
-                                  <p className="font-semibold mt-0.5">{mockCommunications.length}</p>
+                                  <Label className="text-xs text-muted-foreground">
+                                    Total Emails
+                                  </Label>
+                                  <p className="font-semibold mt-0.5">
+                                    {emails?.length || 0}
+                                  </p>
                                 </div>
                                 <div className="p-2 rounded-md bg-background/60 border">
-                                  <Label className="text-xs text-muted-foreground">Last Contact</Label>
-                                  <p className="mt-0.5">{mockCommunications[0]?.date}</p>
+                                  <Label className="text-xs text-muted-foreground">
+                                    Last Contact
+                                  </Label>
+                                  <p className="mt-0.5">
+                                    {emails && emails.length > 0
+                                      ? new Date(
+                                          emails[0].sentAt ||
+                                            emails[0].receivedAt
+                                        ).toLocaleDateString()
+                                      : "N/A"}
+                                  </p>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           className="w-full mt-3"
-                          onClick={() => navigate(`/dashboard/jobs/pipeline/${candidate.jobId}`)}
+                          onClick={() =>
+                            navigate(
+                              `/dashboard/jobs/pipeline/${candidate.jobId}`
+                            )
+                          }
                         >
                           <IconMail className="h-4 w-4 mr-2" />
                           View Full Communication Details
@@ -947,42 +1633,67 @@ export default function CandidateDetailsPage() {
                         const lastEmailDate = history.lastUpdated;
 
                         return (
-                          <div key={history.id} className="p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors">
+                          <div
+                            key={history.id}
+                            className="p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
+                          >
                             <div className="flex items-start justify-between gap-4 mb-3">
                               <div className="flex items-start gap-3 flex-1 min-w-0">
                                 <Avatar className="h-10 w-10 rounded-md border flex-shrink-0">
                                   <AvatarFallback className="rounded-md text-xs">
-                                    {history.clientName.split(" ").map((n) => n[0]).join("")}
+                                    {history.clientName
+                                      .split(" ")
+                                      .map((n: string) => n[0])
+                                      .join("")}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-sm mb-1">{history.jobTitle}</h4>
-                                  <p className="text-sm text-muted-foreground mb-2">{history.clientName}</p>
+                                  <h4 className="font-semibold text-sm mb-1">
+                                    {history.jobTitle}
+                                  </h4>
+                                  <p className="text-sm text-muted-foreground mb-2">
+                                    {history.clientName}
+                                  </p>
                                   <div className="grid grid-cols-3 gap-3 text-xs mt-3">
                                     <div className="p-2 rounded-md bg-background/60 border">
-                                      <Label className="text-xs text-muted-foreground">Job ID</Label>
-                                      <p className="font-mono mt-0.5">{history.jobId}</p>
-                                    </div>
-                                    <div className="p-2 rounded-md bg-background/60 border">
-                                      <Label className="text-xs text-muted-foreground">Total Emails</Label>
-                                      <p className="font-semibold mt-0.5">{emailCount}</p>
-                                      <p className="text-muted-foreground mt-0.5">
-                                        {sentCount} sent, {receivedCount} received
+                                      <Label className="text-xs text-muted-foreground">
+                                        Job ID
+                                      </Label>
+                                      <p className="font-mono mt-0.5">
+                                        {history.jobId}
                                       </p>
                                     </div>
                                     <div className="p-2 rounded-md bg-background/60 border">
-                                      <Label className="text-xs text-muted-foreground">Last Contact</Label>
+                                      <Label className="text-xs text-muted-foreground">
+                                        Total Emails
+                                      </Label>
+                                      <p className="font-semibold mt-0.5">
+                                        {emailCount}
+                                      </p>
+                                      <p className="text-muted-foreground mt-0.5">
+                                        {sentCount} sent, {receivedCount}{" "}
+                                        received
+                                      </p>
+                                    </div>
+                                    <div className="p-2 rounded-md bg-background/60 border">
+                                      <Label className="text-xs text-muted-foreground">
+                                        Last Contact
+                                      </Label>
                                       <p className="mt-0.5">{lastEmailDate}</p>
                                     </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               className="w-full mt-3"
-                              onClick={() => navigate(`/dashboard/jobs/pipeline/${history.jobId}`)}
+                              onClick={() =>
+                                navigate(
+                                  `/dashboard/jobs/pipeline/${history.jobId}`
+                                )
+                              }
                             >
                               <IconMail className="h-4 w-4 mr-2" />
                               View Communication Details
@@ -993,15 +1704,19 @@ export default function CandidateDetailsPage() {
                     </div>
 
                     {/* Empty State */}
-                    {historyData.length === 0 && mockCommunications.length === 0 && (
-                      <div className="text-center py-12">
-                        <IconMail className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
-                        <p className="text-sm text-muted-foreground mb-1">No email communications yet</p>
-                        <p className="text-xs text-muted-foreground">
-                          Start communicating with this candidate to see the history here
-                        </p>
-                      </div>
-                    )}
+                    {historyData.length === 0 &&
+                      (!emails || emails.length === 0) && (
+                        <div className="text-center py-12">
+                          <IconMail className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
+                          <p className="text-sm text-muted-foreground mb-1">
+                            No email communications yet
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Start communicating with this candidate to see the
+                            history here
+                          </p>
+                        </div>
+                      )}
                   </CardContent>
                 </Card>
 
@@ -1015,7 +1730,8 @@ export default function CandidateDetailsPage() {
                       <div className="flex-1">
                         <p className="text-sm font-medium mb-1">Send Email</p>
                         <p className="text-sm text-muted-foreground mb-3">
-                          Quickly compose and send an email to this candidate from the current job context.
+                          Quickly compose and send an email to this candidate
+                          from the current job context.
                         </p>
                         <Button variant="outline" size="sm">
                           <IconMail className="h-4 w-4 mr-2" />
@@ -1042,11 +1758,22 @@ export default function CandidateDetailsPage() {
                             Previous Client Interactions Found
                           </p>
                           <p className="text-sm text-amber-800 dark:text-amber-300 mb-3">
-                            This candidate has {historyData.length} previous application{historyData.length !== 1 ? 's' : ''} with {new Set(historyData.map(h => h.clientName)).size} client{new Set(historyData.map(h => h.clientName)).size !== 1 ? 's' : ''}.
-                            Please review their interview history below before submitting to the same clients.
+                            This candidate has {historyData.length} previous
+                            application{historyData.length !== 1 ? "s" : ""}{" "}
+                            with{" "}
+                            {new Set(historyData.map((h) => h.clientName)).size}{" "}
+                            client
+                            {new Set(historyData.map((h) => h.clientName))
+                              .size !== 1
+                              ? "s"
+                              : ""}
+                            . Please review their interview history below before
+                            submitting to the same clients.
                           </p>
                           <div className="flex flex-wrap gap-2">
-                            {Array.from(new Set(historyData.map(h => h.clientName))).map((clientName, idx) => (
+                            {Array.from(
+                              new Set(historyData.map((h) => h.clientName))
+                            ).map((clientName, idx) => (
                               <Badge
                                 key={idx}
                                 variant="outline"
@@ -1065,25 +1792,46 @@ export default function CandidateDetailsPage() {
                 {/* Interview History */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Interview History</CardTitle>
+                    <CardTitle className="text-base">
+                      Interview History
+                    </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Complete interview history with all clients - prevents re-submitting to clients who previously rejected this candidate
+                      Complete interview history with all clients - prevents
+                      re-submitting to clients who previously rejected this
+                      candidate
                     </p>
                   </CardHeader>
                   <CardContent>
                     {(() => {
-                      // Filter interviews for this candidate
-                      const candidateInterviews = interviewsData.filter(
-                        (interview) => interview.candidateId === `cand-${candidateId}`
-                      );
+                      // TODO: Replace with real interview data from backend
+                      const candidateInterviews: Array<{
+                        id: string;
+                        date: string;
+                        type: string;
+                        status: string;
+                        feedback: string;
+                        interviewer: string;
+                        outcome?: string;
+                        jobTitle?: string;
+                        interviewType?: string;
+                        clientName?: string;
+                        interviewerName?: string;
+                        interviewDate?: string;
+                        duration?: number;
+                        rating?: number;
+                        notes?: string;
+                      }> = [];
 
                       if (candidateInterviews.length === 0) {
                         return (
                           <div className="text-center py-12">
                             <IconCalendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
-                            <p className="text-sm text-muted-foreground">No interview history</p>
+                            <p className="text-sm text-muted-foreground">
+                              No interview history
+                            </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              This candidate hasn't interviewed with any clients yet
+                              This candidate hasn't interviewed with any clients
+                              yet
                             </p>
                           </div>
                         );
@@ -1092,7 +1840,8 @@ export default function CandidateDetailsPage() {
                       return (
                         <div className="space-y-3">
                           {candidateInterviews.map((interview) => {
-                            const isCompleted = interview.status === "completed";
+                            const isCompleted =
+                              interview.status === "completed";
                             const isPassed = interview.outcome === "passed";
                             const isFailed = interview.outcome === "failed";
                             const isNoShow = interview.status === "no_show";
@@ -1113,18 +1862,25 @@ export default function CandidateDetailsPage() {
                                 <div className="flex items-start justify-between gap-4 mb-3">
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="font-semibold">{interview.jobTitle}</h4>
+                                      <h4 className="font-semibold">
+                                        {interview.jobTitle}
+                                      </h4>
                                       <Badge
                                         variant="outline"
                                         className={`text-xs ${
-                                          interview.interviewType === "technical"
+                                          interview.interviewType ===
+                                          "technical"
                                             ? "bg-purple-100 text-purple-700 border-purple-200"
-                                            : interview.interviewType === "final"
+                                            : interview.interviewType ===
+                                              "final"
                                             ? "bg-orange-100 text-orange-700 border-orange-200"
                                             : "bg-blue-100 text-blue-700 border-blue-200"
                                         }`}
                                       >
-                                        {interview.interviewType.replace("_", " ")}
+                                        {interview.interviewType?.replace(
+                                          "_",
+                                          " "
+                                        ) || "N/A"}
                                       </Badge>
                                     </div>
                                     <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -1133,7 +1889,8 @@ export default function CandidateDetailsPage() {
                                     </p>
                                     {interview.interviewerName && (
                                       <p className="text-xs text-muted-foreground mt-1">
-                                        Interviewed by: {interview.interviewerName}
+                                        Interviewed by:{" "}
+                                        {interview.interviewerName}
                                       </p>
                                     )}
                                   </div>
@@ -1150,14 +1907,22 @@ export default function CandidateDetailsPage() {
                                           Not Selected
                                         </Badge>
                                       ) : (
-                                        <Badge variant="secondary">Completed</Badge>
+                                        <Badge variant="secondary">
+                                          Completed
+                                        </Badge>
                                       )
                                     ) : isNoShow ? (
-                                      <Badge variant="outline" className="bg-gray-200 text-gray-700">
+                                      <Badge
+                                        variant="outline"
+                                        className="bg-gray-200 text-gray-700"
+                                      >
                                         No Show
                                       </Badge>
                                     ) : (
-                                      <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                                      <Badge
+                                        variant="outline"
+                                        className="bg-blue-100 text-blue-700"
+                                      >
                                         Scheduled
                                       </Badge>
                                     )}
@@ -1171,26 +1936,40 @@ export default function CandidateDetailsPage() {
                                     </Label>
                                     <p className="text-xs mt-1 flex items-center gap-1">
                                       <IconCalendar className="h-3 w-3" />
-                                      {new Date(interview.interviewDate).toLocaleDateString()}
+                                      {interview.interviewDate
+                                        ? new Date(
+                                            interview.interviewDate
+                                          ).toLocaleDateString()
+                                        : "N/A"}
                                     </p>
                                   </div>
                                   <div>
-                                    <Label className="text-xs text-muted-foreground">Duration</Label>
+                                    <Label className="text-xs text-muted-foreground">
+                                      Duration
+                                    </Label>
                                     <p className="text-xs mt-1">
-                                      {interview.duration ? `${interview.duration} min` : "N/A"}
+                                      {interview.duration
+                                        ? `${interview.duration} min`
+                                        : "N/A"}
                                     </p>
                                   </div>
                                   {interview.rating && (
                                     <div>
-                                      <Label className="text-xs text-muted-foreground">Rating</Label>
+                                      <Label className="text-xs text-muted-foreground">
+                                        Rating
+                                      </Label>
                                       <p className="text-xs mt-1 flex items-center gap-1">
-                                        <span className="text-yellow-600">★</span>
+                                        <span className="text-yellow-600">
+                                          ★
+                                        </span>
                                         {interview.rating}/5
                                       </p>
                                     </div>
                                   )}
                                   <div>
-                                    <Label className="text-xs text-muted-foreground">Status</Label>
+                                    <Label className="text-xs text-muted-foreground">
+                                      Status
+                                    </Label>
                                     <p className="text-xs mt-1 capitalize">
                                       {interview.status.replace("_", " ")}
                                     </p>
@@ -1199,7 +1978,9 @@ export default function CandidateDetailsPage() {
 
                                 {interview.feedback && (
                                   <div className="pt-3 border-t">
-                                    <Label className="text-xs text-muted-foreground">Feedback</Label>
+                                    <Label className="text-xs text-muted-foreground">
+                                      Feedback
+                                    </Label>
                                     <p className="text-sm mt-1 text-muted-foreground">
                                       {interview.feedback}
                                     </p>
@@ -1208,7 +1989,9 @@ export default function CandidateDetailsPage() {
 
                                 {interview.notes && (
                                   <div className="pt-2">
-                                    <Label className="text-xs text-muted-foreground">Notes</Label>
+                                    <Label className="text-xs text-muted-foreground">
+                                      Notes
+                                    </Label>
                                     <p className="text-sm mt-1 text-muted-foreground italic">
                                       {interview.notes}
                                     </p>
@@ -1226,7 +2009,9 @@ export default function CandidateDetailsPage() {
                 {/* Application History */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Application History</CardTitle>
+                    <CardTitle className="text-base">
+                      Application History
+                    </CardTitle>
                     <p className="text-sm text-muted-foreground">
                       All past applications and interactions in the platform
                     </p>
@@ -1235,30 +2020,51 @@ export default function CandidateDetailsPage() {
                     {historyData.length > 0 ? (
                       <div className="space-y-4">
                         {historyData.map((history) => (
-                          <div key={history.id} className="p-4 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
+                          <div
+                            key={history.id}
+                            className="p-4 rounded-lg border bg-card hover:bg-muted/30 transition-colors"
+                          >
                             <div className="flex items-start justify-between gap-4 mb-3">
                               <div>
-                                <h4 className="font-semibold">{history.jobTitle}</h4>
-                                <p className="text-sm text-muted-foreground">{history.clientName}</p>
+                                <h4 className="font-semibold">
+                                  {history.jobTitle}
+                                </h4>
+                                <p className="text-sm text-muted-foreground">
+                                  {history.clientName}
+                                </p>
                               </div>
                               {getStatusBadge(history.status)}
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                               <div>
-                                <Label className="text-xs text-muted-foreground">Job ID</Label>
-                                <p className="font-mono text-xs mt-1">{history.jobId}</p>
+                                <Label className="text-xs text-muted-foreground">
+                                  Job ID
+                                </Label>
+                                <p className="font-mono text-xs mt-1">
+                                  {history.jobId}
+                                </p>
                               </div>
                               <div>
-                                <Label className="text-xs text-muted-foreground">Applied</Label>
-                                <p className="text-xs mt-1">{history.appliedDate}</p>
+                                <Label className="text-xs text-muted-foreground">
+                                  Applied
+                                </Label>
+                                <p className="text-xs mt-1">
+                                  {history.appliedDate}
+                                </p>
                               </div>
                               <div>
-                                <Label className="text-xs text-muted-foreground">Final Stage</Label>
+                                <Label className="text-xs text-muted-foreground">
+                                  Final Stage
+                                </Label>
                                 <p className="text-xs mt-1">{history.stage}</p>
                               </div>
                               <div>
-                                <Label className="text-xs text-muted-foreground">Last Updated</Label>
-                                <p className="text-xs mt-1">{history.lastUpdated}</p>
+                                <Label className="text-xs text-muted-foreground">
+                                  Last Updated
+                                </Label>
+                                <p className="text-xs mt-1">
+                                  {history.lastUpdated}
+                                </p>
                               </div>
                             </div>
                           </div>
@@ -1267,7 +2073,9 @@ export default function CandidateDetailsPage() {
                     ) : (
                       <div className="text-center py-12">
                         <IconClockHour4 className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
-                        <p className="text-sm text-muted-foreground">No previous applications</p>
+                        <p className="text-sm text-muted-foreground">
+                          No previous applications
+                        </p>
                       </div>
                     )}
                   </CardContent>
@@ -1281,9 +2089,13 @@ export default function CandidateDetailsPage() {
                         <IconUserCheck className="h-5 w-5 text-primary" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium mb-1">Apply to Future Jobs</p>
+                        <p className="text-sm font-medium mb-1">
+                          Apply to Future Jobs
+                        </p>
                         <p className="text-sm text-muted-foreground mb-3">
-                          This candidate can be assigned to any future job openings. Their profile and documents are saved in the system.
+                          This candidate can be assigned to any future job
+                          openings. Their profile and documents are saved in the
+                          system.
                         </p>
                         <Button variant="outline" size="sm">
                           Assign to New Job

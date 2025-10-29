@@ -19,9 +19,15 @@ export default function ClientDetailPage() {
   const allCandidates = useAppSelector(selectCandidates);
   
   const jobs = allJobs.filter(j => j.clientId === clientId);
-  const candidates = allCandidates.filter(c => 
-    c.jobApplications.some(app => jobs.some(j => j.id === app.jobId))
-  );
+  
+  // Filter candidates by checking if their jobIds include any of the client's jobs
+  const candidates = allCandidates.filter(c => {
+    const jobIdsList = c.jobIds || [];
+    return jobIdsList.some((id: string | {toString(): string}) => {
+      const idString = typeof id === 'string' ? id : id?.toString();
+      return jobs.some(j => j.id === idString);
+    });
+  });
 
   useEffect(() => {
     if (clientId) {
