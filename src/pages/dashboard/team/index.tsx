@@ -47,9 +47,14 @@ import {
   Building2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useTeam, useAppSelector } from "@/store/hooks/index";
-import { selectTeam } from "@/store/selectors";
-import type { TeamMember, TeamRole } from "@/types";
+import { useTeam, useAppDispatch, useAppSelector } from "@/store/hooks/index";
+import { fetchUsers, updateUser, deleteUser } from "@/store/slices/usersSlice";
+import { registerUser } from "@/services/auth.service";
+import { useAuth } from "@/hooks/useAuth";
+import type { TeamMember, TeamRole, User } from "@/types";
+
+// Type helper for backend User which uses isActive instead of status and title instead of position
+type BackendUser = User & { isActive?: boolean; title?: string };
 
 const getInitials = (firstName?: string, lastName?: string) => {
   if (!firstName || !lastName) return "?";
@@ -57,9 +62,11 @@ const getInitials = (firstName?: string, lastName?: string) => {
 };
 
 const roleColors: Record<string, string> = {
-  admin: "bg-primary",
-  recruiter: "bg-primary/80",
-  hiring_manager: "bg-primary/60",
+  admin: "bg-red-500",
+  recruiter: "bg-primary",
+  hiring_manager: "bg-primary/80",
+  interviewer: "bg-primary/60",
+  coordinator: "bg-muted-foreground",
   viewer: "bg-muted-foreground",
 };
 
@@ -67,19 +74,57 @@ const roleLabels: Record<string, string> = {
   admin: "Admin",
   recruiter: "Recruiter",
   hiring_manager: "Hiring Manager",
+  interviewer: "Interviewer",
+  coordinator: "Coordinator",
   viewer: "Viewer",
 };
 
 export default function TeamPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useAppDispatch();
+  const { user: currentUser, accessToken } = useAuth();
   
-  const { fetchTeam, createTeamMember, updateTeamMember, deleteTeamMember } = useTeam();
-  const members = useAppSelector(selectTeam) as TeamMember[];
+  const { fetchTeam, updateTeamMember } = useTeam();
+  // Fetch all users instead of just team members to show admins too
+  const users = useAppSelector((state: { users: { users: BackendUser[] } }) => state.users.users || []);
+
+  // Convert users to display format (like team members but with all users including admins)
+  const members = users.map((user: BackendUser) => ({
+    id: user.id,
+    userId: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    status: user.isActive ? 'active' : 'inactive', // Backend uses isActive boolean
+    avatar: user.avatar,
+    department: user.department,
+    title: user.title, // Backend User model uses 'title', not 'position'
+    permissions: {
+      canManageClients: user.role === 'admin',
+      canManageJobs: user.role === 'admin',
+      canReviewApplications: true,
+      canManageCandidates: user.role === 'admin' || user.role === 'recruiter',
+      canSendEmails: true,
+      canManageTeam: user.role === 'admin',
+      canAccessAnalytics: user.role === 'admin',
+    },
+    statistics: {
+      activeJobs: 0,
+      placedCandidates: 0,
+      pendingReviews: 0,
+      emailsSent: 0,
+    },
+    lastLoginAt: user.lastLoginAt,
+  } as TeamMember));
 
   useEffect(() => {
+    // Fetch both team members (for job assignments) and all users
     fetchTeam();
-  }, [fetchTeam]);
+    dispatch(fetchUsers());
+  }, [fetchTeam, dispatch]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -101,7 +146,7 @@ export default function TeamPage() {
       // Clear the state
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state, members]);
+  }, [location.state, location.pathname, navigate, members]);
   const [formData, setFormData] = useState<Partial<TeamMember>>({
     firstName: "",
     lastName: "",
@@ -122,32 +167,84 @@ export default function TeamPage() {
     },
   });
 
-  const handleAddMember = () => {
+  const handleAddMember = async () => {
     if (!formData.firstName || !formData.lastName || !formData.email) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    createTeamMember(formData);
-    setIsAddDialogOpen(false);
-    resetForm();
+    if (!accessToken) {
+      toast.error("You must be logged in to add team members");
+      return;
+    }
+
+    try {
+      // Use the auth/register endpoint which automatically sends invitation email
+      await registerUser(
+        {
+          email: formData.email!,
+          firstName: formData.firstName!,
+          lastName: formData.lastName!,
+          role: formData.role,
+          department: formData.department,
+          title: formData.title,
+          phone: formData.phone,
+        },
+        accessToken
+      );
+
+      toast.success(`Invitation email sent to ${formData.email}`);
+      
+      // Refresh the users list
+      dispatch(fetchUsers());
+      
+      setIsAddDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to add team member";
+      toast.error(errorMessage);
+    }
   };
 
-  const handleEditMember = () => {
+  const handleEditMember = async () => {
     if (!selectedMember) return;
 
-    updateTeamMember(selectedMember.id, formData);
-    setIsEditDialogOpen(false);
-    setSelectedMember(null);
-    resetForm();
+    try {
+      await dispatch(updateUser({ 
+        id: selectedMember.id, 
+        data: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          role: formData.role,
+          department: formData.department,
+          phone: formData.phone,
+        } 
+      })).unwrap();
+      setIsEditDialogOpen(false);
+      setSelectedMember(null);
+      resetForm();
+    } catch (error) {
+      console.error("Failed to update user:", error);
+    }
   };
 
-  const handleDeleteMember = () => {
+  const handleDeleteMember = async () => {
     if (!selectedMember) return;
 
-    deleteTeamMember(selectedMember.id);
-    setIsDeleteDialogOpen(false);
-    setSelectedMember(null);
+    try {
+      await dispatch(deleteUser(selectedMember.id)).unwrap();
+      setIsDeleteDialogOpen(false);
+      setSelectedMember(null);
+      toast.success(`${selectedMember.firstName} ${selectedMember.lastName} has been deleted`);
+    } catch (error: unknown) {
+      console.error("Failed to delete user:", error);
+      // Show the backend error message if available
+      const errorMessage = (error as { message?: string; error?: string }).message || 
+                          (error as { message?: string; error?: string }).error || 
+                          "Failed to delete user";
+      toast.error(errorMessage);
+    }
   };
 
   const handleUpdatePermissions = () => {
@@ -178,12 +275,19 @@ export default function TeamPage() {
     setIsPermissionsDialogOpen(true);
   };
 
-  const toggleMemberStatus = (member: TeamMember) => {
-    const newStatus = member.status === "active" ? "inactive" : "active";
-    updateTeamMember(member.id, { status: newStatus });
-    toast.success(
-      `${member.firstName} ${member.lastName} is now ${newStatus}`
-    );
+  const toggleMemberStatus = async (member: TeamMember) => {
+    const newIsActive = member.status !== "active";
+    try {
+      await dispatch(updateUser({ 
+        id: member.id, 
+        data: { isActive: newIsActive } as Partial<BackendUser>
+      })).unwrap();
+      toast.success(
+        `${member.firstName} ${member.lastName} is now ${newIsActive ? 'active' : 'inactive'}`
+      );
+    } catch (error) {
+      console.error("Failed to toggle user status:", error);
+    }
   };
 
   const resetForm = () => {
@@ -385,10 +489,15 @@ export default function TeamPage() {
                             {member.firstName} {member.lastName}
                           </h3>
                           <p className="text-sm text-muted-foreground truncate">{member.title}</p>
-                          <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
                             <Badge variant="outline" className="text-xs">
                               {roleLabels[member.role]}
                             </Badge>
+                            {currentUser?.email === member.email && (
+                              <Badge className="text-xs bg-blue-500 hover:bg-blue-600">
+                                You
+                              </Badge>
+                            )}
                             {member.status === "active" ? (
                               <Badge variant="outline" className="text-xs">
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -419,10 +528,12 @@ export default function TeamPage() {
                             <Edit className="h-4 w-4 mr-2" />
                             Edit Member
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openPermissionsDialog(member)}>
-                            <Shield className="h-4 w-4 mr-2" />
-                            Manage Permissions
-                          </DropdownMenuItem>
+                          {member.role !== 'admin' && (
+                            <DropdownMenuItem onClick={() => openPermissionsDialog(member)}>
+                              <Shield className="h-4 w-4 mr-2" />
+                              Manage Permissions
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={() => toggleMemberStatus(member)}>
                             {member.status === "active" ? (
                               <>
@@ -813,11 +924,22 @@ export default function TeamPage() {
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Remove Team Member</DialogTitle>
+                  <DialogTitle>Delete Team Member</DialogTitle>
                   <DialogDescription>
-                    Are you sure you want to remove{" "}
-                    {selectedMember && `${selectedMember.firstName} ${selectedMember.lastName}`} from the team?
-                    This action cannot be undone.
+                    Are you sure you want to permanently delete{" "}
+                    <span className="font-semibold">
+                      {selectedMember && `${selectedMember.firstName} ${selectedMember.lastName}`}
+                    </span>
+                    ?
+                    <br />
+                    <br />
+                    <span className="text-red-600 font-medium">
+                      This action cannot be undone.
+                    </span>
+                    <br />
+                    <span className="text-sm text-muted-foreground">
+                      Note: Users with active candidates or job assignments cannot be deleted.
+                    </span>
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
@@ -826,7 +948,7 @@ export default function TeamPage() {
                   </Button>
                   <Button variant="destructive" onClick={handleDeleteMember}>
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Remove Member
+                    Delete Permanently
                   </Button>
                 </DialogFooter>
               </DialogContent>

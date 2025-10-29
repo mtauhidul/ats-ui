@@ -1,16 +1,16 @@
 /**
  * Fetch API wrapper with authentication
- * Automatically attaches Clerk JWT token to requests
+ * Automatically attaches JWT token to requests
  */
 
-import { getClerkToken } from './clerk-utils';
+import { getAccessToken } from './auth-utils';
 
 export interface AuthenticatedFetchOptions extends RequestInit {
   skipAuth?: boolean;
 }
 
 /**
- * Fetch wrapper that automatically includes Clerk authentication token
+ * Fetch wrapper that automatically includes JWT authentication token
  * @param url - URL to fetch
  * @param options - Fetch options
  * @returns Fetch response
@@ -31,7 +31,7 @@ export async function authenticatedFetch(
   // Add authentication token if not skipped
   if (!skipAuth) {
     try {
-      const token = await getClerkToken();
+      const token = getAccessToken();
       if (token) {
         (requestHeaders as Record<string, string>)['Authorization'] = `Bearer ${token}`;
       }
@@ -44,5 +44,6 @@ export async function authenticatedFetch(
     ...restOptions,
     body,
     headers: requestHeaders,
+    credentials: 'include', // Important for cookies (refresh token)
   });
 }

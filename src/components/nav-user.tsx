@@ -6,7 +6,7 @@ import {
   IconUserCircle,
 } from "@tabler/icons-react";
 import { Link } from "react-router-dom";
-import { useClerk } from "@clerk/clerk-react";
+import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { useUserRole } from "@/lib/auth";
 
@@ -37,11 +37,11 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
-  const { signOut } = useClerk();
+  const { logout } = useAuth();
   const userRole = useUserRole();
 
   const handleSignOut = async () => {
-    await signOut();
+    await logout();
   };
 
   const getInitials = (name: string) => {

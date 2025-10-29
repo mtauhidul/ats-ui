@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessageSquare, Search, Send, MoreVertical, Plus, Paperclip, Smile } from "lucide-react";
 import { useMessages } from "@/store/hooks/useMessages";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/lib/auth";
 import { toast } from "sonner";
 
@@ -19,7 +19,7 @@ const getInitials = (name: string) => {
 };
 
 export default function MessagesPage() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const userRole = useUserRole();
   const { conversations, sendMessage, setCurrentConversation, currentConversation } = useMessages();
   
@@ -27,9 +27,9 @@ export default function MessagesPage() {
   const canSendMessages = userRole === 'admin' || userRole === 'recruiter' || userRole === 'hiring_manager';
   const currentUserId = user?.id || '';
   
-  // Get user display name from Clerk
-  const senderName = user?.fullName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User';
-  const senderAvatar = user?.imageUrl || '';
+  // Get user display name
+  const senderName = user ? `${user.firstName} ${user.lastName}`.trim() : 'User';
+  const senderAvatar = '';
 
   const [searchQuery, setSearchQuery] = useState("");
   const [messageText, setMessageText] = useState("");

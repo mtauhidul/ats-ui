@@ -1,14 +1,24 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { IconInnerShadowTop } from "@tabler/icons-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Layout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -16,6 +26,18 @@ export default function Layout() {
   ];
 
   const isActive = (href: string) => location.pathname === href;
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
+
+  const handleLogout = async () => {
+    await logout();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -49,33 +71,56 @@ export default function Layout() {
 
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-3">
-              <SignedOut>
-                <Button variant="ghost" asChild size="sm">
-                  <Link to="/auth">Sign In</Link>
-                </Button>
-                <Button asChild size="sm">
-                  <Link to="/dashboard">Get Started</Link>
-                </Button>
-              </SignedOut>
-              <SignedIn>
-                <Button variant="ghost" asChild size="sm">
-                  <Link to="/dashboard">Dashboard</Link>
-                </Button>
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: "h-9 w-9",
-                      userButtonPopoverCard: "shadow-xl border border-border",
-                      userButtonPopoverActionButton: "hover:bg-accent",
-                      userButtonPopoverActionButtonText: "text-foreground",
-                      userButtonPopoverFooter: "hidden",
-                    },
-                  }}
-                  afterSignOutUrl="/"
-                  userProfileMode="navigation"
-                  userProfileUrl="/dashboard/account"
-                />
-              </SignedIn>
+              {!user ? (
+                <>
+                  <Button variant="ghost" asChild size="sm">
+                    <Link to="/login">Sign In</Link>
+                  </Button>
+                  <Button asChild size="sm">
+                    <Link to="/dashboard">Get Started</Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" asChild size="sm">
+                    <Link to="/dashboard">Dashboard</Link>
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="relative h-9 w-9 rounded-full p-0">
+                        <Avatar className="h-9 w-9">
+                          {user.avatar && (
+                            <AvatarImage src={user.avatar} alt={`${user.firstName} ${user.lastName}`} />
+                          )}
+                          <AvatarFallback>
+                            {getInitials(`${user.firstName} ${user.lastName}`)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel>
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">
+                            {user.firstName} {user.lastName}
+                          </p>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {user.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/dashboard/account">Account Settings</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleLogout}>
+                        Log out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -112,47 +157,54 @@ export default function Layout() {
                 </Button>
               ))}
               <div className="flex flex-col gap-2 pt-2 mt-2 border-t border-border/40">
-                <SignedOut>
-                  <Button 
-                    variant="ghost" 
-                    asChild 
-                    className="w-full justify-start"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Link to="/auth">Sign In</Link>
-                  </Button>
-                  <Button 
-                    asChild 
-                    className="w-full"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Link to="/dashboard">Get Started</Link>
-                  </Button>
-                </SignedOut>
-                <SignedIn>
-                  <Button 
-                    variant="ghost" 
-                    asChild 
-                    className="w-full justify-start"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Link to="/dashboard">Dashboard</Link>
-                  </Button>
-                  <div className="flex items-center gap-3 p-2">
-                    <UserButton
-                      appearance={{
-                        elements: {
-                          avatarBox: "h-10 w-10",
-                          userButtonPopoverCard: "shadow-xl border border-border",
-                        },
+                {!user ? (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      asChild 
+                      className="w-full justify-start"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Link to="/login">Sign In</Link>
+                    </Button>
+                    <Button 
+                      asChild 
+                      className="w-full"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Link to="/dashboard">Get Started</Link>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      asChild 
+                      className="w-full justify-start"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Link to="/dashboard">Dashboard</Link>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      asChild 
+                      className="w-full justify-start"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Link to="/dashboard/account">Account</Link>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        handleLogout();
                       }}
-                      afterSignOutUrl="/"
-                      userProfileMode="navigation"
-                      userProfileUrl="/dashboard/account"
-                    />
-                    <span className="text-sm text-muted-foreground">Account</span>
-                  </div>
-                </SignedIn>
+                    >
+                      Log out
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>

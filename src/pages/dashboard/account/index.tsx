@@ -10,11 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { User as UserIcon, Mail, Phone, Building, Shield, Bell, Lock, Eye, EyeOff, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/lib/auth";
+import { authService } from "@/services/auth.service";
 
 export default function AccountPage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoading, accessToken } = useAuth();
   const userRole = useUserRole();
 
   const [profileData, setProfileData] = useState({
@@ -32,12 +33,16 @@ export default function AccountPage() {
       setProfileData({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
-        email: user.primaryEmailAddress?.emailAddress || "",
-        phone: (user.unsafeMetadata?.phone as string) || user.phoneNumbers?.[0]?.phoneNumber || "",
-        department: (user.unsafeMetadata?.department as string) || "",
-        title: (user.unsafeMetadata?.title as string) || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        department: user.department || "",
+        title: user.title || "",
       });
-      setProfilePhoto(user.imageUrl || undefined);
+      
+      // Set avatar if available
+      if (user.avatar) {
+        setProfilePhoto(user.avatar);
+      }
     }
   }, [user]);
 
@@ -45,6 +50,7 @@ export default function AccountPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+  const [isPhotoUploading, setIsPhotoUploading] = useState(false);
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -70,25 +76,13 @@ export default function AccountPage() {
     setIsProfileLoading(true);
     
     try {
-      // Update Clerk user basic info
-      await user?.update({
-        firstName: profileData.firstName,
-        lastName: profileData.lastName,
-      });
+      if (!accessToken) {
+        throw new Error('Not authenticated');
+      }
 
-      // Update unsafe metadata for department, title, and phone (store as metadata instead)
-      await user?.update({
-        unsafeMetadata: {
-          ...user.unsafeMetadata,
-          department: profileData.department,
-          title: profileData.title,
-          phone: profileData.phone, // Store phone in metadata for simplicity
-        },
-      });
-
-      // Reload user data
-      await user?.reload();
-
+      // Call API to update profile
+      await authService.updateProfile(profileData, accessToken);
+      
       toast.success("Profile updated successfully!");
     } catch (error) {
       toast.error("Failed to update profile");
@@ -112,38 +106,28 @@ export default function AccountPage() {
     setIsPasswordLoading(true);
 
     try {
-      await user?.updatePassword({
+      if (!accessToken) {
+        throw new Error('Not authenticated');
+      }
+
+      // Call API to change password
+      await authService.updatePassword({
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
-      });
+      }, accessToken);
 
-      toast.success("Password changed successfully! A confirmation email has been sent.");
+      toast.success("Password changed successfully!");
       setPasswordData({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       });
     } catch (error: unknown) {
-      // Handle specific Clerk errors
-      const clerkError = error as { errors?: Array<{ code?: string; message?: string }> };
-      
-      if (clerkError?.errors?.[0]?.code === "form_password_incorrect") {
-        toast.error("Current password is incorrect");
-      } else if (clerkError?.errors?.[0]?.message) {
-        toast.error(clerkError.errors[0].message);
-      } else {
-        toast.error("Failed to change password");
-      }
+      toast.error("Failed to change password");
       console.error(error);
     } finally {
       setIsPasswordLoading(false);
     }
-    toast.success("Password updated successfully!");
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
   };
 
   const handleNotificationChange = (key: keyof typeof notifications) => {
@@ -153,28 +137,60 @@ export default function AccountPage() {
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error("File size must be less than 2MB");
-        return;
-      }
+    if (!file) return;
 
-      try {
-        // Upload to Clerk
-        await user?.setProfileImage({ file });
-        
-        // Update local preview
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setProfilePhoto(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-        
-        toast.success("Profile photo updated!");
-      } catch (error) {
-        toast.error("Failed to update profile photo");
-        console.error(error);
-      }
+    // Validate file size
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File size must be less than 2MB");
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    setIsPhotoUploading(true);
+
+    try {
+      // Convert to base64
+      const reader = new FileReader();
+      
+      reader.onloadend = async () => {
+        try {
+          const base64String = reader.result as string;
+          
+          // Update profile with avatar
+          if (!accessToken) {
+            toast.error("Not authenticated");
+            setIsPhotoUploading(false);
+            return;
+          }
+
+          await authService.updateProfile({ avatar: base64String }, accessToken);
+          
+          // Update local state only after successful save
+          setProfilePhoto(base64String);
+          toast.success("Profile photo updated!");
+        } catch (error) {
+          console.error('Photo upload error:', error);
+          toast.error("Failed to save profile photo");
+        } finally {
+          setIsPhotoUploading(false);
+        }
+      };
+
+      reader.onerror = () => {
+        toast.error("Failed to read image file");
+        setIsPhotoUploading(false);
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      toast.error("Failed to upload profile photo");
+      setIsPhotoUploading(false);
     }
   };
 
@@ -197,7 +213,7 @@ export default function AccountPage() {
     }
   };
 
-  if (!isLoaded || !user) {
+  if (isLoading || !user) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="text-center">
@@ -231,7 +247,7 @@ export default function AccountPage() {
               <CardContent className="pt-6">
                 <div className="flex items-start gap-6">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src={profilePhoto || user?.imageUrl} alt={profileData.firstName} />
+                    <AvatarImage src={profilePhoto} alt={profileData.firstName} />
                     <AvatarFallback className="text-2xl">
                       {getInitials(profileData.firstName, profileData.lastName)}
                     </AvatarFallback>
@@ -257,10 +273,6 @@ export default function AccountPage() {
                         <Building className="h-4 w-4" />
                         {profileData.department || 'No department set'}
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <UserIcon className="h-4 w-4" />
-                        Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A'}
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -271,33 +283,25 @@ export default function AccountPage() {
               <Card>
                 <CardHeader className="pb-3">
                   <CardDescription>Active Jobs</CardDescription>
-                  <CardTitle className="text-3xl">
-                    {((user?.unsafeMetadata?.statistics as Record<string, number>)?.activeJobs) || 0}
-                  </CardTitle>
+                  <CardTitle className="text-3xl">0</CardTitle>
                 </CardHeader>
               </Card>
               <Card>
                 <CardHeader className="pb-3">
                   <CardDescription>Placed Candidates</CardDescription>
-                  <CardTitle className="text-3xl">
-                    {((user?.unsafeMetadata?.statistics as Record<string, number>)?.placedCandidates) || 0}
-                  </CardTitle>
+                  <CardTitle className="text-3xl">0</CardTitle>
                 </CardHeader>
               </Card>
               <Card>
                 <CardHeader className="pb-3">
                   <CardDescription>Pending Reviews</CardDescription>
-                  <CardTitle className="text-3xl">
-                    {((user?.unsafeMetadata?.statistics as Record<string, number>)?.pendingReviews) || 0}
-                  </CardTitle>
+                  <CardTitle className="text-3xl">0</CardTitle>
                 </CardHeader>
               </Card>
               <Card>
                 <CardHeader className="pb-3">
                   <CardDescription>Emails Sent</CardDescription>
-                  <CardTitle className="text-3xl">
-                    {((user?.unsafeMetadata?.statistics as Record<string, number>)?.emailsSent) || 0}
-                  </CardTitle>
+                  <CardTitle className="text-3xl">0</CardTitle>
                 </CardHeader>
               </Card>
             </div>
@@ -355,10 +359,16 @@ export default function AccountPage() {
                           </Avatar>
                           <div>
                             <Label htmlFor="photo-upload" className="cursor-pointer">
-                              <Button type="button" variant="outline" size="sm" asChild>
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm" 
+                                asChild
+                                disabled={isPhotoUploading}
+                              >
                                 <span>
                                   <Upload className="h-4 w-4 mr-2" />
-                                  Change Photo
+                                  {isPhotoUploading ? 'Uploading...' : 'Change Photo'}
                                 </span>
                               </Button>
                             </Label>
@@ -368,6 +378,7 @@ export default function AccountPage() {
                               accept="image/*"
                               className="hidden"
                               onChange={handlePhotoUpload}
+                              disabled={isPhotoUploading}
                             />
                             <p className="text-xs text-muted-foreground mt-1">
                               JPG, PNG or GIF. Max size 2MB.

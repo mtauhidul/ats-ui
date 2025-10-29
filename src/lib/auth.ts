@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/hooks/useAuth";
 
 /**
  * User Roles in the ATS System
@@ -141,14 +141,14 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 };
 
 /**
- * Hook to get the current user's role from Clerk metadata
+ * Hook to get the current user's role
  */
 export function useUserRole(): UserRole {
-  const { user } = useUser();
+  const { user } = useAuth();
   
-  // Get role from Clerk's public metadata
+  // Get role from user object
   // Default to 'viewer' if no role is set
-  const role = user?.publicMetadata?.role as UserRole;
+  const role = user?.role as UserRole;
   
   return role || "viewer";
 }
@@ -213,16 +213,15 @@ export function hasPermission(role: UserRole, permission: Permission): boolean {
  * Get user display information
  */
 export function useUserInfo() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const role = useUserRole();
   
   return {
     id: user?.id,
-    email: user?.primaryEmailAddress?.emailAddress,
+    email: user?.email,
     firstName: user?.firstName,
     lastName: user?.lastName,
-    fullName: user?.fullName,
-    imageUrl: user?.imageUrl,
+    fullName: user ? `${user.firstName} ${user.lastName}`.trim() : '',
     role,
     isAdmin: role === "admin",
     isRecruiter: role === "recruiter",

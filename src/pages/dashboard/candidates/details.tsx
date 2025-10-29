@@ -30,6 +30,7 @@ import {
   selectJobs,
 } from "@/store/selectors";
 import { fetchCandidateEmails } from "@/store/slices/emailsSlice";
+import type { Email } from "@/types/email";
 import {
   IconArrowDown,
   IconArrowLeft,
@@ -137,7 +138,7 @@ export default function CandidateDetailsPage() {
   const candidateData = useAppSelector(selectCandidateById(candidateId || ""));
   const jobs = useAppSelector(selectJobs);
   const clients = useAppSelector(selectClients);
-  const emails = useAppSelector((state: any) => state.emails.emails || []);
+  const emails = useAppSelector((state: { emails: { emails: Email[] } }) => state.emails.emails || []);
 
   React.useEffect(() => {
     if (candidateId) {
@@ -220,25 +221,27 @@ export default function CandidateDetailsPage() {
 
   if (firstJobId) {
     if (typeof firstJobId === "object" && "title" in firstJobId) {
-      // Create a mutable copy and normalize the ID
+      // jobId is already populated with job object
+      const populatedJob = firstJobId as Record<string, unknown> & { id?: string; _id?: string; title?: string; clientId?: unknown };
       job = {
-        ...firstJobId,
-        id: firstJobId.id || firstJobId._id,
+        ...populatedJob,
+        id: populatedJob.id || populatedJob._id,
       } as (typeof jobs)[0];
       if (
         job?.clientId &&
         typeof job.clientId === "object" &&
         "companyName" in job.clientId
       ) {
-        // Normalize client ID too
+        // clientId is already populated
+        const populatedClient = job.clientId as Record<string, unknown> & { id?: string; _id?: string; companyName?: string };
         client = {
-          ...job.clientId,
-          id: job.clientId.id || job.clientId._id,
+          ...populatedClient,
+          id: populatedClient.id || populatedClient._id,
         } as (typeof clients)[0];
       } else if (job?.clientId) {
         const clientIdStr =
           typeof job.clientId === "object"
-            ? job.clientId._id || job.clientId.id
+            ? (job.clientId as { _id?: string; id?: string })._id || (job.clientId as { _id?: string; id?: string }).id
             : job.clientId;
         client = clients.find((c) => c.id === clientIdStr) || null;
       }
@@ -395,7 +398,7 @@ export default function CandidateDetailsPage() {
   console.log("Transformed candidate:", candidate);
   console.log("============================");
 
-  // TODO: Replace with real history data from backend - multiple job applications for this candidate
+  // Build history data from jobApplications
   const historyData: Array<{
     id: string;
     jobTitle: string;
@@ -405,7 +408,41 @@ export default function CandidateDetailsPage() {
     status: string;
     stage: string;
     lastUpdated: string;
-  }> = [];
+  }> = candidateData.jobApplications
+    ? candidateData.jobApplications.map((jobApp) => {
+        // Find the job details
+        const jobAppJobId = typeof jobApp.jobId === "object" && jobApp.jobId !== null 
+          ? (jobApp.jobId as { _id?: string; id?: string })._id || (jobApp.jobId as { _id?: string; id?: string }).id
+          : jobApp.jobId;
+        const jobDetails = jobs.find((j) => j.id === jobAppJobId || j.id === jobAppJobId?.toString());
+        
+        // Find the client details
+        let clientName = "Unknown Client";
+        if (jobDetails?.clientId) {
+          const clientIdStr = typeof jobDetails.clientId === "object" && jobDetails.clientId !== null
+            ? (jobDetails.clientId as { _id?: string; id?: string })._id || (jobDetails.clientId as { _id?: string; id?: string }).id 
+            : jobDetails.clientId;
+          const clientDetails = clients.find((c) => c.id === clientIdStr);
+          clientName = clientDetails?.companyName || "Unknown Client";
+        }
+        
+        return {
+          id: (jobApp as { _id?: string })._id || `${jobAppJobId}-${jobApp.appliedAt}`,
+          jobTitle: jobDetails?.title || "Unknown Job",
+          jobId: jobAppJobId?.toString() || "",
+          clientName,
+          appliedDate: new Date(jobApp.appliedAt).toLocaleDateString(),
+          status: jobApp.status || "active",
+          stage: jobApp.currentStage || "Not Started",
+          lastUpdated: new Date(jobApp.lastStatusChange || jobApp.appliedAt).toLocaleDateString(),
+        };
+      })
+    : [];
+
+  console.log("=== HISTORY DATA ===");
+  console.log("Job Applications:", candidateData.jobApplications);
+  console.log("History Data:", historyData);
+  console.log("====================");
 
   return (
     <div className="flex flex-1 flex-col">
@@ -1419,9 +1456,9 @@ export default function CandidateDetailsPage() {
                       </h4>
                       <div className="space-y-3">
                         {emails && emails.length > 0 ? (
-                          emails.slice(0, 3).map((email: any) => (
+                          emails.slice(0, 3).map((email) => (
                             <div
-                              key={email._id || email.id}
+                              key={email.id}
                               className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30"
                             >
                               <div
@@ -1454,10 +1491,8 @@ export default function CandidateDetailsPage() {
                                   <IconCalendar className="h-3 w-3" />
                                   {email.sentAt
                                     ? new Date(email.sentAt).toLocaleString()
-                                    : email.receivedAt
-                                    ? new Date(
-                                        email.receivedAt
-                                      ).toLocaleString()
+                                    : email.deliveredAt
+                                    ? new Date(email.deliveredAt).toLocaleString()
                                     : "N/A"}
                                 </p>
                               </div>
@@ -1532,7 +1567,7 @@ export default function CandidateDetailsPage() {
                         </div>
                         <p className="text-2xl font-bold text-green-800 dark:text-green-300">
                           {emails?.filter(
-                            (e: any) => e.direction === "outbound"
+                            (e) => e.direction === "outbound"
                           ).length || 0}
                         </p>
                       </div>
@@ -1544,7 +1579,7 @@ export default function CandidateDetailsPage() {
                           </Label>
                         </div>
                         <p className="text-2xl font-bold text-purple-800 dark:text-purple-300">
-                          {emails?.filter((e: any) => e.direction === "inbound")
+                          {emails?.filter((e) => e.direction === "inbound")
                             .length || 0}
                         </p>
                       </div>
@@ -1600,7 +1635,8 @@ export default function CandidateDetailsPage() {
                                     {emails && emails.length > 0
                                       ? new Date(
                                           emails[0].sentAt ||
-                                            emails[0].receivedAt
+                                            emails[0].deliveredAt ||
+                                            emails[0].createdAt
                                         ).toLocaleDateString()
                                       : "N/A"}
                                   </p>
@@ -1626,11 +1662,24 @@ export default function CandidateDetailsPage() {
 
                       {/* Previous Jobs */}
                       {historyData.map((history) => {
-                        // Mock email data for past jobs
-                        const emailCount = Math.floor(Math.random() * 8) + 2; // 2-9 emails
-                        const sentCount = Math.floor(emailCount * 0.6);
-                        const receivedCount = emailCount - sentCount;
-                        const lastEmailDate = history.lastUpdated;
+                        // Get email data from jobApplications
+                        const jobApp = candidateData.jobApplications?.find(
+                          (app) => {
+                            const appJobId = typeof app.jobId === "object" && app.jobId !== null
+                              ? (app.jobId as { _id?: string; id?: string })._id || (app.jobId as { _id?: string; id?: string }).id 
+                              : app.jobId;
+                            return appJobId === history.jobId;
+                          }
+                        );
+                        
+                        const emailCount = jobApp 
+                          ? (jobApp.emailsSent || 0) + (jobApp.emailsReceived || 0)
+                          : 0;
+                        const sentCount = jobApp?.emailsSent || 0;
+                        const receivedCount = jobApp?.emailsReceived || 0;
+                        const lastEmailDate = jobApp?.lastEmailDate 
+                          ? new Date(jobApp.lastEmailDate).toLocaleDateString()
+                          : "N/A";
 
                         return (
                           <div
@@ -1670,10 +1719,12 @@ export default function CandidateDetailsPage() {
                                       <p className="font-semibold mt-0.5">
                                         {emailCount}
                                       </p>
-                                      <p className="text-muted-foreground mt-0.5">
-                                        {sentCount} sent, {receivedCount}{" "}
-                                        received
-                                      </p>
+                                      {emailCount > 0 && (
+                                        <p className="text-muted-foreground mt-0.5">
+                                          {sentCount} sent, {receivedCount}{" "}
+                                          received
+                                        </p>
+                                      )}
                                     </div>
                                     <div className="p-2 rounded-md bg-background/60 border">
                                       <Label className="text-xs text-muted-foreground">

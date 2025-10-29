@@ -1,9 +1,15 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Layout from "./components/layout";
 import DashboardLayout from "./components/dashboard-layout";
-import ProtectedRoute from "./components/protected-route";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Toaster } from "./components/ui/sonner";
-import AuthPage from "./pages/auth";
+import LoginPage from "./pages/auth/login";
+import RegisterAdminPage from "./pages/auth/register-admin";
+import ForgotPasswordPage from "./pages/auth/forgot-password";
+import ResetPasswordPage from "./pages/auth/reset-password";
+import VerifyEmailPage from "./pages/auth/verify-email";
+import MagicLinkPage from "./pages/auth/magic-link";
+import VerifyMagicLinkPage from "./pages/auth/verify-magic-link";
 import HomePage from "./pages/home";
 import JobsPage from "./pages/jobs";
 import PublicJobDetailPage from "./pages/jobs/detail";
@@ -39,17 +45,24 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
-          <Route path="auth/*" element={<AuthPage />} />
           <Route path="jobs" element={<JobsPage />} />
           <Route path="jobs/:jobId" element={<PublicJobDetailPage />} />
           <Route path="apply/:jobId" element={<PublicApplyPage />} />
           <Route path="apply/success" element={<ApplySuccessPage />} />
         </Route>
         
+        {/* Auth Routes */}
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register-admin" element={<RegisterAdminPage />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="verify-email/:token" element={<VerifyEmailPage />} />
+        <Route path="magic-link" element={<MagicLinkPage />} />
+        <Route path="magic-link/:token" element={<VerifyMagicLinkPage />} />
+        
         {/* Protected Dashboard Routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="dashboard" element={<DashboardLayout />}>
-            <Route index element={<DashboardMainPage />} />
+        <Route path="dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route index element={<DashboardMainPage />} />
           
           {/* Clients Routes */}
           <Route path="clients" element={<ClientsPage />} />
@@ -82,7 +95,6 @@ function App() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="help" element={<HelpPage />} />
           <Route path="messages" element={<MessagesPage />} />
-          </Route>
         </Route>
       </Routes>
       <Toaster />

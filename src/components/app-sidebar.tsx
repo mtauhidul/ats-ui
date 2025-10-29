@@ -13,7 +13,7 @@ import {
   IconUsers,
 } from "@tabler/icons-react";
 import * as React from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "@/hooks/useAuth";
 
 import { NavUtilities } from "@/components/nav-utilities";
 import { NavMain } from "@/components/nav-main";
@@ -95,13 +95,13 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user, isLoaded } = useUser();
+  const { user, isLoading } = useAuth();
 
-  // Get user data from Clerk
+  // Get user data
   const userData = {
-    name: user?.fullName || user?.firstName || "User",
-    email: user?.primaryEmailAddress?.emailAddress || "",
-    avatar: user?.imageUrl || "",
+    name: user ? `${user.firstName} ${user.lastName}`.trim() : "User",
+    email: user?.email || "",
+    avatar: user?.avatar || "",
   };
 
   return (
@@ -127,7 +127,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        {isLoaded && <NavUser user={userData} />}
+        {!isLoading && user && <NavUser user={userData} />}
       </SidebarFooter>
     </Sidebar>
   );
