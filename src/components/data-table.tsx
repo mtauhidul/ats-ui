@@ -383,23 +383,30 @@ export function DataTable({
   );
 
   // Fetch jobs for approval flow
-  React.useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        const response = await authenticatedFetch(
-          "http://localhost:5001/api/jobs?limit=100&status=open",
-          { method: "GET" }
-        );
-        if (response.ok) {
-          const result = await response.json();
-          setJobs(result.data?.jobs || []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch jobs:", error);
+  const fetchJobs = React.useCallback(async () => {
+    try {
+      console.log('Fetching jobs from API...');
+      const response = await authenticatedFetch(
+        "http://localhost:5001/api/jobs?limit=100&status=open",
+        { method: "GET" }
+      );
+      if (response.ok) {
+        const result = await response.json();
+        const fetchedJobs = result.data?.jobs || [];
+        console.log('Fetched jobs:', fetchedJobs.length, 'open jobs');
+        console.log('Jobs data:', JSON.stringify(fetchedJobs.slice(0, 3), null, 2)); // Log first 3 jobs
+        setJobs(fetchedJobs);
+      } else {
+        console.error('Failed to fetch jobs, status:', response.status);
       }
-    };
-    fetchJobs();
+    } catch (error) {
+      console.error("Failed to fetch jobs:", error);
+    }
   }, []);
+
+  React.useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
   // Generate columns
   const columns = React.useMemo(
@@ -527,12 +534,18 @@ export function DataTable({
   };
 
   // Individual action handlers
-  const handleApprove = (id: number | string) => {
+  const handleApprove = async (id: number | string) => {
     const application = data.find((item) => item.id === id);
     if (!application) return;
     
     setCurrentApprovingId(id);
     setCurrentApprovingName(application.header || "this candidate");
+    
+    console.log('Approve clicked, refetching jobs...');
+    // Refetch jobs to get the latest list including newly created ones
+    await fetchJobs();
+    console.log('Jobs after refetch, count:', jobs.length);
+    
     setShowJobSelectionModal(true);
   };
 
@@ -1315,23 +1328,24 @@ function TableCellViewer({
   // Load jobs data from API
   const [jobs, setJobs] = React.useState<Array<{ _id?: string; id?: string; title: string; clientId: string | { _id: string; companyName: string } }>>([]);
 
-  React.useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        const response = await authenticatedFetch(
-          "http://localhost:5001/api/jobs?limit=100&status=open",
-          { method: "GET" }
-        );
-        if (response.ok) {
-          const result = await response.json();
-          setJobs(result.data?.jobs || []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch jobs:", error);
+  const fetchJobs = React.useCallback(async () => {
+    try {
+      const response = await authenticatedFetch(
+        "http://localhost:5001/api/jobs?limit=100&status=open",
+        { method: "GET" }
+      );
+      if (response.ok) {
+        const result = await response.json();
+        setJobs(result.data?.jobs || []);
       }
-    };
-    fetchJobs();
+    } catch (error) {
+      console.error("Failed to fetch jobs:", error);
+    }
   }, []);
+
+  React.useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
   // Handler for job selection and approval
   const handleJobConfirmation = async (jobId: string, clientId: string) => {
@@ -1907,8 +1921,10 @@ function TableCellViewer({
         <DrawerFooter className="border-t gap-2">
           <div className="flex gap-2">
             <Button
-              onClick={() => {
+              onClick={async () => {
                 setApprovalAction('approve');
+                // Refetch jobs to get the latest list including newly created ones
+                await fetchJobs();
                 setShowJobSelectionModal(true);
               }}
               className="flex-1"
@@ -1923,8 +1939,10 @@ function TableCellViewer({
             </Button>
             <Button
               variant="destructive"
-              onClick={() => {
+              onClick={async () => {
                 setApprovalAction('reject');
+                // Refetch jobs to get the latest list including newly created ones
+                await fetchJobs();
                 setShowJobSelectionModal(true);
               }}
               className="flex-1"

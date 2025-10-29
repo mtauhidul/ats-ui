@@ -3,7 +3,7 @@
  * Verifies email and allows user to set password
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 export default function VerifyEmailPage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
+  const hasVerified = useRef(false);
   
   const [isVerifying, setIsVerifying] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
@@ -25,7 +26,9 @@ export default function VerifyEmailPage() {
   const [isSettingPassword, setIsSettingPassword] = useState(false);
 
   useEffect(() => {
-    if (token) {
+    // Prevent double verification in StrictMode or on re-renders
+    if (token && !hasVerified.current) {
+      hasVerified.current = true;
       handleVerification();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,7 +92,7 @@ export default function VerifyEmailPage() {
             </div>
           )}
 
-          {!isVerifying && error && (
+          {!isVerifying && error && !isVerified && (
             <div className="flex flex-col items-center space-y-4">
               <XCircle className="h-12 w-12 text-destructive" />
               <div className="text-center">
@@ -102,21 +105,21 @@ export default function VerifyEmailPage() {
             </div>
           )}
 
-          {!isVerifying && isVerified && (
+          {!isVerifying && isVerified && !error && (
             <div className="space-y-6">
               <div className="flex flex-col items-center space-y-4">
                 <CheckCircle2 className="h-12 w-12 text-green-500" />
                 <div className="text-center">
                   <p className="font-medium text-green-600">Email Verified!</p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Now set your password to complete account setup
+                    Choose how you'd like to access your account
                   </p>
                 </div>
               </div>
 
               <form onSubmit={handleSetPassword} className="space-y-4 mt-6">
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Create Password (Optional)</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -126,7 +129,6 @@ export default function VerifyEmailPage() {
                       value={password}
                       onChange={(e) => setPasswordValue(e.target.value)}
                       className="pl-10"
-                      required
                       minLength={8}
                       disabled={isSettingPassword}
                     />
@@ -147,7 +149,6 @@ export default function VerifyEmailPage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="pl-10"
-                      required
                       disabled={isSettingPassword}
                     />
                   </div>
@@ -156,7 +157,7 @@ export default function VerifyEmailPage() {
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={isSettingPassword}
+                  disabled={isSettingPassword || !password || !confirmPassword}
                 >
                   {isSettingPassword ? (
                     <>
@@ -164,9 +165,33 @@ export default function VerifyEmailPage() {
                       Setting Password...
                     </>
                   ) : (
-                    'Set Password & Continue'
+                    'Set Password & Login'
                   )}
                 </Button>
+
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or
+                    </span>
+                  </div>
+                </div>
+
+                <Button 
+                  type="button"
+                  variant="outline"
+                  className="w-full" 
+                  onClick={() => navigate('/magic-link')}
+                >
+                  Use Passwordless Login (Magic Link)
+                </Button>
+
+                <p className="text-xs text-center text-muted-foreground mt-4">
+                  With magic link, you'll receive a login link via email each time you want to sign in.
+                </p>
               </form>
             </div>
           )}

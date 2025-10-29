@@ -40,6 +40,7 @@ const transformTeamMember = (backendMember: Record<string, unknown>): TeamMember
       department: userId.department as string | undefined,
       status: backendMember.isActive ? 'active' : 'inactive',
       userId: (userId._id || userId.id) as string,
+      lastLoginAt: userId.lastLogin as string | undefined,
     } as TeamMember;
   }
   // If it's already in the correct format or userId is just an ID
@@ -47,14 +48,15 @@ const transformTeamMember = (backendMember: Record<string, unknown>): TeamMember
     ...backendMember,
     id: (backendMember._id || backendMember.id) as string,
     status: backendMember.isActive !== undefined ? (backendMember.isActive ? 'active' : 'inactive') : backendMember.status,
+    lastLoginAt: backendMember.lastLogin as string | undefined,
   } as TeamMember;
 };
 
 export const fetchTeamMembers = createAsyncThunk("team/fetchAll", async () => {
-  const response = await authenticatedFetch(`${API_BASE_URL}/team`);
+  const response = await authenticatedFetch(`${API_BASE_URL}/users`);
   if (!response.ok) throw new Error("Failed to fetch team members");
   const result = await response.json();
-  const teamMembers = result.data?.teamMembers || result.data || result;
+  const teamMembers = result.data?.users || result.data || result;
   // Transform team members from backend format to frontend format
   return Array.isArray(teamMembers) ? teamMembers.map(transformTeamMember) : [];
 });
@@ -62,8 +64,11 @@ export const fetchTeamMembers = createAsyncThunk("team/fetchAll", async () => {
 export const fetchTeamMemberById = createAsyncThunk(
   "team/fetchById",
   async (id: string) => {
-    const response = await authenticatedFetch(`${API_BASE_URL}/team/${id}`);
-    if (!response.ok) throw new Error("Failed to fetch team member");
+    // Fetch user by ID from users endpoint since team page displays users, not team members
+    const response = await authenticatedFetch(`${API_BASE_URL}/users/${id}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch team member");
+    }
     const result = await response.json();
     const member = result.data || result;
     return transformTeamMember(member);
@@ -134,8 +139,16 @@ const teamSlice = createSlice({
         state.isLoading = false;
         state.error = action.error.message || "Failed to fetch team members";
       })
+      .addCase(fetchTeamMemberById.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(fetchTeamMemberById.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.currentMember = action.payload;
+      })
+      .addCase(fetchTeamMemberById.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to fetch team member";
       })
       .addCase(createTeamMember.fulfilled, (state, action) => {
         state.teamMembers.push(action.payload);

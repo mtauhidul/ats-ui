@@ -3,27 +3,28 @@
  * Automatically verifies magic link and logs user in
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { verifyMagicLink } from '@/services/auth.service';
-import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import * as authUtils from '@/lib/auth-utils';
 
 export default function VerifyMagicLinkPage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const { refreshToken } = useAuth();
+  const hasVerified = useRef(false);
   
   const [isVerifying, setIsVerifying] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (token) {
+    // Prevent double verification in StrictMode or on re-renders
+    if (token && !hasVerified.current) {
+      hasVerified.current = true;
       handleVerification();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -33,7 +34,7 @@ export default function VerifyMagicLinkPage() {
     try {
       const response = await verifyMagicLink(token!);
       
-      // Save tokens
+      // Save tokens to localStorage
       if (response.data.accessToken) {
         authUtils.setAccessToken(response.data.accessToken);
       }
@@ -44,13 +45,11 @@ export default function VerifyMagicLinkPage() {
       setIsSuccess(true);
       toast.success('Logged in successfully!');
       
-      // Refresh auth context
-      await refreshToken();
-      
-      // Redirect to dashboard after a short delay
+      // Redirect to dashboard - the ProtectedRoute will handle auth check
+      // and AuthContext will load user from the saved token
       setTimeout(() => {
-        navigate('/dashboard');
-      }, 1500);
+        window.location.href = '/dashboard';
+      }, 1000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Invalid or expired magic link';
       setError(errorMessage);
@@ -74,7 +73,7 @@ export default function VerifyMagicLinkPage() {
             </div>
           )}
 
-          {!isVerifying && error && (
+          {!isVerifying && error && !isSuccess && (
             <div className="flex flex-col items-center space-y-4">
               <XCircle className="h-12 w-12 text-destructive" />
               <div className="text-center">
@@ -87,7 +86,7 @@ export default function VerifyMagicLinkPage() {
             </div>
           )}
 
-          {!isVerifying && isSuccess && (
+          {!isVerifying && isSuccess && !error && (
             <div className="flex flex-col items-center space-y-4">
               <CheckCircle2 className="h-12 w-12 text-green-500" />
               <div className="text-center">

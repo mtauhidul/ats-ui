@@ -54,7 +54,19 @@ import { useAuth } from "@/hooks/useAuth";
 import type { TeamMember, TeamRole, User } from "@/types";
 
 // Type helper for backend User which uses isActive instead of status and title instead of position
-type BackendUser = User & { isActive?: boolean; title?: string };
+type BackendUser = User & { 
+  isActive?: boolean; 
+  title?: string;
+  permissions?: {
+    canManageClients?: boolean;
+    canManageJobs?: boolean;
+    canReviewApplications?: boolean;
+    canManageCandidates?: boolean;
+    canSendEmails?: boolean;
+    canManageTeam?: boolean;
+    canAccessAnalytics?: boolean;
+  };
+};
 
 const getInitials = (firstName?: string, lastName?: string) => {
   if (!firstName || !lastName) return "?";
@@ -102,7 +114,8 @@ export default function TeamPage() {
     avatar: user.avatar,
     department: user.department,
     title: user.title, // Backend User model uses 'title', not 'position'
-    permissions: {
+    permissions: user.permissions || {
+      // Fallback to role-based permissions if not set
       canManageClients: user.role === 'admin',
       canManageJobs: user.role === 'admin',
       canReviewApplications: true,
@@ -189,6 +202,7 @@ export default function TeamPage() {
           department: formData.department,
           title: formData.title,
           phone: formData.phone,
+          permissions: formData.permissions,
         },
         accessToken
       );
@@ -218,14 +232,18 @@ export default function TeamPage() {
           email: formData.email,
           role: formData.role,
           department: formData.department,
+          title: formData.title,
           phone: formData.phone,
-        } 
+          permissions: formData.permissions,
+        } as Partial<BackendUser>
       })).unwrap();
+      toast.success(`${formData.firstName} ${formData.lastName} updated successfully`);
       setIsEditDialogOpen(false);
       setSelectedMember(null);
       resetForm();
     } catch (error) {
       console.error("Failed to update user:", error);
+      toast.error("Failed to update user");
     }
   };
 
@@ -260,7 +278,17 @@ export default function TeamPage() {
 
   const openEditDialog = (member: TeamMember) => {
     setSelectedMember(member);
-    setFormData({ ...member });
+    setFormData({
+      firstName: member.firstName,
+      lastName: member.lastName,
+      email: member.email,
+      phone: member.phone || '',
+      role: member.role,
+      department: member.department || '',
+      title: member.title || '',
+      status: member.status,
+      permissions: { ...member.permissions },
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -809,7 +837,7 @@ export default function TeamPage() {
                       <Label htmlFor="edit-phone">Phone</Label>
                       <Input
                         id="edit-phone"
-                        value={formData.phone}
+                        value={formData.phone || ''}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       />
                     </div>

@@ -170,6 +170,7 @@ export function AddJobModal({
       type: formData.type,
       experienceLevel: formData.experienceLevel,
       priority: formData.priority,
+      status: 'open', // Set status to 'open' so job is immediately available
       openings: formData.openings,
       requirements: requirementsArray,
       responsibilities: formData.responsibilities.filter(r => r.trim()),

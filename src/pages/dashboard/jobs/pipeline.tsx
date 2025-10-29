@@ -100,12 +100,26 @@ export default function JobPipelinePage() {
   // Fetch pipeline when job is loaded and has pipelineId
   useEffect(() => {
     console.log("Job loaded:", job);
-    console.log("Job pipelineId:", job?.pipelineId);
-    
-    if (job?.pipelineId) {
-      console.log("Fetching pipeline with ID:", job.pipelineId);
+
+    // Normalize pipelineId whether it's a string or a populated object
+    const rawPipelineId: unknown = job?.pipelineId;
+    let pipelineId: string | null = null;
+    if (rawPipelineId) {
+      if (typeof rawPipelineId === "string") {
+        pipelineId = rawPipelineId;
+      } else if (typeof rawPipelineId === "object") {
+        const obj = rawPipelineId as Record<string, unknown>;
+  const idCandidate = obj['id'] ?? obj['_id'] ?? (typeof obj['toString'] === 'function' ? (obj['toString'] as () => string)() : undefined);
+        pipelineId = typeof idCandidate === 'string' ? idCandidate : (idCandidate ? String(idCandidate) : null);
+      }
+    }
+
+    console.log("Job pipelineId:", pipelineId);
+
+    if (pipelineId) {
+      console.log("Fetching pipeline with ID:", pipelineId);
       setIsFetchingPipeline(true);
-      fetchPipelineById(job.pipelineId).finally(() => {
+      fetchPipelineById(pipelineId).finally(() => {
         setIsFetchingPipeline(false);
       });
     } else {
@@ -113,7 +127,7 @@ export default function JobPipelinePage() {
       setIsFetchingPipeline(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [job?.pipelineId]);
+  }, [job]);
 
   // Show loading state while fetching job
   if (jobsLoading && !job) {
@@ -286,6 +300,9 @@ export default function JobPipelinePage() {
       
       // Refresh candidates to ensure consistency with backend
       await fetchCandidates();
+      
+      // Dispatch custom event to notify other components to refetch
+      window.dispatchEvent(new CustomEvent('refetchCandidates'));
       
       toast.success("Candidate moved to new stage!");
     } catch (error) {

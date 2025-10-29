@@ -18,6 +18,15 @@ export interface RegisterData {
   department?: string;
   title?: string;
   phone?: string;
+  permissions?: {
+    canManageClients?: boolean;
+    canManageJobs?: boolean;
+    canReviewApplications?: boolean;
+    canManageCandidates?: boolean;
+    canSendEmails?: boolean;
+    canManageTeam?: boolean;
+    canAccessAnalytics?: boolean;
+  };
 }
 
 export interface RegisterFirstAdminData {

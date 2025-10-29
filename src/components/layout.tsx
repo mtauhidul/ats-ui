@@ -92,7 +92,7 @@ export default function Layout() {
                           {user.avatar && (
                             <AvatarImage src={user.avatar} alt={`${user.firstName} ${user.lastName}`} />
                           )}
-                          <AvatarFallback>
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                             {getInitials(`${user.firstName} ${user.lastName}`)}
                           </AvatarFallback>
                         </Avatar>

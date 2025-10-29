@@ -16,6 +16,12 @@ const normalizeCandidate = (candidate: any): Candidate => {
   if (!candidate.id && candidate._id) {
     candidate.id = candidate._id;
   }
+  
+  // If assignedTo is populated (object), extract the ID
+  if (candidate.assignedTo && typeof candidate.assignedTo === 'object' && candidate.assignedTo._id) {
+    candidate.assignedTo = candidate.assignedTo._id || candidate.assignedTo.id;
+  }
+  
   return candidate;
 };
 
@@ -47,7 +53,10 @@ export const fetchCandidates = createAsyncThunk(
     const result = await response.json();
     // Extract data from wrapped response and normalize
     const candidates = result.data?.candidates || result.data || result;
-    return normalizeCandidates(candidates);
+    console.log('📥 Fetched candidates, sample assignedTo:', candidates.slice(0, 3).map((c: Candidate) => ({ id: c.id || (c as unknown as { _id: string })._id, assignedTo: c.assignedTo })));
+    const normalized = normalizeCandidates(candidates);
+    console.log('📥 Normalized candidates, sample assignedTo:', normalized.slice(0, 3).map((c: Candidate) => ({ id: c.id, assignedTo: c.assignedTo })));
+    return normalized;
   }
 );
 

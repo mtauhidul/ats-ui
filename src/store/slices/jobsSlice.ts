@@ -180,6 +180,7 @@ export const updateJob = createAsyncThunk(
     // Only include fields that are being updated
     if (data.title !== undefined) backendData.title = data.title;
     if (data.clientId !== undefined) backendData.clientId = data.clientId;
+    if (data.pipelineId !== undefined) backendData.pipelineId = data.pipelineId;
     if (data.description !== undefined) backendData.description = data.description;
     if (data.responsibilities !== undefined) backendData.responsibilities = data.responsibilities;
     if (data.salaryRange !== undefined) backendData.salaryRange = data.salaryRange;

@@ -20,6 +20,15 @@ interface User {
   title?: string;
   department?: string;
   avatar?: string;
+  permissions?: {
+    canManageClients?: boolean;
+    canManageJobs?: boolean;
+    canReviewApplications?: boolean;
+    canManageCandidates?: boolean;
+    canSendEmails?: boolean;
+    canManageTeam?: boolean;
+    canAccessAnalytics?: boolean;
+  };
 }
 
 interface AuthContextType {

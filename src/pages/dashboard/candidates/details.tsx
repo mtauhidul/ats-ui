@@ -150,6 +150,34 @@ export default function CandidateDetailsPage() {
     fetchClients();
   }, [candidateId, fetchCandidateById, fetchJobs, fetchClients, dispatch]);
 
+  // Refetch candidate data when window regains focus (for real-time sync)
+  React.useEffect(() => {
+    const handleFocus = () => {
+      if (candidateId) {
+        console.log('Window focused, refetching candidate data for real-time sync...');
+        fetchCandidateById(candidateId);
+        fetchJobs();
+      }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [candidateId, fetchCandidateById, fetchJobs]);
+
+  // Poll for updates every 30 seconds when tab is visible
+  React.useEffect(() => {
+    if (!candidateId) return;
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        console.log('Polling for candidate updates...');
+        fetchCandidateById(candidateId);
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [candidateId, fetchCandidateById]);
+
   // Log candidate data for debugging
   React.useEffect(() => {
     if (candidateData) {

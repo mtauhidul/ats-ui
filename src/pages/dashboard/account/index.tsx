@@ -700,8 +700,9 @@ export default function AccountPage() {
                     <Separator />
 
                     <div className="space-y-3">
-                      <h4 className="text-sm font-medium">Enabled Permissions</h4>
+                      <h4 className="text-sm font-medium">Your Permissions</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {/* Always enabled base permissions */}
                         <div className="flex items-center gap-2 text-sm">
                           <div className="h-2 w-2 rounded-full bg-green-500" />
                           View Dashboard
@@ -710,31 +711,84 @@ export default function AccountPage() {
                           <div className="h-2 w-2 rounded-full bg-green-500" />
                           Manage Profile
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <div className="h-2 w-2 rounded-full bg-gray-300" />
-                          Additional permissions based on your role
-                        </div>
+                        
+                        {/* Dynamic permissions from backend */}
+                        {user?.permissions?.canManageClients && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500" />
+                            Manage Clients
+                          </div>
+                        )}
+                        {user?.permissions?.canManageJobs && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500" />
+                            Manage Jobs
+                          </div>
+                        )}
+                        {user?.permissions?.canReviewApplications && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500" />
+                            Review Applications
+                          </div>
+                        )}
+                        {user?.permissions?.canManageCandidates && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500" />
+                            Manage Candidates
+                          </div>
+                        )}
+                        {user?.permissions?.canSendEmails && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500" />
+                            Send Emails
+                          </div>
+                        )}
+                        {user?.permissions?.canManageTeam && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500" />
+                            Manage Team
+                          </div>
+                        )}
+                        {user?.permissions?.canAccessAnalytics && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500" />
+                            Access Analytics
+                          </div>
+                        )}
                       </div>
+                      
+                      {userRole === 'admin' && (
+                        <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                          <p className="text-sm text-primary font-medium">
+                            🎉 As an admin, you have full access to all system features and permissions.
+                          </p>
+                        </div>
+                      )}
+                      
                       <p className="text-xs text-muted-foreground mt-4">
-                        Your specific permissions are determined by your role. Contact your administrator to request additional access.
+                        Your specific permissions are determined by your role and can be customized by your administrator.
                       </p>
                     </div>
 
-                    <Separator />
+                    {userRole !== 'admin' && (
+                      <>
+                        <Separator />
 
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                      <div className="flex items-start gap-3">
-                        <Bell className="h-5 w-5 text-amber-600 mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium text-amber-900">
-                            Permission Changes
-                          </p>
-                          <p className="text-sm text-amber-700 mt-1">
-                            Contact your administrator if you need additional permissions or role changes.
-                          </p>
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                          <div className="flex items-start gap-3">
+                            <Bell className="h-5 w-5 text-amber-600 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-medium text-amber-900">
+                                Need Additional Access?
+                              </p>
+                              <p className="text-sm text-amber-700 mt-1">
+                                Contact your administrator if you need additional permissions or role changes.
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

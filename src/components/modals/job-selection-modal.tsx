@@ -111,9 +111,18 @@ export function JobSelectionModal({
               }}
             >
               <SelectTrigger id="job-select" className="w-full">
-                <span className="block truncate">
-                  {selectedJobId && selectedJob ? selectedJob.title : "Select a job position"}
-                </span>
+                {selectedJobId && selectedJob ? (
+                  <div className="flex items-center justify-between gap-4 w-full">
+                    <span className="font-medium truncate">{selectedJob.title}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {typeof selectedJob.clientId === 'object' 
+                        ? selectedJob.clientId.companyName 
+                        : 'Unknown Client'}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">Select a job position</span>
+                )}
               </SelectTrigger>
               <SelectContent position="popper" className="max-h-[300px]">
                 {jobs.length === 0 ? (
@@ -123,10 +132,16 @@ export function JobSelectionModal({
                 ) : (
                   jobs.map((job) => {
                     const jobId = getJobId(job);
+                    const clientName = typeof job.clientId === 'object' 
+                      ? job.clientId.companyName 
+                      : 'Unknown Client';
                     console.log('Rendering job:', jobId, job.title);
                     return (
-                      <SelectItem key={jobId} value={jobId}>
-                        {job.title}
+                      <SelectItem key={jobId} value={jobId} className="cursor-pointer">
+                        <div className="flex items-center justify-between gap-4 w-full">
+                          <span className="font-medium truncate">{job.title}</span>
+                          <span className="text-xs text-muted-foreground shrink-0">{clientName}</span>
+                        </div>
                       </SelectItem>
                     );
                   })

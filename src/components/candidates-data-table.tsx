@@ -115,6 +115,12 @@ function AssignedSelector({
     fetchTeam();
   }, [fetchTeam]);
 
+  // Debug: Log team members
+  React.useEffect(() => {
+    console.log('AssignedSelector - Team members:', teamMembers);
+    console.log('AssignedSelector - Team members count:', teamMembers.length);
+  }, [teamMembers]);
+
   // Update selected member when initialAssignee changes (e.g., after data refresh)
   React.useEffect(() => {
     setSelectedMember(initialAssignee || null);
@@ -145,7 +151,10 @@ function AssignedSelector({
         try {
           // Use userId (the actual user's ID), not id (the team member document ID)
           const userIdToAssign = member.userId || member.id;
+          console.log('🔵 Assigning candidate:', candidateId, 'to user:', userIdToAssign);
+          console.log('🔵 Member object:', member);
           await updateCandidate(candidateId.toString(), { assignedTo: userIdToAssign });
+          console.log('✅ Assignment successful');
           onUpdate?.(); // Trigger parent refresh
           toast.success(`Assigned ${memberName} to candidate`);
         } catch (error) {
@@ -183,18 +192,24 @@ function AssignedSelector({
           <div className="text-xs font-semibold text-muted-foreground px-2 py-1.5">
             Select Team Member
           </div>
-          {teamMembers.map((member) => {
-            const memberName = `${member.firstName} ${member.lastName}`.trim() || member.email;
-            return (
-              <SelectItem
-                key={member.id}
-                value={member.id}
-                className="text-sm"
-              >
-                {memberName}
-              </SelectItem>
-            );
-          })}
+          {teamMembers.length === 0 ? (
+            <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+              No team members found
+            </div>
+          ) : (
+            teamMembers.map((member) => {
+              const memberName = `${member.firstName} ${member.lastName}`.trim() || member.email;
+              return (
+                <SelectItem
+                  key={member.id}
+                  value={member.id}
+                  className="text-sm"
+                >
+                  {memberName}
+                </SelectItem>
+              );
+            })
+          )}
           {selectedMember && (
             <>
               <div className="border-t my-1" />
@@ -519,6 +534,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
             onUpdate={() => {
               // Trigger a refetch of candidates when assignment changes
               // This will be handled by the parent component
+              console.log('📢 CandidatesDataTable: Dispatching refetchCandidates event');
               window.dispatchEvent(new CustomEvent('refetchCandidates'));
             }}
           />
