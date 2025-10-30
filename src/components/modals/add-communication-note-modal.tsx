@@ -31,8 +31,8 @@ export function AddCommunicationNoteModal({ open, onClose, onSubmit }: AddCommun
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Add Communication Note</DialogTitle>
           <DialogDescription>Record a communication with this client</DialogDescription>
@@ -64,6 +64,7 @@ export function AddCommunicationNoteModal({ open, onClose, onSubmit }: AddCommun
               id="subject"
               value={formData.subject}
               onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+              placeholder="Enter subject"
               required
             />
           </div>
@@ -74,8 +75,9 @@ export function AddCommunicationNoteModal({ open, onClose, onSubmit }: AddCommun
               id="content"
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              placeholder="Enter communication details"
               required
-              className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 

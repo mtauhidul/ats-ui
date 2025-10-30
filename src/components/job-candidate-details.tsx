@@ -1,23 +1,32 @@
-import { useState } from "react";
-import { ArrowLeft, Mail, Phone, MapPin, Briefcase, GraduationCap, Award, Calendar, Star, Download, UserCheck, UserX, Clock, FileText } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Mail, Phone, MapPin, Briefcase, GraduationCap, Award, Calendar, Star, Download, Clock, FileText, Video, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 interface JobCandidateDetailsProps {
   candidate: Candidate;
   job: Job;
   onBack: () => void;
-  onStatusChange: (candidateId: string, jobId: string, newStatus: string) => void;
   onInterviewClick?: () => void;
   onEmailClick?: () => void;
+}
+
+interface Interview {
+  id: string;
+  title: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  scheduledAt: string;
+  feedback?: Array<{
+    rating: number;
+    recommendation?: string;
+    comments?: string;
+  }>;
 }
 
 const statusColors = {
@@ -32,8 +41,12 @@ const statusColors = {
   withdrawn: "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20",
 } as const;
 
-export function JobCandidateDetails({ candidate, job, onBack, onStatusChange, onInterviewClick, onEmailClick }: JobCandidateDetailsProps) {
+export function JobCandidateDetails({ candidate, job, onBack, onInterviewClick, onEmailClick }: JobCandidateDetailsProps) {
   const [activeTab, setActiveTab] = useState("overview");
+  
+  // Interview state for timeline
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [isLoadingInterviews, setIsLoadingInterviews] = useState(false);
   
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
   const initials = `${candidate.firstName[0]}${candidate.lastName[0]}`.toUpperCase();
@@ -61,6 +74,45 @@ export function JobCandidateDetails({ candidate, job, onBack, onStatusChange, on
     return id === job.id;
   });
   
+  // Fetch interviews for this candidate and job (before early return)
+  useEffect(() => {
+    if (!isAssociatedWithJob) return; // Skip if not associated
+    
+    const fetchInterviews = async () => {
+      setIsLoadingInterviews(true);
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+        const token = await window.Clerk?.session?.getToken();
+        
+        if (!token) {
+          console.error('No auth token available');
+          return;
+        }
+        
+        const response = await fetch(
+          `${API_BASE_URL}/api/interviews?candidateId=${candidateData._id || candidateData.id}&jobId=${job.id}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setInterviews(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching interviews:', error);
+      } finally {
+        setIsLoadingInterviews(false);
+      }
+    };
+
+    fetchInterviews();
+  }, [candidateData._id, candidateData.id, job.id, isAssociatedWithJob]);
+  
   if (!isAssociatedWithJob) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -79,13 +131,6 @@ export function JobCandidateDetails({ candidate, job, onBack, onStatusChange, on
   const status = candidateData.status || 'active';
   
   const daysSinceApplied = Math.floor((new Date().getTime() - new Date(candidateData.createdAt).getTime()) / (1000 * 60 * 60 * 24));
-
-  const handleStatusChange = (newStatus: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const candidateId = (candidate as any)._id || candidate.id;
-    onStatusChange(candidateId, job.id, newStatus);
-    toast.success(`Candidate status updated to ${newStatus.replace(/_/g, ' ')}`);
-  };
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -164,40 +209,6 @@ export function JobCandidateDetails({ candidate, job, onBack, onStatusChange, on
           )}
         </div>
       </div>
-
-      {/* Quick Actions */}
-      <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-        <CardContent className="p-4">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <span className="text-sm font-medium">Update Status:</span>
-              <Select value={status} onValueChange={handleStatusChange}>
-                <SelectTrigger className="w-full sm:w-[200px] bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="interviewing">Interviewing</SelectItem>
-                  <SelectItem value="offered">Offered</SelectItem>
-                  <SelectItem value="hired">Hired</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="withdrawn">Withdrawn</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="default" className="flex-1 sm:flex-none">
-                <UserCheck className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Approve</span>
-              </Button>
-              <Button size="sm" variant="outline" className="flex-1 sm:flex-none">
-                <UserX className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Reject</span>
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Job Context */}
       <Card>
@@ -635,85 +646,152 @@ export function JobCandidateDetails({ candidate, job, onBack, onStatusChange, on
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Clock className="h-4 w-4" />
-                Application Timeline
+                Job-Specific Activity Timeline
               </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Complete activity history for this job including stage changes, interviews, and communications
+              </p>
             </CardHeader>
             <CardContent>
-              <div className="relative space-y-6 pl-8">
-                {/* Timeline Line */}
-                <div className="absolute left-[15px] top-3 bottom-3 w-0.5 bg-border"></div>
-
-                {/* Applied Event */}
-                <div className="relative">
-                  <div className="absolute -left-8 top-0.5 rounded-full bg-primary p-2 ring-4 ring-background">
-                    <Calendar className="h-3.5 w-3.5 text-primary-foreground" />
-                  </div>
-                  <div className="bg-muted/50 rounded-lg p-4 border">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-sm">Application Submitted</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {daysSinceApplied} days ago
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(candidateData.createdAt).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
+              {isLoadingInterviews ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                  <p className="text-sm text-muted-foreground mt-2">Loading timeline...</p>
                 </div>
+              ) : (
+                <div className="relative space-y-6 pl-8">
+                  {/* Timeline Line */}
+                  <div className="absolute left-[15px] top-3 bottom-3 w-0.5 bg-border"></div>
 
-                {/* Last Status Change Event */}
-                <div className="relative">
-                  <div className="absolute -left-8 top-0.5 rounded-full bg-muted p-2 ring-4 ring-background border-2 border-border">
-                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
-                  <div className="bg-muted/50 rounded-lg p-4 border">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-sm">Current Status</h4>
-                      <Badge className={cn("text-xs border", statusColors[status as keyof typeof statusColors] || "bg-gray-500/10 text-gray-700")}>
-                        {status.replace(/_/g, ' ')}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(candidateData.updatedAt || candidateData.createdAt).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
-                </div>
-
-                {/* AI Score if available */}
-                {candidateData.aiScore?.overallScore && (
+                  {/* Applied Event */}
                   <div className="relative">
-                    <div className="absolute -left-8 top-0.5 rounded-full bg-amber-500 p-2 ring-4 ring-background">
-                      <Star className="h-3.5 w-3.5 text-white" />
+                    <div className="absolute -left-8 top-0.5 rounded-full bg-primary p-2 ring-4 ring-background">
+                      <Calendar className="h-3.5 w-3.5 text-primary-foreground" />
                     </div>
                     <div className="bg-muted/50 rounded-lg p-4 border">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-semibold text-sm">AI Assessment</h4>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                          <span className="font-bold text-sm">{candidateData.aiScore.overallScore}%</span>
-                        </div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-sm">Application Submitted</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {daysSinceApplied} days ago
+                        </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {candidateData.aiScore.recommendation?.replace(/_/g, ' ')}
+                        {new Date(candidateData.createdAt).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                       </p>
                     </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Interview Events */}
+                  {interviews.map((interview) => (
+                    <div key={interview.id} className="relative">
+                      <div className={`absolute -left-8 top-0.5 rounded-full p-2 ring-4 ring-background ${
+                        interview.status === 'completed' 
+                          ? 'bg-green-500' 
+                          : interview.status === 'cancelled'
+                          ? 'bg-red-500'
+                          : 'bg-amber-500'
+                      }`}>
+                        {interview.status === 'completed' ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                        ) : (
+                          <Video className="h-3.5 w-3.5 text-white" />
+                        )}
+                      </div>
+                      <div className="bg-muted/50 rounded-lg p-4 border">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-sm">
+                            {interview.status === 'completed' ? 'Interview Completed' : 
+                             interview.status === 'cancelled' ? 'Interview Cancelled' : 
+                             'Interview Scheduled'}
+                          </h4>
+                          <Badge variant={
+                            interview.status === 'completed' ? 'default' :
+                            interview.status === 'cancelled' ? 'destructive' :
+                            'secondary'
+                          } className="text-xs">
+                            {interview.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm mb-2">{interview.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(interview.scheduledAt).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                        {interview.feedback && interview.feedback.length > 0 && (
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="text-xs font-medium mb-1">Feedback:</p>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs">Rating: {interview.feedback[0].rating}/5 ⭐</span>
+                              <Badge variant="outline" className="text-xs">
+                                {interview.feedback[0].recommendation?.replace('_', ' ')}
+                              </Badge>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* AI Score if available */}
+                  {candidateData.aiScore?.overallScore && (
+                    <div className="relative">
+                      <div className="absolute -left-8 top-0.5 rounded-full bg-amber-500 p-2 ring-4 ring-background">
+                        <Star className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <div className="bg-muted/50 rounded-lg p-4 border">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-semibold text-sm">AI Assessment</h4>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                            <span className="font-bold text-sm">{candidateData.aiScore.overallScore}%</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {candidateData.aiScore.recommendation?.replace(/_/g, ' ')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Last Status Change Event */}
+                  <div className="relative">
+                    <div className="absolute -left-8 top-0.5 rounded-full bg-muted p-2 ring-4 ring-background border-2 border-border">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-4 border">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-sm">Current Status</h4>
+                        <Badge className={cn("text-xs border", statusColors[status as keyof typeof statusColors] || "bg-gray-500/10 text-gray-700")}>
+                          {status.replace(/_/g, ' ')}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(candidateData.updatedAt || candidateData.createdAt).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

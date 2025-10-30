@@ -129,6 +129,9 @@ export default function TeamMemberDetailPage() {
       reviewed_application: 'Reviewed application',
       updated_candidate: 'Updated candidate',
       created_candidate: 'Created candidate',
+      completed_interview: 'Completed interview',
+      scheduled_interview: 'Scheduled interview',
+      created_zoom_meeting: 'Created Zoom meeting',
     };
     return actionMap[action] || action.replace(/_/g, ' ');
   };
@@ -199,12 +202,27 @@ export default function TeamMemberDetailPage() {
   }
 
   const assignedJobs = jobs.filter((job: Job) => job.assignedRecruiterId === currentMember.id);
-  const assignedCandidates = candidates.filter((candidate: Candidate) => candidate.assignedTo === currentMember.id);
+  
+  // assignedTo references User ID (currentMember.userId), not TeamMember ID (currentMember.id)
+  // assignedTo can be either a string (User ID) or a populated user object
+  const userIdToMatch = currentMember.userId || currentMember.id;
+  const assignedCandidates = candidates.filter((candidate: Candidate) => {
+    if (typeof candidate.assignedTo === 'string') {
+      // assignedTo is a User ID string
+      return candidate.assignedTo === userIdToMatch;
+    } else if (candidate.assignedTo && typeof candidate.assignedTo === 'object') {
+      // assignedTo is a populated User object - check both id and _id fields
+      return candidate.assignedTo.id === userIdToMatch || candidate.assignedTo._id === userIdToMatch;
+    }
+    return false;
+  });
 
   console.log('Team detail - currentMember.id:', currentMember.id);
+  console.log('Team detail - currentMember.userId:', currentMember.userId);
+  console.log('Team detail - userIdToMatch:', userIdToMatch);
   console.log('Team detail - Total candidates:', candidates.length);
   console.log('Team detail - Assigned candidates:', assignedCandidates.length);
-  console.log('Team detail - Sample candidate assignedTo values:', candidates.slice(0, 3).map(c => ({ id: c.id, assignedTo: c.assignedTo, assignedRecruiterId: c.assignedRecruiterId })));
+  console.log('Team detail - Sample candidate assignedTo values:', candidates.slice(0, 3).map(c => ({ id: c.id, assignedTo: c.assignedTo })));
 
   return (
     <div className="flex flex-1 flex-col">
@@ -458,7 +476,7 @@ export default function TeamMemberDetailPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  Recent Candidates
+                  Assigned Candidates
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -489,19 +507,21 @@ export default function TeamMemberDetailPage() {
                               ID: {candidate.id}
                             </p>
                             <p className="text-sm text-muted-foreground truncate">
+                              {/* eslint-disable @typescript-eslint/no-explicit-any */}
                               {candidate.jobIds && candidate.jobIds.length > 0 ? (
                                 <>
-                                  {typeof candidate.jobIds[0] === 'object' && candidate.jobIds[0].title 
-                                    ? candidate.jobIds[0].title 
+                                  {typeof candidate.jobIds[0] === 'object' && (candidate.jobIds[0] as any).title 
+                                    ? (candidate.jobIds[0] as any).title 
                                     : 'No job'}
-                                  {typeof candidate.jobIds[0] === 'object' && candidate.jobIds[0].clientId && 
-                                   typeof candidate.jobIds[0].clientId === 'object' && candidate.jobIds[0].clientId.companyName && (
-                                    <> • {candidate.jobIds[0].clientId.companyName}</>
+                                  {typeof candidate.jobIds[0] === 'object' && (candidate.jobIds[0] as any).clientId && 
+                                   typeof (candidate.jobIds[0] as any).clientId === 'object' && (candidate.jobIds[0] as any).clientId.companyName && (
+                                    <> • {(candidate.jobIds[0] as any).clientId.companyName}</>
                                   )}
                                 </>
                               ) : (
                                 'No job assigned'
                               )}
+                              {/* eslint-enable @typescript-eslint/no-explicit-any */}
                             </p>
                           </div>
                         </div>

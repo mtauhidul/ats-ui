@@ -165,9 +165,12 @@ export interface Candidate extends BaseEntity {
     order: number;
   }; // Populated stage object from backend
   
+  // Status
+  status?: 'active' | 'interviewing' | 'offered' | 'hired' | 'rejected' | 'withdrawn';
+  
   // Relations (Database references - stored as IDs)
   assignedRecruiterId?: string; // Primary recruiter managing this candidate (for UI filtering)
-  assignedTo?: string | null; // Assigned team member (User ID) - can be populated with User object by backend
+  assignedTo?: string | { id: string; _id?: string; firstName?: string; lastName?: string; email?: string; avatar?: string } | null; // Assigned team member - can be User ID string or populated User object from backend
   jobIds: string[]; // MANDATORY: All jobs this candidate has applied to - References to Job collection (at least one)
   applicationIds: string[]; // References to original Application collection (if created from application)
   clientIds: string[]; // All clients this candidate has interacted with (derived from jobs) - References to Client collection

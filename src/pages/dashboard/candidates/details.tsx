@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import tagsData from "@/lib/mock-data/tags.json";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import {
   useAppDispatch,
   useAppSelector,
@@ -46,79 +46,23 @@ import {
   IconPhone,
   IconTag,
   IconUserCheck,
-  IconUserX,
   IconX,
 } from "@tabler/icons-react";
-import { CheckCircle2, XCircle } from "lucide-react";
 import * as React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-// Helper functions for status badges
-function getStatusBadge(status: string) {
-  switch (status) {
-    case "Hired":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800"
-        >
-          <IconCircleCheckFilled className="h-3 w-3 mr-1" />
-          Hired
-        </Badge>
-      );
-    case "Rejected":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800"
-        >
-          <IconUserX className="h-3 w-3 mr-1" />
-          Rejected
-        </Badge>
-      );
-    case "Withdrawn":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-800"
-        >
-          <IconUserX className="h-3 w-3 mr-1" />
-          Withdrawn
-        </Badge>
-      );
-    case "Offered":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-400 dark:border-purple-800"
-        >
-          <IconUserCheck className="h-3 w-3 mr-1" />
-          Offered
-        </Badge>
-      );
-    case "Interviewing":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
-        >
-          <IconClockHour4 className="h-3 w-3 mr-1" />
-          Interviewing
-        </Badge>
-      );
-    case "In Process":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800"
-        >
-          <IconClockHour4 className="h-3 w-3 mr-1" />
-          In Process
-        </Badge>
-      );
-    default:
-      return <Badge variant="secondary">{status}</Badge>;
-  }
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
+
+// Tag interface
+interface Tag {
+  _id: string;
+  id?: string;
+  name: string;
+  description?: string;
+  color?: string;
+  type: "job" | "candidate" | "skill" | "general";
+  isActive: boolean;
 }
 
 export default function CandidateDetailsPage() {
@@ -128,6 +72,42 @@ export default function CandidateDetailsPage() {
   const [showVideoPreview, setShowVideoPreview] = React.useState(false);
   const [openTagPopover, setOpenTagPopover] = React.useState(false);
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
+  const [allTags, setAllTags] = React.useState<Tag[]>([]);
+  const [isLoadingTags, setIsLoadingTags] = React.useState(false);
+  const [interviews, setInterviews] = React.useState<Interview[]>([]);
+  const [isLoadingInterviews, setIsLoadingInterviews] = React.useState(false);
+
+  // Interview interface for history
+  interface Interview {
+    id?: string;
+    _id?: string;
+    scheduledAt: string;
+    type: string;
+    status: string;
+    title: string;
+    duration: number;
+    notes?: string;
+    description?: string;
+    feedback?: Array<{
+      comments: string;
+      rating: number;
+      recommendation: string;
+      interviewerId?: {
+        firstName?: string;
+        lastName?: string;
+      };
+    }>;
+    jobId?: {
+      title?: string;
+    };
+    clientId?: {
+      companyName?: string;
+    };
+    interviewerIds?: Array<{
+      firstName?: string;
+      lastName?: string;
+    }>;
+  }
 
   // Fetch data from Redux store
   const dispatch = useAppDispatch();
@@ -138,7 +118,9 @@ export default function CandidateDetailsPage() {
   const candidateData = useAppSelector(selectCandidateById(candidateId || ""));
   const jobs = useAppSelector(selectJobs);
   const clients = useAppSelector(selectClients);
-  const emails = useAppSelector((state: { emails: { emails: Email[] } }) => state.emails.emails || []);
+  const emails = useAppSelector(
+    (state: { emails: { emails: Email[] } }) => state.emails.emails || []
+  );
 
   React.useEffect(() => {
     if (candidateId) {
@@ -154,14 +136,16 @@ export default function CandidateDetailsPage() {
   React.useEffect(() => {
     const handleFocus = () => {
       if (candidateId) {
-        console.log('Window focused, refetching candidate data for real-time sync...');
+        console.log(
+          "Window focused, refetching candidate data for real-time sync..."
+        );
         fetchCandidateById(candidateId);
         fetchJobs();
       }
     };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, [candidateId, fetchCandidateById, fetchJobs]);
 
   // Poll for updates every 30 seconds when tab is visible
@@ -169,8 +153,8 @@ export default function CandidateDetailsPage() {
     if (!candidateId) return;
 
     const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        console.log('Polling for candidate updates...');
+      if (document.visibilityState === "visible") {
+        console.log("Polling for candidate updates...");
         fetchCandidateById(candidateId);
       }
     }, 30000); // 30 seconds
@@ -201,12 +185,120 @@ export default function CandidateDetailsPage() {
     }
   }, [candidateData]);
 
+  // Fetch interviews for this candidate
+  const fetchInterviews = React.useCallback(async () => {
+    if (!candidateId) return;
+
+    try {
+      setIsLoadingInterviews(true);
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/interviews?candidateId=${candidateId}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch interviews");
+      }
+
+      const result = await response.json();
+      setInterviews(result.data?.interviews || []);
+    } catch (error) {
+      console.error("Failed to fetch interviews:", error);
+      setInterviews([]);
+    } finally {
+      setIsLoadingInterviews(false);
+    }
+  }, [candidateId]);
+
+  // Fetch interviews when candidate loads
+  React.useEffect(() => {
+    fetchInterviews();
+  }, [fetchInterviews]);
+
+  // Fetch all available tags
+  const fetchTags = React.useCallback(async () => {
+    try {
+      setIsLoadingTags(true);
+      const response = await authenticatedFetch(`${API_BASE_URL}/tags`);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch tags");
+      }
+
+      const result = await response.json();
+      const tags = result.data || [];
+      // Ensure id field exists for compatibility
+      const tagsWithId = tags.map((tag: Tag) => ({
+        ...tag,
+        id: tag.id || tag._id,
+      }));
+      setAllTags(tagsWithId);
+    } catch (error) {
+      console.error("Failed to fetch tags:", error);
+      setAllTags([]);
+    } finally {
+      setIsLoadingTags(false);
+    }
+  }, []);
+
+  // Fetch tags on mount
+  React.useEffect(() => {
+    fetchTags();
+  }, [fetchTags]);
+
+  // Load candidate's tags when candidate data is available
+  React.useEffect(() => {
+    if (
+      candidateData &&
+      (candidateData as unknown as { tagIds?: string[] }).tagIds
+    ) {
+      const tagIds = (
+        candidateData as unknown as {
+          tagIds: Array<string | { _id?: string; id?: string }>;
+        }
+      ).tagIds.map((id: string | { _id?: string; id?: string }) =>
+        typeof id === "object" ? id._id || id.id || "" : id
+      );
+      setSelectedTags(tagIds);
+    }
+  }, [candidateData]);
+
+  // Update candidate tags on the backend
+  const updateCandidateTags = React.useCallback(
+    async (tagIds: string[]) => {
+      if (!candidateId) return;
+
+      try {
+        const response = await authenticatedFetch(
+          `${API_BASE_URL}/candidates/${candidateId}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ tagIds }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to update tags");
+        }
+
+        // Refetch candidate data to sync
+        fetchCandidateById(candidateId);
+      } catch (error) {
+        console.error("Failed to update candidate tags:", error);
+      }
+    },
+    [candidateId, fetchCandidateById]
+  );
+
   const toggleTag = (tagId: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tagId)
-        ? prev.filter((id) => id !== tagId)
-        : [...prev, tagId]
-    );
+    const newTags = selectedTags.includes(tagId)
+      ? selectedTags.filter((id) => id !== tagId)
+      : [...selectedTags, tagId];
+
+    setSelectedTags(newTags);
+    updateCandidateTags(newTags);
   };
 
   // Loading state
@@ -250,7 +342,12 @@ export default function CandidateDetailsPage() {
   if (firstJobId) {
     if (typeof firstJobId === "object" && "title" in firstJobId) {
       // jobId is already populated with job object
-      const populatedJob = firstJobId as Record<string, unknown> & { id?: string; _id?: string; title?: string; clientId?: unknown };
+      const populatedJob = firstJobId as Record<string, unknown> & {
+        id?: string;
+        _id?: string;
+        title?: string;
+        clientId?: unknown;
+      };
       job = {
         ...populatedJob,
         id: populatedJob.id || populatedJob._id,
@@ -261,7 +358,11 @@ export default function CandidateDetailsPage() {
         "companyName" in job.clientId
       ) {
         // clientId is already populated
-        const populatedClient = job.clientId as Record<string, unknown> & { id?: string; _id?: string; companyName?: string };
+        const populatedClient = job.clientId as Record<string, unknown> & {
+          id?: string;
+          _id?: string;
+          companyName?: string;
+        };
         client = {
           ...populatedClient,
           id: populatedClient.id || populatedClient._id,
@@ -269,7 +370,8 @@ export default function CandidateDetailsPage() {
       } else if (job?.clientId) {
         const clientIdStr =
           typeof job.clientId === "object"
-            ? (job.clientId as { _id?: string; id?: string })._id || (job.clientId as { _id?: string; id?: string }).id
+            ? (job.clientId as { _id?: string; id?: string })._id ||
+              (job.clientId as { _id?: string; id?: string }).id
             : job.clientId;
         client = clients.find((c) => c.id === clientIdStr) || null;
       }
@@ -439,30 +541,41 @@ export default function CandidateDetailsPage() {
   }> = candidateData.jobApplications
     ? candidateData.jobApplications.map((jobApp) => {
         // Find the job details
-        const jobAppJobId = typeof jobApp.jobId === "object" && jobApp.jobId !== null 
-          ? (jobApp.jobId as { _id?: string; id?: string })._id || (jobApp.jobId as { _id?: string; id?: string }).id
-          : jobApp.jobId;
-        const jobDetails = jobs.find((j) => j.id === jobAppJobId || j.id === jobAppJobId?.toString());
-        
+        const jobAppJobId =
+          typeof jobApp.jobId === "object" && jobApp.jobId !== null
+            ? (jobApp.jobId as { _id?: string; id?: string })._id ||
+              (jobApp.jobId as { _id?: string; id?: string }).id
+            : jobApp.jobId;
+        const jobDetails = jobs.find(
+          (j) => j.id === jobAppJobId || j.id === jobAppJobId?.toString()
+        );
+
         // Find the client details
         let clientName = "Unknown Client";
         if (jobDetails?.clientId) {
-          const clientIdStr = typeof jobDetails.clientId === "object" && jobDetails.clientId !== null
-            ? (jobDetails.clientId as { _id?: string; id?: string })._id || (jobDetails.clientId as { _id?: string; id?: string }).id 
-            : jobDetails.clientId;
+          const clientIdStr =
+            typeof jobDetails.clientId === "object" &&
+            jobDetails.clientId !== null
+              ? (jobDetails.clientId as { _id?: string; id?: string })._id ||
+                (jobDetails.clientId as { _id?: string; id?: string }).id
+              : jobDetails.clientId;
           const clientDetails = clients.find((c) => c.id === clientIdStr);
           clientName = clientDetails?.companyName || "Unknown Client";
         }
-        
+
         return {
-          id: (jobApp as { _id?: string })._id || `${jobAppJobId}-${jobApp.appliedAt}`,
+          id:
+            (jobApp as { _id?: string })._id ||
+            `${jobAppJobId}-${jobApp.appliedAt}`,
           jobTitle: jobDetails?.title || "Unknown Job",
           jobId: jobAppJobId?.toString() || "",
           clientName,
           appliedDate: new Date(jobApp.appliedAt).toLocaleDateString(),
           status: jobApp.status || "active",
           stage: jobApp.currentStage || "Not Started",
-          lastUpdated: new Date(jobApp.lastStatusChange || jobApp.appliedAt).toLocaleDateString(),
+          lastUpdated: new Date(
+            jobApp.lastStatusChange || jobApp.appliedAt
+          ).toLocaleDateString(),
         };
       })
     : [];
@@ -493,7 +606,8 @@ export default function CandidateDetailsPage() {
             {/* Candidate Header Card */}
             <Card className="border-2">
               <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row gap-6">
+                <div className="flex flex-col lg:flex-row gap-6">
+                  {/* Avatar */}
                   <Avatar className="h-24 w-24 border-2 rounded-lg flex-shrink-0">
                     <AvatarImage
                       src={candidate.photo || ""}
@@ -506,11 +620,31 @@ export default function CandidateDetailsPage() {
                   </Avatar>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
-                      <div>
-                        <h1 className="text-2xl font-bold mb-1">
-                          {candidate.fullName}
-                        </h1>
+                    {/* Name and Title Row */}
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h1 className="text-2xl font-bold">
+                            {candidate.fullName}
+                          </h1>
+                          {candidate.rating && candidate.rating > 0 && (
+                            <div className="flex items-center gap-0.5">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <svg
+                                  key={i}
+                                  className={`h-4 w-4 ${
+                                    i < candidate.rating!
+                                      ? "fill-amber-500 text-amber-500"
+                                      : "fill-muted text-muted"
+                                  }`}
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                         {candidate.currentTitle && (
                           <p className="text-muted-foreground flex items-center gap-2">
                             <IconBriefcase className="h-4 w-4" />
@@ -520,62 +654,130 @@ export default function CandidateDetailsPage() {
                           </p>
                         )}
                       </div>
-                      <div className="flex flex-col items-end gap-2">
-                        {getStatusBadge(candidate.status)}
-                        {candidate.rating && candidate.rating > 0 && (
-                          <div className="flex items-center gap-1 text-amber-500">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <svg
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < candidate.rating!
-                                    ? "fill-amber-500"
-                                    : "fill-muted"
-                                }`}
-                                viewBox="0 0 20 20"
-                              >
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            ))}
-                          </div>
-                        )}
-                      </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div className="space-y-2">
+
+                    {/* Contact Info Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm mb-4">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <IconMail className="h-4 w-4 flex-shrink-0" />
+                        <a
+                          href={`mailto:${candidate.email}`}
+                          className="hover:text-foreground truncate"
+                        >
+                          {candidate.email}
+                        </a>
+                      </div>
+                      {candidate.phone && candidate.phone !== "N/A" && (
                         <div className="flex items-center gap-2 text-muted-foreground">
-                          <IconMail className="h-4 w-4" />
+                          <IconPhone className="h-4 w-4 flex-shrink-0" />
                           <a
-                            href={`mailto:${candidate.email}`}
-                            className="hover:text-foreground truncate"
+                            href={`tel:${candidate.phone}`}
+                            className="hover:text-foreground"
                           >
-                            {candidate.email}
+                            {candidate.phone}
                           </a>
                         </div>
-                        {candidate.phone && candidate.phone !== "N/A" && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <IconPhone className="h-4 w-4" />
-                            <a
-                              href={`tel:${candidate.phone}`}
-                              className="hover:text-foreground"
+                      )}
+                      {candidate.location && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <IconMapPin className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{candidate.location}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tags Section - Moved here for better visibility */}
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <IconTag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      {selectedTags.length === 0 ? (
+                        <span className="text-sm text-muted-foreground">
+                          No tags
+                        </span>
+                      ) : (
+                        selectedTags.map((tagId) => {
+                          const tag = allTags.find(
+                            (t) => t.id === tagId || t._id === tagId
+                          );
+                          if (!tag) return null;
+                          return (
+                            <Badge
+                              key={tag._id}
+                              variant="secondary"
+                              style={{
+                                backgroundColor: `${tag.color || "#10B981"}15`,
+                                color: tag.color || "#10B981",
+                                borderColor: `${tag.color || "#10B981"}40`,
+                              }}
+                              className="px-2 py-1 text-xs border"
                             >
-                              {candidate.phone}
-                            </a>
-                          </div>
-                        )}
-                        {candidate.location && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <IconMapPin className="h-4 w-4" />
-                            <span>{candidate.location}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>{" "}
+                              {tag.name}
+                              <button
+                                onClick={() => toggleTag(tag.id || tag._id)}
+                                className="ml-1.5 hover:opacity-70"
+                              >
+                                <IconX className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          );
+                        })
+                      )}
+                      <Popover
+                        open={openTagPopover}
+                        onOpenChange={setOpenTagPopover}
+                      >
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                          >
+                            <IconTag className="h-3 w-3 mr-1" />
+                            Add Tag
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[300px] p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Search tags..." />
+                            <CommandEmpty>No tags found.</CommandEmpty>
+                            <CommandGroup className="max-h-[200px] overflow-auto">
+                              {allTags
+                                .filter((tag) => tag.isActive)
+                                .map((tag) => (
+                                  <CommandItem
+                                    key={tag._id}
+                                    value={tag.name}
+                                    onSelect={() => {
+                                      toggleTag(tag.id || tag._id);
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-2 flex-1">
+                                      <div
+                                        className="h-3 w-3 rounded-full"
+                                        style={{
+                                          backgroundColor:
+                                            tag.color || "#10B981",
+                                        }}
+                                      />
+                                      <span>{tag.name}</span>
+                                    </div>
+                                    {selectedTags.includes(
+                                      tag.id || tag._id
+                                    ) && (
+                                      <IconCircleCheckFilled className="h-4 w-4 text-primary" />
+                                    )}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
                     {/* Social Links */}
                     {(candidate.linkedInUrl ||
                       candidate.githubUrl ||
                       candidate.portfolioUrl) && (
-                      <div className="flex flex-wrap gap-2 mt-4">
+                      <div className="flex flex-wrap gap-2">
                         {candidate.linkedInUrl && (
                           <Button
                             variant="outline"
@@ -628,83 +830,6 @@ export default function CandidateDetailsPage() {
                     )}
                   </div>
                 </div>
-
-                {/* Tags Section */}
-                <div className="mt-4 pt-4 border-t">
-                  <div className="flex items-center gap-2 mb-3">
-                    <IconTag className="h-4 w-4 text-muted-foreground" />
-                    <Label className="text-sm font-medium">Tags</Label>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {selectedTags.map((tagId) => {
-                      const tag = tagsData.find((t) => t.id === tagId);
-                      if (!tag) return null;
-                      return (
-                        <Badge
-                          key={tag.id}
-                          variant="secondary"
-                          style={{
-                            backgroundColor: `${tag.color}20`,
-                            color: tag.color,
-                            borderColor: tag.color,
-                          }}
-                          className="px-2 py-1 text-xs border"
-                        >
-                          {tag.name}
-                          <button
-                            onClick={() => toggleTag(tag.id)}
-                            className="ml-1.5 hover:opacity-70"
-                          >
-                            <IconX className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      );
-                    })}
-                    <Popover
-                      open={openTagPopover}
-                      onOpenChange={setOpenTagPopover}
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs border-dashed"
-                        >
-                          <IconTag className="h-3 w-3 mr-1" />
-                          Add Tag
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[200px] p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search tags..." />
-                          <CommandEmpty>No tags found.</CommandEmpty>
-                          <CommandGroup className="max-h-[200px] overflow-auto">
-                            {tagsData.map((tag) => (
-                              <CommandItem
-                                key={tag.id}
-                                onSelect={() => {
-                                  toggleTag(tag.id);
-                                  setOpenTagPopover(false);
-                                }}
-                              >
-                                <div className="flex items-center gap-2 flex-1">
-                                  <div
-                                    className="w-3 h-3 rounded-full"
-                                    style={{ backgroundColor: tag.color }}
-                                  />
-                                  <span>{tag.name}</span>
-                                </div>
-                                {selectedTags.includes(tag.id) && (
-                                  <IconCircleCheckFilled className="h-4 w-4 text-primary" />
-                                )}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -730,6 +855,12 @@ export default function CandidateDetailsPage() {
                   className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
                 >
                   Communications
+                </TabsTrigger>
+                <TabsTrigger
+                  value="interviews"
+                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                >
+                  Interviews
                 </TabsTrigger>
                 <TabsTrigger
                   value="history"
@@ -1281,8 +1412,8 @@ export default function CandidateDetailsPage() {
                 {/* Current Application Card */}
                 <Card className="border-primary/20">
                   <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3 flex-1">
                         <Avatar className="h-12 w-12 rounded-md border-2">
                           <AvatarImage src={candidate.clientLogo} />
                           <AvatarFallback className="rounded-md">
@@ -1301,7 +1432,29 @@ export default function CandidateDetailsPage() {
                           </p>
                         </div>
                       </div>
-                      {getStatusBadge(candidate.status)}
+
+                      {/* Assigned Under - Moved to Top Right */}
+                      <div className="bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/20 rounded-lg p-3 min-w-[200px]">
+                        <Label className="text-xs text-muted-foreground mb-2 block">
+                          Assigned under:
+                        </Label>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10 border-2 border-primary/30">
+                            <AvatarImage src="" alt={candidate.reviewedBy} />
+                            <AvatarFallback className="text-sm font-semibold bg-primary/20 text-primary">
+                              {candidate.reviewedBy
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-semibold">
+                              {candidate.reviewedBy}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -1416,146 +1569,6 @@ export default function CandidateDetailsPage() {
                         </div>
                       </div>
                     )}
-
-                    {/* Team Assignment */}
-                    <div>
-                      <h4 className="text-sm font-semibold mb-3">
-                        Team Assignment
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-3 rounded-lg border bg-card">
-                          <Label className="text-xs text-muted-foreground mb-2 block">
-                            Reviewed By
-                          </Label>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="text-xs">
-                                {candidate.reviewedBy
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm font-medium">
-                              {candidate.reviewedBy}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Communication Stats */}
-                    <div>
-                      <h4 className="text-sm font-semibold mb-3">
-                        Communication Statistics
-                      </h4>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="p-3 rounded-lg border bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-                          <Label className="text-xs text-blue-700 dark:text-blue-400">
-                            Total Emails
-                          </Label>
-                          <p className="text-2xl font-bold mt-1 text-blue-800 dark:text-blue-300">
-                            {candidate.totalEmails}
-                          </p>
-                        </div>
-                        <div className="p-3 rounded-lg border bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
-                          <Label className="text-xs text-green-700 dark:text-green-400">
-                            Sent
-                          </Label>
-                          <p className="text-2xl font-bold mt-1 text-green-800 dark:text-green-300">
-                            {Math.floor(candidate.totalEmails * 0.6)}
-                          </p>
-                        </div>
-                        <div className="p-3 rounded-lg border bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800">
-                          <Label className="text-xs text-purple-700 dark:text-purple-400">
-                            Received
-                          </Label>
-                          <p className="text-2xl font-bold mt-1 text-purple-800 dark:text-purple-300">
-                            {Math.ceil(candidate.totalEmails * 0.4)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Communication Timeline */}
-                    <div className="pt-4 border-t">
-                      <h4 className="text-sm font-semibold mb-3">
-                        Communication History
-                      </h4>
-                      <div className="space-y-3">
-                        {emails && emails.length > 0 ? (
-                          emails.slice(0, 3).map((email) => (
-                            <div
-                              key={email.id}
-                              className="flex items-start gap-3 p-3 rounded-lg border bg-muted/30"
-                            >
-                              <div
-                                className={`p-2 rounded-md ${
-                                  email.direction === "outbound"
-                                    ? "bg-blue-100 dark:bg-blue-900/30"
-                                    : "bg-green-100 dark:bg-green-900/30"
-                                }`}
-                              >
-                                <IconMail
-                                  className={`h-4 w-4 ${
-                                    email.direction === "outbound"
-                                      ? "text-blue-600 dark:text-blue-400"
-                                      : "text-green-600 dark:text-green-400"
-                                  }`}
-                                />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-2">
-                                  <p className="text-sm font-medium">
-                                    {email.subject}
-                                  </p>
-                                  <Badge variant="outline" className="text-xs">
-                                    {email.direction === "outbound"
-                                      ? "Sent"
-                                      : "Received"}
-                                  </Badge>
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                  <IconCalendar className="h-3 w-3" />
-                                  {email.sentAt
-                                    ? new Date(email.sentAt).toLocaleString()
-                                    : email.deliveredAt
-                                    ? new Date(email.deliveredAt).toLocaleString()
-                                    : "N/A"}
-                                </p>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-sm text-muted-foreground">
-                            No communications yet
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Quick Actions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Quick Actions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm">
-                        <IconMail className="h-4 w-4 mr-2" />
-                        Send Email
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <IconCalendar className="h-4 w-4 mr-2" />
-                        Schedule Interview
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <IconUserCheck className="h-4 w-4 mr-2" />
-                        Move to Next Stage
-                      </Button>
-                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1594,9 +1607,8 @@ export default function CandidateDetailsPage() {
                           </Label>
                         </div>
                         <p className="text-2xl font-bold text-green-800 dark:text-green-300">
-                          {emails?.filter(
-                            (e) => e.direction === "outbound"
-                          ).length || 0}
+                          {emails?.filter((e) => e.direction === "outbound")
+                            .length || 0}
                         </p>
                       </div>
                       <div className="p-4 rounded-lg border bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 border-purple-200 dark:border-purple-800">
@@ -1629,48 +1641,45 @@ export default function CandidateDetailsPage() {
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-sm mb-1 flex items-center gap-2">
+                              <h4 className="font-semibold text-sm mb-1">
                                 {candidate.jobTitle}
-                                <Badge variant="default" className="text-xs">
-                                  Current
-                                </Badge>
                               </h4>
-                              <p className="text-sm text-muted-foreground mb-2">
+                              <p className="text-sm text-muted-foreground">
                                 {candidate.clientName}
                               </p>
-                              <div className="grid grid-cols-3 gap-3 text-xs mt-3">
-                                <div className="p-2 rounded-md bg-background/60 border">
-                                  <Label className="text-xs text-muted-foreground">
-                                    Job ID
-                                  </Label>
-                                  <p className="font-mono mt-0.5">
-                                    {candidate.jobId}
-                                  </p>
-                                </div>
-                                <div className="p-2 rounded-md bg-background/60 border">
-                                  <Label className="text-xs text-muted-foreground">
-                                    Total Emails
-                                  </Label>
-                                  <p className="font-semibold mt-0.5">
-                                    {emails?.length || 0}
-                                  </p>
-                                </div>
-                                <div className="p-2 rounded-md bg-background/60 border">
-                                  <Label className="text-xs text-muted-foreground">
-                                    Last Contact
-                                  </Label>
-                                  <p className="mt-0.5">
-                                    {emails && emails.length > 0
-                                      ? new Date(
-                                          emails[0].sentAt ||
-                                            emails[0].deliveredAt ||
-                                            emails[0].createdAt
-                                        ).toLocaleDateString()
-                                      : "N/A"}
-                                  </p>
-                                </div>
-                              </div>
                             </div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 text-xs">
+                          <div className="p-2 rounded-md bg-background/60 border">
+                            <Label className="text-xs text-muted-foreground">
+                              Job ID
+                            </Label>
+                            <p className="font-mono mt-0.5 truncate">
+                              {candidate.jobId}
+                            </p>
+                          </div>
+                          <div className="p-2 rounded-md bg-background/60 border">
+                            <Label className="text-xs text-muted-foreground">
+                              Total Emails
+                            </Label>
+                            <p className="font-semibold mt-0.5">
+                              {emails?.length || 0}
+                            </p>
+                          </div>
+                          <div className="p-2 rounded-md bg-background/60 border">
+                            <Label className="text-xs text-muted-foreground">
+                              Last Contact
+                            </Label>
+                            <p className="mt-0.5 truncate">
+                              {emails && emails.length > 0
+                                ? new Date(
+                                    emails[0].sentAt ||
+                                      emails[0].deliveredAt ||
+                                      emails[0].createdAt
+                                  ).toLocaleDateString()
+                                : "N/A"}
+                            </p>
                           </div>
                         </div>
                         <Button
@@ -1689,97 +1698,108 @@ export default function CandidateDetailsPage() {
                       </div>
 
                       {/* Previous Jobs */}
-                      {historyData.map((history) => {
-                        // Get email data from jobApplications
-                        const jobApp = candidateData.jobApplications?.find(
-                          (app) => {
-                            const appJobId = typeof app.jobId === "object" && app.jobId !== null
-                              ? (app.jobId as { _id?: string; id?: string })._id || (app.jobId as { _id?: string; id?: string }).id 
-                              : app.jobId;
-                            return appJobId === history.jobId;
-                          }
-                        );
-                        
-                        const emailCount = jobApp 
-                          ? (jobApp.emailsSent || 0) + (jobApp.emailsReceived || 0)
-                          : 0;
-                        const sentCount = jobApp?.emailsSent || 0;
-                        const receivedCount = jobApp?.emailsReceived || 0;
-                        const lastEmailDate = jobApp?.lastEmailDate 
-                          ? new Date(jobApp.lastEmailDate).toLocaleDateString()
-                          : "N/A";
+                      {historyData
+                        .filter((history) => history.jobId !== candidate.jobId)
+                        .map((history) => {
+                          // Get email data from jobApplications
+                          const jobApp = candidateData.jobApplications?.find(
+                            (app) => {
+                              const appJobId =
+                                typeof app.jobId === "object" &&
+                                app.jobId !== null
+                                  ? (app.jobId as { _id?: string; id?: string })
+                                      ._id ||
+                                    (app.jobId as { _id?: string; id?: string })
+                                      .id
+                                  : app.jobId;
+                              return appJobId === history.jobId;
+                            }
+                          );
 
-                        return (
-                          <div
-                            key={history.id}
-                            className="p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
-                          >
-                            <div className="flex items-start justify-between gap-4 mb-3">
-                              <div className="flex items-start gap-3 flex-1 min-w-0">
-                                <Avatar className="h-10 w-10 rounded-md border flex-shrink-0">
-                                  <AvatarFallback className="rounded-md text-xs">
-                                    {history.clientName
-                                      .split(" ")
-                                      .map((n: string) => n[0])
-                                      .join("")}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-sm mb-1">
-                                    {history.jobTitle}
-                                  </h4>
-                                  <p className="text-sm text-muted-foreground mb-2">
-                                    {history.clientName}
-                                  </p>
-                                  <div className="grid grid-cols-3 gap-3 text-xs mt-3">
-                                    <div className="p-2 rounded-md bg-background/60 border">
-                                      <Label className="text-xs text-muted-foreground">
-                                        Job ID
-                                      </Label>
-                                      <p className="font-mono mt-0.5">
-                                        {history.jobId}
-                                      </p>
-                                    </div>
-                                    <div className="p-2 rounded-md bg-background/60 border">
-                                      <Label className="text-xs text-muted-foreground">
-                                        Total Emails
-                                      </Label>
-                                      <p className="font-semibold mt-0.5">
-                                        {emailCount}
-                                      </p>
-                                      {emailCount > 0 && (
-                                        <p className="text-muted-foreground mt-0.5">
-                                          {sentCount} sent, {receivedCount}{" "}
-                                          received
-                                        </p>
-                                      )}
-                                    </div>
-                                    <div className="p-2 rounded-md bg-background/60 border">
-                                      <Label className="text-xs text-muted-foreground">
-                                        Last Contact
-                                      </Label>
-                                      <p className="mt-0.5">{lastEmailDate}</p>
-                                    </div>
+                          const emailCount = jobApp
+                            ? (jobApp.emailsSent || 0) +
+                              (jobApp.emailsReceived || 0)
+                            : 0;
+                          const sentCount = jobApp?.emailsSent || 0;
+                          const receivedCount = jobApp?.emailsReceived || 0;
+                          const lastEmailDate = jobApp?.lastEmailDate
+                            ? new Date(
+                                jobApp.lastEmailDate
+                              ).toLocaleDateString()
+                            : "N/A";
+
+                          return (
+                            <div
+                              key={history.id}
+                              className="p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
+                            >
+                              <div className="flex items-start justify-between gap-4 mb-3">
+                                <div className="flex items-start gap-3 flex-1 min-w-0">
+                                  <Avatar className="h-10 w-10 rounded-md border flex-shrink-0">
+                                    <AvatarFallback className="rounded-md text-xs">
+                                      {history.clientName
+                                        .split(" ")
+                                        .map((n: string) => n[0])
+                                        .join("")}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-semibold text-sm mb-1">
+                                      {history.jobTitle}
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      {history.clientName}
+                                    </p>
                                   </div>
                                 </div>
                               </div>
+                              <div className="grid grid-cols-3 gap-3 text-xs">
+                                <div className="p-2 rounded-md bg-background/60 border">
+                                  <Label className="text-xs text-muted-foreground">
+                                    Job ID
+                                  </Label>
+                                  <p className="font-mono mt-0.5 truncate">
+                                    {history.jobId}
+                                  </p>
+                                </div>
+                                <div className="p-2 rounded-md bg-background/60 border">
+                                  <Label className="text-xs text-muted-foreground">
+                                    Total Emails
+                                  </Label>
+                                  <p className="font-semibold mt-0.5">
+                                    {emailCount}
+                                  </p>
+                                  {emailCount > 0 && (
+                                    <p className="text-muted-foreground mt-0.5 text-[10px]">
+                                      {sentCount} sent, {receivedCount} received
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="p-2 rounded-md bg-background/60 border">
+                                  <Label className="text-xs text-muted-foreground">
+                                    Last Contact
+                                  </Label>
+                                  <p className="mt-0.5 truncate">
+                                    {lastEmailDate}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full mt-3"
+                                onClick={() =>
+                                  navigate(
+                                    `/dashboard/jobs/pipeline/${history.jobId}`
+                                  )
+                                }
+                              >
+                                <IconMail className="h-4 w-4 mr-2" />
+                                View Communication Details
+                              </Button>
                             </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full mt-3"
-                              onClick={() =>
-                                navigate(
-                                  `/dashboard/jobs/pipeline/${history.jobId}`
-                                )
-                              }
-                            >
-                              <IconMail className="h-4 w-4 mr-2" />
-                              View Communication Details
-                            </Button>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
 
                     {/* Empty State */}
@@ -1812,7 +1832,15 @@ export default function CandidateDetailsPage() {
                           Quickly compose and send an email to this candidate
                           from the current job context.
                         </p>
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            navigate(
+                              `/dashboard/communications?to=${candidate.email}&candidateId=${candidateId}&jobId=${candidate.jobId}`
+                            )
+                          }
+                        >
                           <IconMail className="h-4 w-4 mr-2" />
                           Compose Email
                         </Button>
@@ -1822,365 +1850,525 @@ export default function CandidateDetailsPage() {
                 </Card>
               </TabsContent>
 
-              {/* History Tab */}
-              <TabsContent value="history" className="mt-6 space-y-6">
-                {/* Warning Banner for Previous Interactions */}
-                {historyData.length > 0 && (
-                  <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/30">
-                    <CardContent className="pt-6">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-md bg-amber-100 dark:bg-amber-900/30">
-                          <IconCalendar className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-amber-900 dark:text-amber-200 mb-1">
-                            Previous Client Interactions Found
-                          </p>
-                          <p className="text-sm text-amber-800 dark:text-amber-300 mb-3">
-                            This candidate has {historyData.length} previous
-                            application{historyData.length !== 1 ? "s" : ""}{" "}
-                            with{" "}
-                            {new Set(historyData.map((h) => h.clientName)).size}{" "}
-                            client
-                            {new Set(historyData.map((h) => h.clientName))
-                              .size !== 1
-                              ? "s"
-                              : ""}
-                            . Please review their interview history below before
-                            submitting to the same clients.
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {Array.from(
-                              new Set(historyData.map((h) => h.clientName))
-                            ).map((clientName, idx) => (
-                              <Badge
-                                key={idx}
-                                variant="outline"
-                                className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/50 dark:text-amber-200 dark:border-amber-700"
-                              >
-                                {clientName}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Interview History */}
+              {/* Interviews Tab - Read-only overview across all jobs */}
+              <TabsContent value="interviews" className="mt-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">
-                      Interview History
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <IconCalendar className="h-5 w-5 text-primary" />
+                      Interview History Across All Jobs
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Complete interview history with all clients - prevents
-                      re-submitting to clients who previously rejected this
-                      candidate
+                      Read-only overview of all interviews this candidate has
+                      had
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingInterviews ? (
+                      <div className="text-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                        <p className="text-sm text-muted-foreground mt-3">
+                          Loading interviews...
+                        </p>
+                      </div>
+                    ) : interviews.length === 0 ? (
+                      <div className="text-center py-12">
+                        <IconCalendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
+                        <p className="text-sm text-muted-foreground">
+                          No interview history found
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          This candidate hasn't interviewed with any clients yet
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {interviews.map((interview) => {
+                          const feedback =
+                            interview.feedback && interview.feedback.length > 0
+                              ? interview.feedback[0]
+                              : null;
+                          const isCompleted = interview.status === "completed";
+                          const outcome = feedback?.recommendation;
+
+                          return (
+                            <div
+                              key={interview.id || interview._id}
+                              className={`p-3 rounded-lg border-2 transition-colors ${
+                                outcome === "strong_yes"
+                                  ? "bg-green-50 dark:bg-green-950/30 border-green-300 dark:border-green-700"
+                                  : outcome === "no"
+                                  ? "bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-700"
+                                  : "bg-card hover:bg-muted/30 border-border hover:border-primary/30"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3 mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-0.5">
+                                    <h4 className="font-semibold text-sm truncate">
+                                      {interview.jobId?.title ||
+                                        "Unknown Position"}
+                                    </h4>
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs shrink-0"
+                                    >
+                                      {interview.type.replace("_", " ")}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <IconBriefcase className="h-3 w-3" />
+                                    {interview.clientId?.companyName ||
+                                      "Unknown Client"}
+                                  </p>
+                                </div>
+                                <Badge
+                                  className={`text-xs shrink-0 ${
+                                    isCompleted && outcome === "strong_yes"
+                                      ? "bg-green-600 text-white"
+                                      : isCompleted && outcome === "no"
+                                      ? "bg-red-600 text-white"
+                                      : interview.status === "scheduled"
+                                      ? "bg-blue-600 text-white"
+                                      : "bg-gray-600 text-white"
+                                  }`}
+                                >
+                                  {interview.status}
+                                </Badge>
+                              </div>
+
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mb-2">
+                                <div className="flex items-center gap-1">
+                                  <IconCalendar className="h-3 w-3" />
+                                  <span>
+                                    {new Date(
+                                      interview.scheduledAt
+                                    ).toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                    })}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <IconClockHour4 className="h-3 w-3" />
+                                  <span>{interview.duration} min</span>
+                                </div>
+                                {interview.interviewerIds &&
+                                  interview.interviewerIds.length > 0 && (
+                                    <div className="flex items-center gap-1">
+                                      <IconUserCheck className="h-3 w-3" />
+                                      <span className="truncate">
+                                        {interview.interviewerIds
+                                          .map((i) =>
+                                            `${i.firstName || ""} ${
+                                              i.lastName || ""
+                                            }`.trim()
+                                          )
+                                          .filter((n) => n)
+                                          .join(", ") || "Not assigned"}
+                                      </span>
+                                    </div>
+                                  )}
+                                <div className="flex items-center gap-1 ml-auto">
+                                  <span className="font-mono text-muted-foreground">
+                                    Job ID:{" "}
+                                    {typeof interview.jobId === "object"
+                                      ? (
+                                          interview.jobId as {
+                                            _id?: string;
+                                            id?: string;
+                                          }
+                                        )?._id ||
+                                        (
+                                          interview.jobId as {
+                                            _id?: string;
+                                            id?: string;
+                                          }
+                                        )?.id ||
+                                        "N/A"
+                                      : interview.jobId || "N/A"}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {feedback && (
+                                <div className="mt-2 pt-2 border-t">
+                                  <div className="flex items-center justify-between gap-2 mb-1">
+                                    <Label className="text-xs font-medium">
+                                      Feedback
+                                    </Label>
+                                    <div className="flex items-center gap-2">
+                                      {feedback.rating && (
+                                        <div className="flex items-center gap-0.5">
+                                          <span className="text-yellow-400 text-sm">
+                                            ⭐
+                                          </span>
+                                          <span className="text-xs text-muted-foreground">
+                                            {feedback.rating}/5
+                                          </span>
+                                        </div>
+                                      )}
+                                      {feedback.recommendation && (
+                                        <Badge
+                                          variant="outline"
+                                          className={`text-xs ${
+                                            feedback.recommendation ===
+                                            "strong_yes"
+                                              ? "bg-green-100 text-green-700 border-green-200"
+                                              : feedback.recommendation === "no"
+                                              ? "bg-red-100 text-red-700 border-red-200"
+                                              : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                                          }`}
+                                        >
+                                          {feedback.recommendation.replace(
+                                            "_",
+                                            " "
+                                          )}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {feedback.comments && (
+                                    <p className="text-xs text-muted-foreground italic line-clamp-2">
+                                      "{feedback.comments}"
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+
+                              {interview.notes && !feedback && (
+                                <div className="mt-2 pt-2 border-t">
+                                  <Label className="text-xs text-muted-foreground">
+                                    Notes
+                                  </Label>
+                                  <p className="text-xs mt-1 text-muted-foreground line-clamp-2">
+                                    {interview.notes}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* History Tab */}
+              <TabsContent value="history" className="mt-6 space-y-6">
+                {/* Career Timeline - Enhanced */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <IconClockHour4 className="h-5 w-5 text-primary" />
+                      Career Timeline
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Complete journey across all job applications with detailed
+                      milestones
                     </p>
                   </CardHeader>
                   <CardContent>
                     {(() => {
-                      // TODO: Replace with real interview data from backend
-                      const candidateInterviews: Array<{
+                      // Create comprehensive timeline events
+                      type TimelineEvent = {
                         id: string;
-                        date: string;
+                        date: Date;
                         type: string;
-                        status: string;
-                        feedback: string;
-                        interviewer: string;
-                        outcome?: string;
+                        title: string;
+                        description: string;
+                        status: "success" | "error" | "warning" | "info";
+                        icon: React.ComponentType<{ className?: string }>;
                         jobTitle?: string;
-                        interviewType?: string;
                         clientName?: string;
-                        interviewerName?: string;
-                        interviewDate?: string;
-                        duration?: number;
-                        rating?: number;
-                        notes?: string;
-                      }> = [];
+                        jobId?: string;
+                        metadata?: {
+                          stage?: string;
+                          interviewCount?: number;
+                          rating?: number;
+                          recommendation?: string;
+                        };
+                      };
 
-                      if (candidateInterviews.length === 0) {
+                      const timelineEvents: TimelineEvent[] = [];
+
+                      // Add job application events
+                      historyData.forEach((history) => {
+                        // Application submitted
+                        timelineEvents.push({
+                          id: `applied-${history.id}`,
+                          date: new Date(history.appliedDate),
+                          type: "applied",
+                          title: "Application Submitted",
+                          description: `Applied for ${history.jobTitle}`,
+                          status: "info",
+                          icon: IconFileText,
+                          jobTitle: history.jobTitle,
+                          clientName: history.clientName,
+                          jobId: history.jobId,
+                          metadata: { stage: history.stage },
+                        });
+
+                        // Final status event if not active
+                        if (history.status !== "active") {
+                          let statusTitle = "Status Updated";
+                          let statusIcon = IconClockHour4;
+                          let statusType:
+                            | "success"
+                            | "error"
+                            | "warning"
+                            | "info" = "info";
+
+                          if (history.status === "hired") {
+                            statusTitle = "Hired";
+                            statusIcon = IconCircleCheckFilled;
+                            statusType = "success";
+                          } else if (history.status === "rejected") {
+                            statusTitle = "Application Rejected";
+                            statusIcon = IconUserCheck;
+                            statusType = "error";
+                          } else if (history.status === "offered") {
+                            statusTitle = "Offer Extended";
+                            statusIcon = IconUserCheck;
+                            statusType = "success";
+                          } else if (history.status === "withdrawn") {
+                            statusTitle = "Application Withdrawn";
+                            statusIcon = IconUserCheck;
+                            statusType = "warning";
+                          }
+
+                          timelineEvents.push({
+                            id: `status-${history.id}`,
+                            date: new Date(history.lastUpdated),
+                            type: history.status,
+                            title: statusTitle,
+                            description: `${history.jobTitle} - ${
+                              history.status.charAt(0).toUpperCase() +
+                              history.status.slice(1)
+                            }`,
+                            status: statusType,
+                            icon: statusIcon,
+                            jobTitle: history.jobTitle,
+                            clientName: history.clientName,
+                            jobId: history.jobId,
+                          });
+                        }
+                      });
+
+                      // Add interview events
+                      interviews.forEach((interview) => {
+                        const feedback = interview.feedback?.[0];
+                        const isCompleted = interview.status === "completed";
+
+                        timelineEvents.push({
+                          id: `interview-${interview.id || interview._id}`,
+                          date: new Date(interview.scheduledAt),
+                          type: "interview",
+                          title: `${interview.type.replace(
+                            "_",
+                            " "
+                          )} Interview`,
+                          description: isCompleted
+                            ? `Completed interview for ${
+                                interview.jobId?.title || "position"
+                              }`
+                            : `${
+                                interview.status.charAt(0).toUpperCase() +
+                                interview.status.slice(1)
+                              } interview`,
+                          status: isCompleted
+                            ? feedback?.recommendation === "strong_yes"
+                              ? "success"
+                              : feedback?.recommendation === "no"
+                              ? "error"
+                              : "info"
+                            : "warning",
+                          icon: IconUserCheck,
+                          jobTitle: interview.jobId?.title,
+                          jobId:
+                            typeof interview.jobId === "object"
+                              ? interview.jobId._id || interview.jobId.id
+                              : interview.jobId,
+                          clientName: interview.clientId?.companyName,
+                          metadata: {
+                            interviewCount: 1,
+                            rating: feedback?.rating,
+                            recommendation: feedback?.recommendation,
+                          },
+                        });
+                      });
+
+                      // Sort by date (most recent first)
+                      timelineEvents.sort(
+                        (a, b) => b.date.getTime() - a.date.getTime()
+                      );
+
+                      if (isLoadingInterviews) {
+                        return (
+                          <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Loading timeline...
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      if (timelineEvents.length === 0) {
                         return (
                           <div className="text-center py-12">
-                            <IconCalendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
-                            <p className="text-sm text-muted-foreground">
-                              No interview history
+                            <IconClockHour4 className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
+                            <p className="text-sm text-muted-foreground mb-2">
+                              No activity yet
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              This candidate hasn't interviewed with any clients
-                              yet
+                            <p className="text-xs text-muted-foreground">
+                              Timeline will show: Applications, Interviews,
+                              Offers, Hires, and Status Changes
                             </p>
                           </div>
                         );
                       }
 
                       return (
-                        <div className="space-y-3">
-                          {candidateInterviews.map((interview) => {
-                            const isCompleted =
-                              interview.status === "completed";
-                            const isPassed = interview.outcome === "passed";
-                            const isFailed = interview.outcome === "failed";
-                            const isNoShow = interview.status === "no_show";
+                        <div className="relative space-y-4">
+                          {/* Timeline line */}
+                          <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/50 via-border to-transparent"></div>
+
+                          {timelineEvents.map((event, index) => {
+                            const Icon = event.icon;
+                            const isLast = index === timelineEvents.length - 1;
 
                             return (
-                              <div
-                                key={interview.id}
-                                className={`p-4 rounded-lg border ${
-                                  isPassed
-                                    ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800"
-                                    : isFailed
-                                    ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
-                                    : isNoShow
-                                    ? "bg-gray-100 dark:bg-gray-900/50 border-gray-300 dark:border-gray-700"
-                                    : "bg-card"
-                                }`}
-                              >
-                                <div className="flex items-start justify-between gap-4 mb-3">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="font-semibold">
-                                        {interview.jobTitle}
-                                      </h4>
-                                      <Badge
-                                        variant="outline"
-                                        className={`text-xs ${
-                                          interview.interviewType ===
-                                          "technical"
-                                            ? "bg-purple-100 text-purple-700 border-purple-200"
-                                            : interview.interviewType ===
-                                              "final"
-                                            ? "bg-orange-100 text-orange-700 border-orange-200"
-                                            : "bg-blue-100 text-blue-700 border-blue-200"
-                                        }`}
-                                      >
-                                        {interview.interviewType?.replace(
-                                          "_",
-                                          " "
-                                        ) || "N/A"}
-                                      </Badge>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                      <IconBriefcase className="h-3 w-3" />
-                                      {interview.clientName}
-                                    </p>
-                                    {interview.interviewerName && (
-                                      <p className="text-xs text-muted-foreground mt-1">
-                                        Interviewed by:{" "}
-                                        {interview.interviewerName}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <div className="text-right">
-                                    {isCompleted ? (
-                                      isPassed ? (
-                                        <Badge className="bg-green-600">
-                                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                                          Passed
-                                        </Badge>
-                                      ) : isFailed ? (
-                                        <Badge variant="destructive">
-                                          <XCircle className="h-3 w-3 mr-1" />
-                                          Not Selected
-                                        </Badge>
-                                      ) : (
-                                        <Badge variant="secondary">
-                                          Completed
-                                        </Badge>
-                                      )
-                                    ) : isNoShow ? (
-                                      <Badge
-                                        variant="outline"
-                                        className="bg-gray-200 text-gray-700"
-                                      >
-                                        No Show
-                                      </Badge>
-                                    ) : (
-                                      <Badge
-                                        variant="outline"
-                                        className="bg-blue-100 text-blue-700"
-                                      >
-                                        Scheduled
-                                      </Badge>
-                                    )}
-                                  </div>
+                              <div key={event.id} className="relative pl-12">
+                                {/* Timeline dot */}
+                                <div
+                                  className={`absolute left-0 w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                                    event.status === "success"
+                                      ? "bg-green-100 dark:bg-green-900/30 border-green-500"
+                                      : event.status === "error"
+                                      ? "bg-red-100 dark:bg-red-900/30 border-red-500"
+                                      : event.status === "warning"
+                                      ? "bg-yellow-100 dark:bg-yellow-900/30 border-yellow-500"
+                                      : "bg-blue-100 dark:bg-blue-900/30 border-blue-500"
+                                  }`}
+                                >
+                                  <Icon
+                                    className={`h-4 w-4 ${
+                                      event.status === "success"
+                                        ? "text-green-600 dark:text-green-400"
+                                        : event.status === "error"
+                                        ? "text-red-600 dark:text-red-400"
+                                        : event.status === "warning"
+                                        ? "text-yellow-600 dark:text-yellow-400"
+                                        : "text-blue-600 dark:text-blue-400"
+                                    }`}
+                                  />
                                 </div>
 
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-3">
-                                  <div>
-                                    <Label className="text-xs text-muted-foreground">
-                                      Interview Date
-                                    </Label>
-                                    <p className="text-xs mt-1 flex items-center gap-1">
-                                      <IconCalendar className="h-3 w-3" />
-                                      {interview.interviewDate
-                                        ? new Date(
-                                            interview.interviewDate
-                                          ).toLocaleDateString()
-                                        : "N/A"}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs text-muted-foreground">
-                                      Duration
-                                    </Label>
-                                    <p className="text-xs mt-1">
-                                      {interview.duration
-                                        ? `${interview.duration} min`
-                                        : "N/A"}
-                                    </p>
-                                  </div>
-                                  {interview.rating && (
-                                    <div>
-                                      <Label className="text-xs text-muted-foreground">
-                                        Rating
-                                      </Label>
-                                      <p className="text-xs mt-1 flex items-center gap-1">
-                                        <span className="text-yellow-600">
-                                          ★
+                                {/* Event card */}
+                                <div
+                                  className={`rounded-lg border-2 bg-card p-4 hover:shadow-md transition-shadow ${
+                                    event.status === "success"
+                                      ? "border-green-200 dark:border-green-800/50"
+                                      : event.status === "error"
+                                      ? "border-red-200 dark:border-red-800/50"
+                                      : event.status === "warning"
+                                      ? "border-yellow-200 dark:border-yellow-800/50"
+                                      : "border-blue-200 dark:border-blue-800/50"
+                                  } ${isLast ? "" : "mb-4"}`}
+                                >
+                                  <div className="flex items-start justify-between gap-4 mb-2">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="font-semibold text-sm">
+                                          {event.title}
+                                        </h4>
+                                        <Badge
+                                          variant={
+                                            event.status === "success"
+                                              ? "default"
+                                              : "secondary"
+                                          }
+                                          className="text-xs"
+                                        >
+                                          {event.type}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground">
+                                        {event.description}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-1">
+                                      {event.jobTitle && (
+                                        <Badge
+                                          variant="outline"
+                                          className="text-xs shrink-0"
+                                        >
+                                          {event.jobTitle}
+                                        </Badge>
+                                      )}
+                                      {event.jobId && (
+                                        <span className="text-xs font-mono text-muted-foreground">
+                                          Job ID: {event.jobId}
                                         </span>
-                                        {interview.rating}/5
-                                      </p>
+                                      )}
                                     </div>
-                                  )}
-                                  <div>
-                                    <Label className="text-xs text-muted-foreground">
-                                      Status
-                                    </Label>
-                                    <p className="text-xs mt-1 capitalize">
-                                      {interview.status.replace("_", " ")}
-                                    </p>
+                                  </div>
+
+                                  {/* Metadata section */}
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground pt-2 border-t">
+                                    {event.clientName && (
+                                      <span className="flex items-center gap-1">
+                                        <IconBriefcase className="h-3 w-3" />
+                                        {event.clientName}
+                                      </span>
+                                    )}
+                                    <span className="flex items-center gap-1">
+                                      <IconCalendar className="h-3 w-3" />
+                                      {event.date.toLocaleDateString("en-US", {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </span>
+                                    {event.metadata?.stage && (
+                                      <span className="flex items-center gap-1">
+                                        <IconClockHour4 className="h-3 w-3" />
+                                        {event.metadata.stage}
+                                      </span>
+                                    )}
+                                    {event.metadata?.rating && (
+                                      <span className="flex items-center gap-1">
+                                        <span className="text-yellow-500">
+                                          ⭐
+                                        </span>
+                                        {event.metadata.rating}/5
+                                      </span>
+                                    )}
+                                    {event.jobId && (
+                                      <button
+                                        onClick={() =>
+                                          navigate(
+                                            `/dashboard/jobs/pipeline/${event.jobId}`
+                                          )
+                                        }
+                                        className="text-primary hover:underline flex items-center gap-1"
+                                      >
+                                        View Job →
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
-
-                                {interview.feedback && (
-                                  <div className="pt-3 border-t">
-                                    <Label className="text-xs text-muted-foreground">
-                                      Feedback
-                                    </Label>
-                                    <p className="text-sm mt-1 text-muted-foreground">
-                                      {interview.feedback}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {interview.notes && (
-                                  <div className="pt-2">
-                                    <Label className="text-xs text-muted-foreground">
-                                      Notes
-                                    </Label>
-                                    <p className="text-sm mt-1 text-muted-foreground italic">
-                                      {interview.notes}
-                                    </p>
-                                  </div>
-                                )}
                               </div>
                             );
                           })}
                         </div>
                       );
                     })()}
-                  </CardContent>
-                </Card>
-
-                {/* Application History */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      Application History
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      All past applications and interactions in the platform
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    {historyData.length > 0 ? (
-                      <div className="space-y-4">
-                        {historyData.map((history) => (
-                          <div
-                            key={history.id}
-                            className="p-4 rounded-lg border bg-card hover:bg-muted/30 transition-colors"
-                          >
-                            <div className="flex items-start justify-between gap-4 mb-3">
-                              <div>
-                                <h4 className="font-semibold">
-                                  {history.jobTitle}
-                                </h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {history.clientName}
-                                </p>
-                              </div>
-                              {getStatusBadge(history.status)}
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                              <div>
-                                <Label className="text-xs text-muted-foreground">
-                                  Job ID
-                                </Label>
-                                <p className="font-mono text-xs mt-1">
-                                  {history.jobId}
-                                </p>
-                              </div>
-                              <div>
-                                <Label className="text-xs text-muted-foreground">
-                                  Applied
-                                </Label>
-                                <p className="text-xs mt-1">
-                                  {history.appliedDate}
-                                </p>
-                              </div>
-                              <div>
-                                <Label className="text-xs text-muted-foreground">
-                                  Final Stage
-                                </Label>
-                                <p className="text-xs mt-1">{history.stage}</p>
-                              </div>
-                              <div>
-                                <Label className="text-xs text-muted-foreground">
-                                  Last Updated
-                                </Label>
-                                <p className="text-xs mt-1">
-                                  {history.lastUpdated}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12">
-                        <IconClockHour4 className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
-                        <p className="text-sm text-muted-foreground">
-                          No previous applications
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Note about re-applying */}
-                <Card className="border-dashed">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-md bg-primary/10">
-                        <IconUserCheck className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium mb-1">
-                          Apply to Future Jobs
-                        </p>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          This candidate can be assigned to any future job
-                          openings. Their profile and documents are saved in the
-                          system.
-                        </p>
-                        <Button variant="outline" size="sm">
-                          Assign to New Job
-                        </Button>
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>

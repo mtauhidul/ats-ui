@@ -17,9 +17,14 @@ const normalizeCandidate = (candidate: any): Candidate => {
     candidate.id = candidate._id;
   }
   
-  // If assignedTo is populated (object), extract the ID
-  if (candidate.assignedTo && typeof candidate.assignedTo === 'object' && candidate.assignedTo._id) {
-    candidate.assignedTo = candidate.assignedTo._id || candidate.assignedTo.id;
+  // Preserve assignedTo as populated object (don't convert to ID)
+  // The backend populates it with { _id, firstName, lastName, email, avatar }
+  // We keep it as-is so the UI can display the user's name
+  if (candidate.assignedTo && typeof candidate.assignedTo === 'object') {
+    // Ensure the nested user object also has an id field
+    if (!candidate.assignedTo.id && candidate.assignedTo._id) {
+      candidate.assignedTo.id = candidate.assignedTo._id;
+    }
   }
   
   return candidate;
