@@ -1,59 +1,28 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Send, Reply, Forward, Trash2, Archive, Star, MoreVertical, Paperclip, Image, Type, Clock, CheckCheck, Mail, Inbox, SendHorizontal, Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { authenticatedFetch } from "@/lib/authenticated-fetch";
-import {
-  extractEmailVariables,
-  replaceTemplateVariables,
-} from "@/lib/email-template-helper";
-import { cn } from "@/lib/utils";
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
-import {
-  Archive,
-  ArrowLeft,
-  CheckCheck,
-  Clock,
-  Download,
-  FileText,
-  Forward,
-  Image,
-  Inbox,
-  Mail,
-  MoreVertical,
-  Paperclip,
-  Reply,
-  Send,
-  SendHorizontal,
-  Star,
-  Trash2,
-  Type,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { replaceTemplateVariables, extractEmailVariables } from "@/lib/email-template-helper";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
-// System email for sending (matches backend RESEND_FROM_EMAIL)
-const SYSTEM_FROM_EMAIL = "noreply@notequik.com";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
 
 interface CandidateEmailCommunicationProps {
   candidate: Candidate;
@@ -84,15 +53,10 @@ interface EmailThread {
   };
   candidateId?: string;
   jobId?: string;
-  attachments?: {
-    filename: string;
-    url: string;
-    contentType: string;
-    size: number;
-  }[];
+  attachments?: { filename: string; url: string; contentType: string; size: number }[];
 }
 
-// Email templates
+// Mock email templates (should come from settings in real app)
 interface EmailTemplate {
   id: string;
   name: string;
@@ -121,19 +85,14 @@ const emailTemplates: EmailTemplate[] = [
   },
 ];
 
-export function CandidateEmailCommunication({
-  candidate,
-  job,
-  onBack,
-}: CandidateEmailCommunicationProps) {
+export function CandidateEmailCommunication({ candidate, job, onBack }: CandidateEmailCommunicationProps) {
   const [activeTab, setActiveTab] = useState("inbox");
   const [selectedEmail, setSelectedEmail] = useState<EmailThread | null>(null);
   const [isComposing, setIsComposing] = useState(false);
   const [emails, setEmails] = useState<EmailThread[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
+  
   // Compose email state
   const [composeData, setComposeData] = useState({
     to: candidate.email,
@@ -142,61 +101,35 @@ export function CandidateEmailCommunication({
   });
 
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
-  const initials =
-    `${candidate.firstName[0]}${candidate.lastName[0]}`.toUpperCase();
+  const initials = `${candidate.firstName[0]}${candidate.lastName[0]}`.toUpperCase();
 
   // Fetch emails on mount
   useEffect(() => {
     const fetchEmails = async () => {
       try {
-        console.log(
-          "[Email Fetch] Starting fetch at",
-          new Date().toISOString()
-        );
         setIsLoading(true);
-
-        const startTime = performance.now();
         const response = await authenticatedFetch(
           `${API_BASE_URL}/emails?candidateId=${candidate.id}&jobId=${job.id}&sortBy=createdAt&sortOrder=desc&limit=100`
         );
-        const fetchTime = performance.now() - startTime;
-        console.log(
-          "[Email Fetch] Request completed in",
-          fetchTime.toFixed(2),
-          "ms"
-        );
-
+        
         if (!response.ok) {
-          throw new Error("Failed to fetch emails");
+          throw new Error('Failed to fetch emails');
         }
-
-        const result = await response.json();
-        const emailsData = result.data?.emails || []; // Access nested data.emails
-        console.log("[Email Fetch] Received", emailsData.length, "emails");
-
+        
+        const data = await response.json();
+        const emailsData = data.emails || [];
+        
         // Transform emails to match our interface
-        const transformedEmails = emailsData.map(
-          (email: {
-            _id?: string;
-            id?: string;
-            sentAt?: string;
-            receivedAt?: string;
-            createdAt?: string;
-            [key: string]: unknown;
-          }) => ({
-            ...email,
-            id: email._id || email.id,
-            timestamp: new Date(
-              email.sentAt || email.receivedAt || email.createdAt || Date.now()
-            ),
-          })
-        );
-
+        const transformedEmails = emailsData.map((email: any) => ({
+          ...email,
+          id: email._id || email.id,
+          timestamp: new Date(email.sentAt || email.receivedAt || email.createdAt),
+        }));
+        
         setEmails(transformedEmails);
-        console.log("[Email Fetch] Complete");
       } catch (error) {
-        console.error("[Email Fetch] Error:", error);
-        toast.error("Failed to load emails");
+        console.error('Error fetching emails:', error);
+        toast.error('Failed to load emails');
       } finally {
         setIsLoading(false);
       }
@@ -205,141 +138,61 @@ export function CandidateEmailCommunication({
     fetchEmails();
   }, [candidate.id, job.id]);
 
-  const sentEmails = emails.filter((e) => e.direction === "outbound");
-  const receivedEmails = emails.filter((e) => e.direction === "inbound");
-  const allEmails = [...emails].sort(
-    (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-  );
+  const sentEmails = emails.filter(e => e.direction === "outbound");
+  const receivedEmails = emails.filter(e => e.direction === "inbound");
+  const allEmails = [...emails].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-  const handleSendEmail = async () => {
+  const handleSendEmail = () => {
     if (!composeData.subject || !composeData.content) {
       toast.error("Please fill in subject and content");
       return;
     }
 
-    try {
-      setIsSending(true);
+    // Extract variables from candidate and job data
+    const variables = extractEmailVariables(candidate, job);
+    
+    // Replace template variables with actual values
+    const processedSubject = replaceTemplateVariables(composeData.subject, variables);
+    const processedContent = replaceTemplateVariables(composeData.content, variables);
 
-      // Extract variables from candidate and job data
-      const variables = extractEmailVariables(candidate, job);
+    const newEmail: EmailThread = {
+      id: `email-${Date.now()}`,
+      subject: processedSubject,
+      from: "HR Team",
+      fromEmail: "hr@company.com",
+      to: fullName,
+      toEmail: composeData.to,
+      timestamp: new Date(),
+      content: processedContent,
+      isRead: true,
+      isStarred: false,
+      type: "sent",
+    };
 
-      // Replace template variables with actual values
-      const processedSubject = replaceTemplateVariables(
-        composeData.subject,
-        variables
-      );
-      const processedContent = replaceTemplateVariables(
-        composeData.content,
-        variables
-      );
-
-      const response = await authenticatedFetch(`${API_BASE_URL}/emails`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: SYSTEM_FROM_EMAIL,
-          to: [composeData.to],
-          subject: processedSubject,
-          body: processedContent,
-          candidateId: candidate.id,
-          jobId: job.id,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to send email");
-      }
-
-      const result = await response.json();
-      const sentEmail = result.data; // Extract from success response wrapper
-
-      // Transform the sent email to match our interface
-      const transformedEmail = {
-        ...sentEmail,
-        id: sentEmail._id || sentEmail.id,
-        timestamp: new Date(
-          sentEmail.sentAt || sentEmail.createdAt || Date.now()
-        ),
-      };
-
-      setEmails([transformedEmail, ...emails]);
-      setComposeData({
-        to: candidate.email,
-        subject: "",
-        content: "",
-      });
-      setIsComposing(false);
-      toast.success("Email sent successfully");
-    } catch (error) {
-      console.error("Error sending email:", error);
-      toast.error("Failed to send email");
-    } finally {
-      setIsSending(false);
-    }
+    setEmails([newEmail, ...emails]);
+    setComposeData({
+      to: candidate.email,
+      subject: "",
+      content: "",
+    });
+    setIsComposing(false);
+    toast.success("Email sent successfully");
   };
 
   const handleReply = (email: EmailThread) => {
-    const replyTo =
-      email.direction === "outbound"
-        ? email.to && email.to.length > 0
-          ? email.to[0]
-          : candidate.email
-        : email.from || candidate.email;
-
     setComposeData({
-      to: replyTo,
-      subject: email.subject?.startsWith("Re:")
-        ? email.subject
-        : `Re: ${email.subject || "(No Subject)"}`,
-      content: `\n\n---\nOn ${email.timestamp.toLocaleString()}, ${
-        email.from || "Unknown"
-      } wrote:\n${email.body || ""}`,
+      to: email.type === "sent" ? email.toEmail : email.fromEmail,
+      subject: `Re: ${email.subject}`,
+      content: `\n\n---\nOn ${email.timestamp.toLocaleString()}, ${email.from} wrote:\n${email.content}`,
     });
     setIsComposing(true);
     setSelectedEmail(null);
   };
 
-  const handleDeleteEmail = async (email: EmailThread) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this email? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const response = await authenticatedFetch(
-        `${API_BASE_URL}/emails/${email.id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete email");
-      }
-
-      // Remove email from list
-      setEmails(emails.filter((e) => e.id !== email.id));
-
-      // Clear selection if this email was selected
-      if (selectedEmail?.id === email.id) {
-        setSelectedEmail(null);
-      }
-
-      toast.success("Email deleted successfully");
-    } catch (error) {
-      console.error("Error deleting email:", error);
-      toast.error("Failed to delete email");
-    }
-  };
-
-  const filteredEmails = allEmails.filter(
-    (email) =>
-      email.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      email.body?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      email.from?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredEmails = allEmails.filter(email => 
+    email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    email.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    email.from.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getDisplayEmails = () => {
@@ -355,36 +208,21 @@ export function CandidateEmailCommunication({
 
   const displayEmails = getDisplayEmails();
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
   return (
     <div className="space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onBack}
-          className="flex-shrink-0"
-        >
+        <Button variant="ghost" size="icon" onClick={onBack} className="flex-shrink-0">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-2">
             <Avatar className="h-12 w-12 border-2 border-border">
               <AvatarImage src={candidate.avatar} alt={fullName} />
-              <AvatarFallback className="text-sm font-semibold">
-                {initials}
-              </AvatarFallback>
+              <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-foreground truncate">
-                Email Communication
-              </h1>
+              <h1 className="text-2xl font-bold text-foreground truncate">Email Communication</h1>
               <p className="text-sm text-muted-foreground truncate">
                 {fullName} • {candidate.email}
               </p>
@@ -396,12 +234,7 @@ export function CandidateEmailCommunication({
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Button
-            onClick={() => {
-              setIsComposing(true);
-              setSelectedEmail(null);
-            }}
-          >
+          <Button onClick={() => { setIsComposing(true); setSelectedEmail(null); }}>
             <Send className="h-4 w-4 mr-2" />
             New Email
           </Button>
@@ -434,22 +267,22 @@ export function CandidateEmailCommunication({
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <div className="px-6 pt-4 pb-3">
                   <TabsList className="h-11 p-1 bg-card border border-border w-fit">
-                    <TabsTrigger
-                      value="inbox"
+                    <TabsTrigger 
+                      value="inbox" 
                       className="px-4 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
                     >
                       <Inbox className="h-4 w-4 mr-2" />
                       All
                     </TabsTrigger>
-                    <TabsTrigger
-                      value="sent"
+                    <TabsTrigger 
+                      value="sent" 
                       className="px-4 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
                     >
                       <SendHorizontal className="h-4 w-4 mr-2" />
                       Sent
                     </TabsTrigger>
-                    <TabsTrigger
-                      value="received"
+                    <TabsTrigger 
+                      value="received" 
                       className="px-4 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
                     >
                       <Mail className="h-4 w-4 mr-2" />
@@ -459,14 +292,7 @@ export function CandidateEmailCommunication({
                 </div>
 
                 <div className="max-h-[600px] overflow-y-auto border-t">
-                  {isLoading ? (
-                    <div className="px-6 py-12 text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
-                      <p className="text-sm text-muted-foreground">
-                        Loading emails...
-                      </p>
-                    </div>
-                  ) : displayEmails.length > 0 ? (
+                  {displayEmails.length > 0 ? (
                     displayEmails.map((email, index) => (
                       <div key={email.id}>
                         <div
@@ -482,7 +308,7 @@ export function CandidateEmailCommunication({
                         >
                           <div className="flex items-start gap-3">
                             <div className="flex-shrink-0 mt-1">
-                              {email.direction === "outbound" ? (
+                              {email.type === "sent" ? (
                                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                                   <SendHorizontal className="h-4 w-4 text-primary" />
                                 </div>
@@ -494,36 +320,24 @@ export function CandidateEmailCommunication({
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2 mb-1">
-                                <p
-                                  className={cn(
-                                    "text-sm truncate",
-                                    !email.isRead
-                                      ? "font-semibold"
-                                      : "font-medium"
-                                  )}
-                                >
-                                  {email.direction === "outbound"
-                                    ? email.to && email.to.length > 0
-                                      ? email.to[0]
-                                      : "Unknown"
-                                    : email.from || "Unknown"}
+                                <p className={cn(
+                                  "text-sm truncate",
+                                  !email.isRead ? "font-semibold" : "font-medium"
+                                )}>
+                                  {email.type === "sent" ? email.to : email.from}
                                 </p>
                                 <span className="text-xs text-muted-foreground flex-shrink-0">
                                   {formatTimestamp(email.timestamp)}
                                 </span>
                               </div>
-                              <p
-                                className={cn(
-                                  "text-sm mb-1 truncate",
-                                  !email.isRead
-                                    ? "font-medium text-foreground"
-                                    : "text-muted-foreground"
-                                )}
-                              >
-                                {email.subject || "(No Subject)"}
+                              <p className={cn(
+                                "text-sm mb-1 truncate",
+                                !email.isRead ? "font-medium text-foreground" : "text-muted-foreground"
+                              )}>
+                                {email.subject}
                               </p>
                               <p className="text-xs text-muted-foreground line-clamp-2">
-                                {email.body || ""}
+                                {email.content}
                               </p>
                             </div>
                             {email.isStarred && (
@@ -539,11 +353,6 @@ export function CandidateEmailCommunication({
                       <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
                       <p className="text-sm text-muted-foreground">
                         {searchQuery ? "No emails found" : "No emails yet"}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {searchQuery
-                          ? "Try a different search term"
-                          : "Send your first email to this candidate"}
                       </p>
                     </div>
                   )}
@@ -561,30 +370,12 @@ export function CandidateEmailCommunication({
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Compose Email</CardTitle>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsComposing(false)}
-                      disabled={isSending}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setIsComposing(false)}>
                       Cancel
                     </Button>
-                    <Button
-                      size="sm"
-                      onClick={handleSendEmail}
-                      disabled={isSending}
-                    >
-                      {isSending ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4 mr-2" />
-                          Send
-                        </>
-                      )}
+                    <Button size="sm" onClick={handleSendEmail}>
+                      <Send className="h-4 w-4 mr-2" />
+                      Send
                     </Button>
                   </div>
                 </div>
@@ -596,21 +387,13 @@ export function CandidateEmailCommunication({
                   <Select
                     onValueChange={(value) => {
                       if (value === "none") return;
-                      const template = emailTemplates.find(
-                        (t) => t.id === value
-                      );
+                      const template = emailTemplates.find(t => t.id === value);
                       if (template) {
                         // Extract variables and apply template
                         const variables = extractEmailVariables(candidate, job);
-                        const processedSubject = replaceTemplateVariables(
-                          template.subject,
-                          variables
-                        );
-                        const processedBody = replaceTemplateVariables(
-                          template.body,
-                          variables
-                        );
-
+                        const processedSubject = replaceTemplateVariables(template.subject, variables);
+                        const processedBody = replaceTemplateVariables(template.body, variables);
+                        
                         setComposeData({
                           ...composeData,
                           subject: processedSubject,
@@ -648,11 +431,8 @@ export function CandidateEmailCommunication({
                   <Input
                     id="to"
                     value={composeData.to}
-                    onChange={(e) =>
-                      setComposeData({ ...composeData, to: e.target.value })
-                    }
+                    onChange={(e) => setComposeData({ ...composeData, to: e.target.value })}
                     placeholder="recipient@email.com"
-                    disabled={isSending}
                   />
                 </div>
 
@@ -662,14 +442,8 @@ export function CandidateEmailCommunication({
                   <Input
                     id="subject"
                     value={composeData.subject}
-                    onChange={(e) =>
-                      setComposeData({
-                        ...composeData,
-                        subject: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setComposeData({ ...composeData, subject: e.target.value })}
                     placeholder="Email subject..."
-                    disabled={isSending}
                   />
                 </div>
 
@@ -679,29 +453,23 @@ export function CandidateEmailCommunication({
                   <textarea
                     id="content"
                     value={composeData.content}
-                    onChange={(e) =>
-                      setComposeData({
-                        ...composeData,
-                        content: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setComposeData({ ...composeData, content: e.target.value })}
                     placeholder="Write your message..."
                     className="w-full min-h-[300px] px-3 py-2 text-sm rounded-md border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    disabled={isSending}
                   />
                 </div>
 
                 {/* Compose Actions */}
                 <div className="flex items-center gap-2 pt-2">
-                  <Button variant="outline" size="sm" disabled={isSending}>
+                  <Button variant="outline" size="sm">
                     <Paperclip className="h-4 w-4 mr-2" />
                     Attach
                   </Button>
-                  <Button variant="outline" size="sm" disabled={isSending}>
+                  <Button variant="outline" size="sm">
                     <Image className="h-4 w-4 mr-2" />
                     Image
                   </Button>
-                  <Button variant="outline" size="sm" disabled={isSending}>
+                  <Button variant="outline" size="sm">
                     <Type className="h-4 w-4 mr-2" />
                     Format
                   </Button>
@@ -713,34 +481,20 @@ export function CandidateEmailCommunication({
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold mb-2">
-                      {selectedEmail.subject || "(No Subject)"}
-                    </h3>
+                    <h3 className="text-lg font-semibold mb-2">{selectedEmail.subject}</h3>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
                           <AvatarFallback className="text-xs">
-                            {selectedEmail.direction === "outbound"
-                              ? "You"
-                              : initials}
+                            {selectedEmail.type === "sent" ? "You" : initials}
                           </AvatarFallback>
                         </Avatar>
                         <span className="font-medium text-foreground">
-                          {selectedEmail.direction === "outbound"
-                            ? selectedEmail.sentBy
-                              ? `${selectedEmail.sentBy.firstName} ${selectedEmail.sentBy.lastName}`
-                              : "You"
-                            : selectedEmail.from || "Unknown"}
+                          {selectedEmail.type === "sent" ? "You" : selectedEmail.from}
                         </span>
                       </div>
                       <span>→</span>
-                      <span>
-                        {selectedEmail.direction === "outbound"
-                          ? selectedEmail.to && selectedEmail.to.length > 0
-                            ? selectedEmail.to[0]
-                            : "Unknown"
-                          : "You"}
-                      </span>
+                      <span>{selectedEmail.type === "sent" ? selectedEmail.to : "You"}</span>
                     </div>
                   </div>
                   <DropdownMenu>
@@ -750,9 +504,7 @@ export function CandidateEmailCommunication({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => handleReply(selectedEmail)}
-                      >
+                      <DropdownMenuItem onClick={() => handleReply(selectedEmail)}>
                         <Reply className="h-4 w-4 mr-2" />
                         Reply
                       </DropdownMenuItem>
@@ -764,10 +516,7 @@ export function CandidateEmailCommunication({
                         <Archive className="h-4 w-4 mr-2" />
                         Archive
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={() => handleDeleteEmail(selectedEmail)}
-                      >
+                      <DropdownMenuItem className="text-destructive">
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
                       </DropdownMenuItem>
@@ -779,65 +528,47 @@ export function CandidateEmailCommunication({
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock className="h-3.5 w-3.5" />
                   <span>{selectedEmail.timestamp.toLocaleString()}</span>
-                  {selectedEmail.direction === "outbound" &&
-                    selectedEmail.status === "sent" && (
-                      <>
-                        <CheckCheck className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                        <span className="text-green-600 dark:text-green-400">
-                          Sent
-                        </span>
-                      </>
-                    )}
+                  {selectedEmail.type === "sent" && (
+                    <>
+                      <CheckCheck className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                      <span className="text-green-600 dark:text-green-400">Sent</span>
+                    </>
+                  )}
                 </div>
 
                 <Separator />
 
                 <div className="prose prose-sm dark:prose-invert max-w-none">
                   <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {selectedEmail.body || "(No content)"}
+                    {selectedEmail.content}
                   </p>
                 </div>
 
-                {selectedEmail.attachments &&
-                  selectedEmail.attachments.length > 0 && (
-                    <>
-                      <Separator />
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">
-                          Attachments
-                        </Label>
-                        <div className="grid gap-2">
-                          {selectedEmail.attachments.map(
-                            (attachment, index) => (
-                              <div
-                                key={index}
-                                className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50"
-                              >
-                                <Paperclip className="h-4 w-4 text-muted-foreground" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">
-                                    {attachment.filename}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {formatFileSize(attachment.size)}
-                                  </p>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    window.open(attachment.url, "_blank")
-                                  }
-                                >
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            )
-                          )}
-                        </div>
+                {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Attachments</Label>
+                      <div className="grid gap-2">
+                        {selectedEmail.attachments.map((attachment, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50"
+                          >
+                            <Paperclip className="h-4 w-4 text-muted-foreground" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{attachment.name}</p>
+                              <p className="text-xs text-muted-foreground">{attachment.size}</p>
+                            </div>
+                            <Button variant="ghost" size="sm">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
                       </div>
-                    </>
-                  )}
+                    </div>
+                  </>
+                )}
 
                 <Separator />
 
@@ -857,9 +588,7 @@ export function CandidateEmailCommunication({
             <Card className="h-[600px] flex items-center justify-center">
               <div className="text-center">
                 <Mail className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-20" />
-                <p className="text-lg font-medium text-muted-foreground mb-2">
-                  No email selected
-                </p>
+                <p className="text-lg font-medium text-muted-foreground mb-2">No email selected</p>
                 <p className="text-sm text-muted-foreground mb-4">
                   Select an email to view or compose a new one
                 </p>
@@ -887,6 +616,6 @@ function formatTimestamp(date: Date): string {
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
-
+  
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }

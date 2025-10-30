@@ -30,9 +30,12 @@ export default function ClientDetailPage() {
   });
 
   useEffect(() => {
-    if (clientId) {
-      fetchClientById(clientId);
+    // Early return if no clientId to prevent undefined API calls
+    if (!clientId) {
+      return;
     }
+    
+    fetchClientById(clientId);
     fetchClients();
     fetchJobs();
     fetchCandidates();
@@ -77,10 +80,20 @@ export default function ClientDetailPage() {
     navigate(`/dashboard/clients/${clientId}/jobs/${jobId}`);
   };
 
+  // Check if clientId is valid
+  if (!clientId || clientId === 'undefined') {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Invalid client ID</p>
+      </div>
+    );
+  }
+
+  // Check if client data is loaded
   if (!client) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Client not found</p>
+        <p className="text-muted-foreground">Loading client...</p>
       </div>
     );
   }

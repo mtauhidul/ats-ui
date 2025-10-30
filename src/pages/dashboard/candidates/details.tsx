@@ -1835,11 +1835,37 @@ export default function CandidateDetailsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() =>
-                            navigate(
-                              `/dashboard/communications?to=${candidate.email}&candidateId=${candidateId}&jobId=${candidate.jobId}`
-                            )
-                          }
+                          onClick={() => {
+                            // Get the first job ID from the candidate's job applications
+                            const firstJobId = candidateData.jobIds?.[0];
+                            let jobIdStr: string | undefined;
+
+                            if (typeof firstJobId === "string") {
+                              jobIdStr = firstJobId;
+                            } else if (
+                              firstJobId &&
+                              typeof firstJobId === "object"
+                            ) {
+                              const jobIdObj = firstJobId as {
+                                id?: string;
+                                _id?: string;
+                                toString?: () => string;
+                              };
+                              jobIdStr =
+                                jobIdObj.id ||
+                                jobIdObj._id ||
+                                jobIdObj.toString?.();
+                            }
+
+                            if (jobIdStr) {
+                              navigate(
+                                `/dashboard/jobs/${jobIdStr}/candidates/${candidateId}/communication`
+                              );
+                            } else {
+                              // Fallback: show error message
+                              console.error("No job ID found for candidate");
+                            }
+                          }}
                         >
                           <IconMail className="h-4 w-4 mr-2" />
                           Compose Email

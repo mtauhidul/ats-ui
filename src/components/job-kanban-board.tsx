@@ -34,7 +34,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Edit, MoreHorizontal, Plus, User } from "lucide-react";
+import { Edit, MoreHorizontal, User } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DroppableArea } from "./droppable-area";
 import { CandidateCard, SortableCandidate } from "./sortable-candidate";
@@ -51,7 +51,6 @@ interface JobKanbanBoardProps {
 
 export function JobKanbanBoard({
   pipeline,
-  jobId: _jobId, // Kept for interface compatibility, but not used (backend uses currentPipelineStageId)
   candidates,
   onCandidateClick,
   onStatusChange,
@@ -69,39 +68,47 @@ export function JobKanbanBoard({
     const calculateMaxWidth = () => {
       const viewportWidth = window.innerWidth;
       // Use the gap element which actually changes width, not the sidebar itself
-      const sidebarGapElement = document.querySelector('[data-slot="sidebar-gap"]');
-      const sidebarWidth = sidebarGapElement?.getBoundingClientRect().width || 0;
-      
-      console.log('🔍 Width Calculation:', {
+      const sidebarGapElement = document.querySelector(
+        '[data-slot="sidebar-gap"]'
+      );
+      const sidebarWidth =
+        sidebarGapElement?.getBoundingClientRect().width || 0;
+
+      console.log("🔍 Width Calculation:", {
         sidebarState,
         viewportWidth,
         sidebarWidth,
-        containerMaxWidth: viewportWidth - sidebarWidth
+        containerMaxWidth: viewportWidth - sidebarWidth,
       });
-      
+
       setContainerMaxWidth(viewportWidth - sidebarWidth);
     };
 
-    const sidebarGapElement = document.querySelector('[data-slot="sidebar-gap"]');
-    
+    const sidebarGapElement = document.querySelector(
+      '[data-slot="sidebar-gap"]'
+    );
+
     // Listen for transition end on the sidebar gap
     const handleTransitionEnd = () => {
       calculateMaxWidth();
     };
-    
+
     if (sidebarGapElement) {
-      sidebarGapElement.addEventListener('transitionend', handleTransitionEnd);
+      sidebarGapElement.addEventListener("transitionend", handleTransitionEnd);
     }
-    
+
     // Also calculate immediately (in case no transition)
     calculateMaxWidth();
-    
+
     // Also recalculate on window resize
     window.addEventListener("resize", calculateMaxWidth);
 
     return () => {
       if (sidebarGapElement) {
-        sidebarGapElement.removeEventListener('transitionend', handleTransitionEnd);
+        sidebarGapElement.removeEventListener(
+          "transitionend",
+          handleTransitionEnd
+        );
       }
       window.removeEventListener("resize", calculateMaxWidth);
     };
@@ -111,22 +118,24 @@ export function JobKanbanBoard({
   const columnWidths = useMemo(() => {
     const minColumnWidth = 300;
     const maxColumnWidth = 400;
-    const availableWidth = containerMaxWidth > 0 ? containerMaxWidth : window.innerWidth;
-    
+    const availableWidth =
+      containerMaxWidth > 0 ? containerMaxWidth : window.innerWidth;
+
     const stageCount = pipeline.stages.length;
     const containerPadding = 48; // px-6
     const wrapperPadding = 16; // p-2
     const columnGap = 12; // gap-3
     const borderWidth = 2; // 1px each side
     const scrollBuffer = 2;
-    
+
     const totalGaps = columnGap * (stageCount - 1);
     const totalBorders = borderWidth * stageCount;
     const totalPadding = containerPadding + wrapperPadding;
-    
-    const availableForStages = availableWidth - totalPadding - totalGaps - totalBorders - scrollBuffer;
+
+    const availableForStages =
+      availableWidth - totalPadding - totalGaps - totalBorders - scrollBuffer;
     const idealWidth = Math.floor(availableForStages / stageCount);
-    
+
     let columnWidth;
     if (idealWidth >= minColumnWidth && idealWidth <= maxColumnWidth) {
       columnWidth = idealWidth;
@@ -135,7 +144,7 @@ export function JobKanbanBoard({
     } else {
       columnWidth = minColumnWidth;
     }
-    
+
     return pipeline.stages.map(() => columnWidth);
   }, [pipeline.stages, containerMaxWidth]);
 
@@ -149,10 +158,13 @@ export function JobKanbanBoard({
 
   // Group candidates by stage
   const candidatesByStage = useMemo(() => {
-    console.log('=== KANBAN BOARD: Grouping Candidates ===');
-    console.log('Total candidates received:', candidates.length);
-    console.log('Pipeline stages:', pipeline.stages.map(s => ({ id: s.id, name: s.name })));
-    
+    console.log("=== KANBAN BOARD: Grouping Candidates ===");
+    console.log("Total candidates received:", candidates.length);
+    console.log(
+      "Pipeline stages:",
+      pipeline.stages.map((s) => ({ id: s.id, name: s.name }))
+    );
+
     const grouped: Record<string, Candidate[]> = {};
 
     pipeline.stages.forEach((stage) => {
@@ -160,22 +172,28 @@ export function JobKanbanBoard({
     });
 
     candidates.forEach((candidate, index) => {
-      const candidateWithStage = candidate as {currentPipelineStageId?: string | {toString(): string}; currentStage?: {id: string}};
-      
+      const candidateWithStage = candidate as {
+        currentPipelineStageId?: string | { toString(): string };
+        currentStage?: { id: string };
+      };
+
       console.log(`\nCandidate ${index + 1}:`, {
         name: `${candidate.firstName} ${candidate.lastName}`,
         id: candidate.id,
         currentPipelineStageId: candidateWithStage.currentPipelineStageId,
         currentStage: candidateWithStage.currentStage,
       });
-      
+
       // Backend uses currentPipelineStageId, not jobApplications
-      const currentStageId = candidateWithStage.currentPipelineStageId?.toString() || 
-                            candidateWithStage.currentStage?.id;
-      
+      const currentStageId =
+        candidateWithStage.currentPipelineStageId?.toString() ||
+        candidateWithStage.currentStage?.id;
+
       console.log(`  -> Current stage ID: ${currentStageId}`);
-      console.log(`  -> Stage exists in grouped: ${!!grouped[currentStageId || '']}`);
-      
+      console.log(
+        `  -> Stage exists in grouped: ${!!grouped[currentStageId || ""]}`
+      );
+
       if (currentStageId && grouped[currentStageId]) {
         grouped[currentStageId].push(candidate);
         console.log(`  -> Added to stage: ${currentStageId}`);
@@ -184,17 +202,21 @@ export function JobKanbanBoard({
         const firstStage = pipeline.stages[0];
         if (firstStage) {
           grouped[firstStage.id].push(candidate);
-          console.log(`  -> No stage assigned, added to first stage: ${firstStage.name} (${firstStage.id})`);
+          console.log(
+            `  -> No stage assigned, added to first stage: ${firstStage.name} (${firstStage.id})`
+          );
         }
       }
     });
 
-    console.log('\n=== Final grouped candidates by stage: ===');
+    console.log("\n=== Final grouped candidates by stage: ===");
     Object.entries(grouped).forEach(([stageId, stageCandidates]) => {
-      const stage = pipeline.stages.find(s => s.id === stageId);
-      console.log(`${stage?.name} (${stageId}): ${stageCandidates.length} candidates`);
+      const stage = pipeline.stages.find((s) => s.id === stageId);
+      console.log(
+        `${stage?.name} (${stageId}): ${stageCandidates.length} candidates`
+      );
     });
-    console.log('=========================================\n');
+    console.log("=========================================\n");
 
     return grouped;
   }, [candidates, pipeline]);
@@ -219,12 +241,16 @@ export function JobKanbanBoard({
     const candidateId = active.id as string;
     const newStageId = over.id as string;
     const currentCandidate = candidates.find((c) => c.id === candidateId);
-    
+
     if (currentCandidate) {
       // Backend uses currentPipelineStageId
-      const candidateWithStage = currentCandidate as {currentPipelineStageId?: string | {toString(): string}; currentStage?: {id: string}};
-      const currentStageId = candidateWithStage.currentPipelineStageId?.toString() || 
-                            candidateWithStage.currentStage?.id;
+      const candidateWithStage = currentCandidate as {
+        currentPipelineStageId?: string | { toString(): string };
+        currentStage?: { id: string };
+      };
+      const currentStageId =
+        candidateWithStage.currentPipelineStageId?.toString() ||
+        candidateWithStage.currentStage?.id;
 
       if (currentStageId !== newStageId) {
         onStatusChange(candidateId, newStageId);
@@ -249,22 +275,7 @@ export function JobKanbanBoard({
         maxWidth: containerMaxWidth > 0 ? `${containerMaxWidth}px` : undefined,
       }}
     >
-      <div className="flex-shrink-0 px-6 pt-6 pb-3">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-bold truncate">{pipeline.name}</h2>
-            <p className="text-xs text-muted-foreground mt-0.5 truncate">
-              Drag and drop candidates between stages to update their status
-            </p>
-          </div>
-          <Button size="sm" variant="default" className="flex-shrink-0">
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Add Candidate
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex-1 min-h-0 overflow-x-auto px-6 pb-6">
+      <div className="flex-1 min-h-0 overflow-x-auto px-6 py-6">
         <DndContext
           sensors={sensors}
           collisionDetection={rectIntersection}

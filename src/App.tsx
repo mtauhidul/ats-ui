@@ -1,43 +1,43 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Layout from "./components/layout";
 import DashboardLayout from "./components/dashboard-layout";
+import Layout from "./components/layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Toaster } from "./components/ui/sonner";
-import LoginPage from "./pages/auth/login";
-import RegisterAdminPage from "./pages/auth/register-admin";
-import ForgotPasswordPage from "./pages/auth/forgot-password";
-import ResetPasswordPage from "./pages/auth/reset-password";
-import VerifyEmailPage from "./pages/auth/verify-email";
-import MagicLinkPage from "./pages/auth/magic-link";
-import VerifyMagicLinkPage from "./pages/auth/verify-magic-link";
-import HomePage from "./pages/home";
-import JobsPage from "./pages/jobs";
-import PublicJobDetailPage from "./pages/jobs/detail";
 import PublicApplyPage from "./pages/apply";
 import ApplySuccessPage from "./pages/apply/success";
-import DashboardMainPage from "./pages/dashboard/dashboard-main";
-import ClientsPage from "./pages/dashboard/clients";
-import ClientDetailPage from "./pages/dashboard/clients/detail";
+import ForgotPasswordPage from "./pages/auth/forgot-password";
+import LoginPage from "./pages/auth/login";
+import MagicLinkPage from "./pages/auth/magic-link";
+import RegisterAdminPage from "./pages/auth/register-admin";
+import ResetPasswordPage from "./pages/auth/reset-password";
+import VerifyEmailPage from "./pages/auth/verify-email";
+import VerifyMagicLinkPage from "./pages/auth/verify-magic-link";
+import AccountPage from "./pages/dashboard/account";
+import ApplicationsPage from "./pages/dashboard/applications";
 import CandidatesPage from "./pages/dashboard/candidates";
 import CandidateDetailsPage from "./pages/dashboard/candidates/details";
 import QuickImportPage from "./pages/dashboard/candidates/quick-import";
-import ApplicationsPage from "./pages/dashboard/applications";
-import TeamPage from "./pages/dashboard/team";
-import TeamMemberDetailPage from "./pages/dashboard/team/detail";
-import DashboardJobsPage from "./pages/dashboard/jobs";
-import JobDetailPage from "./pages/dashboard/jobs/detail";
-import JobCandidateDetailPage from "./pages/dashboard/jobs/candidate-detail";
-import JobPipelinePage from "./pages/dashboard/jobs/pipeline";
-import InterviewPage from "./pages/dashboard/jobs/interview";
-// import JobCandidateCommunicationPage from "./pages/dashboard/jobs/candidate-communication";
-import TagsPage from "./pages/dashboard/tags";
 import CategoriesPage from "./pages/dashboard/categories";
-import AccountPage from "./pages/dashboard/account";
+import ClientsPage from "./pages/dashboard/clients";
+import ClientDetailPage from "./pages/dashboard/clients/detail";
+import DashboardMainPage from "./pages/dashboard/dashboard-main";
+import HelpPage from "./pages/dashboard/help";
+import DashboardJobsPage from "./pages/dashboard/jobs";
+import JobCandidateCommunicationPage from "./pages/dashboard/jobs/candidate-communication";
+import JobCandidateDetailPage from "./pages/dashboard/jobs/candidate-detail";
+import JobDetailPage from "./pages/dashboard/jobs/detail";
+import InterviewPage from "./pages/dashboard/jobs/interview";
+import JobPipelinePage from "./pages/dashboard/jobs/pipeline";
+import MessagesPage from "./pages/dashboard/messages";
 import NotificationsPage from "./pages/dashboard/notifications";
 import SearchPage from "./pages/dashboard/search";
 import SettingsPage from "./pages/dashboard/settings";
-import HelpPage from "./pages/dashboard/help";
-import MessagesPage from "./pages/dashboard/messages";
+import TagsPage from "./pages/dashboard/tags";
+import TeamPage from "./pages/dashboard/team";
+import TeamMemberDetailPage from "./pages/dashboard/team/detail";
+import HomePage from "./pages/home";
+import JobsPage from "./pages/jobs";
+import PublicJobDetailPage from "./pages/jobs/detail";
 
 function App() {
   return (
@@ -50,7 +50,7 @@ function App() {
           <Route path="apply/:jobId" element={<PublicApplyPage />} />
           <Route path="apply/success" element={<ApplySuccessPage />} />
         </Route>
-        
+
         {/* Auth Routes */}
         <Route path="login" element={<LoginPage />} />
         <Route path="register-admin" element={<RegisterAdminPage />} />
@@ -59,30 +59,63 @@ function App() {
         <Route path="verify-email/:token" element={<VerifyEmailPage />} />
         <Route path="magic-link" element={<MagicLinkPage />} />
         <Route path="magic-link/:token" element={<VerifyMagicLinkPage />} />
-        
+
         {/* Protected Dashboard Routes */}
-        <Route path="dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+        <Route
+          path="dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<DashboardMainPage />} />
-          
+
           {/* Clients Routes */}
           <Route path="clients" element={<ClientsPage />} />
           <Route path="clients/:clientId" element={<ClientDetailPage />} />
-          <Route path="clients/:clientId/jobs/:jobId" element={<JobDetailPage />} />
-          <Route path="clients/:clientId/jobs/:jobId/candidates/:candidateId" element={<JobCandidateDetailPage />} />
-          <Route path="clients/:clientId/jobs/:jobId/candidates/:candidateId/interviews" element={<InterviewPage />} />
-          
+          <Route
+            path="clients/:clientId/jobs/:jobId"
+            element={<JobDetailPage />}
+          />
+          <Route
+            path="clients/:clientId/jobs/:jobId/candidates/:candidateId"
+            element={<JobCandidateDetailPage />}
+          />
+          <Route
+            path="clients/:clientId/jobs/:jobId/candidates/:candidateId/interviews"
+            element={<InterviewPage />}
+          />
+          <Route
+            path="clients/:clientId/jobs/:jobId/candidates/:candidateId/communication"
+            element={<JobCandidateCommunicationPage />}
+          />
+
           {/* Jobs Routes */}
           <Route path="jobs" element={<DashboardJobsPage />} />
           <Route path="jobs/:jobId" element={<JobDetailPage />} />
-          <Route path="jobs/:jobId/candidates/:candidateId" element={<JobCandidateDetailPage />} />
-          <Route path="jobs/:jobId/candidates/:candidateId/interviews" element={<InterviewPage />} />
+          <Route
+            path="jobs/:jobId/candidates/:candidateId"
+            element={<JobCandidateDetailPage />}
+          />
+          <Route
+            path="jobs/:jobId/candidates/:candidateId/interviews"
+            element={<InterviewPage />}
+          />
+          <Route
+            path="jobs/:jobId/candidates/:candidateId/communication"
+            element={<JobCandidateCommunicationPage />}
+          />
           <Route path="jobs/pipeline/:jobId" element={<JobPipelinePage />} />
-          
+
           {/* Candidates Routes */}
           <Route path="candidates" element={<CandidatesPage />} />
           <Route path="candidates/quick-import" element={<QuickImportPage />} />
-          <Route path="candidates/:candidateId" element={<CandidateDetailsPage />} />
-          
+          <Route
+            path="candidates/:candidateId"
+            element={<CandidateDetailsPage />}
+          />
+
           {/* Other Routes */}
           <Route path="applications" element={<ApplicationsPage />} />
           <Route path="team" element={<TeamPage />} />
