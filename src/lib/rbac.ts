@@ -1,19 +1,19 @@
 // Role-Based Access Control utilities
 
 interface UserPermissions {
-  canManageClients: boolean;
-  canManageJobs: boolean;
-  canReviewApplications: boolean;
-  canManageCandidates: boolean;
-  canSendEmails: boolean;
-  canManageTeam: boolean;
-  canAccessAnalytics: boolean;
+  canManageClients?: boolean;
+  canManageJobs?: boolean;
+  canReviewApplications?: boolean;
+  canManageCandidates?: boolean;
+  canSendEmails?: boolean;
+  canManageTeam?: boolean;
+  canAccessAnalytics?: boolean;
 }
 
 interface User {
   id: string;
   role: string;
-  permissions: UserPermissions;
+  permissions?: UserPermissions;
 }
 
 /**
@@ -21,6 +21,7 @@ interface User {
  */
 export const hasPermission = (user: User | null, permission: keyof UserPermissions): boolean => {
   if (!user) return false;
+  if (!user.permissions) return false;
   return user.permissions[permission] === true;
 };
 

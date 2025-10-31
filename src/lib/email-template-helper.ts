@@ -84,15 +84,15 @@ export function extractEmailVariables(
     phone: candidate.phone,
     
     // Job info
-    jobTitle: job?.title,
-    department: job?.department,
+    jobTitle: job?.title || "[Job Title]",
+    department: job?.department || "[Department]",
     
     // Company info - handle both populated and unpopulated clientId
     companyName: client?.companyName || 
                  (typeof job?.clientId === 'object' && job?.clientId !== null 
                    ? job.clientId.companyName
                    : undefined) || 
-                 "Our Company",
+                 "[Company Name]",
     
     // Default recruiter info (should come from user context in real app)
     recruiterName: "HR Team",
@@ -102,6 +102,12 @@ export function extractEmailVariables(
     // Default values for common variables
     reviewDays: "5-7",
     retentionPeriod: "6",
+    interviewDate: "[Interview Date]",
+    interviewTime: "[Interview Time]",
+    interviewLocation: "[Interview Location]",
+    startDate: "[Start Date]",
+    salary: "[Salary]",
+    benefits: "[Benefits]",
     
     // Add any custom variables
     ...customVars,

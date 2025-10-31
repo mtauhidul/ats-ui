@@ -1,8 +1,7 @@
-import { useState } from "react";
 import { Bot, Loader2, Mail, Shield } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
-import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
 // Email provider types
 export type EmailProvider = "gmail" | "outlook" | "other";
@@ -83,7 +83,13 @@ function EmailConnectionDialog({
         name: `${provider.charAt(0).toUpperCase() + provider.slice(1)} Account`,
         email: imapUsername,
         provider: provider === "other" ? "custom" : provider,
-        imapHost: imapServer || (provider === "gmail" ? "imap.gmail.com" : provider === "outlook" ? "outlook.office365.com" : ""),
+        imapHost:
+          imapServer ||
+          (provider === "gmail"
+            ? "imap.gmail.com"
+            : provider === "outlook"
+            ? "outlook.office365.com"
+            : ""),
         imapPort: parseInt(imapPort) || 993,
         imapUser: imapUsername,
         imapPassword: imapPassword,
@@ -92,29 +98,30 @@ function EmailConnectionDialog({
       };
 
       // Add the account
-      const addAccountResponse = await authenticatedFetch(
-        "/email-accounts",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        }
-      );
+      const addAccountResponse = await authenticatedFetch("/email-accounts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
 
       setConnectionProgress(80);
 
       if (!addAccountResponse.ok) {
         const errorData = await addAccountResponse.json();
         console.error("API Error:", errorData);
-        
+
         // Handle validation errors
         if (errorData.errors && Array.isArray(errorData.errors)) {
-          const errorMessages = errorData.errors.map((err: any) => err.message).join(", ");
+          const errorMessages = (
+            errorData.errors as Array<{ message?: string }>
+          )
+            .map((err) => err.message ?? "Unknown error")
+            .join(", ");
           throw new Error(errorMessages);
         }
-        
+
         throw new Error(
           errorData.message || errorData.error || "Failed to add email account"
         );
@@ -174,7 +181,9 @@ function EmailConnectionDialog({
             <Label className="text-sm font-medium">Email Provider</Label>
             <RadioGroup
               value={provider}
-              onValueChange={(value: string) => setProvider(value as EmailProvider)}
+              onValueChange={(value: string) =>
+                setProvider(value as EmailProvider)
+              }
               className="grid grid-cols-1 gap-1.5"
             >
               <div className="flex items-center space-x-2 p-2.5 border rounded-lg hover:bg-muted/50 transition-colors">

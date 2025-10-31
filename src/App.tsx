@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import DashboardLayout from "./components/dashboard-layout";
 import Layout from "./components/layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { PermissionGuard } from "./components/auth/PermissionGuard";
 import { Toaster } from "./components/ui/sonner";
 import PublicApplyPage from "./pages/apply";
 import ApplySuccessPage from "./pages/apply/success";
@@ -72,56 +73,56 @@ function App() {
           <Route index element={<DashboardMainPage />} />
 
           {/* Clients Routes */}
-          <Route path="clients" element={<ClientsPage />} />
-          <Route path="clients/:clientId" element={<ClientDetailPage />} />
+          <Route path="clients" element={<PermissionGuard permission="canManageClients"><ClientsPage /></PermissionGuard>} />
+          <Route path="clients/:clientId" element={<PermissionGuard permission="canManageClients"><ClientDetailPage /></PermissionGuard>} />
           <Route
             path="clients/:clientId/jobs/:jobId"
-            element={<JobDetailPage />}
+            element={<PermissionGuard permission="canManageJobs"><JobDetailPage /></PermissionGuard>}
           />
           <Route
             path="clients/:clientId/jobs/:jobId/candidates/:candidateId"
-            element={<JobCandidateDetailPage />}
+            element={<PermissionGuard permission="canManageCandidates"><JobCandidateDetailPage /></PermissionGuard>}
           />
           <Route
             path="clients/:clientId/jobs/:jobId/candidates/:candidateId/interviews"
-            element={<InterviewPage />}
+            element={<PermissionGuard permission="canManageCandidates"><InterviewPage /></PermissionGuard>}
           />
           <Route
             path="clients/:clientId/jobs/:jobId/candidates/:candidateId/communication"
-            element={<JobCandidateCommunicationPage />}
+            element={<PermissionGuard permission="canSendEmails"><JobCandidateCommunicationPage /></PermissionGuard>}
           />
 
           {/* Jobs Routes */}
-          <Route path="jobs" element={<DashboardJobsPage />} />
-          <Route path="jobs/:jobId" element={<JobDetailPage />} />
+          <Route path="jobs" element={<PermissionGuard permission="canManageJobs"><DashboardJobsPage /></PermissionGuard>} />
+          <Route path="jobs/:jobId" element={<PermissionGuard permission="canManageJobs"><JobDetailPage /></PermissionGuard>} />
           <Route
             path="jobs/:jobId/candidates/:candidateId"
-            element={<JobCandidateDetailPage />}
+            element={<PermissionGuard permission="canManageCandidates"><JobCandidateDetailPage /></PermissionGuard>}
           />
           <Route
             path="jobs/:jobId/candidates/:candidateId/interviews"
-            element={<InterviewPage />}
+            element={<PermissionGuard permission="canManageCandidates"><InterviewPage /></PermissionGuard>}
           />
           <Route
             path="jobs/:jobId/candidates/:candidateId/communication"
-            element={<JobCandidateCommunicationPage />}
+            element={<PermissionGuard permission="canSendEmails"><JobCandidateCommunicationPage /></PermissionGuard>}
           />
-          <Route path="jobs/pipeline/:jobId" element={<JobPipelinePage />} />
+          <Route path="jobs/pipeline/:jobId" element={<PermissionGuard permission="canManageJobs"><JobPipelinePage /></PermissionGuard>} />
 
           {/* Candidates Routes */}
-          <Route path="candidates" element={<CandidatesPage />} />
-          <Route path="candidates/quick-import" element={<QuickImportPage />} />
+          <Route path="candidates" element={<PermissionGuard permission="canManageCandidates"><CandidatesPage /></PermissionGuard>} />
+          <Route path="candidates/quick-import" element={<PermissionGuard permission="canManageCandidates"><QuickImportPage /></PermissionGuard>} />
           <Route
             path="candidates/:candidateId"
-            element={<CandidateDetailsPage />}
+            element={<PermissionGuard permission="canManageCandidates"><CandidateDetailsPage /></PermissionGuard>}
           />
 
           {/* Other Routes */}
-          <Route path="applications" element={<ApplicationsPage />} />
-          <Route path="team" element={<TeamPage />} />
-          <Route path="team/:memberId" element={<TeamMemberDetailPage />} />
-          <Route path="tags" element={<TagsPage />} />
-          <Route path="categories" element={<CategoriesPage />} />
+          <Route path="applications" element={<PermissionGuard permission="canReviewApplications"><ApplicationsPage /></PermissionGuard>} />
+          <Route path="team" element={<PermissionGuard permission="canManageTeam"><TeamPage /></PermissionGuard>} />
+          <Route path="team/:memberId" element={<PermissionGuard permission="canManageTeam"><TeamMemberDetailPage /></PermissionGuard>} />
+          <Route path="tags" element={<PermissionGuard permission="canManageCandidates"><TagsPage /></PermissionGuard>} />
+          <Route path="categories" element={<PermissionGuard permission="canManageJobs"><CategoriesPage /></PermissionGuard>} />
           <Route path="account" element={<AccountPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="search" element={<SearchPage />} />

@@ -35,94 +35,34 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Copy, Edit, Info, Mail, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import {
+  getEmailTemplates,
+  createEmailTemplate,
+  updateEmailTemplate,
+  deleteEmailTemplate as deleteEmailTemplateAPI,
+} from "@/services/emailTemplate.service";
 
 interface EmailTemplate {
-  id: string;
+  id?: string;
+  _id?: string;
   name: string;
   subject: string;
   body: string;
-  type: "interview" | "offer" | "rejection" | "follow_up" | "general";
+  type: "interview" | "offer" | "rejection" | "follow_up" | "application_received" | "general";
   variables: string[];
-  createdAt: Date;
-  updatedAt: Date;
+  isDefault?: boolean;
+  isActive?: boolean;
+  createdBy?: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
-
-const initialTemplates: EmailTemplate[] = [
-  {
-    id: "tmpl-1",
-    name: "Interview Invitation",
-    subject: "Interview Invitation - {{jobTitle}}",
-    body: "Dear {{firstName}} {{lastName}},\n\nWe are pleased to inform you that after reviewing your application for the {{jobTitle}} position at {{companyName}}, we would like to invite you for an interview.\n\nInterview Details:\nDate: {{interviewDate}}\nTime: {{interviewTime}}\nLocation: {{interviewLocation}}\n\nPlease confirm your attendance by replying to this email.\n\nWe look forward to meeting you!\n\nBest regards,\n{{recruiterName}}\n{{companyName}}",
-    type: "interview",
-    variables: [
-      "firstName",
-      "lastName",
-      "jobTitle",
-      "companyName",
-      "interviewDate",
-      "interviewTime",
-      "interviewLocation",
-      "recruiterName",
-    ],
-    createdAt: new Date("2025-01-15"),
-    updatedAt: new Date("2025-01-15"),
-  },
-  {
-    id: "tmpl-2",
-    name: "Job Offer Letter",
-    subject: "Job Offer - {{jobTitle}} at {{companyName}}",
-    body: "Dear {{firstName}} {{lastName}},\n\nWe are delighted to offer you the position of {{jobTitle}} at {{companyName}}.\n\nPosition Details:\n• Title: {{jobTitle}}\n• Department: {{department}}\n• Start Date: {{startDate}}\n• Salary: {{salary}}\n• Benefits: {{benefits}}\n\nThis offer is contingent upon successful completion of background checks and reference verification.\n\nPlease review the attached detailed offer letter and respond within 5 business days to accept this offer.\n\nCongratulations!\n\nSincerely,\n{{recruiterName}}\n{{companyName}}",
-    type: "offer",
-    variables: [
-      "firstName",
-      "lastName",
-      "jobTitle",
-      "companyName",
-      "department",
-      "startDate",
-      "salary",
-      "benefits",
-      "recruiterName",
-    ],
-    createdAt: new Date("2025-01-10"),
-    updatedAt: new Date("2025-01-10"),
-  },
-  {
-    id: "tmpl-3",
-    name: "Application Received",
-    subject: "Application Received - {{jobTitle}}",
-    body: "Dear {{firstName}},\n\nThank you for your interest in the {{jobTitle}} position at {{companyName}}.\n\nWe have successfully received your application and our team is currently reviewing all submissions. We will contact you within {{reviewDays}} business days if your qualifications match our requirements.\n\nWe appreciate your interest in joining our team!\n\nBest regards,\n{{recruiterName}}\nRecruitment Team\n{{companyName}}",
-    type: "follow_up",
-    variables: [
-      "firstName",
-      "jobTitle",
-      "companyName",
-      "reviewDays",
-      "recruiterName",
-    ],
-    createdAt: new Date("2025-01-20"),
-    updatedAt: new Date("2025-01-20"),
-  },
-  {
-    id: "tmpl-4",
-    name: "Rejection - Not Selected",
-    subject: "Update on Your Application - {{jobTitle}}",
-    body: "Dear {{firstName}} {{lastName}},\n\nThank you for taking the time to apply for the {{jobTitle}} position at {{companyName}} and for your interest in joining our team.\n\nAfter careful consideration, we have decided to move forward with other candidates whose qualifications more closely match our current needs for this role.\n\nWe were impressed by your background and encourage you to apply for future opportunities that align with your skills and experience. We will keep your resume on file for {{retentionPeriod}} months.\n\nWe wish you the best in your job search and future endeavors.\n\nBest regards,\n{{recruiterName}}\n{{companyName}}",
-    type: "rejection",
-    variables: [
-      "firstName",
-      "lastName",
-      "jobTitle",
-      "companyName",
-      "retentionPeriod",
-      "recruiterName",
-    ],
-    createdAt: new Date("2025-01-12"),
-    updatedAt: new Date("2025-01-12"),
-  },
-];
 
 const availableVariables = [
   "firstName",
@@ -154,7 +94,8 @@ const templateTypes = [
 ];
 
 export function EmailTemplatesSettings() {
-  const [templates, setTemplates] = useState<EmailTemplate[]>(initialTemplates);
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(
     null
@@ -173,6 +114,25 @@ export function EmailTemplatesSettings() {
   const [customVariable, setCustomVariable] = useState("");
   const [showAddVariable, setShowAddVariable] = useState(false);
 
+  // Fetch templates on mount
+  useEffect(() => {
+    loadTemplates();
+  }, []);
+
+  const loadTemplates = async () => {
+    try {
+      setIsLoading(true);
+      // Fetch all templates (both active and inactive)
+      const data = await getEmailTemplates({ isActive: undefined });
+      setTemplates(data);
+    } catch (error) {
+      console.error("Failed to load email templates:", error);
+      toast.error("Failed to load email templates");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleAdd = () => {
     setFormData({ name: "", subject: "", body: "", type: "general" });
     setIsAddOpen(true);
@@ -188,70 +148,76 @@ export function EmailTemplatesSettings() {
     setEditingTemplate(template);
   };
 
-  const handleDuplicate = (template: EmailTemplate) => {
-    const newTemplate: EmailTemplate = {
-      ...template,
-      id: `tmpl-${Date.now()}`,
-      name: `${template.name} (Copy)`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    setTemplates([...templates, newTemplate]);
-    toast.success("Template duplicated successfully");
+  const handleDuplicate = async (template: EmailTemplate) => {
+    try {
+      await createEmailTemplate({
+        name: `${template.name} (Copy)`,
+        subject: template.subject,
+        body: template.body,
+        type: template.type,
+      });
+      toast.success("Template duplicated successfully");
+      await loadTemplates();
+    } catch (error) {
+      console.error("Failed to duplicate template:", error);
+      toast.error("Failed to duplicate template");
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deleteTemplate) {
-      setTemplates(templates.filter((t) => t.id !== deleteTemplate.id));
-      toast.success("Template deleted successfully");
-      setDeleteTemplate(null);
+      try {
+        const templateId = deleteTemplate._id || deleteTemplate.id;
+        if (!templateId) {
+          toast.error("Invalid template ID");
+          return;
+        }
+        
+        await deleteEmailTemplateAPI(templateId);
+        toast.success("Template deleted successfully");
+        await loadTemplates();
+      } catch (error) {
+        console.error("Failed to delete template:", error);
+        toast.error("Failed to delete template");
+      } finally {
+        setDeleteTemplate(null);
+      }
     }
   };
 
-  const extractVariables = (text: string): string[] => {
-    const regex = /\{\{([^}]+)\}\}/g;
-    const matches = text.matchAll(regex);
-    const vars = new Set<string>();
-    for (const match of matches) {
-      vars.add(match[1].trim());
-    }
-    return Array.from(vars);
-  };
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name || !formData.subject || !formData.body) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    const variables = extractVariables(formData.subject + " " + formData.body);
+    try {
+      if (editingTemplate) {
+        // Update existing template
+        const templateId = editingTemplate._id || editingTemplate.id;
+        if (!templateId) {
+          toast.error("Invalid template ID");
+          return;
+        }
+        
+        await updateEmailTemplate(templateId, formData);
+        toast.success("Template updated successfully");
+      } else {
+        // Add new template
+        await createEmailTemplate(formData);
+        toast.success("Template created successfully");
+      }
 
-    if (editingTemplate) {
-      // Update existing template
-      setTemplates(
-        templates.map((t) =>
-          t.id === editingTemplate.id
-            ? { ...t, ...formData, variables, updatedAt: new Date() }
-            : t
-        )
-      );
-      toast.success("Template updated successfully");
-    } else {
-      // Add new template
-      const newTemplate: EmailTemplate = {
-        id: `tmpl-${Date.now()}`,
-        ...formData,
-        variables,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setTemplates([...templates, newTemplate]);
-      toast.success("Template created successfully");
+      // Reload templates from server
+      await loadTemplates();
+
+      setIsAddOpen(false);
+      setEditingTemplate(null);
+      setFormData({ name: "", subject: "", body: "", type: "general" });
+    } catch (error) {
+      console.error("Failed to save template:", error);
+      toast.error("Failed to save template");
     }
-
-    setIsAddOpen(false);
-    setEditingTemplate(null);
-    setFormData({ name: "", subject: "", body: "", type: "general" });
   };
 
   const insertVariable = (variable: string) => {
@@ -314,7 +280,18 @@ export function EmailTemplatesSettings() {
       </div>
 
       <div className="grid gap-4">
-        {templates.length === 0 ? (
+        {isLoading ? (
+          <Card>
+            <CardContent className="py-12">
+              <div className="text-center space-y-3">
+                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto">
+                  <Mail className="h-6 w-6 text-muted-foreground animate-pulse" />
+                </div>
+                <p className="text-sm text-muted-foreground">Loading templates...</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : templates.length === 0 ? (
           <Card>
             <CardContent className="py-12">
               <div className="text-center space-y-3">
@@ -336,7 +313,7 @@ export function EmailTemplatesSettings() {
         ) : (
           templates.map((template) => (
             <Card
-              key={template.id}
+              key={template._id || template.id}
               className="hover:shadow-md transition-shadow"
             >
               <CardHeader>
@@ -402,13 +379,17 @@ export function EmailTemplatesSettings() {
                     </div>
                   )}
                   <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">
-                    <span>
-                      Created: {template.createdAt.toLocaleDateString()}
-                    </span>
-                    <span>•</span>
-                    <span>
-                      Updated: {template.updatedAt.toLocaleDateString()}
-                    </span>
+                    {template.createdAt && (
+                      <span>
+                        Created: {new Date(template.createdAt).toLocaleDateString()}
+                      </span>
+                    )}
+                    {template.createdAt && template.updatedAt && <span>•</span>}
+                    {template.updatedAt && (
+                      <span>
+                        Updated: {new Date(template.updatedAt).toLocaleDateString()}
+                      </span>
+                    )}
                   </div>
                 </div>
               </CardContent>

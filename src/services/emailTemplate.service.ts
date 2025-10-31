@@ -27,7 +27,7 @@ export interface EmailTemplateResponse {
   message?: string;
 }
 
-const API_BASE = "/api/email-templates";
+const API_BASE = "/email-templates";
 
 /**
  * Get all email templates

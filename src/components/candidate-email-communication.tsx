@@ -27,6 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
+import { getEmailTemplates, type EmailTemplate } from "@/services/emailTemplate.service";
 import {
   Archive,
   ArrowLeft,
@@ -92,35 +93,6 @@ interface EmailThread {
   }[];
 }
 
-// Email templates
-interface EmailTemplate {
-  id: string;
-  name: string;
-  subject: string;
-  body: string;
-}
-
-const emailTemplates: EmailTemplate[] = [
-  {
-    id: "tmpl-1",
-    name: "Interview Invitation",
-    subject: "Interview Invitation - {{jobTitle}}",
-    body: "Dear {{firstName}} {{lastName}},\n\nWe are pleased to inform you that after reviewing your application for the {{jobTitle}} position at {{companyName}}, we would like to invite you for an interview.\n\nPlease confirm your attendance by replying to this email.\n\nWe look forward to meeting you!\n\nBest regards,\n{{recruiterName}}\n{{companyName}}",
-  },
-  {
-    id: "tmpl-2",
-    name: "Application Received",
-    subject: "Application Received - {{jobTitle}}",
-    body: "Dear {{firstName}},\n\nThank you for your interest in the {{jobTitle}} position at {{companyName}}.\n\nWe have successfully received your application and our team is currently reviewing all submissions.\n\nWe appreciate your interest in joining our team!\n\nBest regards,\n{{recruiterName}}\n{{companyName}}",
-  },
-  {
-    id: "tmpl-3",
-    name: "Follow-up Email",
-    subject: "Following up on {{jobTitle}} Application",
-    body: "Hi {{firstName}},\n\nI wanted to follow up on your application for the {{jobTitle}} position.\n\nWe're impressed with your background and would love to learn more about you.\n\nAre you available for a brief call this week?\n\nBest regards,\n{{recruiterName}}",
-  },
-];
-
 export function CandidateEmailCommunication({
   candidate,
   job,
@@ -133,6 +105,7 @@ export function CandidateEmailCommunication({
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
 
   // Compose email state
   const [composeData, setComposeData] = useState({
@@ -144,6 +117,20 @@ export function CandidateEmailCommunication({
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
   const initials =
     `${candidate.firstName[0]}${candidate.lastName[0]}`.toUpperCase();
+
+  // Fetch email templates on mount
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const templates = await getEmailTemplates({ isActive: true });
+        setEmailTemplates(templates);
+      } catch (error) {
+        console.error("Failed to load email templates:", error);
+        // Don't show error toast, just log it (templates are optional)
+      }
+    };
+    loadTemplates();
+  }, []);
 
   // Fetch emails on mount
   useEffect(() => {
@@ -597,7 +584,7 @@ export function CandidateEmailCommunication({
                     onValueChange={(value) => {
                       if (value === "none") return;
                       const template = emailTemplates.find(
-                        (t) => t.id === value
+                        (t) => (t._id || t.id) === value
                       );
                       if (template) {
                         // Extract variables and apply template
@@ -630,14 +617,17 @@ export function CandidateEmailCommunication({
                           <span>No template</span>
                         </div>
                       </SelectItem>
-                      {emailTemplates.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            <span>{template.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
+                      {emailTemplates.map((template) => {
+                        const templateId = template._id || template.id || '';
+                        return (
+                          <SelectItem key={templateId} value={templateId}>
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4" />
+                              <span>{template.name}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
