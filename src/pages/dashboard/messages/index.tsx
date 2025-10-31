@@ -1,4 +1,5 @@
 import { NewMessageModal } from "@/components/modals/new-message-modal";
+import MessageInputAi from "@/components/message-input-ai";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +30,6 @@ import {
   Plus,
   RotateCcw,
   Search,
-  Send,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -113,7 +113,6 @@ export default function MessagesPage() {
   const [messageText, setMessageText] = useState("");
   const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messageInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch messages on mount
   useEffect(() => {
@@ -200,7 +199,7 @@ export default function MessagesPage() {
     return groups;
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (message?: string) => {
     if (!canSendMessages) {
       toast.error(
         "You don't have permission to send messages. Please contact your administrator."
@@ -208,20 +207,19 @@ export default function MessagesPage() {
       return;
     }
 
+    // Use the provided message or the messageText state
+    const textToSend = (message || messageText).trim();
+    
     if (
-      !messageText.trim() ||
+      !textToSend ||
       !currentConversation ||
-      messageText.length > 1000
+      textToSend.length > 1000
     ) {
       return;
     }
 
     // Clear message immediately for instant feel
-    const textToSend = messageText.trim();
     setMessageText("");
-
-    // Re-focus input
-    messageInputRef.current?.focus();
 
     // Create temp ID for tracking
     const tempId = `temp_${Date.now()}_${Math.random()}`;
@@ -358,13 +356,6 @@ export default function MessagesPage() {
         })
       );
       toast.error("Failed to send message");
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
     }
   };
 
@@ -518,19 +509,19 @@ export default function MessagesPage() {
                 {currentConversation ? (
                   <>
                     {/* Chat Header */}
-                    <CardHeader className="pb-3 border-b shrink-0 bg-muted/20">
+                    <CardHeader className="p-0! py-1.5! px-3! border-b shrink-0 bg-muted/20">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10 ring-2 ring-background">
-                            <AvatarFallback className="bg-linear-to-br from-primary/20 to-primary/10 text-primary font-semibold">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8 ring-1 ring-background">
+                            <AvatarFallback className="bg-linear-to-br from-primary/20 to-primary/10 text-primary font-semibold text-xs">
                               {getInitials(currentConversation.participantName)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <CardTitle className="text-base font-semibold">
+                            <CardTitle className="text-sm font-semibold">
                               {currentConversation.participantName}
                             </CardTitle>
-                            <p className="text-xs text-muted-foreground capitalize">
+                            <p className="text-[11px] text-muted-foreground capitalize leading-tight">
                               {currentConversation.participantRole.replace(
                                 /_/g,
                                 " "
@@ -550,7 +541,7 @@ export default function MessagesPage() {
 
                     {/* Messages */}
                     <div
-                      className="flex-1 overflow-y-auto p-4 space-y-1"
+                      className="flex-1 overflow-y-auto py-2 space-y-1"
                       style={{ backgroundColor: "hsl(var(--muted) / 0.3)" }}
                     >
                       {currentConversation.messages.length === 0 ? (
@@ -578,7 +569,7 @@ export default function MessagesPage() {
                                     isCurrentUser
                                       ? "justify-end"
                                       : "justify-start"
-                                  } mb-4 message-group-animate`}
+                                  } mb-3 px-2 message-group-animate`}
                                   style={{
                                     animationDelay: `${groupIndex * 30}ms`,
                                     opacity: 0,
@@ -586,22 +577,22 @@ export default function MessagesPage() {
                                   }}
                                 >
                                   <div
-                                    className={`flex gap-2 max-w-[75%] ${
+                                    className={`flex gap-1 max-w-[95%] ${
                                       isCurrentUser
                                         ? "flex-row-reverse"
                                         : "flex-row"
                                     }`}
                                   >
                                     {/* Avatar - only show for first message in group */}
-                                    <Avatar className="h-8 w-8 shrink-0">
-                                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                                    <Avatar className="h-7 w-7 shrink-0">
+                                      <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
                                         {getInitials(group[0].senderName)}
                                       </AvatarFallback>
                                     </Avatar>
 
                                     {/* Messages group */}
                                     <div
-                                      className={`flex flex-col gap-1 ${
+                                      className={`flex flex-col gap-3 ${
                                         isCurrentUser
                                           ? "items-end"
                                           : "items-start"
@@ -635,9 +626,9 @@ export default function MessagesPage() {
                                                 }}
                                               >
                                                 <div
-                                                  className={`inline-block rounded-2xl px-4 py-2.5 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
+                                                  className={`inline-block rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
                                                     isCurrentUser
-                                                      ? "bg-primary text-primary-foreground rounded-tr-md"
+                                                      ? "bg-primary rounded-tr-md"
                                                       : "bg-card border rounded-tl-md"
                                                   } ${
                                                     msgIndex === 0
@@ -647,7 +638,9 @@ export default function MessagesPage() {
                                                       : "rounded-tl-2xl"
                                                   }`}
                                                 >
-                                                  <p className="text-sm leading-relaxed whitespace-pre-wrap wrap-break-word">
+                                                  <p className={`text-sm leading-relaxed whitespace-pre-wrap wrap-break-word ${
+                                                    isCurrentUser ? "text-white" : ""
+                                                  }`}>
                                                     {msg.message}
                                                   </p>
                                                 </div>
@@ -724,36 +717,16 @@ export default function MessagesPage() {
                     </div>
 
                     {/* Message Input */}
-                    <div className="p-4 border-t bg-background shrink-0">
-                      <div className="flex items-end gap-2">
-                        <div className="flex-1 relative">
-                          <Input
-                            ref={messageInputRef}
-                            placeholder="Type your message..."
-                            value={messageText}
-                            onChange={(e) => setMessageText(e.target.value)}
-                            onKeyDown={handleKeyPress}
-                            className="pr-12"
-                            autoComplete="off"
-                          />
-                          <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                            {messageText.length}/1000
-                          </div>
-                        </div>
-                        <Button
-                          onClick={handleSendMessage}
-                          size="icon"
-                          className="shrink-0 h-10 w-10"
-                          disabled={
-                            !messageText.trim() || messageText.length > 1000
-                          }
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Press Enter to send, Shift+Enter for new line
-                      </p>
+                    <div className="px-2 py-2 border-t shrink-0">
+                      <MessageInputAi
+                        onSendMessage={(message) => {
+                          handleSendMessage(message);
+                        }}
+                        disabled={!canSendMessages}
+                        placeholder="Type your message..."
+                        maxLength={1000}
+                        autoFocus={true}
+                      />
                     </div>
                   </>
                 ) : (

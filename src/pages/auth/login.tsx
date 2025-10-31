@@ -5,18 +5,12 @@
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { LogoIcon } from "@/components/icons/logo-icon";
+import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
 import { useAuth } from "@/hooks/useAuth";
-import { AlertCircle, Loader2, Lock, Mail } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -49,86 +43,99 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
-            Welcome Back
-          </CardTitle>
-          <CardDescription className="text-center">
-            Sign in to your ATS account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden p-4">
+      {/* Background Ripple Effect */}
+      <div className="absolute inset-0 [--cell-border-color:hsl(var(--primary)/0.3)] [--cell-fill-color:hsl(var(--primary)/0.15)] [--cell-shadow-color:hsl(var(--primary)/0.4)]">
+        <BackgroundRippleEffect rows={10} cols={30} cellSize={48} />
+      </div>
+      
+      <div className="relative z-10 w-full max-w-md space-y-8">
+        {/* Logo and Header */}
+        <div className="flex flex-col items-center space-y-4">
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <LogoIcon size={32} color="#71abbf" />
+            <span className="text-xl font-semibold">YTFCS ATS</span>
+          </Link>
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight">Welcome Back</h1>
+            <p className="text-sm text-muted-foreground">
+              Sign in to your ATS account
+            </p>
+          </div>
+        </div>
+        
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <FieldGroup>
+            <Field>
+              <FieldLabel>Email address</FieldLabel>
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+                autoComplete="email"
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel>Password</FieldLabel>
+              <Input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+                autoComplete="current-password"
+              />
+            </Field>
+          </FieldGroup>
+          
+          <Button className="w-full" type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              "Sign In"
             )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                "Sign In"
-              )}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
+          </Button>
+        </form>
+        
+        {/* Footer */}
+        <div className="text-center text-sm space-y-2">
           <Link
             to="/forgot-password"
-            className="text-sm text-primary hover:underline text-center w-full"
+            className="block text-primary hover:text-primary/80 font-medium transition-colors"
           >
             Forgot your password?
           </Link>
           <Link
             to="/magic-link"
-            className="text-sm text-muted-foreground hover:text-primary text-center w-full"
+            className="block text-muted-foreground hover:text-foreground transition-colors"
           >
             Sign in with magic link instead
           </Link>
-        </CardFooter>
-      </Card>
+          <Link
+            to="/"
+            className="inline-flex items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-colors pt-2"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to Home
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

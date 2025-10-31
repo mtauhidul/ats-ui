@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
 import { Upload, FileText, Loader2, CheckCircle2, ArrowLeft, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import type { Job } from "@/types/job";
@@ -429,8 +429,11 @@ export default function PublicApplyPage() {
 
   if (loadingJob) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 [--cell-border-color:hsl(var(--primary)/0.3)] [--cell-fill-color:hsl(var(--primary)/0.15)] [--cell-shadow-color:hsl(var(--primary)/0.4)]">
+          <BackgroundRippleEffect rows={10} cols={30} cellSize={48} />
+        </div>
+        <div className="relative z-10 text-center">
           <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
           <p className="text-muted-foreground">Loading job details...</p>
         </div>
@@ -440,8 +443,11 @@ export default function PublicApplyPage() {
 
   if (!job) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 [--cell-border-color:hsl(var(--primary)/0.3)] [--cell-fill-color:hsl(var(--primary)/0.15)] [--cell-shadow-color:hsl(var(--primary)/0.4)]">
+          <BackgroundRippleEffect rows={10} cols={30} cellSize={48} />
+        </div>
+        <div className="relative z-10 text-center space-y-4">
           <h2 className="text-2xl font-bold">Job not found</h2>
           <Button asChild>
             <Link to="/jobs">Browse Jobs</Link>
@@ -452,17 +458,23 @@ export default function PublicApplyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/5">
-      <div className="container mx-auto px-4 py-8 md:px-6 lg:px-8">
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background Ripple Effect */}
+      <div className="absolute inset-0 [--cell-border-color:hsl(var(--primary)/0.3)] [--cell-fill-color:hsl(var(--primary)/0.15)] [--cell-shadow-color:hsl(var(--primary)/0.4)]">
+        <BackgroundRippleEffect rows={10} cols={30} cellSize={48} />
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8 md:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <Button variant="ghost" asChild className="mb-6 -ml-2">
-              <Link to={`/jobs/${jobId}`}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Job Details
-              </Link>
-            </Button>
+            <Link
+              to={`/jobs/${jobId}`}
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Job Details
+            </Link>
             
             <div className="text-center mb-8">
               <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
@@ -478,17 +490,17 @@ export default function PublicApplyPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Upload Section */}
             <div className="space-y-5">
-              <Card className="border-primary/20">
-                <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
-                  <CardTitle className="flex items-center gap-2">
+              <div className="bg-background/80 backdrop-blur-sm border border-primary/20 rounded-xl shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
                     <Upload className="h-5 w-5 text-primary" />
                     Upload Resume
-                  </CardTitle>
-                  <CardDescription>
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
                     Upload a PDF or Word document (max 5MB) to automatically extract your information
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
+                  </p>
+                </div>
+                <div className="p-6">
                   <div
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
@@ -577,22 +589,22 @@ export default function PublicApplyPage() {
                       )}
                     </Button>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Video Introduction Card (Optional) */}
               {parsedData && (
-                <Card className="border-primary/20">
-                  <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
-                    <CardTitle className="flex items-center gap-2">
+                <div className="bg-background/80 backdrop-blur-sm border border-primary/20 rounded-xl shadow-lg overflow-hidden">
+                  <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
                       <FileText className="h-5 w-5 text-primary" />
                       Video Introduction (Optional)
-                    </CardTitle>
-                    <CardDescription>
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
                       Some employers prefer a video introduction. Upload a short video (max 100MB)
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6">
+                    </p>
+                  </div>
+                  <div className="p-6">
                     {!selectedVideo && !videoUrl ? (
                       <div className="border-2 border-dashed rounded-xl p-8 transition-all duration-200 border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50">
                         <div className="text-center">
@@ -689,25 +701,25 @@ export default function PublicApplyPage() {
                         </Button>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               )}
             </div>
 
             {/* Right Column - Form Section */}
-            <Card className="border-primary/20 min-w-0">
-              <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
-                <CardTitle className="flex items-center gap-2">
+            <div className="bg-background/80 backdrop-blur-sm border border-primary/20 rounded-xl shadow-lg overflow-hidden min-w-0">
+              <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
                   Your Information
-                </CardTitle>
-                <CardDescription>
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
                   {parsedData
                     ? "Review and edit your information before submitting"
                     : "Upload a resume to see extracted information"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6 overflow-hidden">
+                </p>
+              </div>
+              <div className="p-6 overflow-hidden">
                 {parsedData ? (
                   <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                     {/* Personal Information */}
@@ -882,8 +894,8 @@ export default function PublicApplyPage() {
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
           {/* Footer Actions */}

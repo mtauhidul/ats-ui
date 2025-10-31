@@ -1,6 +1,6 @@
-import { Building2, Mail, MapPin, Phone, TrendingUp, Users, User } from "lucide-react";
+import { Building2, Mail, MapPin, Phone, TrendingUp, Users, User, BadgeCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Client } from "@/types/client";
 import { cn } from "@/lib/utils";
@@ -17,19 +17,6 @@ const statusColors = {
   on_hold: "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20",
 } as const;
 
-const industryColors = {
-  technology: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
-  healthcare: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
-  finance: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
-  education: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-  retail: "bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/20",
-  manufacturing: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20",
-  consulting: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20",
-  real_estate: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-  hospitality: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20",
-  other: "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20",
-} as const;
-
 export function ClientCard({ client, onClick }: ClientCardProps) {
   const primaryContact = client.contacts.find((c) => c.isPrimary);
 
@@ -37,116 +24,105 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
     <Card
       className={cn(
         "cursor-pointer transition-all hover:shadow-md hover:border-primary/30",
-        "group"
+        "max-w-md"
       )}
       onClick={onClick}
     >
-      <CardHeader>
-        <div className="flex items-start gap-4">
-          <Avatar className="h-12 w-12 rounded-lg">
+      <CardHeader className="px-5! py-4!">
+        <div className="flex items-center gap-3 w-full">
+          <Avatar className="ring-ring ring-2 h-12 w-12 rounded-lg">
             <AvatarImage src={client.logo} alt={client.companyName} />
             <AvatarFallback className="rounded-lg">
               <Building2 className="h-6 w-6" />
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg mb-1 line-clamp-1">
+          <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+            <CardTitle className="flex items-center gap-1 text-sm">
               {client.companyName}
+              {client.status === 'active' && (
+                <BadgeCheck className="size-4 fill-sky-600 stroke-white dark:fill-sky-400" />
+              )}
             </CardTitle>
-            <CardDescription className="line-clamp-2">
-              {client.description || "No description available"}
+            <CardDescription className="line-clamp-1 capitalize">
+              {client.industry.replace("_", " ")}
             </CardDescription>
           </div>
         </div>
+      </CardHeader>
 
-        <div className="flex flex-wrap gap-2 mt-4">
+      <CardContent className="space-y-4 text-sm px-5! py-4!">
+        <div className="flex flex-wrap gap-2">
           <Badge variant="outline" className={statusColors[client.status]}>
             {client.status.replace("_", " ")}
           </Badge>
-          <Badge variant="outline" className={industryColors[client.industry]}>
-            {client.industry}
-          </Badge>
           <Badge variant="outline">
-            <Users className="h-3 w-3" />
+            <Users className="h-3 w-3 mr-1" />
             {client.companySize}
           </Badge>
         </div>
 
-        <div className="grid grid-cols-1 gap-2 mt-4 text-sm text-muted-foreground">
+        {client.description && (
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {client.description}
+          </p>
+        )}
+
+        <div className="space-y-2">
           {primaryContact && (
             <>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="h-4 w-4 shrink-0" />
-                <span className="truncate">{primaryContact.email}</span>
+                <span className="truncate text-xs">{primaryContact.email}</span>
               </div>
               {primaryContact.phone && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <Phone className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{primaryContact.phone}</span>
+                  <span className="truncate text-xs">{primaryContact.phone}</span>
                 </div>
               )}
             </>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <MapPin className="h-4 w-4 shrink-0" />
-            <span className="truncate">
+            <span className="truncate text-xs">
               {client.address.city}, {client.address.country}
             </span>
           </div>
           {client.assignedToName && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <User className="h-4 w-4 shrink-0" />
               <span className="truncate text-xs">
-                <span className="text-muted-foreground/70">Managed by:</span> {client.assignedToName}
+                {client.assignedToName}
               </span>
             </div>
           )}
         </div>
+      </CardContent>
 
-        <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t">
-          <div>
-            <div className="text-xs text-muted-foreground mb-1">Jobs</div>
-            <div className="text-base font-semibold text-foreground">
-              {client.statistics.totalJobs}
-            </div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">
-              {client.statistics.activeJobs}A / {client.statistics.closedJobs}C / {client.statistics.draftJobs}D
-            </div>
+      <CardFooter className="flex items-center justify-between pt-4 border-t px-5! pb-4!">
+        <div className="flex items-center gap-4 text-sm">
+          <div className="flex flex-col">
+            <span className="text-base font-semibold">{client.statistics.totalJobs}</span>
+            <span className="text-xs text-muted-foreground">Jobs</span>
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground mb-1">Candidates</div>
-            <div className="text-base font-semibold text-foreground">
-              {client.statistics.totalCandidates}
-            </div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">
-              {client.statistics.activeCandidates} active
-            </div>
+          <div className="flex flex-col">
+            <span className="text-base font-semibold">{client.statistics.totalCandidates}</span>
+            <span className="text-xs text-muted-foreground">Candidates</span>
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground mb-1">Hired</div>
-            <div className="text-base font-semibold text-green-600 dark:text-green-500">
+          <div className="flex flex-col">
+            <span className="text-base font-semibold text-green-600 dark:text-green-500">
               {client.statistics.hiredCandidates}
-            </div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">
-              {client.statistics.successRate}% rate
-            </div>
+            </span>
+            <span className="text-xs text-muted-foreground">Hired</span>
           </div>
         </div>
-
         {client.statistics.successRate !== undefined && client.statistics.successRate > 0 && (
-          <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs">
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <TrendingUp className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
-              <span>{client.statistics.successRate}% success</span>
-            </div>
-            {client.statistics.averageTimeToHire !== undefined && client.statistics.averageTimeToHire > 0 && (
-              <div className="text-muted-foreground">
-                ~{client.statistics.averageTimeToHire}d to hire
-              </div>
-            )}
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <TrendingUp className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+            <span>{client.statistics.successRate}%</span>
           </div>
         )}
-      </CardHeader>
+      </CardFooter>
     </Card>
   );
 }

@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Shield } from 'lucide-react';
+import { Loader2, Shield, ArrowLeft } from 'lucide-react';
 import { authService } from '@/services/auth.service';
 import { useAuth } from '@/hooks/useAuth';
 import { setAccessToken, setRefreshToken } from '@/lib/auth-utils';
@@ -76,32 +76,39 @@ export default function RegisterAdminPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-accent/5 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="rounded-full bg-primary/10 p-3">
-              <Shield className="h-8 w-8 text-primary" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-bold">Create First Admin</CardTitle>
-          <CardDescription>
-            Set up your administrator account to get started
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden p-4">
+      {/* Background Ripple Effect */}
+      <div className="absolute inset-0 [--cell-border-color:hsl(var(--primary)/0.3)] [--cell-fill-color:hsl(var(--primary)/0.15)] [--cell-shadow-color:hsl(var(--primary)/0.4)]">
+        <BackgroundRippleEffect rows={10} cols={30} cellSize={48} />
+      </div>
 
+      <div className="relative z-10 w-full max-w-md space-y-8">
+        {/* Logo and Header */}
+        <div className="flex flex-col items-center space-y-4">
+          <div className="rounded-full bg-primary/10 p-3">
+            <Shield className="h-8 w-8 text-primary" />
+          </div>
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight">Create First Admin</h1>
+            <p className="text-sm text-muted-foreground">
+              Set up your administrator account to get started
+            </p>
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <FieldGroup>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
+              <Field>
+                <FieldLabel>First Name</FieldLabel>
                 <Input
-                  id="firstName"
                   name="firstName"
                   type="text"
                   placeholder="John"
@@ -110,11 +117,10 @@ export default function RegisterAdminPage() {
                   required
                   disabled={isLoading}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
+              </Field>
+              <Field>
+                <FieldLabel>Last Name</FieldLabel>
                 <Input
-                  id="lastName"
                   name="lastName"
                   type="text"
                   placeholder="Doe"
@@ -123,13 +129,12 @@ export default function RegisterAdminPage() {
                   required
                   disabled={isLoading}
                 />
-              </div>
+              </Field>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+            <Field>
+              <FieldLabel>Email address</FieldLabel>
               <Input
-                id="email"
                 name="email"
                 type="email"
                 placeholder="admin@example.com"
@@ -138,12 +143,11 @@ export default function RegisterAdminPage() {
                 required
                 disabled={isLoading}
               />
-            </div>
+            </Field>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+            <Field>
+              <FieldLabel>Password</FieldLabel>
               <Input
-                id="password"
                 name="password"
                 type="password"
                 placeholder="••••••••"
@@ -152,15 +156,14 @@ export default function RegisterAdminPage() {
                 required
                 disabled={isLoading}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 Must be at least 8 characters
               </p>
-            </div>
+            </Field>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Field>
+              <FieldLabel>Confirm Password</FieldLabel>
               <Input
-                id="confirmPassword"
                 name="confirmPassword"
                 type="password"
                 placeholder="••••••••"
@@ -169,25 +172,35 @@ export default function RegisterAdminPage() {
                 required
                 disabled={isLoading}
               />
-            </div>
+            </Field>
+          </FieldGroup>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Create Admin Account
+          </Button>
+
+          <p className="text-xs text-center text-muted-foreground">
+            This will create the first administrator account.
+            <br />
+            Only works if no users exist in the system.
+          </p>
+          
+          <div className="text-center text-sm pt-2">
+            <Link 
+              to="/" 
+              className="inline-flex items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Admin Account
-            </Button>
-
-            <p className="text-xs text-center text-muted-foreground">
-              This will create the first administrator account.
-              <br />
-              Only works if no users exist in the system.
-            </p>
-          </form>
-        </CardContent>
-      </Card>
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back to Home
+            </Link>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

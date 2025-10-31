@@ -1,15 +1,21 @@
-import { useEffect, useState } from "react";
-import {
-  Plus,
-  Search,
-  Folder,
-  FolderTree,
-  Edit2,
-  Trash2,
-  ChevronRight,
-  ChevronDown,
-} from "lucide-react";
+import { AddCategoryModal } from "@/components/modals/add-category-modal";
+import { EditCategoryModal } from "@/components/modals/edit-category-modal";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardToolbar,
+} from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -18,20 +24,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AddCategoryModal } from "@/components/modals/add-category-modal";
-import { EditCategoryModal } from "@/components/modals/edit-category-modal";
+import { useAppSelector, useCategories } from "@/store/hooks/index";
+import { selectCategories } from "@/store/selectors";
 import type {
   Category,
   CreateCategoryRequest,
   UpdateCategoryRequest,
-  CategoryTree,
 } from "@/types/category";
-import { useCategories, useAppSelector } from "@/store/hooks/index";
-import { selectCategories } from "@/store/selectors";
+import {
+  Edit2,
+  Folder,
+  FolderTree,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function CategoriesPage() {
-  const { fetchCategories, createCategory, updateCategory, deleteCategory } = useCategories();
+  const { fetchCategories, createCategory, updateCategory, deleteCategory } =
+    useCategories();
   const categories = useAppSelector(selectCategories);
 
   useEffect(() => {
@@ -41,14 +55,8 @@ export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("name");
-  const [viewMode, setViewMode] = useState<"tree" | "grid">("tree");
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set()
-  );
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(
-    null
-  );
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   const handleAddCategory = (data: CreateCategoryRequest) => {
     createCategory(data);
@@ -61,10 +69,14 @@ export default function CategoriesPage() {
   };
 
   const handleDeleteCategory = (categoryId: string) => {
-    const category = categories.find((c: { id: string }) => c.id === categoryId);
+    const category = categories.find(
+      (c: { id: string }) => c.id === categoryId
+    );
 
     // Check if category has children
-    const hasChildren = categories.some((c: { parentId?: string }) => c.parentId === categoryId);
+    const hasChildren = categories.some(
+      (c: { parentId?: string }) => c.parentId === categoryId
+    );
     if (hasChildren) {
       toast.error(
         `Cannot delete "${category?.name}". Please delete all subcategories first.`,
@@ -82,202 +94,41 @@ export default function CategoriesPage() {
     deleteCategory(categoryId);
   };
 
-  const toggleExpanded = (categoryId: string) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(categoryId)) {
-      newExpanded.delete(categoryId);
-    } else {
-      newExpanded.add(categoryId);
-    }
-    setExpandedCategories(newExpanded);
-  };
-
-  // Build category tree with circular reference protection
-  const buildCategoryTree = (
-    items: Category[],
-    parentId: string | null | undefined = null,
-    level: number = 0,
-    visitedIds: Set<string> = new Set()
-  ): CategoryTree[] => {
-    // Prevent infinite recursion by limiting depth
-    if (level > 10) {
-      console.warn('Maximum category nesting depth (10) exceeded. Possible circular reference.');
-      return [];
-    }
-
-    return items
-      .filter((item) => {
-        // Validate that item has an ID
-        if (!item.id) {
-          console.error(`Category missing ID:`, item);
-          return false;
-        }
-        
-        // Handle both null and undefined as "no parent"
-        const itemParent = item.parentId ?? null;
-        const targetParent = parentId ?? null;
-        
-        // Skip if this item was already processed in the current path (circular reference)
-        if (visitedIds.has(item.id)) {
-          console.warn(`Circular reference detected for category: ${item.name} (ID: ${item.id || 'undefined'})`);
-          return false;
-        }
-        
-        // Don't allow a category to be its own parent
-        if (item.id === item.parentId) {
-          console.warn(`Category cannot be its own parent: ${item.name} (ID: ${item.id || 'undefined'})`);
-          return false;
-        }
-        
-        return itemParent === targetParent;
-      })
-      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
-      .map((item) => {
-        // Create a new visited set for this branch
-        const newVisitedIds = new Set(visitedIds);
-        newVisitedIds.add(item.id);
-        
-        return {
-          ...item,
-          level,
-          children: buildCategoryTree(items, item.id, level + 1, newVisitedIds),
-        };
-      });
-  };
-
   // Filter categories
-  const filteredCategories = categories.filter((category: Category) => {
-    // Search filter
-    const matchesSearch =
-      category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      category.description?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredCategories = categories
+    .filter((category: Category) => {
+      // Search filter
+      const matchesSearch =
+        category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        category.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Status filter
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "active" && category.isActive) ||
-      (statusFilter === "inactive" && !category.isActive);
+      // Status filter
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && category.isActive) ||
+        (statusFilter === "inactive" && !category.isActive);
 
-    return matchesSearch && matchesStatus;
-  });
-
-  // Build tree from filtered categories
-  const categoryTree = buildCategoryTree(filteredCategories);
-
-  // Flatten tree for grid view
-  const flattenTree = (tree: CategoryTree[]): CategoryTree[] => {
-    return tree.reduce((acc: CategoryTree[], item) => {
-      const { children, ...rest } = item;
-      return [...acc, rest, ...(children ? flattenTree(children) : [])];
-    }, []);
-  };
-
-  const flatCategories = flattenTree(categoryTree).sort((a, b) => {
-    switch (sortBy) {
-      case "name":
-        return a.name.localeCompare(b.name);
-      case "newest":
-        return b.createdAt.getTime() - a.createdAt.getTime();
-      case "oldest":
-        return a.createdAt.getTime() - b.createdAt.getTime();
-      default:
-        return 0;
-    }
-  });
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a: Category, b: Category) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "newest":
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        case "oldest":
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        default:
+          return 0;
+      }
+    });
 
   const activeCategories = categories.filter((c: Category) => c.isActive);
   const parentCategories = categories.filter((c: Category) => !c.parentId);
-
-  // Recursive tree renderer
-  const renderCategoryTree = (tree: CategoryTree[]) => {
-    return tree.map((category) => {
-      const hasChildren = category.children && category.children.length > 0;
-      const isExpanded = expandedCategories.has(category.id);
-
-      return (
-        <div key={category.id}>
-          <div
-            className="rounded-lg border bg-card p-4 shadow-sm hover:shadow-md transition-shadow mb-2"
-            style={{
-              marginLeft: `${(category.level || 0) * 24}px`,
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1">
-                {hasChildren ? (
-                  <button
-                    onClick={() => toggleExpanded(category.id)}
-                    className="p-1 hover:bg-muted rounded transition-colors"
-                  >
-                    {isExpanded ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </button>
-                ) : (
-                  <div className="w-6" />
-                )}
-                <div
-                  className="w-3 h-3 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: category.color }}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-medium text-foreground">
-                      {category.name}
-                    </h3>
-                    {category.parentId && (
-                      <span className="text-xs text-muted-foreground">
-                        (Subcategory)
-                      </span>
-                    )}
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded border ${
-                        category.isActive
-                          ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {category.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                  {category.description && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {category.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-1 ml-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setEditingCategory(category)}
-                >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-950"
-                  onClick={() => handleDeleteCategory(category.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-          {hasChildren && isExpanded && (
-            <div key={`children-${category.id}`}>
-              {renderCategoryTree(category.children!)}
-            </div>
-          )}
-        </div>
-      );
-    });
-  };
 
   return (
     <div className="flex flex-1 flex-col">
@@ -322,27 +173,16 @@ export default function CategoriesPage() {
                     <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={viewMode} onValueChange={(value: "tree" | "grid") => setViewMode(value)}>
+                <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="View" />
+                    <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="tree">Tree View</SelectItem>
-                    <SelectItem value="grid">Grid View</SelectItem>
+                    <SelectItem value="name">Name (A-Z)</SelectItem>
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
                   </SelectContent>
                 </Select>
-                {viewMode === "grid" && (
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="name">Name (A-Z)</SelectItem>
-                      <SelectItem value="newest">Newest First</SelectItem>
-                      <SelectItem value="oldest">Oldest First</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
               </div>
 
               {/* Stats */}
@@ -352,7 +192,9 @@ export default function CategoriesPage() {
                     <div className="rounded-md bg-primary/10 p-1.5">
                       <Folder className="h-4 w-4 text-primary" />
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">Total</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Total
+                    </span>
                   </div>
                   <p className="text-xl font-bold">{categories.length}</p>
                   <p className="text-xs text-muted-foreground">Categories</p>
@@ -362,7 +204,9 @@ export default function CategoriesPage() {
                     <div className="rounded-md bg-green-500/10 p-1.5">
                       <Folder className="h-4 w-4 text-green-600 dark:text-green-500" />
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">Active</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Active
+                    </span>
                   </div>
                   <p className="text-xl font-bold text-green-600 dark:text-green-500">
                     {activeCategories.length}
@@ -374,7 +218,9 @@ export default function CategoriesPage() {
                     <div className="rounded-md bg-blue-500/10 p-1.5">
                       <FolderTree className="h-4 w-4 text-blue-600 dark:text-blue-500" />
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">Parent</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Parent
+                    </span>
                   </div>
                   <p className="text-xl font-bold text-blue-600 dark:text-blue-500">
                     {parentCategories.length}
@@ -385,95 +231,100 @@ export default function CategoriesPage() {
             </div>
 
             {/* Categories Display */}
-            {viewMode === "tree" ? (
-              <div className="space-y-2">
-                {categoryTree.length > 0 ? (
-                  renderCategoryTree(categoryTree)
-                ) : (
-                  <div className="text-center py-12">
-                    <FolderTree className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      {searchQuery
-                        ? "No categories found matching your search"
-                        : "No categories yet. Add your first category to get started."}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {flatCategories.map((category) => (
-                  <div
-                    key={category.id}
-                    className="rounded-lg border bg-card p-4 shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div
-                          className="w-3 h-3 rounded-full mt-1 flex-shrink-0"
-                          style={{ backgroundColor: category.color }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <h3 className="font-medium text-foreground">
-                              {category.name}
-                            </h3>
-                            {category.parentId && (
-                              <span className="text-xs text-muted-foreground">
-                                (Sub)
-                              </span>
-                            )}
-                          </div>
-                          {category.description && (
-                            <p className="text-sm text-muted-foreground">
-                              {category.description}
-                            </p>
+            {filteredCategories.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {filteredCategories.map((category: Category) => {
+                  const subcategories = categories.filter(
+                    (c: Category) => c.parentId === category.id
+                  );
+
+                  return (
+                    <Card key={category.id}>
+                      <CardHeader className="border-0">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: category.color }}
+                          />
+                          <span className="truncate">{category.name}</span>
+                        </CardTitle>
+                        <CardToolbar>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="dim"
+                                size="sm"
+                                mode="icon"
+                                className="-me-1.5"
+                              >
+                                <MoreHorizontal />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" side="bottom">
+                              <DropdownMenuItem
+                                onClick={() => setEditingCategory(category)}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                                Edit Category
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() =>
+                                  handleDeleteCategory(category.id)
+                                }
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </CardToolbar>
+                      </CardHeader>
+                      <CardContent className="space-y-2.5">
+                        {category.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2 min-h-10">
+                            {category.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 pt-2 border-t">
+                          {category.isActive ? (
+                            <Badge variant="success" appearance="light">
+                              <Folder className="h-3 w-3" />
+                              Active
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" appearance="light">
+                              <Folder className="h-3 w-3" />
+                              Inactive
+                            </Badge>
+                          )}
+                          {category.parentId ? (
+                            <Badge variant="info" appearance="light">
+                              Subcategory
+                            </Badge>
+                          ) : (
+                            subcategories.length > 0 && (
+                              <Badge variant="primary" appearance="light">
+                                <FolderTree className="h-3 w-3" />
+                                {subcategories.length} Sub
+                              </Badge>
+                            )
                           )}
                         </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-3 border-t">
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded border ${
-                          category.isActive
-                            ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {category.isActive ? "Active" : "Inactive"}
-                      </span>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => setEditingCategory(category)}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-950"
-                          onClick={() => handleDeleteCategory(category.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {flatCategories.length === 0 && (
-                  <div className="col-span-full text-center py-12">
-                    <Folder className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      {searchQuery
-                        ? "No categories found matching your search"
-                        : "No categories yet. Add your first category to get started."}
-                    </p>
-                  </div>
-                )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Folder className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">
+                  {searchQuery
+                    ? "No categories found matching your search"
+                    : "No categories yet. Add your first category to get started."}
+                </p>
               </div>
             )}
           </div>

@@ -4,8 +4,9 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { LogoIcon } from '@/components/icons/logo-icon';
+import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { verifyMagicLink } from '@/services/auth.service';
@@ -60,45 +61,63 @@ export default function VerifyMagicLinkPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Magic Link Verification</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isVerifying && (
-            <div className="flex flex-col items-center space-y-4">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-muted-foreground">Verifying your magic link...</p>
-            </div>
-          )}
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden p-4">
+      {/* Background Ripple Effect */}
+      <div className="absolute inset-0 [--cell-border-color:hsl(var(--primary)/0.3)] [--cell-fill-color:hsl(var(--primary)/0.15)] [--cell-shadow-color:hsl(var(--primary)/0.4)]">
+        <BackgroundRippleEffect rows={10} cols={30} cellSize={48} />
+      </div>
 
-          {!isVerifying && error && !isSuccess && (
-            <div className="flex flex-col items-center space-y-4">
+      <div className="relative z-10 w-full max-w-md space-y-8">
+        {/* Logo and Header */}
+        <div className="flex flex-col items-center space-y-4">
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <LogoIcon size={32} color="#71abbf" />
+            <span className="text-xl font-semibold">YTFCS ATS</span>
+          </Link>
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight">Magic Link Verification</h1>
+          </div>
+        </div>
+
+        {/* Verifying State */}
+        {isVerifying && (
+          <div className="flex flex-col items-center space-y-4 py-8">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-muted-foreground">Verifying your magic link...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {!isVerifying && error && !isSuccess && (
+          <div className="flex flex-col items-center space-y-6">
+            <div className="rounded-full bg-destructive/10 p-4">
               <XCircle className="h-12 w-12 text-destructive" />
-              <div className="text-center">
-                <p className="font-medium text-destructive">Verification Failed</p>
-                <p className="text-sm text-muted-foreground mt-2">{error}</p>
-              </div>
-              <Button onClick={() => navigate('/magic-link')} className="mt-4">
-                Request New Magic Link
-              </Button>
             </div>
-          )}
+            <div className="text-center space-y-2">
+              <p className="font-medium text-destructive">Verification Failed</p>
+              <p className="text-sm text-muted-foreground">{error}</p>
+            </div>
+            <Button onClick={() => navigate('/magic-link')}>
+              Request New Magic Link
+            </Button>
+          </div>
+        )}
 
-          {!isVerifying && isSuccess && !error && (
-            <div className="flex flex-col items-center space-y-4">
-              <CheckCircle2 className="h-12 w-12 text-green-500" />
-              <div className="text-center">
-                <p className="font-medium text-green-600">Success!</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Redirecting to dashboard...
-                </p>
-              </div>
+        {/* Success State */}
+        {!isVerifying && isSuccess && !error && (
+          <div className="flex flex-col items-center space-y-6">
+            <div className="rounded-full bg-green-100 p-4">
+              <CheckCircle2 className="h-12 w-12 text-green-600" />
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <div className="text-center space-y-2">
+              <p className="font-medium text-green-600">Success!</p>
+              <p className="text-sm text-muted-foreground">
+                Redirecting to dashboard...
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

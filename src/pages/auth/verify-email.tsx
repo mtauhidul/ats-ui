@@ -4,12 +4,13 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CheckCircle2, XCircle, Lock } from 'lucide-react';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { LogoIcon } from '@/components/icons/logo-icon';
+import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect';
+import { Loader2, CheckCircle2, XCircle, ArrowLeft } from 'lucide-react';
 import { verifyEmail, setPassword } from '@/services/auth.service';
 import { toast } from 'sonner';
 
@@ -76,127 +77,147 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Email Verification</CardTitle>
-          <CardDescription>
-            {isVerifying ? 'Verifying your email...' : ''}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isVerifying && (
-            <div className="flex flex-col items-center space-y-4">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-muted-foreground">Please wait...</p>
-            </div>
-          )}
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden p-4">
+      {/* Background Ripple Effect */}
+      <div className="absolute inset-0 [--cell-border-color:hsl(var(--primary)/0.3)] [--cell-fill-color:hsl(var(--primary)/0.15)] [--cell-shadow-color:hsl(var(--primary)/0.4)]">
+        <BackgroundRippleEffect rows={10} cols={30} cellSize={48} />
+      </div>
 
-          {!isVerifying && error && !isVerified && (
-            <div className="flex flex-col items-center space-y-4">
+      <div className="relative z-10 w-full max-w-md space-y-8">
+        {/* Logo and Header */}
+        <div className="flex flex-col items-center space-y-4">
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <LogoIcon size={32} color="#71abbf" />
+            <span className="text-xl font-semibold">YTFCS ATS</span>
+          </Link>
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight">Email Verification</h1>
+            {isVerifying && (
+              <p className="text-sm text-muted-foreground">Verifying your email...</p>
+            )}
+          </div>
+        </div>
+
+        {/* Verifying State */}
+        {isVerifying && (
+          <div className="flex flex-col items-center space-y-4 py-8">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-muted-foreground">Please wait...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {!isVerifying && error && !isVerified && (
+          <div className="flex flex-col items-center space-y-6">
+            <div className="rounded-full bg-destructive/10 p-4">
               <XCircle className="h-12 w-12 text-destructive" />
-              <div className="text-center">
-                <p className="font-medium text-destructive">Verification Failed</p>
-                <p className="text-sm text-muted-foreground mt-2">{error}</p>
-              </div>
-              <Button onClick={() => navigate('/login')} className="mt-4">
-                Go to Login
-              </Button>
             </div>
-          )}
+            <div className="text-center space-y-2">
+              <p className="font-medium text-destructive">Verification Failed</p>
+              <p className="text-sm text-muted-foreground">{error}</p>
+            </div>
+            <Button onClick={() => navigate('/login')}>
+              Go to Login
+            </Button>
+          </div>
+        )}
 
-          {!isVerifying && isVerified && !error && (
-            <div className="space-y-6">
-              <div className="flex flex-col items-center space-y-4">
-                <CheckCircle2 className="h-12 w-12 text-green-500" />
-                <div className="text-center">
-                  <p className="font-medium text-green-600">Email Verified!</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Choose how you'd like to access your account
-                  </p>
-                </div>
+        {/* Success State with Password Setup */}
+        {!isVerifying && isVerified && !error && (
+          <div className="space-y-6">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="rounded-full bg-green-100 p-4">
+                <CheckCircle2 className="h-12 w-12 text-green-600" />
               </div>
+              <div className="text-center space-y-2">
+                <p className="font-medium text-green-600">Email Verified!</p>
+                <p className="text-sm text-muted-foreground">
+                  Choose how you'd like to access your account
+                </p>
+              </div>
+            </div>
 
-              <form onSubmit={handleSetPassword} className="space-y-4 mt-6">
-                <div className="space-y-2">
-                  <Label htmlFor="password">Create Password (Optional)</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPasswordValue(e.target.value)}
-                      className="pl-10"
-                      minLength={8}
-                      disabled={isSettingPassword}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
+            <form onSubmit={handleSetPassword} className="space-y-6">
+              <FieldGroup>
+                <Field>
+                  <FieldLabel>Create Password (Optional)</FieldLabel>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPasswordValue(e.target.value)}
+                    minLength={8}
+                    disabled={isSettingPassword}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
                     At least 8 characters with uppercase, lowercase, and number
                   </p>
+                </Field>
+
+                <Field>
+                  <FieldLabel>Confirm Password</FieldLabel>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={isSettingPassword}
+                  />
+                </Field>
+              </FieldGroup>
+
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isSettingPassword || !password || !confirmPassword}
+              >
+                {isSettingPassword ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Setting Password...
+                  </>
+                ) : (
+                  'Set Password & Login'
+                )}
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10"
-                      disabled={isSettingPassword}
-                    />
-                  </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or
+                  </span>
                 </div>
+              </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isSettingPassword || !password || !confirmPassword}
-                >
-                  {isSettingPassword ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Setting Password...
-                    </>
-                  ) : (
-                    'Set Password & Login'
-                  )}
-                </Button>
+              <Button 
+                type="button"
+                variant="outline"
+                className="w-full" 
+                onClick={() => navigate('/magic-link')}
+              >
+                Use Passwordless Login (Magic Link)
+              </Button>
 
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      Or
-                    </span>
-                  </div>
-                </div>
-
-                <Button 
-                  type="button"
-                  variant="outline"
-                  className="w-full" 
-                  onClick={() => navigate('/magic-link')}
-                >
-                  Use Passwordless Login (Magic Link)
-                </Button>
-
-                <p className="text-xs text-center text-muted-foreground mt-4">
-                  With magic link, you'll receive a login link via email each time you want to sign in.
-                </p>
-              </form>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              <p className="text-xs text-center text-muted-foreground">
+                With magic link, you'll receive a login link via email each time you want to sign in.
+              </p>
+              
+              <Link 
+                to="/" 
+                className="block text-center text-sm text-muted-foreground hover:text-foreground transition-colors pt-2"
+              >
+                <span className="inline-flex items-center gap-1">
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  Back to Home
+                </span>
+              </Link>
+            </form>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

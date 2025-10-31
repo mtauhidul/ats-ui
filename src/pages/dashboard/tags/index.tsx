@@ -1,13 +1,42 @@
-import { useEffect, useState } from "react";
-import { Plus, Search, Tag as TagIcon, Edit2, Trash2, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AddTagModal } from "@/components/modals/add-tag-modal";
 import { EditTagModal } from "@/components/modals/edit-tag-modal";
-import type { Tag, CreateTagRequest, UpdateTagRequest } from "@/types/tag";
-import { useTags, useAppSelector } from "@/store/hooks/index";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardToolbar,
+} from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAppSelector, useTags } from "@/store/hooks/index";
 import { selectTags } from "@/store/selectors";
+import type { CreateTagRequest, Tag, UpdateTagRequest } from "@/types/tag";
+import {
+  AlertCircle,
+  Edit2,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Tag as TagIcon,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function TagsPage() {
@@ -35,7 +64,7 @@ export default function TagsPage() {
   };
 
   const handleDeleteTag = (tagId: string) => {
-    const tag = tags.find((t: any) => t.id === tagId);
+    const tag = tags.find((t: Tag) => t.id === tagId);
 
     if (tag?.isSystem) {
       toast.error("System tags cannot be deleted");
@@ -52,7 +81,7 @@ export default function TagsPage() {
   };
 
   // Filter and sort tags
-  const filteredTags = (tags as any[])
+  const filteredTags = (tags as Tag[])
     .filter((tag) => {
       // Search filter
       const matchesSearch =
@@ -72,9 +101,13 @@ export default function TagsPage() {
         case "name":
           return a.name.localeCompare(b.name);
         case "newest":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         case "oldest":
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
         default:
           return 0;
       }
@@ -145,7 +178,9 @@ export default function TagsPage() {
                     <div className="rounded-md bg-primary/10 p-1.5">
                       <TagIcon className="h-4 w-4 text-primary" />
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">Total</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Total
+                    </span>
                   </div>
                   <p className="text-xl font-bold">{tags.length}</p>
                   <p className="text-xs text-muted-foreground">Tags</p>
@@ -155,7 +190,9 @@ export default function TagsPage() {
                     <div className="rounded-md bg-blue-500/10 p-1.5">
                       <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-500" />
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">System</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      System
+                    </span>
                   </div>
                   <p className="text-xl font-bold text-blue-600 dark:text-blue-500">
                     {systemTags.length}
@@ -167,7 +204,9 @@ export default function TagsPage() {
                     <div className="rounded-md bg-green-500/10 p-1.5">
                       <TagIcon className="h-4 w-4 text-green-600 dark:text-green-500" />
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">Custom</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Custom
+                    </span>
                   </div>
                   <p className="text-xl font-bold text-green-600 dark:text-green-500">
                     {customTags.length}
@@ -177,86 +216,83 @@ export default function TagsPage() {
               </div>
             </div>
 
-            {/* Tags Table */}
-            <div className="rounded-lg border bg-card overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/50 border-b">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Tag
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Description
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {filteredTags.map((tag) => (
-                      <tr key={tag.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-3">
-                          <span
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium"
-                            style={{
-                              backgroundColor: `${tag.color}20`,
-                              color: tag.color,
-                              border: `1px solid ${tag.color}40`,
-                            }}
-                          >
-                            {tag.name}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">
-                          {tag.description || "—"}
-                        </td>
-                        <td className="px-4 py-3">
-                          {tag.isSystem && (
-                            <span className="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-500 border border-blue-500/20">
-                              System
-                            </span>
-                          )}
-                          {!tag.isSystem && (
-                            <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground border">
-                              Custom
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-end gap-1">
+            {/* Tags Cards */}
+            {filteredTags.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {filteredTags.map((tag) => (
+                  <Card key={tag.id}>
+                    <CardHeader className="border-0">
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <span
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium"
+                          style={{
+                            backgroundColor: `${tag.color}20`,
+                            color: tag.color,
+                            border: `1px solid ${tag.color}40`,
+                          }}
+                        >
+                          {tag.name}
+                        </span>
+                      </CardTitle>
+                      <CardToolbar>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
+                              variant="dim"
+                              size="sm"
+                              mode="icon"
+                              className="-me-1.5"
+                            >
+                              <MoreHorizontal />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" side="bottom">
+                            <DropdownMenuItem
                               onClick={() => setEditingTag(tag)}
                             >
                               <Edit2 className="h-4 w-4" />
-                            </Button>
+                              Edit Tag
+                            </DropdownMenuItem>
                             {!tag.isSystem && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-950"
-                                onClick={() => handleDeleteTag(tag.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  variant="destructive"
+                                  onClick={() => handleDeleteTag(tag.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </>
                             )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </CardToolbar>
+                    </CardHeader>
+                    <CardContent className="space-y-2.5">
+                      {tag.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {tag.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 pt-2 border-t">
+                        {tag.isSystem ? (
+                          <Badge variant="info" appearance="light">
+                            <AlertCircle className="h-3 w-3" />
+                            System Tag
+                          </Badge>
+                        ) : (
+                          <Badge variant="success" appearance="light">
+                            <TagIcon className="h-3 w-3" />
+                            Custom Tag
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </div>
-
-            {filteredTags.length === 0 && (
+            ) : (
               <div className="text-center py-12">
                 <TagIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">
