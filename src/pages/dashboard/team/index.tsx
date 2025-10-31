@@ -55,6 +55,7 @@ import type { TeamMember, TeamRole, User } from "@/types";
 
 // Type helper for backend User which uses isActive instead of status and title instead of position
 type BackendUser = User & { 
+  _id?: string; // MongoDB _id field
   isActive?: boolean; 
   title?: string;
   permissions?: {
@@ -103,8 +104,8 @@ export default function TeamPage() {
 
   // Convert users to display format (like team members but with all users including admins)
   const members = users.map((user: BackendUser) => ({
-    id: user.id,
-    userId: user.id,
+    id: user._id || user.id, // Backend uses _id, frontend expects id
+    userId: user._id || user.id,
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,

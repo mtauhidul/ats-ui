@@ -24,6 +24,9 @@ export interface Notification {
   title: string;
   message: string;
   read: boolean;
+  isImportant?: boolean;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  expiresAt?: string;
   createdAt: string;
   relatedEntity: {
     type: string;
@@ -108,6 +111,19 @@ export const createNotification = createAsyncThunk(
       body: JSON.stringify(notification),
     });
     if (!response.ok) throw new Error("Failed to create notification");
+    const result = await response.json();
+    return result.data || result;
+  }
+);
+
+export const broadcastImportantNotice = createAsyncThunk(
+  "notifications/broadcastImportant",
+  async (notice: { type: NotificationType; title: string; message: string; priority: 'low' | 'medium' | 'high' | 'urgent'; expiresAt?: string }) => {
+    const response = await authenticatedFetch(`${API_BASE_URL}/notifications/broadcast-important`, {
+      method: "POST",
+      body: JSON.stringify(notice),
+    });
+    if (!response.ok) throw new Error("Failed to broadcast important notice");
     const result = await response.json();
     return result.data || result;
   }

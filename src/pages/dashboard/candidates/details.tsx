@@ -1688,7 +1688,7 @@ export default function CandidateDetailsPage() {
                           className="w-full mt-3"
                           onClick={() =>
                             navigate(
-                              `/dashboard/jobs/pipeline/${candidate.jobId}`
+                              `/dashboard/jobs/${candidate.jobId}/candidates/${candidate.id}/communication`
                             )
                           }
                         >
@@ -1790,7 +1790,7 @@ export default function CandidateDetailsPage() {
                                 className="w-full mt-3"
                                 onClick={() =>
                                   navigate(
-                                    `/dashboard/jobs/pipeline/${history.jobId}`
+                                    `/dashboard/jobs/${history.jobId}/candidates/${candidate.id}/communication`
                                   )
                                 }
                               >

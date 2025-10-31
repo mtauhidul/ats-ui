@@ -6,6 +6,8 @@ import {
   markAllAsRead,
   deleteNotification,
   createNotification,
+  broadcastImportantNotice,
+  type NotificationType,
 } from "../slices/notificationsSlice";
 import type { Notification } from "../slices/notificationsSlice";
 
@@ -19,6 +21,8 @@ export const useNotifications = () => {
   const deleteNotificationCallback = useCallback((id: string) => dispatch(deleteNotification(id)), [dispatch]);
   const createNotificationCallback = useCallback((notification: Omit<Notification, "id">) =>
       dispatch(createNotification(notification)), [dispatch]);
+  const broadcastImportantNoticeCallback = useCallback((notice: { type: NotificationType; title: string; message: string; priority: 'low' | 'medium' | 'high' | 'urgent'; expiresAt?: string }) =>
+      dispatch(broadcastImportantNotice(notice)), [dispatch]);
 
   return {
     notifications,
@@ -29,5 +33,6 @@ export const useNotifications = () => {
     markAllAsRead: markAllAsReadCallback,
     deleteNotification: deleteNotificationCallback,
     createNotification: createNotificationCallback,
+    broadcastImportantNotice: broadcastImportantNoticeCallback,
   };
 };

@@ -96,7 +96,7 @@ async function refreshAccessToken(): Promise<string | null> {
 
 /**
  * Fetch wrapper that automatically includes JWT authentication token
- * @param url - URL to fetch
+ * @param url - URL to fetch (can be relative or absolute)
  * @param options - Fetch options
  * @returns Fetch response
  */
@@ -105,7 +105,10 @@ export async function authenticatedFetch(
   options: AuthenticatedFetchOptions = {}
 ): Promise<Response> {
   const startTime = performance.now();
-  console.log("[Auth Fetch] Starting request to:", url);
+  
+  // Convert relative URLs to absolute URLs using API_BASE_URL
+  const absoluteUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+  console.log("[Auth Fetch] Starting request to:", absoluteUrl);
 
   const {
     skipAuth = false,
@@ -140,24 +143,30 @@ export async function authenticatedFetch(
     }
   }
 
-  // Make the request
+  // Make the request with timeout
   const fetchStart = performance.now();
-  const response = await fetch(url, {
-    ...restOptions,
-    body,
-    headers: requestHeaders,
-    credentials: "include", // Important for cookies (refresh token)
-  });
-  const fetchTime = performance.now() - fetchStart;
-  console.log(
-    "[Auth Fetch] Fetch completed in",
-    fetchTime.toFixed(2),
-    "ms, status:",
-    response.status
-  );
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 
-  // Handle 401 Unauthorized - attempt token refresh and retry
-  if (response.status === 401 && !skipAuth && !skipRetry) {
+  try {
+    const response = await fetch(absoluteUrl, {
+      ...restOptions,
+      body,
+      headers: requestHeaders,
+      credentials: "include", // Important for cookies (refresh token)
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    const fetchTime = performance.now() - fetchStart;
+    console.log(
+      "[Auth Fetch] Fetch completed in",
+      fetchTime.toFixed(2),
+      "ms, status:",
+      response.status
+    );
+
+    // Handle 401 Unauthorized - attempt token refresh and retry
+    if (response.status === 401 && !skipAuth && !skipRetry) {
     console.log("[Auth Fetch] Received 401, attempting to refresh token...");
 
     const refreshStart = performance.now();
@@ -199,10 +208,18 @@ export async function authenticatedFetch(
 
       return retryResponse;
     }
+    }
+
+    const totalTime = performance.now() - startTime;
+    console.log("[Auth Fetch] Total time:", totalTime.toFixed(2), "ms");
+
+    return response;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      console.error("[Auth Fetch] Request timeout after 60 seconds");
+      throw new Error('Request timeout - server is too slow');
+    }
+    throw error;
   }
-
-  const totalTime = performance.now() - startTime;
-  console.log("[Auth Fetch] Total time:", totalTime.toFixed(2), "ms");
-
-  return response;
 }

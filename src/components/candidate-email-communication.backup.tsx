@@ -1,28 +1,57 @@
-import { useState, useEffect } from "react";
-import { ArrowLeft, Send, Reply, Forward, Trash2, Archive, Star, MoreVertical, Paperclip, Image, Type, Clock, CheckCheck, Mail, Inbox, SendHorizontal, Download, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import {
+  extractEmailVariables,
+  replaceTemplateVariables,
+} from "@/lib/email-template-helper";
+import { cn } from "@/lib/utils";
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
-import { cn } from "@/lib/utils";
+import {
+  Archive,
+  ArrowLeft,
+  CheckCheck,
+  Clock,
+  Download,
+  FileText,
+  Forward,
+  Image,
+  Inbox,
+  Mail,
+  MoreVertical,
+  Paperclip,
+  Reply,
+  Send,
+  SendHorizontal,
+  Star,
+  Trash2,
+  Type,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { replaceTemplateVariables, extractEmailVariables } from "@/lib/email-template-helper";
-import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
 
 interface CandidateEmailCommunicationProps {
   candidate: Candidate;
@@ -53,7 +82,12 @@ interface EmailThread {
   };
   candidateId?: string;
   jobId?: string;
-  attachments?: { filename: string; url: string; contentType: string; size: number }[];
+  attachments?: {
+    filename: string;
+    url: string;
+    contentType: string;
+    size: number;
+  }[];
 }
 
 // Mock email templates (should come from settings in real app)
@@ -85,14 +119,17 @@ const emailTemplates: EmailTemplate[] = [
   },
 ];
 
-export function CandidateEmailCommunication({ candidate, job, onBack }: CandidateEmailCommunicationProps) {
+export function CandidateEmailCommunication({
+  candidate,
+  job,
+  onBack,
+}: CandidateEmailCommunicationProps) {
   const [activeTab, setActiveTab] = useState("inbox");
   const [selectedEmail, setSelectedEmail] = useState<EmailThread | null>(null);
   const [isComposing, setIsComposing] = useState(false);
   const [emails, setEmails] = useState<EmailThread[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Compose email state
   const [composeData, setComposeData] = useState({
     to: candidate.email,
@@ -101,46 +138,49 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
   });
 
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
-  const initials = `${candidate.firstName[0]}${candidate.lastName[0]}`.toUpperCase();
+  const initials =
+    `${candidate.firstName[0]}${candidate.lastName[0]}`.toUpperCase();
 
   // Fetch emails on mount
   useEffect(() => {
     const fetchEmails = async () => {
       try {
-        setIsLoading(true);
         const response = await authenticatedFetch(
           `${API_BASE_URL}/emails?candidateId=${candidate.id}&jobId=${job.id}&sortBy=createdAt&sortOrder=desc&limit=100`
         );
-        
+
         if (!response.ok) {
-          throw new Error('Failed to fetch emails');
+          throw new Error("Failed to fetch emails");
         }
-        
+
         const data = await response.json();
         const emailsData = data.emails || [];
-        
+
         // Transform emails to match our interface
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const transformedEmails = emailsData.map((email: any) => ({
           ...email,
           id: email._id || email.id,
-          timestamp: new Date(email.sentAt || email.receivedAt || email.createdAt),
+          timestamp: new Date(
+            email.sentAt || email.receivedAt || email.createdAt
+          ),
         }));
-        
+
         setEmails(transformedEmails);
       } catch (error) {
-        console.error('Error fetching emails:', error);
-        toast.error('Failed to load emails');
-      } finally {
-        setIsLoading(false);
+        console.error("Error fetching emails:", error);
+        toast.error("Failed to load emails");
       }
     };
 
     fetchEmails();
   }, [candidate.id, job.id]);
 
-  const sentEmails = emails.filter(e => e.direction === "outbound");
-  const receivedEmails = emails.filter(e => e.direction === "inbound");
-  const allEmails = [...emails].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  const sentEmails = emails.filter((e) => e.direction === "outbound");
+  const receivedEmails = emails.filter((e) => e.direction === "inbound");
+  const allEmails = [...emails].sort(
+    (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+  );
 
   const handleSendEmail = () => {
     if (!composeData.subject || !composeData.content) {
@@ -150,23 +190,28 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
 
     // Extract variables from candidate and job data
     const variables = extractEmailVariables(candidate, job);
-    
+
     // Replace template variables with actual values
-    const processedSubject = replaceTemplateVariables(composeData.subject, variables);
-    const processedContent = replaceTemplateVariables(composeData.content, variables);
+    const processedSubject = replaceTemplateVariables(
+      composeData.subject,
+      variables
+    );
+    const processedContent = replaceTemplateVariables(
+      composeData.content,
+      variables
+    );
 
     const newEmail: EmailThread = {
       id: `email-${Date.now()}`,
       subject: processedSubject,
       from: "HR Team",
-      fromEmail: "hr@company.com",
-      to: fullName,
-      toEmail: composeData.to,
+      to: [composeData.to],
       timestamp: new Date(),
-      content: processedContent,
+      body: processedContent,
       isRead: true,
       isStarred: false,
-      type: "sent",
+      direction: "outbound",
+      status: "sent",
     };
 
     setEmails([newEmail, ...emails]);
@@ -181,18 +226,21 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
 
   const handleReply = (email: EmailThread) => {
     setComposeData({
-      to: email.type === "sent" ? email.toEmail : email.fromEmail,
+      to: email.direction === "outbound" ? email.to[0] : email.from,
       subject: `Re: ${email.subject}`,
-      content: `\n\n---\nOn ${email.timestamp.toLocaleString()}, ${email.from} wrote:\n${email.content}`,
+      content: `\n\n---\nOn ${email.timestamp.toLocaleString()}, ${
+        email.from
+      } wrote:\n${email.body}`,
     });
     setIsComposing(true);
     setSelectedEmail(null);
   };
 
-  const filteredEmails = allEmails.filter(email => 
-    email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    email.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    email.from.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredEmails = allEmails.filter(
+    (email) =>
+      email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.body.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.from.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getDisplayEmails = () => {
@@ -212,17 +260,26 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
     <div className="space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Button variant="ghost" size="icon" onClick={onBack} className="flex-shrink-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
+          className="shrink-0"
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-2">
             <Avatar className="h-12 w-12 border-2 border-border">
               <AvatarImage src={candidate.avatar} alt={fullName} />
-              <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
+              <AvatarFallback className="text-sm font-semibold">
+                {initials}
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-foreground truncate">Email Communication</h1>
+              <h1 className="text-2xl font-bold text-foreground truncate">
+                Email Communication
+              </h1>
               <p className="text-sm text-muted-foreground truncate">
                 {fullName} • {candidate.email}
               </p>
@@ -233,8 +290,13 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
             <span>Regarding: {job.title}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Button onClick={() => { setIsComposing(true); setSelectedEmail(null); }}>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            onClick={() => {
+              setIsComposing(true);
+              setSelectedEmail(null);
+            }}
+          >
             <Send className="h-4 w-4 mr-2" />
             New Email
           </Button>
@@ -267,23 +329,23 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <div className="px-6 pt-4 pb-3">
                   <TabsList className="h-11 p-1 bg-card border border-border w-fit">
-                    <TabsTrigger 
-                      value="inbox" 
-                      className="px-4 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                    <TabsTrigger
+                      value="inbox"
+                      className="px-4 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground"
                     >
                       <Inbox className="h-4 w-4 mr-2" />
                       All
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="sent" 
-                      className="px-4 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                    <TabsTrigger
+                      value="sent"
+                      className="px-4 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground"
                     >
                       <SendHorizontal className="h-4 w-4 mr-2" />
                       Sent
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="received" 
-                      className="px-4 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                    <TabsTrigger
+                      value="received"
+                      className="px-4 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground"
                     >
                       <Mail className="h-4 w-4 mr-2" />
                       Received
@@ -307,8 +369,8 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
                           }}
                         >
                           <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 mt-1">
-                              {email.type === "sent" ? (
+                            <div className="shrink-0 mt-1">
+                              {email.direction === "outbound" ? (
                                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                                   <SendHorizontal className="h-4 w-4 text-primary" />
                                 </div>
@@ -320,28 +382,38 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2 mb-1">
-                                <p className={cn(
-                                  "text-sm truncate",
-                                  !email.isRead ? "font-semibold" : "font-medium"
-                                )}>
-                                  {email.type === "sent" ? email.to : email.from}
+                                <p
+                                  className={cn(
+                                    "text-sm truncate",
+                                    !email.isRead
+                                      ? "font-semibold"
+                                      : "font-medium"
+                                  )}
+                                >
+                                  {email.direction === "outbound"
+                                    ? email.to[0]
+                                    : email.from}
                                 </p>
-                                <span className="text-xs text-muted-foreground flex-shrink-0">
+                                <span className="text-xs text-muted-foreground shrink-0">
                                   {formatTimestamp(email.timestamp)}
                                 </span>
                               </div>
-                              <p className={cn(
-                                "text-sm mb-1 truncate",
-                                !email.isRead ? "font-medium text-foreground" : "text-muted-foreground"
-                              )}>
+                              <p
+                                className={cn(
+                                  "text-sm mb-1 truncate",
+                                  !email.isRead
+                                    ? "font-medium text-foreground"
+                                    : "text-muted-foreground"
+                                )}
+                              >
                                 {email.subject}
                               </p>
                               <p className="text-xs text-muted-foreground line-clamp-2">
-                                {email.content}
+                                {email.body}
                               </p>
                             </div>
                             {email.isStarred && (
-                              <Star className="h-4 w-4 fill-amber-500 text-amber-500 flex-shrink-0" />
+                              <Star className="h-4 w-4 fill-amber-500 text-amber-500 shrink-0" />
                             )}
                           </div>
                         </div>
@@ -370,7 +442,11 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Compose Email</CardTitle>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setIsComposing(false)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsComposing(false)}
+                    >
                       Cancel
                     </Button>
                     <Button size="sm" onClick={handleSendEmail}>
@@ -387,13 +463,21 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
                   <Select
                     onValueChange={(value) => {
                       if (value === "none") return;
-                      const template = emailTemplates.find(t => t.id === value);
+                      const template = emailTemplates.find(
+                        (t) => t.id === value
+                      );
                       if (template) {
                         // Extract variables and apply template
                         const variables = extractEmailVariables(candidate, job);
-                        const processedSubject = replaceTemplateVariables(template.subject, variables);
-                        const processedBody = replaceTemplateVariables(template.body, variables);
-                        
+                        const processedSubject = replaceTemplateVariables(
+                          template.subject,
+                          variables
+                        );
+                        const processedBody = replaceTemplateVariables(
+                          template.body,
+                          variables
+                        );
+
                         setComposeData({
                           ...composeData,
                           subject: processedSubject,
@@ -431,7 +515,9 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
                   <Input
                     id="to"
                     value={composeData.to}
-                    onChange={(e) => setComposeData({ ...composeData, to: e.target.value })}
+                    onChange={(e) =>
+                      setComposeData({ ...composeData, to: e.target.value })
+                    }
                     placeholder="recipient@email.com"
                   />
                 </div>
@@ -442,7 +528,12 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
                   <Input
                     id="subject"
                     value={composeData.subject}
-                    onChange={(e) => setComposeData({ ...composeData, subject: e.target.value })}
+                    onChange={(e) =>
+                      setComposeData({
+                        ...composeData,
+                        subject: e.target.value,
+                      })
+                    }
                     placeholder="Email subject..."
                   />
                 </div>
@@ -453,7 +544,12 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
                   <textarea
                     id="content"
                     value={composeData.content}
-                    onChange={(e) => setComposeData({ ...composeData, content: e.target.value })}
+                    onChange={(e) =>
+                      setComposeData({
+                        ...composeData,
+                        content: e.target.value,
+                      })
+                    }
                     placeholder="Write your message..."
                     className="w-full min-h-[300px] px-3 py-2 text-sm rounded-md border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   />
@@ -481,20 +577,28 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold mb-2">{selectedEmail.subject}</h3>
+                    <h3 className="text-lg font-semibold mb-2">
+                      {selectedEmail.subject}
+                    </h3>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
                           <AvatarFallback className="text-xs">
-                            {selectedEmail.type === "sent" ? "You" : initials}
+                            {selectedEmail.direction === "outbound" ? "You" : initials}
                           </AvatarFallback>
                         </Avatar>
                         <span className="font-medium text-foreground">
-                          {selectedEmail.type === "sent" ? "You" : selectedEmail.from}
+                          {selectedEmail.direction === "outbound"
+                            ? "You"
+                            : selectedEmail.from}
                         </span>
                       </div>
                       <span>→</span>
-                      <span>{selectedEmail.type === "sent" ? selectedEmail.to : "You"}</span>
+                      <span>
+                        {selectedEmail.direction === "outbound"
+                          ? selectedEmail.to[0]
+                          : "You"}
+                      </span>
                     </div>
                   </div>
                   <DropdownMenu>
@@ -504,7 +608,9 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleReply(selectedEmail)}>
+                      <DropdownMenuItem
+                        onClick={() => handleReply(selectedEmail)}
+                      >
                         <Reply className="h-4 w-4 mr-2" />
                         Reply
                       </DropdownMenuItem>
@@ -528,10 +634,12 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock className="h-3.5 w-3.5" />
                   <span>{selectedEmail.timestamp.toLocaleString()}</span>
-                  {selectedEmail.type === "sent" && (
+                  {selectedEmail.direction === "outbound" && (
                     <>
                       <CheckCheck className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                      <span className="text-green-600 dark:text-green-400">Sent</span>
+                      <span className="text-green-600 dark:text-green-400">
+                        Sent
+                      </span>
                     </>
                   )}
                 </div>
@@ -540,35 +648,44 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
 
                 <div className="prose prose-sm dark:prose-invert max-w-none">
                   <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {selectedEmail.content}
+                    {selectedEmail.body}
                   </p>
                 </div>
 
-                {selectedEmail.attachments && selectedEmail.attachments.length > 0 && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">Attachments</Label>
-                      <div className="grid gap-2">
-                        {selectedEmail.attachments.map((attachment, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50"
-                          >
-                            <Paperclip className="h-4 w-4 text-muted-foreground" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{attachment.name}</p>
-                              <p className="text-xs text-muted-foreground">{attachment.size}</p>
-                            </div>
-                            <Button variant="ghost" size="sm">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
+                {selectedEmail.attachments &&
+                  selectedEmail.attachments.length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">
+                          Attachments
+                        </Label>
+                        <div className="grid gap-2">
+                          {selectedEmail.attachments.map(
+                            (attachment, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50"
+                              >
+                                <Paperclip className="h-4 w-4 text-muted-foreground" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">
+                                    {attachment.filename}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {attachment.size}
+                                  </p>
+                                </div>
+                                <Button variant="ghost" size="sm">
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </>
-                )}
+                    </>
+                  )}
 
                 <Separator />
 
@@ -588,7 +705,9 @@ export function CandidateEmailCommunication({ candidate, job, onBack }: Candidat
             <Card className="h-[600px] flex items-center justify-center">
               <div className="text-center">
                 <Mail className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-20" />
-                <p className="text-lg font-medium text-muted-foreground mb-2">No email selected</p>
+                <p className="text-lg font-medium text-muted-foreground mb-2">
+                  No email selected
+                </p>
                 <p className="text-sm text-muted-foreground mb-4">
                   Select an email to view or compose a new one
                 </p>
@@ -616,6 +735,6 @@ function formatTimestamp(date: Date): string {
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
-  
+
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }

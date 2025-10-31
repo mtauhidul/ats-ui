@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Bot, Loader2, Mail, Shield } from "lucide-react";
 import { toast } from "sonner";
 
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -66,44 +67,39 @@ function EmailConnectionDialog({
     setConnectionProgress(10);
 
     try {
-      // Prepare credentials based on provider
-      let credentials: EmailConfig;
+      // Validate required fields
+      if (!imapUsername || !imapPassword) {
+        throw new Error("Please provide email and password");
+      }
 
-      if (provider === "other") {
-        if (!imapServer || !imapUsername || !imapPassword) {
-          throw new Error("Please provide all IMAP server details");
-        }
-
-        credentials = {
-          provider: "other",
-          server: imapServer,
-          port: imapPort,
-          username: imapUsername,
-          password: imapPassword,
-        };
-      } else {
-        credentials = {
-          provider,
-          username: imapUsername,
-          password: imapPassword,
-        };
+      if (provider === "other" && !imapServer) {
+        throw new Error("Please provide IMAP server details");
       }
 
       setConnectionProgress(30);
 
+      // Prepare the request body according to backend schema
+      const requestBody = {
+        name: `${provider.charAt(0).toUpperCase() + provider.slice(1)} Account`,
+        email: imapUsername,
+        provider: provider === "other" ? "custom" : provider,
+        imapHost: imapServer || (provider === "gmail" ? "imap.gmail.com" : provider === "outlook" ? "outlook.office365.com" : ""),
+        imapPort: parseInt(imapPort) || 993,
+        imapUser: imapUsername,
+        imapPassword: imapPassword,
+        imapTls: true,
+        isActive: true,
+      };
+
       // Add the account
-      const addAccountResponse = await fetch(
-        `${import.meta.env.VITE_API_URL || ""}/email/automation/accounts`,
+      const addAccountResponse = await authenticatedFetch(
+        "/email-accounts",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-api-key": import.meta.env.VITE_API_KEY || "",
           },
-          body: JSON.stringify({
-            ...credentials,
-            automationEnabled: true,
-          }),
+          body: JSON.stringify(requestBody),
         }
       );
 
@@ -111,8 +107,16 @@ function EmailConnectionDialog({
 
       if (!addAccountResponse.ok) {
         const errorData = await addAccountResponse.json();
+        console.error("API Error:", errorData);
+        
+        // Handle validation errors
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          const errorMessages = errorData.errors.map((err: any) => err.message).join(", ");
+          throw new Error(errorMessages);
+        }
+        
         throw new Error(
-          errorData.error || "Failed to add email account to automation"
+          errorData.message || errorData.error || "Failed to add email account"
         );
       }
 

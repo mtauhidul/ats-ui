@@ -97,6 +97,39 @@ export function JobCard({ job, onClick, clientName }: JobCardProps) {
           )}
         </div>
 
+        {/* Categories */}
+        {job.categoryIds && job.categoryIds.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {job.categoryIds.slice(0, 3).map((categoryId: any) => {
+              const category = typeof categoryId === 'object' ? categoryId : null;
+              if (!category) return null;
+
+              return (
+                <Badge
+                  key={category.id || category._id}
+                  variant="secondary"
+                  style={{
+                    backgroundColor: `${category.color || "#3B82F6"}15`,
+                    color: category.color || "#3B82F6",
+                    borderColor: `${category.color || "#3B82F6"}40`,
+                  }}
+                  className="px-2 py-0.5 text-xs border"
+                >
+                  {category.name}
+                </Badge>
+              );
+            })}
+            {job.categoryIds.length > 3 && (
+              <Badge
+                variant="secondary"
+                className="px-2 py-0.5 text-xs"
+              >
+                +{job.categoryIds.length - 3}
+              </Badge>
+            )}
+          </div>
+        )}
+
         {/* Candidate Statistics */}
         <div className="flex items-center justify-between pt-3 border-t">
           <div className="flex items-center gap-3 text-sm">

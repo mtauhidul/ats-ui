@@ -1,9 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus, Search, Building2, Users, Briefcase, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ClientCard } from "@/components/client-card";
+import { AddClientModal } from "@/components/modals/add-client-modal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,28 +10,40 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ClientCard } from "@/components/client-card";
-import { AddClientModal } from "@/components/modals/add-client-modal";
-import type { Client, CreateClientRequest } from "@/types/client";
-import { useClients, useUI, useAppSelector } from "@/store/hooks/index";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAppSelector, useClients, useUI } from "@/store/hooks/index";
 import { selectFilteredClients } from "@/store/selectors";
+import type { Client, CreateClientRequest } from "@/types/client";
+import {
+  Briefcase,
+  Building2,
+  CheckCircle2,
+  Plus,
+  Search,
+  Users,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function ClientsPage() {
   const navigate = useNavigate();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
-  
+
   // Redux state and actions
-  const {
-    filters,
-    fetchClients,
-    createClient,
-    deleteClient,
-    setFilters,
-  } = useClients();
-  
+  const { filters, fetchClients, createClient, deleteClient, setFilters } =
+    useClients();
+
   const { modals, openModal, closeModal } = useUI();
-  
+
   // Use memoized selector for filtered clients
   const filteredClients = useAppSelector(selectFilteredClients);
 
@@ -92,11 +100,18 @@ export default function ClientsPage() {
                   <Input
                     placeholder="Search clients by name, email, industry, or location..."
                     value={filters.search}
-                    onChange={(e) => setFilters({ search: e.target.value })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setFilters({ search: e.target.value })
+                    }
                     className="pl-10"
                   />
                 </div>
-                <Select value={filters.status} onValueChange={(value) => setFilters({ status: value })}>
+                <Select
+                  value={filters.status}
+                  onValueChange={(value: string) =>
+                    setFilters({ status: value })
+                  }
+                >
                   <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
@@ -108,7 +123,12 @@ export default function ClientsPage() {
                     <SelectItem value="on_hold">On Hold</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={filters.industry} onValueChange={(value) => setFilters({ industry: value })}>
+                <Select
+                  value={filters.industry}
+                  onValueChange={(value: string) =>
+                    setFilters({ industry: value })
+                  }
+                >
                   <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Industry" />
                   </SelectTrigger>
@@ -126,7 +146,12 @@ export default function ClientsPage() {
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={filters.sortBy} onValueChange={(value) => setFilters({ sortBy: value })}>
+                <Select
+                  value={filters.sortBy}
+                  onValueChange={(value: string) =>
+                    setFilters({ sortBy: value })
+                  }
+                >
                   <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
@@ -147,7 +172,9 @@ export default function ClientsPage() {
                     <div className="rounded-md bg-primary/10 p-1.5">
                       <Building2 className="h-4 w-4 text-primary" />
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">Total</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Total
+                    </span>
                   </div>
                   <p className="text-xl font-bold">{filteredClients.length}</p>
                   <p className="text-xs text-muted-foreground">Clients</p>
@@ -157,13 +184,28 @@ export default function ClientsPage() {
                     <div className="rounded-md bg-green-500/10 p-1.5">
                       <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                     </div>
-                    <span className="text-xs font-medium text-green-700 dark:text-green-400">Active</span>
+                    <span className="text-xs font-medium text-green-700 dark:text-green-400">
+                      Active
+                    </span>
                   </div>
                   <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                    {filteredClients.filter((c) => c.status === "active").length}
+                    {
+                      filteredClients.filter(
+                        (c: Client) => c.status === "active"
+                      ).length
+                    }
                   </p>
                   <p className="text-xs text-green-600/70 dark:text-green-400/70">
-                    {filteredClients.length > 0 ? Math.round((filteredClients.filter((c) => c.status === "active").length / filteredClients.length) * 100) : 0}% of total
+                    {filteredClients.length > 0
+                      ? Math.round(
+                          (filteredClients.filter(
+                            (c: Client) => c.status === "active"
+                          ).length /
+                            filteredClients.length) *
+                            100
+                        )
+                      : 0}
+                    % of total
                   </p>
                 </div>
                 <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100/20 dark:from-blue-950/20 dark:to-blue-900/10 p-3 shadow-sm">
@@ -171,10 +213,15 @@ export default function ClientsPage() {
                     <div className="rounded-md bg-blue-500/10 p-1.5">
                       <Briefcase className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <span className="text-xs font-medium text-blue-700 dark:text-blue-400">Total Jobs</span>
+                    <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
+                      Total Jobs
+                    </span>
                   </div>
                   <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                    {filteredClients.reduce((acc, c) => acc + c.statistics.totalJobs, 0)}
+                    {filteredClients.reduce(
+                      (acc: number, c: Client) => acc + c.statistics.totalJobs,
+                      0
+                    )}
                   </p>
                   <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
                     Across all clients
@@ -185,10 +232,15 @@ export default function ClientsPage() {
                     <div className="rounded-md bg-purple-500/10 p-1.5">
                       <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                     </div>
-                    <span className="text-xs font-medium text-purple-700 dark:text-purple-400">Active Jobs</span>
+                    <span className="text-xs font-medium text-purple-700 dark:text-purple-400">
+                      Active Jobs
+                    </span>
                   </div>
                   <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                    {filteredClients.reduce((acc, c) => acc + c.statistics.activeJobs, 0)}
+                    {filteredClients.reduce(
+                      (acc: number, c: Client) => acc + c.statistics.activeJobs,
+                      0
+                    )}
                   </p>
                   <p className="text-xs text-purple-600/70 dark:text-purple-400/70">
                     Currently open
@@ -200,7 +252,7 @@ export default function ClientsPage() {
             {/* Client Cards Grid */}
             {/* Client Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredClients.map((client) => (
+              {filteredClients.map((client: Client) => (
                 <ClientCard
                   key={client.id}
                   client={client}
@@ -222,7 +274,7 @@ export default function ClientsPage() {
         </div>
       </div>
 
-            {/* Add Client Modal */}
+      {/* Add Client Modal */}
       <AddClientModal
         open={modals.addClient}
         onClose={() => closeModal("addClient")}
@@ -236,10 +288,13 @@ export default function ClientsPage() {
             <AlertDialogDescription>
               {clientToDelete && (
                 <>
-                  Are you sure you want to delete <strong>{clientToDelete.companyName}</strong>?
+                  Are you sure you want to delete{" "}
+                  <strong>{clientToDelete.companyName}</strong>?
                   {clientToDelete.statistics.totalJobs > 0 && (
                     <span className="block mt-2 text-amber-600 dark:text-amber-500">
-                      This client has {clientToDelete.statistics.totalJobs} job{clientToDelete.statistics.totalJobs > 1 ? 's' : ''} in the system.
+                      This client has {clientToDelete.statistics.totalJobs} job
+                      {clientToDelete.statistics.totalJobs > 1 ? "s" : ""} in
+                      the system.
                     </span>
                   )}
                   <span className="block mt-2">
@@ -251,7 +306,10 @@ export default function ClientsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteClient} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={confirmDeleteClient}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete Client
             </AlertDialogAction>
           </AlertDialogFooter>

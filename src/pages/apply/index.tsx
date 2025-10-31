@@ -12,6 +12,14 @@ import type { Job } from "@/types/job";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
+// Helper function to normalize job data from backend (handle _id to id conversion)
+const normalizeJob = (job: any): Job => {
+  return {
+    ...job,
+    id: job.id || job._id, // Handle both id and _id fields
+  };
+};
+
 interface Experience {
   title: string;
   company: string;
@@ -86,11 +94,12 @@ export default function PublicApplyPage() {
   useEffect(() => {
     const fetchJob = async () => {
       if (!jobId) return;
-      
+
       try {
         const response = await fetch(`${API_BASE_URL}/jobs/${jobId}`);
         const result = await response.json();
-        setJob(result.data || result);
+        const jobData = result.data || result;
+        setJob(normalizeJob(jobData));
       } catch (error) {
         console.error("Error fetching job:", error);
         toast.error("Failed to load job details");

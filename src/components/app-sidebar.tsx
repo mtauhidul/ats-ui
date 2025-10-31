@@ -1,3 +1,5 @@
+import { LogoIcon } from "@/components/icons/logo-icon";
+import { useAuth } from "@/hooks/useAuth";
 import {
   IconBookmark,
   IconBriefcase,
@@ -5,7 +7,6 @@ import {
   IconDashboard,
   IconFileText,
   IconHelp,
-  IconInnerShadowTop,
   IconSearch,
   IconSettings,
   IconTag,
@@ -13,12 +14,11 @@ import {
   IconUsers,
 } from "@tabler/icons-react";
 import * as React from "react";
-import { useAuth } from "@/hooks/useAuth";
 
-import { NavUtilities } from "@/components/nav-utilities";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
+import { NavUtilities } from "@/components/nav-utilities";
 import {
   Sidebar,
   SidebarContent,
@@ -111,10 +111,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
+              className="data-[slot=sidebar-menu-button]:p-2! data-[slot=sidebar-menu-button]:h-auto"
             >
-              <a href="#">
-                <IconInnerShadowTop className="!size-5" />
+              <a href="#" className="flex items-center gap-2">
+                <div style={{ width: "24px", height: "24px", flexShrink: 0 }}>
+                  <LogoIcon size={24} color="#71abbf" />
+                </div>
                 <span className="text-base font-semibold">YTFCS ATS</span>
               </a>
             </SidebarMenuButton>

@@ -27,18 +27,19 @@ import { useNotifications } from "@/store/hooks/useNotifications";
 import { useTeam } from "@/store/hooks/useTeam";
 import { toast } from "sonner";
 import type { NotificationType } from "@/store/slices/notificationsSlice";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function NotificationsPage() {
-  const { notifications, fetchNotifications, markAsRead, markAllAsRead, deleteNotification, createNotification } = useNotifications();
+  const { notifications, fetchNotifications, markAsRead, markAllAsRead, deleteNotification, createNotification, broadcastImportantNotice } = useNotifications();
   const { teamMembers, fetchTeam } = useTeam();
-  
+  const { user } = useAuth();
+
   useEffect(() => {
     fetchNotifications();
     fetchTeam();
   }, [fetchNotifications, fetchTeam]);
-  
-  const currentUser = teamMembers[0]; // Get current logged-in user
-  const isAdmin = currentUser?.role === "admin";
+
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
 
   const [activeTab, setActiveTab] = useState<string>("all");
   const [filterType, setFilterType] = useState<"all" | "unread" | "read">("all");
@@ -47,6 +48,14 @@ export default function NotificationsPage() {
     type: "system" as NotificationType,
     title: "",
     message: "",
+  });
+
+  const [importantNotice, setImportantNotice] = useState({
+    type: "system" as NotificationType,
+    title: "",
+    message: "",
+    priority: "high" as 'low' | 'medium' | 'high' | 'urgent',
+    expiresAt: "",
   });
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -147,16 +156,73 @@ export default function NotificationsPage() {
     toast.success("Notification created and sent to all users!");
   };
 
-  const filteredNotifications = notifications.filter(n => {
+  const handleBroadcastImportantNotice = async () => {
+    if (!importantNotice.title.trim() || !importantNotice.message.trim()) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      await broadcastImportantNotice({
+        type: importantNotice.type,
+        title: importantNotice.title,
+        message: importantNotice.message,
+        priority: importantNotice.priority,
+        expiresAt: importantNotice.expiresAt || undefined,
+      });
+      setImportantNotice({ type: "system", title: "", message: "", priority: "high", expiresAt: "" });
+      toast.success("Important notice broadcast to all team members!");
+      fetchNotifications();
+    } catch (error) {
+      toast.error("Failed to broadcast important notice");
+    }
+  };
+
+  // Filter out expired important notices
+  const activeNotifications = notifications.filter(n => {
+    // If it's an important notice with expiration date
+    if (n.isImportant && n.expiresAt) {
+      const expirationDate = new Date(n.expiresAt);
+      const now = new Date();
+      // Only show if not expired
+      return expirationDate > now;
+    }
+    // Show all non-important or important without expiration
+    return true;
+  });
+
+  const filteredNotifications = activeNotifications.filter(n => {
     if (filterType === "unread") return !n.read;
     if (filterType === "read") return n.read;
     return true;
   });
 
-  const notificationsByType = notifications.reduce((acc, n) => {
+  // Sort notifications: important ones first, then by date
+  const sortedNotifications = [...filteredNotifications].sort((a, b) => {
+    if (a.isImportant && !b.isImportant) return -1;
+    if (!a.isImportant && b.isImportant) return 1;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
+  const notificationsByType = activeNotifications.reduce((acc, n) => {
     acc[n.type] = (acc[n.type] || 0) + 1;
     return acc;
   }, {} as Record<NotificationType, number>);
+
+  const importantCount = activeNotifications.filter(n => n.isImportant).length;
+
+  const getPriorityBadge = (priority?: 'low' | 'medium' | 'high' | 'urgent') => {
+    switch (priority) {
+      case 'urgent':
+        return <Badge className="bg-destructive text-white text-xs">Urgent</Badge>;
+      case 'high':
+        return <Badge className="bg-orange-600 text-white text-xs">High Priority</Badge>;
+      case 'medium':
+        return <Badge className="bg-amber-600 text-white text-xs">Medium Priority</Badge>;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="flex flex-1 flex-col">
@@ -185,7 +251,7 @@ export default function NotificationsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -206,6 +272,19 @@ export default function NotificationsPage() {
                     </div>
                     <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
                       <span className="text-blue-600 font-bold">{unreadCount}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-primary/30">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Important</p>
+                      <p className="text-2xl font-bold text-primary">{importantCount}</p>
+                    </div>
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Shield className="h-5 w-5 text-primary" />
                     </div>
                   </div>
                 </CardContent>
@@ -272,7 +351,7 @@ export default function NotificationsPage() {
               </TabsList>
 
               <TabsContent value="all" className="space-y-3">
-                {filteredNotifications.length === 0 ? (
+                {sortedNotifications.length === 0 ? (
                   <Card>
                     <CardContent className="py-12">
                       <div className="text-center">
@@ -282,27 +361,44 @@ export default function NotificationsPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  filteredNotifications.map((notification) => (
+                  sortedNotifications.map((notification) => (
                     <Card
                       key={notification.id}
                       className={`transition-all hover:shadow-md ${
-                        !notification.read ? "border-l-4 border-l-blue-600 bg-blue-50/30" : ""
+                        notification.isImportant
+                          ? "border-l-4 border-l-primary bg-primary/5 shadow-lg"
+                          : !notification.read
+                            ? "border-l-4 border-l-blue-600 bg-blue-50/30"
+                            : ""
                       }`}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-4">
                           <div className="mt-1">
-                            {getNotificationIcon(notification.type)}
+                            {notification.isImportant ? (
+                              <div className="rounded-full bg-primary/10 p-2">
+                                <Shield className="h-5 w-5 text-primary" />
+                              </div>
+                            ) : (
+                              getNotificationIcon(notification.type)
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className="font-semibold text-foreground">
+                                {notification.isImportant && (
+                                  <Badge className="bg-primary text-primary-foreground text-xs">
+                                    <Shield className="h-3 w-3 mr-1" />
+                                    IMPORTANT
+                                  </Badge>
+                                )}
+                                <h4 className={`font-semibold ${notification.isImportant ? 'text-primary' : 'text-foreground'}`}>
                                   {notification.title}
                                 </h4>
-                                {!notification.read && (
+                                {!notification.read && !notification.isImportant && (
                                   <Badge className="bg-blue-600 text-white text-xs">New</Badge>
                                 )}
+                                {notification.priority && getPriorityBadge(notification.priority)}
                               </div>
                               <Badge
                                 variant="outline"
@@ -311,7 +407,7 @@ export default function NotificationsPage() {
                                 {notification.type.replace(/_/g, ' ')}
                               </Badge>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-2">
+                            <p className={`text-sm mb-2 ${notification.isImportant ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                               {notification.message}
                             </p>
                             <div className="flex items-center justify-between">
@@ -347,7 +443,7 @@ export default function NotificationsPage() {
               </TabsContent>
 
               <TabsContent value="unread" className="space-y-3">
-                {filteredNotifications.length === 0 ? (
+                {sortedNotifications.length === 0 ? (
                   <Card>
                     <CardContent className="py-12">
                       <div className="text-center">
@@ -357,27 +453,44 @@ export default function NotificationsPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  filteredNotifications.map((notification) => (
+                  sortedNotifications.map((notification) => (
                     <Card
                       key={notification.id}
                       className={`transition-all hover:shadow-md ${
-                        !notification.read ? "border-l-4 border-l-blue-600 bg-blue-50/30" : ""
+                        notification.isImportant
+                          ? "border-l-4 border-l-primary bg-primary/5 shadow-lg"
+                          : !notification.read
+                            ? "border-l-4 border-l-blue-600 bg-blue-50/30"
+                            : ""
                       }`}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-4">
                           <div className="mt-1">
-                            {getNotificationIcon(notification.type)}
+                            {notification.isImportant ? (
+                              <div className="rounded-full bg-primary/10 p-2">
+                                <Shield className="h-5 w-5 text-primary" />
+                              </div>
+                            ) : (
+                              getNotificationIcon(notification.type)
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className="font-semibold text-foreground">
+                                {notification.isImportant && (
+                                  <Badge className="bg-primary text-primary-foreground text-xs">
+                                    <Shield className="h-3 w-3 mr-1" />
+                                    IMPORTANT
+                                  </Badge>
+                                )}
+                                <h4 className={`font-semibold ${notification.isImportant ? 'text-primary' : 'text-foreground'}`}>
                                   {notification.title}
                                 </h4>
-                                {!notification.read && (
+                                {!notification.read && !notification.isImportant && (
                                   <Badge className="bg-blue-600 text-white text-xs">New</Badge>
                                 )}
+                                {notification.priority && getPriorityBadge(notification.priority)}
                               </div>
                               <Badge
                                 variant="outline"
@@ -386,7 +499,7 @@ export default function NotificationsPage() {
                                 {notification.type.replace(/_/g, ' ')}
                               </Badge>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-2">
+                            <p className={`text-sm mb-2 ${notification.isImportant ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                               {notification.message}
                             </p>
                             <div className="flex items-center justify-between">
@@ -422,7 +535,7 @@ export default function NotificationsPage() {
               </TabsContent>
 
               <TabsContent value="read" className="space-y-3">
-                {filteredNotifications.length === 0 ? (
+                {sortedNotifications.length === 0 ? (
                   <Card>
                     <CardContent className="py-12">
                       <div className="text-center">
@@ -432,27 +545,44 @@ export default function NotificationsPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  filteredNotifications.map((notification) => (
+                  sortedNotifications.map((notification) => (
                     <Card
                       key={notification.id}
                       className={`transition-all hover:shadow-md ${
-                        !notification.read ? "border-l-4 border-l-blue-600 bg-blue-50/30" : ""
+                        notification.isImportant
+                          ? "border-l-4 border-l-primary bg-primary/5 shadow-lg"
+                          : !notification.read
+                            ? "border-l-4 border-l-blue-600 bg-blue-50/30"
+                            : ""
                       }`}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-4">
                           <div className="mt-1">
-                            {getNotificationIcon(notification.type)}
+                            {notification.isImportant ? (
+                              <div className="rounded-full bg-primary/10 p-2">
+                                <Shield className="h-5 w-5 text-primary" />
+                              </div>
+                            ) : (
+                              getNotificationIcon(notification.type)
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className="font-semibold text-foreground">
+                                {notification.isImportant && (
+                                  <Badge className="bg-primary text-primary-foreground text-xs">
+                                    <Shield className="h-3 w-3 mr-1" />
+                                    IMPORTANT
+                                  </Badge>
+                                )}
+                                <h4 className={`font-semibold ${notification.isImportant ? 'text-primary' : 'text-foreground'}`}>
                                   {notification.title}
                                 </h4>
-                                {!notification.read && (
+                                {!notification.read && !notification.isImportant && (
                                   <Badge className="bg-blue-600 text-white text-xs">New</Badge>
                                 )}
+                                {notification.priority && getPriorityBadge(notification.priority)}
                               </div>
                               <Badge
                                 variant="outline"
@@ -461,7 +591,7 @@ export default function NotificationsPage() {
                                 {notification.type.replace(/_/g, ' ')}
                               </Badge>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-2">
+                            <p className={`text-sm mb-2 ${notification.isImportant ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                               {notification.message}
                             </p>
                             <div className="flex items-center justify-between">
@@ -497,15 +627,131 @@ export default function NotificationsPage() {
               </TabsContent>
 
               {isAdmin && (
-                <TabsContent value="admin" className="space-y-3">
+                <TabsContent value="admin" className="space-y-6">
+                  {/* Important Notice Section */}
+                  <Card className="border-primary/30 bg-primary/5">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-primary">
+                        <Shield className="h-5 w-5" />
+                        Broadcast Important Notice
+                      </CardTitle>
+                      <CardDescription>
+                        Send a high-priority important notice to all team members. This will be highlighted prominently in their notifications.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="important-type">Notice Type</Label>
+                          <Select
+                            value={importantNotice.type}
+                            onValueChange={(value) =>
+                              setImportantNotice({ ...importantNotice, type: value as NotificationType })
+                            }
+                          >
+                            <SelectTrigger id="important-type">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="system">System Announcement</SelectItem>
+                              <SelectItem value="reminder">Important Reminder</SelectItem>
+                              <SelectItem value="team">Team Notice</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="important-priority">Priority Level</Label>
+                          <Select
+                            value={importantNotice.priority}
+                            onValueChange={(value) =>
+                              setImportantNotice({ ...importantNotice, priority: value as 'low' | 'medium' | 'high' | 'urgent' })
+                            }
+                          >
+                            <SelectTrigger id="important-priority">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="high">High</SelectItem>
+                              <SelectItem value="urgent">Urgent</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="important-title">Title *</Label>
+                        <Input
+                          id="important-title"
+                          placeholder="e.g., System Maintenance Scheduled"
+                          value={importantNotice.title}
+                          onChange={(e) =>
+                            setImportantNotice({ ...importantNotice, title: e.target.value })
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="important-message">Message *</Label>
+                        <Textarea
+                          id="important-message"
+                          placeholder="Enter detailed message for all team members..."
+                          rows={5}
+                          value={importantNotice.message}
+                          onChange={(e) =>
+                            setImportantNotice({ ...importantNotice, message: e.target.value })
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="important-expires">Expiration Date (Optional)</Label>
+                        <Input
+                          id="important-expires"
+                          type="datetime-local"
+                          value={importantNotice.expiresAt}
+                          onChange={(e) =>
+                            setImportantNotice({ ...importantNotice, expiresAt: e.target.value })
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          If set, the notice will be automatically hidden after this date
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="h-5 w-5 text-amber-700 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-amber-900">
+                              Important Notice - High Visibility
+                            </p>
+                            <p className="text-sm text-amber-800 mt-1">
+                              This will be sent to ALL active team members and displayed prominently at the top of their notifications with a special badge.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end">
+                        <Button onClick={handleBroadcastImportantNotice}>
+                          <Megaphone className="h-4 w-4 mr-2" />
+                          Broadcast Important Notice
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Regular Notification Section */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Megaphone className="h-5 w-5" />
-                        Create Notification for All Users
+                        <Bell className="h-5 w-5" />
+                        Create Regular Notification
                       </CardTitle>
                       <CardDescription>
-                        Send a notification to all users in the system. Use this for important announcements, system updates, or general notices.
+                        Send a standard notification to all users. Use this for general announcements or updates.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">

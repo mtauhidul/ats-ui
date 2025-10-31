@@ -21,7 +21,14 @@ export const fetchUsers = createAsyncThunk("users/fetchAll", async () => {
   const response = await authenticatedFetch(`${API_BASE_URL}/users`);
   if (!response.ok) throw new Error("Failed to fetch users");
   const result = await response.json();
-  return result.data?.users || result.data || result;
+  const users = result.data?.users || result.data || result;
+
+  // Transform _id to id for frontend compatibility
+  return users.map((user: any) => ({
+    ...user,
+    id: user._id || user.id,
+    _id: undefined,
+  }));
 });
 
 export const updateUser = createAsyncThunk(

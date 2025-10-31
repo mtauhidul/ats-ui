@@ -87,8 +87,12 @@ export function extractEmailVariables(
     jobTitle: job?.title,
     department: job?.department,
     
-    // Company info
-    companyName: client?.companyName || job?.clientId || "Our Company",
+    // Company info - handle both populated and unpopulated clientId
+    companyName: client?.companyName || 
+                 (typeof job?.clientId === 'object' && job?.clientId !== null 
+                   ? job.clientId.companyName
+                   : undefined) || 
+                 "Our Company",
     
     // Default recruiter info (should come from user context in real app)
     recruiterName: "HR Team",

@@ -41,29 +41,73 @@ interface SearchResult {
   badges: string[];
   link: string;
   relevance: number;
+  matchedFields: string[];
 }
 
-// Simple fuzzy match scoring
-const fuzzyMatch = (text: string | undefined | null, query: string): number => {
-  if (!text || typeof text !== "string") return 0;
+// Enhanced fuzzy match scoring with multiple algorithms
+const fuzzyMatch = (text: string | undefined | null, query: string): { score: number; matched: boolean } => {
+  if (!text || typeof text !== "string") return { score: 0, matched: false };
 
-  text = text.toLowerCase();
-  query = query.toLowerCase();
+  text = text.toLowerCase().trim();
+  query = query.toLowerCase().trim();
 
-  if (text === query) return 100;
-  if (text.includes(query)) return 50;
+  // Exact match - highest score
+  if (text === query) return { score: 100, matched: true };
+  
+  // Starts with query - very high score
+  if (text.startsWith(query)) return { score: 90, matched: true };
+  
+  // Contains exact query - high score
+  if (text.includes(query)) return { score: 70, matched: true };
 
+  // Word boundary match (query matches word start)
+  const words = text.split(/\s+/);
+  for (const word of words) {
+    if (word.startsWith(query)) return { score: 60, matched: true };
+    if (word.includes(query)) return { score: 40, matched: true };
+  }
+
+  // Fuzzy sequential match
   let score = 0;
   let queryIndex = 0;
+  let consecutiveMatches = 0;
+  let maxConsecutive = 0;
 
   for (let i = 0; i < text.length && queryIndex < query.length; i++) {
     if (text[i] === query[queryIndex]) {
-      score += 1;
+      consecutiveMatches++;
+      maxConsecutive = Math.max(maxConsecutive, consecutiveMatches);
+      score += consecutiveMatches * 2; // Bonus for consecutive matches
       queryIndex++;
+    } else {
+      consecutiveMatches = 0;
     }
   }
 
-  return queryIndex === query.length ? score : 0;
+  // All characters matched
+  if (queryIndex === query.length) {
+    score += 20 + (maxConsecutive * 5);
+    return { score: Math.min(score, 50), matched: true };
+  }
+
+  return { score: 0, matched: false };
+};
+
+// Debounce function
+const useDebounce = <T,>(value: T, delay: number): T => {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
 };
 
 export default function SearchPage() {
@@ -80,28 +124,27 @@ export default function SearchPage() {
   const { fetchApplications } = useApplications();
   const { fetchTeam } = useTeam();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const jobsData = useAppSelector((state) => (state.jobs as any).jobs);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const candidatesData = useAppSelector(
-    (state) => (state.candidates as any).candidates
-  );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const clientsData = useAppSelector((state) => (state.clients as any).clients);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const applicationsData = useAppSelector(
-    (state) => (state.applications as any).applications
-  );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const teamData = useAppSelector((state) => (state.team as any).teamMembers);
+  const jobsData = useAppSelector((state) => (state.jobs as { jobs: Job[] }).jobs);
+  const candidatesData = useAppSelector((state) => (state.candidates as { candidates: Candidate[] }).candidates);
+  const clientsData = useAppSelector((state) => (state.clients as { clients: Client[] }).clients);
+  const applicationsData = useAppSelector((state) => (state.applications as { applications: Application[] }).applications);
+  const teamData = useAppSelector((state) => (state.team as { teamMembers: TeamMember[] }).teamMembers);
   const currentUser = teamData[0];
 
+  // Debounced search query
+  const debouncedQuery = useDebounce(searchQuery, 300);
+
   useEffect(() => {
-    fetchJobs();
-    fetchCandidates();
-    fetchClients();
-    fetchApplications();
-    fetchTeam();
+    const loadData = async () => {
+      await Promise.all([
+        fetchJobs(),
+        fetchCandidates(),
+        fetchClients(),
+        fetchApplications(),
+        fetchTeam(),
+      ]);
+    };
+    loadData();
   }, [fetchJobs, fetchCandidates, fetchClients, fetchApplications, fetchTeam]);
 
   // Add to recent searches
@@ -134,74 +177,201 @@ export default function SearchPage() {
   }, []);
 
   const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
+    if (!debouncedQuery.trim()) return [];
 
-    const query = searchQuery.toLowerCase();
+    const query = debouncedQuery.toLowerCase();
     const results: SearchResult[] = [];
 
+    // Search Jobs
     if (hasPermission(currentUser, "canManageJobs")) {
       jobsData.forEach((job: Job) => {
+        const matchedFields: string[] = [];
         let relevance = 0;
-        relevance += fuzzyMatch(job.title, query);
-        relevance += fuzzyMatch(job.description || "", query) * 0.3;
-        relevance += fuzzyMatch(job.type || "", query) * 0.5;
-        relevance += fuzzyMatch(job.status || "", query) * 0.3;
-        relevance += fuzzyMatch(job.experienceLevel || "", query) * 0.3;
+
+        const titleMatch = fuzzyMatch(job.title, query);
+        if (titleMatch.matched) {
+          relevance += titleMatch.score * 2.0; // Title is most important
+          matchedFields.push("title");
+        }
+
+        const descMatch = fuzzyMatch(job.description || "", query);
+        if (descMatch.matched) {
+          relevance += descMatch.score * 0.5;
+          matchedFields.push("description");
+        }
+
+        const typeMatch = fuzzyMatch(job.type || "", query);
+        if (typeMatch.matched) {
+          relevance += typeMatch.score * 0.8;
+          matchedFields.push("type");
+        }
+
+        const statusMatch = fuzzyMatch(job.status || "", query);
+        if (statusMatch.matched) {
+          relevance += statusMatch.score * 0.6;
+          matchedFields.push("status");
+        }
+
+        const levelMatch = fuzzyMatch(job.experienceLevel || "", query);
+        if (levelMatch.matched) {
+          relevance += levelMatch.score * 0.7;
+          matchedFields.push("experience level");
+        }
+
+        // Search in location
         const locationStr = job.location
-          ? `${job.location.city || ""} ${job.location.state || ""} ${
-              job.location.country || ""
-            }`
+          ? `${job.location.city || ""} ${job.location.state || ""} ${job.location.country || ""}`.trim()
           : "";
-        relevance += fuzzyMatch(locationStr, query) * 0.4;
+        const locationMatch = fuzzyMatch(locationStr, query);
+        if (locationMatch.matched) {
+          relevance += locationMatch.score * 0.8;
+          matchedFields.push("location");
+        }
 
-        const salaryStr = job.salaryRange
-          ? `${job.salaryRange.min}-${job.salaryRange.max}`
-          : "";
-        relevance += fuzzyMatch(salaryStr, query) * 0.2;
+        // Search in requirements
+        if (job.requirements) {
+          const reqSkills = [...(job.requirements.skills?.required || []), ...(job.requirements.skills?.preferred || [])];
+          for (const skill of reqSkills) {
+            const skillMatch = fuzzyMatch(skill, query);
+            if (skillMatch.matched) {
+              relevance += skillMatch.score * 0.9;
+              matchedFields.push("required skills");
+              break;
+            }
+          }
+          
+          const educationMatch = fuzzyMatch(job.requirements.education || "", query);
+          if (educationMatch.matched) {
+            relevance += educationMatch.score * 0.4;
+            matchedFields.push("education");
+          }
+        }
 
-        if (relevance > 5) {
-          const client = clientsData.find((c: Client) => c.id === job.clientId);
+        // Search in department
+        const deptMatch = fuzzyMatch(job.department || "", query);
+        if (deptMatch.matched) {
+          relevance += deptMatch.score * 0.7;
+          matchedFields.push("department");
+        }
+
+        if (relevance > 10) {
+          const client = clientsData.find((c: Client) => {
+            if (typeof job.clientId === 'string') {
+              return c.id === job.clientId;
+            }
+            return c.id === job.clientId?.id || c.id === job.clientId?._id;
+          });
+          
+          const companyName = client?.companyName || 
+                             (typeof job.clientId === 'object' ? job.clientId.companyName : "Unknown Client");
+          
           results.push({
             id: job.id,
             type: "job",
             title: job.title,
-            subtitle: `${client?.companyName || "Unknown Client"} • ${
-              job.location || "Remote"
-            }`,
+            subtitle: `${companyName} • ${locationStr || "Remote"}`,
             description: job.description || "No description available",
             badges: [
               job.type || "Full-time",
               job.status,
               job.experienceLevel,
               job.salaryRange
-                ? `$${job.salaryRange.min}-${job.salaryRange.max}`
+                ? `$${job.salaryRange.min.toLocaleString()}-${job.salaryRange.max.toLocaleString()}`
                 : "",
             ].filter(Boolean),
             link: `/dashboard/jobs/pipeline/${job.id}`,
             relevance,
+            matchedFields,
           });
         }
       });
     }
 
+    // Search Candidates
     if (hasPermission(currentUser, "canManageCandidates")) {
       candidatesData.forEach((candidate: Candidate) => {
+        const matchedFields: string[] = [];
         let relevance = 0;
         const fullName = `${candidate.firstName} ${candidate.lastName}`;
         const location = candidate.address
           ? `${candidate.address.city}, ${candidate.address.country}`
           : "";
 
-        relevance += fuzzyMatch(fullName, query) * 1.5;
-        relevance += fuzzyMatch(candidate.email, query) * 1.2;
-        relevance += fuzzyMatch(candidate.currentTitle || "", query);
-        relevance += fuzzyMatch(location, query) * 0.4;
+        const nameMatch = fuzzyMatch(fullName, query);
+        if (nameMatch.matched) {
+          relevance += nameMatch.score * 2.5; // Name is very important
+          matchedFields.push("name");
+        }
 
-        candidate.skills?.forEach((skill) => {
-          relevance += fuzzyMatch(skill.name, query) * 0.3;
-        });
+        const emailMatch = fuzzyMatch(candidate.email, query);
+        if (emailMatch.matched) {
+          relevance += emailMatch.score * 1.5;
+          matchedFields.push("email");
+        }
 
-        if (relevance > 5) {
+        const phoneMatch = fuzzyMatch(candidate.phone || "", query);
+        if (phoneMatch.matched) {
+          relevance += phoneMatch.score * 1.2;
+          matchedFields.push("phone");
+        }
+
+        const titleMatch = fuzzyMatch(candidate.currentTitle || "", query);
+        if (titleMatch.matched) {
+          relevance += titleMatch.score * 1.3;
+          matchedFields.push("current title");
+        }
+
+        const locationMatch = fuzzyMatch(location, query);
+        if (locationMatch.matched) {
+          relevance += locationMatch.score * 0.6;
+          matchedFields.push("location");
+        }
+
+        // Search in skills
+        if (candidate.skills && candidate.skills.length > 0) {
+          for (const skill of candidate.skills) {
+            const skillName = typeof skill === 'string' ? skill : skill.name;
+            const skillMatch = fuzzyMatch(skillName, query);
+            if (skillMatch.matched) {
+              relevance += skillMatch.score * 1.0;
+              if (!matchedFields.includes("skills")) {
+                matchedFields.push("skills");
+              }
+            }
+          }
+        }
+
+        // Search in work experience (if available)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const candidateAny = candidate as any;
+        if (candidateAny.experience && Array.isArray(candidateAny.experience)) {
+          for (const exp of candidateAny.experience) {
+            const titleMatch = fuzzyMatch(exp.title || "", query);
+            const companyMatch = fuzzyMatch(exp.company || "", query);
+            if (titleMatch.matched || companyMatch.matched) {
+              relevance += Math.max(titleMatch.score, companyMatch.score) * 0.8;
+              if (!matchedFields.includes("experience")) {
+                matchedFields.push("experience");
+              }
+            }
+          }
+        }
+
+        // Search in education
+        if (candidate.education && candidate.education.length > 0) {
+          for (const edu of candidate.education) {
+            const degreeMatch = fuzzyMatch(edu.degree || "", query);
+            const schoolMatch = fuzzyMatch(edu.institution || "", query);
+            if (degreeMatch.matched || schoolMatch.matched) {
+              relevance += Math.max(degreeMatch.score, schoolMatch.score) * 0.6;
+              if (!matchedFields.includes("education")) {
+                matchedFields.push("education");
+              }
+            }
+          }
+        }
+
+        if (relevance > 10) {
           results.push({
             id: candidate.id,
             type: "candidate",
@@ -211,29 +381,61 @@ export default function SearchPage() {
             }`,
             description: candidate.email,
             avatar: candidate.avatar,
-            badges: candidate.skills?.slice(0, 3).map((s) => s.name) || [],
+            badges: candidate.skills?.slice(0, 3).map((s) => typeof s === 'string' ? s : s.name) || [],
             link: `/dashboard/candidates/${candidate.id}`,
             relevance,
+            matchedFields,
           });
         }
       });
     }
 
+    // Search Clients
     if (hasPermission(currentUser, "canManageClients")) {
       clientsData.forEach((client: Client) => {
+        const matchedFields: string[] = [];
         let relevance = 0;
         const location = client.address
           ? `${client.address.city}, ${client.address.country}`
           : "";
 
-        relevance += fuzzyMatch(client.companyName, query) * 1.5;
-        relevance += fuzzyMatch(client.industry, query);
-        relevance += fuzzyMatch(client.email || "", query) * 0.8;
-        relevance += fuzzyMatch(client.companySize, query) * 0.4;
-        relevance += fuzzyMatch(client.status, query) * 0.3;
-        relevance += fuzzyMatch(location, query) * 0.4;
+        const nameMatch = fuzzyMatch(client.companyName, query);
+        if (nameMatch.matched) {
+          relevance += nameMatch.score * 2.0;
+          matchedFields.push("company name");
+        }
 
-        if (relevance > 5) {
+        const industryMatch = fuzzyMatch(client.industry, query);
+        if (industryMatch.matched) {
+          relevance += industryMatch.score * 1.2;
+          matchedFields.push("industry");
+        }
+
+        const emailMatch = fuzzyMatch(client.email || "", query);
+        if (emailMatch.matched) {
+          relevance += emailMatch.score * 1.0;
+          matchedFields.push("email");
+        }
+
+        const sizeMatch = fuzzyMatch(client.companySize, query);
+        if (sizeMatch.matched) {
+          relevance += sizeMatch.score * 0.6;
+          matchedFields.push("company size");
+        }
+
+        const statusMatch = fuzzyMatch(client.status, query);
+        if (statusMatch.matched) {
+          relevance += statusMatch.score * 0.5;
+          matchedFields.push("status");
+        }
+
+        const locationMatch = fuzzyMatch(location, query);
+        if (locationMatch.matched) {
+          relevance += locationMatch.score * 0.7;
+          matchedFields.push("location");
+        }
+
+        if (relevance > 10) {
           results.push({
             id: client.id,
             type: "client",
@@ -246,22 +448,50 @@ export default function SearchPage() {
             badges: [client.status, client.companySize],
             link: `/dashboard/clients`,
             relevance,
+            matchedFields,
           });
         }
       });
     }
 
+    // Search Applications
     if (hasPermission(currentUser, "canReviewApplications")) {
       applicationsData.forEach((app: Application) => {
+        const matchedFields: string[] = [];
         let relevance = 0;
         const fullName = `${app.firstName} ${app.lastName}`;
-        relevance += fuzzyMatch(fullName, query) * 1.5;
-        relevance += fuzzyMatch(app.email, query) * 1.2;
-        relevance += fuzzyMatch(app.targetJobTitle || "", query);
-        relevance += fuzzyMatch(app.status, query) * 0.5;
-        relevance += fuzzyMatch(app.source, query) * 0.3;
+        
+        const nameMatch = fuzzyMatch(fullName, query);
+        if (nameMatch.matched) {
+          relevance += nameMatch.score * 2.0;
+          matchedFields.push("name");
+        }
 
-        if (relevance > 5) {
+        const emailMatch = fuzzyMatch(app.email, query);
+        if (emailMatch.matched) {
+          relevance += emailMatch.score * 1.5;
+          matchedFields.push("email");
+        }
+
+        const jobTitleMatch = fuzzyMatch(app.targetJobTitle || "", query);
+        if (jobTitleMatch.matched) {
+          relevance += jobTitleMatch.score * 1.2;
+          matchedFields.push("target job");
+        }
+
+        const statusMatch = fuzzyMatch(app.status, query);
+        if (statusMatch.matched) {
+          relevance += statusMatch.score * 0.7;
+          matchedFields.push("status");
+        }
+
+        const sourceMatch = fuzzyMatch(app.source, query);
+        if (sourceMatch.matched) {
+          relevance += sourceMatch.score * 0.5;
+          matchedFields.push("source");
+        }
+
+        if (relevance > 10) {
           results.push({
             id: app.id,
             type: "application",
@@ -274,23 +504,56 @@ export default function SearchPage() {
             badges: [app.status, app.source],
             link: `/dashboard/applications`,
             relevance,
+            matchedFields,
           });
         }
       });
     }
 
+    // Search Team Members
     if (hasPermission(currentUser, "canManageTeam")) {
       teamData.forEach((member: TeamMember) => {
+        const matchedFields: string[] = [];
         let relevance = 0;
         const fullName = `${member.firstName} ${member.lastName}`;
-        relevance += fuzzyMatch(fullName, query) * 1.5;
-        relevance += fuzzyMatch(member.email, query) * 1.2;
-        relevance += fuzzyMatch(member.role, query);
-        relevance += fuzzyMatch(member.title || "", query);
-        relevance += fuzzyMatch(member.department, query) * 0.5;
-        relevance += fuzzyMatch(member.status, query) * 0.3;
+        
+        const nameMatch = fuzzyMatch(fullName, query);
+        if (nameMatch.matched) {
+          relevance += nameMatch.score * 2.0;
+          matchedFields.push("name");
+        }
 
-        if (relevance > 5) {
+        const emailMatch = fuzzyMatch(member.email, query);
+        if (emailMatch.matched) {
+          relevance += emailMatch.score * 1.5;
+          matchedFields.push("email");
+        }
+
+        const roleMatch = fuzzyMatch(member.role, query);
+        if (roleMatch.matched) {
+          relevance += roleMatch.score * 1.2;
+          matchedFields.push("role");
+        }
+
+        const titleMatch = fuzzyMatch(member.title || "", query);
+        if (titleMatch.matched) {
+          relevance += titleMatch.score * 1.0;
+          matchedFields.push("title");
+        }
+
+        const deptMatch = fuzzyMatch(member.department, query);
+        if (deptMatch.matched) {
+          relevance += deptMatch.score * 0.8;
+          matchedFields.push("department");
+        }
+
+        const statusMatch = fuzzyMatch(member.status, query);
+        if (statusMatch.matched) {
+          relevance += statusMatch.score * 0.5;
+          matchedFields.push("status");
+        }
+
+        if (relevance > 10) {
           results.push({
             id: member.id,
             type: "team",
@@ -301,6 +564,7 @@ export default function SearchPage() {
             badges: [member.role, member.status],
             link: `/dashboard/team`,
             relevance,
+            matchedFields,
           });
         }
       });
@@ -308,7 +572,7 @@ export default function SearchPage() {
 
     return results.sort((a, b) => b.relevance - a.relevance);
   }, [
-    searchQuery,
+    debouncedQuery,
     currentUser,
     jobsData,
     candidatesData,
@@ -602,6 +866,11 @@ export default function SearchPage() {
                                 <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
                                   {result.description}
                                 </p>
+                                {result.matchedFields.length > 0 && (
+                                  <p className="text-xs text-muted-foreground mb-2 italic">
+                                    Matched in: {result.matchedFields.join(", ")}
+                                  </p>
+                                )}
                                 <div className="flex items-center gap-2 flex-wrap">
                                   {result.badges
                                     .slice(0, 4)

@@ -1,18 +1,34 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { User as UserIcon, Mail, Phone, Building, Shield, Bell, Lock, Eye, EyeOff, Upload } from "lucide-react";
-import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/lib/auth";
 import { authService } from "@/services/auth.service";
+import {
+  Bell,
+  Building,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Phone,
+  Shield,
+  Upload,
+  User as UserIcon,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function AccountPage() {
   const { user, isLoading, accessToken } = useAuth();
@@ -38,7 +54,7 @@ export default function AccountPage() {
         department: user.department || "",
         title: user.title || "",
       });
-      
+
       // Set avatar if available
       if (user.avatar) {
         setProfilePhoto(user.avatar);
@@ -46,7 +62,9 @@ export default function AccountPage() {
     }
   }, [user]);
 
-  const [profilePhoto, setProfilePhoto] = useState<string | undefined>(undefined);
+  const [profilePhoto, setProfilePhoto] = useState<string | undefined>(
+    undefined
+  );
   const [activeTab, setActiveTab] = useState("profile");
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
@@ -62,27 +80,18 @@ export default function AccountPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    applicationAlerts: true,
-    jobAlerts: false,
-    weeklyReports: true,
-    candidateUpdates: true,
-    systemUpdates: false,
-  });
-
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProfileLoading(true);
-    
+
     try {
       if (!accessToken) {
-        throw new Error('Not authenticated');
+        throw new Error("Not authenticated");
       }
 
       // Call API to update profile
       await authService.updateProfile(profileData, accessToken);
-      
+
       toast.success("Profile updated successfully!");
     } catch (error) {
       toast.error("Failed to update profile");
@@ -107,14 +116,17 @@ export default function AccountPage() {
 
     try {
       if (!accessToken) {
-        throw new Error('Not authenticated');
+        throw new Error("Not authenticated");
       }
 
       // Call API to change password
-      await authService.updatePassword({
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword,
-      }, accessToken);
+      await authService.updatePassword(
+        {
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        },
+        accessToken
+      );
 
       toast.success("Password changed successfully!");
       setPasswordData({
@@ -130,11 +142,6 @@ export default function AccountPage() {
     }
   };
 
-  const handleNotificationChange = (key: keyof typeof notifications) => {
-    setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
-    toast.success("Notification preferences updated!");
-  };
-
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -146,7 +153,7 @@ export default function AccountPage() {
     }
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith("image/")) {
       toast.error("Please upload an image file");
       return;
     }
@@ -156,11 +163,11 @@ export default function AccountPage() {
     try {
       // Convert to base64
       const reader = new FileReader();
-      
+
       reader.onloadend = async () => {
         try {
           const base64String = reader.result as string;
-          
+
           // Update profile with avatar
           if (!accessToken) {
             toast.error("Not authenticated");
@@ -168,13 +175,16 @@ export default function AccountPage() {
             return;
           }
 
-          await authService.updateProfile({ avatar: base64String }, accessToken);
-          
+          await authService.updateProfile(
+            { avatar: base64String },
+            accessToken
+          );
+
           // Update local state only after successful save
           setProfilePhoto(base64String);
           toast.success("Profile photo updated!");
         } catch (error) {
-          console.error('Photo upload error:', error);
+          console.error("Photo upload error:", error);
           toast.error("Failed to save profile photo");
         } finally {
           setIsPhotoUploading(false);
@@ -188,7 +198,7 @@ export default function AccountPage() {
 
       reader.readAsDataURL(file);
     } catch (error) {
-      console.error('Photo upload error:', error);
+      console.error("Photo upload error:", error);
       toast.error("Failed to upload profile photo");
       setIsPhotoUploading(false);
     }
@@ -201,13 +211,39 @@ export default function AccountPage() {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case "admin":
-        return <Badge className="bg-purple-600"><Shield className="h-3 w-3 mr-1" />Admin</Badge>;
+        return (
+          <Badge className="bg-purple-600">
+            <Shield className="h-3 w-3 mr-1" />
+            Admin
+          </Badge>
+        );
       case "recruiter":
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Recruiter</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="bg-blue-50 text-blue-700 border-blue-200"
+          >
+            Recruiter
+          </Badge>
+        );
       case "hiring_manager":
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Hiring Manager</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="bg-green-50 text-green-700 border-green-200"
+          >
+            Hiring Manager
+          </Badge>
+        );
       case "viewer":
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Viewer</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="bg-gray-50 text-gray-700 border-gray-200"
+          >
+            Viewer
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{role}</Badge>;
     }
@@ -235,9 +271,12 @@ export default function AccountPage() {
                   <UserIcon className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">Account Settings</h2>
+                  <h2 className="text-2xl font-bold text-foreground">
+                    Account Settings
+                  </h2>
                   <p className="text-muted-foreground">
-                    Manage your profile information, security settings, and preferences
+                    Manage your profile information, security settings, and
+                    preferences
                   </p>
                 </div>
               </div>
@@ -247,7 +286,10 @@ export default function AccountPage() {
               <CardContent className="pt-6">
                 <div className="flex items-start gap-6">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src={profilePhoto} alt={profileData.firstName} />
+                    <AvatarImage
+                      src={profilePhoto}
+                      alt={profileData.firstName}
+                    />
                     <AvatarFallback className="text-2xl">
                       {getInitials(profileData.firstName, profileData.lastName)}
                     </AvatarFallback>
@@ -259,7 +301,9 @@ export default function AccountPage() {
                       </h3>
                       {userRole && getRoleBadge(userRole)}
                     </div>
-                    <p className="text-muted-foreground mb-3">{profileData.title || 'No title set'}</p>
+                    <p className="text-muted-foreground mb-3">
+                      {profileData.title || "No title set"}
+                    </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Mail className="h-4 w-4" />
@@ -267,44 +311,17 @@ export default function AccountPage() {
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Phone className="h-4 w-4" />
-                        {profileData.phone || 'No phone set'}
+                        {profileData.phone || "No phone set"}
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Building className="h-4 w-4" />
-                        {profileData.department || 'No department set'}
+                        {profileData.department || "No department set"}
                       </div>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardDescription>Active Jobs</CardDescription>
-                  <CardTitle className="text-3xl">0</CardTitle>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardDescription>Placed Candidates</CardDescription>
-                  <CardTitle className="text-3xl">0</CardTitle>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardDescription>Pending Reviews</CardDescription>
-                  <CardTitle className="text-3xl">0</CardTitle>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardDescription>Emails Sent</CardDescription>
-                  <CardTitle className="text-3xl">0</CardTitle>
-                </CardHeader>
-              </Card>
-            </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="h-11 p-1 bg-card border border-border w-fit">
@@ -321,13 +338,6 @@ export default function AccountPage() {
                 >
                   <Lock className="h-4 w-4 mr-2" />
                   Security
-                </TabsTrigger>
-                <TabsTrigger
-                  value="notifications"
-                  className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                >
-                  <Bell className="h-4 w-4 mr-2" />
-                  Notifications
                 </TabsTrigger>
                 <TabsTrigger
                   value="permissions"
@@ -352,23 +362,34 @@ export default function AccountPage() {
                         <Label>Profile Photo</Label>
                         <div className="flex items-center gap-4">
                           <Avatar className="h-20 w-20">
-                            <AvatarImage src={profilePhoto} alt={profileData.firstName} />
+                            <AvatarImage
+                              src={profilePhoto}
+                              alt={profileData.firstName}
+                            />
                             <AvatarFallback className="text-xl">
-                              {getInitials(profileData.firstName, profileData.lastName)}
+                              {getInitials(
+                                profileData.firstName,
+                                profileData.lastName
+                              )}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <Label htmlFor="photo-upload" className="cursor-pointer">
-                              <Button 
-                                type="button" 
-                                variant="outline" 
-                                size="sm" 
+                            <Label
+                              htmlFor="photo-upload"
+                              className="cursor-pointer"
+                            >
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
                                 asChild
                                 disabled={isPhotoUploading}
                               >
                                 <span>
                                   <Upload className="h-4 w-4 mr-2" />
-                                  {isPhotoUploading ? 'Uploading...' : 'Change Photo'}
+                                  {isPhotoUploading
+                                    ? "Uploading..."
+                                    : "Change Photo"}
                                 </span>
                               </Button>
                             </Label>
@@ -395,7 +416,12 @@ export default function AccountPage() {
                           <Input
                             id="firstName"
                             value={profileData.firstName}
-                            onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
+                            onChange={(e) =>
+                              setProfileData({
+                                ...profileData,
+                                firstName: e.target.value,
+                              })
+                            }
                           />
                         </div>
                         <div className="space-y-2">
@@ -403,7 +429,12 @@ export default function AccountPage() {
                           <Input
                             id="lastName"
                             value={profileData.lastName}
-                            onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
+                            onChange={(e) =>
+                              setProfileData({
+                                ...profileData,
+                                lastName: e.target.value,
+                              })
+                            }
                           />
                         </div>
                       </div>
@@ -418,7 +449,8 @@ export default function AccountPage() {
                           className="bg-muted cursor-not-allowed"
                         />
                         <p className="text-xs text-muted-foreground">
-                          Email cannot be changed here. Contact your administrator to update.
+                          Email cannot be changed here. Contact your
+                          administrator to update.
                         </p>
                       </div>
 
@@ -427,7 +459,12 @@ export default function AccountPage() {
                         <Input
                           id="phone"
                           value={profileData.phone}
-                          onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                          onChange={(e) =>
+                            setProfileData({
+                              ...profileData,
+                              phone: e.target.value,
+                            })
+                          }
                         />
                       </div>
 
@@ -437,7 +474,12 @@ export default function AccountPage() {
                           <Input
                             id="department"
                             value={profileData.department}
-                            onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
+                            onChange={(e) =>
+                              setProfileData({
+                                ...profileData,
+                                department: e.target.value,
+                              })
+                            }
                           />
                         </div>
                         <div className="space-y-2">
@@ -445,13 +487,22 @@ export default function AccountPage() {
                           <Input
                             id="title"
                             value={profileData.title}
-                            onChange={(e) => setProfileData({ ...profileData, title: e.target.value })}
+                            onChange={(e) =>
+                              setProfileData({
+                                ...profileData,
+                                title: e.target.value,
+                              })
+                            }
                           />
                         </div>
                       </div>
 
                       <div className="flex justify-end gap-2 pt-4">
-                        <Button type="button" variant="outline" disabled={isProfileLoading}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={isProfileLoading}
+                        >
                           Cancel
                         </Button>
                         <Button type="submit" disabled={isProfileLoading}>
@@ -481,22 +532,35 @@ export default function AccountPage() {
                   <CardContent>
                     <form onSubmit={handlePasswordSubmit} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="currentPassword">Current Password</Label>
+                        <Label htmlFor="currentPassword">
+                          Current Password
+                        </Label>
                         <div className="relative">
                           <Input
                             id="currentPassword"
                             type={showCurrentPassword ? "text" : "password"}
                             value={passwordData.currentPassword}
-                            onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                            onChange={(e) =>
+                              setPasswordData({
+                                ...passwordData,
+                                currentPassword: e.target.value,
+                              })
+                            }
                           />
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                            onClick={() =>
+                              setShowCurrentPassword(!showCurrentPassword)
+                            }
                           >
-                            {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {showCurrentPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
                           </Button>
                         </div>
                       </div>
@@ -508,7 +572,12 @@ export default function AccountPage() {
                             id="newPassword"
                             type={showNewPassword ? "text" : "password"}
                             value={passwordData.newPassword}
-                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                            onChange={(e) =>
+                              setPasswordData({
+                                ...passwordData,
+                                newPassword: e.target.value,
+                              })
+                            }
                           />
                           <Button
                             type="button"
@@ -517,7 +586,11 @@ export default function AccountPage() {
                             className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                             onClick={() => setShowNewPassword(!showNewPassword)}
                           >
-                            {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {showNewPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
                           </Button>
                         </div>
                         <p className="text-xs text-muted-foreground">
@@ -526,29 +599,42 @@ export default function AccountPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                        <Label htmlFor="confirmPassword">
+                          Confirm New Password
+                        </Label>
                         <div className="relative">
                           <Input
                             id="confirmPassword"
                             type={showConfirmPassword ? "text" : "password"}
                             value={passwordData.confirmPassword}
-                            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                            onChange={(e) =>
+                              setPasswordData({
+                                ...passwordData,
+                                confirmPassword: e.target.value,
+                              })
+                            }
                           />
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            onClick={() =>
+                              setShowConfirmPassword(!showConfirmPassword)
+                            }
                           >
-                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
                           </Button>
                         </div>
                       </div>
 
                       <div className="flex justify-end gap-2 pt-4">
-                        <Button 
-                          type="button" 
+                        <Button
+                          type="button"
                           variant="outline"
                           disabled={isPasswordLoading}
                           onClick={() => {
@@ -573,112 +659,6 @@ export default function AccountPage() {
                         </Button>
                       </div>
                     </form>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="notifications" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notification Preferences</CardTitle>
-                    <CardDescription>
-                      Choose what notifications you want to receive
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="emailNotifications">Email Notifications</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Receive notifications via email
-                        </p>
-                      </div>
-                      <Switch
-                        id="emailNotifications"
-                        checked={notifications.emailNotifications}
-                        onCheckedChange={() => handleNotificationChange('emailNotifications')}
-                      />
-                    </div>
-
-                    <Separator />
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="applicationAlerts">Application Alerts</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Get notified when new applications are received
-                        </p>
-                      </div>
-                      <Switch
-                        id="applicationAlerts"
-                        checked={notifications.applicationAlerts}
-                        onCheckedChange={() => handleNotificationChange('applicationAlerts')}
-                      />
-                    </div>
-
-                    <Separator />
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="jobAlerts">Job Alerts</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Notifications about job postings and updates
-                        </p>
-                      </div>
-                      <Switch
-                        id="jobAlerts"
-                        checked={notifications.jobAlerts}
-                        onCheckedChange={() => handleNotificationChange('jobAlerts')}
-                      />
-                    </div>
-
-                    <Separator />
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="weeklyReports">Weekly Reports</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Receive weekly summary of your activities
-                        </p>
-                      </div>
-                      <Switch
-                        id="weeklyReports"
-                        checked={notifications.weeklyReports}
-                        onCheckedChange={() => handleNotificationChange('weeklyReports')}
-                      />
-                    </div>
-
-                    <Separator />
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="candidateUpdates">Candidate Updates</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Get notified about candidate status changes
-                        </p>
-                      </div>
-                      <Switch
-                        id="candidateUpdates"
-                        checked={notifications.candidateUpdates}
-                        onCheckedChange={() => handleNotificationChange('candidateUpdates')}
-                      />
-                    </div>
-
-                    <Separator />
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="systemUpdates">System Updates</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Important system and feature updates
-                        </p>
-                      </div>
-                      <Switch
-                        id="systemUpdates"
-                        checked={notifications.systemUpdates}
-                        onCheckedChange={() => handleNotificationChange('systemUpdates')}
-                      />
-                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -711,7 +691,7 @@ export default function AccountPage() {
                           <div className="h-2 w-2 rounded-full bg-green-500" />
                           Manage Profile
                         </div>
-                        
+
                         {/* Dynamic permissions from backend */}
                         {user?.permissions?.canManageClients && (
                           <div className="flex items-center gap-2 text-sm">
@@ -756,21 +736,23 @@ export default function AccountPage() {
                           </div>
                         )}
                       </div>
-                      
-                      {userRole === 'admin' && (
+
+                      {userRole === "admin" && (
                         <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
                           <p className="text-sm text-primary font-medium">
-                            🎉 As an admin, you have full access to all system features and permissions.
+                            🎉 As an admin, you have full access to all system
+                            features and permissions.
                           </p>
                         </div>
                       )}
-                      
+
                       <p className="text-xs text-muted-foreground mt-4">
-                        Your specific permissions are determined by your role and can be customized by your administrator.
+                        Your specific permissions are determined by your role
+                        and can be customized by your administrator.
                       </p>
                     </div>
 
-                    {userRole !== 'admin' && (
+                    {userRole !== "admin" && (
                       <>
                         <Separator />
 
@@ -782,7 +764,8 @@ export default function AccountPage() {
                                 Need Additional Access?
                               </p>
                               <p className="text-sm text-amber-700 mt-1">
-                                Contact your administrator if you need additional permissions or role changes.
+                                Contact your administrator if you need
+                                additional permissions or role changes.
                               </p>
                             </div>
                           </div>

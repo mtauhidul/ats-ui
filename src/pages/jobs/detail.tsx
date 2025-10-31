@@ -27,6 +27,14 @@ type JobWithExtras = Job & {
   skills?: string[];
 };
 
+// Helper function to normalize job data from backend (handle _id to id conversion)
+const normalizeJob = (job: any): JobWithExtras => {
+  return {
+    ...job,
+    id: job.id || job._id, // Handle both id and _id fields
+  };
+};
+
 export default function JobDetailPage() {
   const { jobId } = useParams();
   const [job, setJob] = useState<JobWithExtras | null>(null);
@@ -39,7 +47,7 @@ export default function JobDetailPage() {
         const response = await fetch(`${API_BASE_URL}/jobs/${jobId}`);
         const result = await response.json();
         const jobData = result.data || result;
-        setJob(jobData);
+        setJob(normalizeJob(jobData));
         setLoading(false);
       } catch (error) {
         console.error("Error fetching job:", error);

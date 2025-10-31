@@ -83,8 +83,8 @@ export interface Job extends BaseEntity {
   title: string;
   description: string;
   
-  // Relations (Database references - stored as IDs)
-  clientId: string; // Reference to Client collection
+  // Relations (Database references - can be either ID string or populated object)
+  clientId: string | { id?: string; _id?: string; companyName: string; logo?: string; website?: string; industry?: string };
   
   status: JobStatus;
   type: JobType;

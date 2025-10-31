@@ -1,11 +1,6 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
-import { IconInnerShadowTop } from "@tabler/icons-react";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { LogoIcon } from "@/components/icons/logo-icon";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +9,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
+import { Menu, X } from "lucide-react";
+import { useState } from "react";
+import { Link, Outlet, useLocation } from "react-router-dom";
 
 export default function Layout() {
   const location = useLocation();
@@ -29,9 +29,9 @@ export default function Layout() {
 
   const getInitials = (name: string) => {
     return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
       .toUpperCase();
   };
 
@@ -46,10 +46,11 @@ export default function Layout() {
         <nav className="container mx-auto px-4 lg:px-8">
           <div className="flex h-16 md:h-18 items-center justify-between">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary text-primary-foreground">
-                <IconInnerShadowTop className="h-5 w-5" stroke={1.5} />
-              </div>
+            <Link
+              to="/"
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <LogoIcon size={28} color="#71abbf" />
               <span className="text-lg md:text-xl font-semibold text-foreground">
                 YTFCS ATS
               </span>
@@ -87,10 +88,17 @@ export default function Layout() {
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="relative h-9 w-9 rounded-full p-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="relative h-9 w-9 rounded-full p-0"
+                      >
                         <Avatar className="h-9 w-9">
                           {user.avatar && (
-                            <AvatarImage src={user.avatar} alt={`${user.firstName} ${user.lastName}`} />
+                            <AvatarImage
+                              src={user.avatar}
+                              alt={`${user.firstName} ${user.lastName}`}
+                            />
                           )}
                           <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                             {getInitials(`${user.firstName} ${user.lastName}`)}
@@ -159,16 +167,16 @@ export default function Layout() {
               <div className="flex flex-col gap-2 pt-2 mt-2 border-t border-border/40">
                 {!user ? (
                   <>
-                    <Button 
-                      variant="ghost" 
-                      asChild 
+                    <Button
+                      variant="ghost"
+                      asChild
                       className="w-full justify-start"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Link to="/login">Sign In</Link>
                     </Button>
-                    <Button 
-                      asChild 
+                    <Button
+                      asChild
                       className="w-full"
                       onClick={() => setMobileMenuOpen(false)}
                     >
@@ -177,24 +185,24 @@ export default function Layout() {
                   </>
                 ) : (
                   <>
-                    <Button 
-                      variant="ghost" 
-                      asChild 
+                    <Button
+                      variant="ghost"
+                      asChild
                       className="w-full justify-start"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Link to="/dashboard">Dashboard</Link>
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      asChild 
+                    <Button
+                      variant="ghost"
+                      asChild
                       className="w-full justify-start"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Link to="/dashboard/account">Account</Link>
                     </Button>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       className="w-full justify-start"
                       onClick={() => {
                         setMobileMenuOpen(false);
@@ -221,9 +229,7 @@ export default function Layout() {
         <div className="container mx-auto px-4 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary">
-                <IconInnerShadowTop className="h-4 w-4" stroke={1.5} />
-              </div>
+              <LogoIcon size={28} color="#71abbf" />
               <span className="text-sm text-muted-foreground">
                 © 2025 YTFCS ATS. All rights reserved.
               </span>

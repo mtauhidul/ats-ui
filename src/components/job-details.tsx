@@ -1,19 +1,23 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Briefcase, MapPin, DollarSign, Users, Clock, CheckCircle2, XCircle, UserCheck, Building2, Calendar, Target, Edit, MoreVertical } from "lucide-react";
+import { ArrowLeft, Briefcase, MapPin, DollarSign, Users, Clock, CheckCircle2, XCircle, UserCheck, Building2, Calendar, Target, Edit, MoreVertical, Tag as IconTag, X as IconX, Check as IconCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { CandidateCard } from "@/components/candidate-card";
 import { JobCandidateDetails } from "@/components/job-candidate-details";
 import { EditJobModal } from "@/components/modals/edit-job-modal";
 import type { Job, UpdateJobRequest } from "@/types/job";
 import type { Candidate } from "@/types/candidate";
 import type { Client } from "@/types/client";
+import type { Category } from "@/types/category";
 import { cn } from "@/lib/utils";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
 interface JobDetailsProps {
   job: Job;
@@ -33,12 +37,20 @@ const statusColors = {
   cancelled: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
 } as const;
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+
 export function JobDetails({ job, candidates, clients, clientName, onBack, onCandidateClick, onEditJob }: JobDetailsProps) {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Category management state
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [openCategoryPopover, setOpenCategoryPopover] = useState(false);
 
   // Filter candidates for this job
   const jobCandidates = candidates.filter(candidate => {
@@ -64,6 +76,88 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
       onEditJob(id, data);
     }
     setIsEditModalOpen(false);
+  };
+
+  // Fetch all categories
+  const fetchCategories = useCallback(async () => {
+    try {
+      setIsLoadingCategories(true);
+      const response = await authenticatedFetch(`${API_BASE_URL}/categories`);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch categories");
+      }
+
+      const result = await response.json();
+      const categories = result.data || [];
+      // Ensure id field exists for compatibility
+      const categoriesWithId = categories.map((category: Category) => ({
+        ...category,
+        id: category.id || category._id,
+      }));
+      setAllCategories(categoriesWithId.filter((c: Category) => c.isActive));
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+      setAllCategories([]);
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  }, []);
+
+  // Load categories on mount
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Load job's categories when job data is available
+  useEffect(() => {
+    if (job && (job as any).categoryIds) {
+      const categoryIds = (job as any).categoryIds.map((id: any) =>
+        typeof id === "object" ? id._id || id.id || "" : id
+      );
+      setSelectedCategories(categoryIds);
+    }
+  }, [job]);
+
+  // Update job categories
+  const updateJobCategories = useCallback(
+    async (categoryIds: string[]) => {
+      if (!job?.id) return;
+
+      try {
+        const response = await authenticatedFetch(
+          `${API_BASE_URL}/jobs/${job.id}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ categoryIds }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to update categories");
+        }
+
+        // Call onEditJob to trigger refetch if available
+        if (onEditJob) {
+          onEditJob(job.id, { categoryIds } as any);
+        }
+      } catch (error) {
+        console.error("Failed to update job categories:", error);
+      }
+    },
+    [job?.id, onEditJob]
+  );
+
+  const toggleCategory = (categoryId: string) => {
+    const newCategories = selectedCategories.includes(categoryId)
+      ? selectedCategories.filter((id) => id !== categoryId)
+      : [...selectedCategories, categoryId];
+
+    setSelectedCategories(newCategories);
+    updateJobCategories(newCategories);
   };
 
   // If viewing candidate details
@@ -157,6 +251,83 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
           <span className="text-xs">•</span>
           <Calendar className="h-4 w-4" />
           <span className="text-sm">Posted {new Date(job.createdAt).toLocaleDateString()}</span>
+        </div>
+
+        {/* Categories Section */}
+        <div className="flex flex-wrap items-center gap-2">
+          <IconTag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          {selectedCategories.length === 0 ? (
+            <span className="text-sm text-muted-foreground">No categories</span>
+          ) : (
+            selectedCategories.map((categoryId) => {
+              const category = allCategories.find(
+                (c) => c.id === categoryId || (c as any)._id === categoryId
+              );
+              if (!category) return null;
+              return (
+                <Badge
+                  key={category.id || (category as any)._id}
+                  variant="secondary"
+                  style={{
+                    backgroundColor: `${category.color || "#3B82F6"}15`,
+                    color: category.color || "#3B82F6",
+                    borderColor: `${category.color || "#3B82F6"}40`,
+                  }}
+                  className="px-2 py-1 text-xs border"
+                >
+                  {category.name}
+                  <button
+                    onClick={() => toggleCategory(category.id || (category as any)._id)}
+                    className="ml-1.5 hover:opacity-70"
+                  >
+                    <IconX className="h-3 w-3" />
+                  </button>
+                </Badge>
+              );
+            })
+          )}
+          <Popover open={openCategoryPopover} onOpenChange={setOpenCategoryPopover}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-7 text-xs">
+                <IconTag className="h-3 w-3 mr-1" />
+                Add Category
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search categories..." />
+                <CommandEmpty>No categories found.</CommandEmpty>
+                <CommandGroup className="max-h-[200px] overflow-auto">
+                  {allCategories
+                    .filter((category) => category.isActive)
+                    .map((category) => (
+                      <CommandItem
+                        key={category.id || (category as any)._id}
+                        value={category.name}
+                        onSelect={() => {
+                          toggleCategory(category.id || (category as any)._id);
+                        }}
+                      >
+                        <div className="flex items-center gap-2 flex-1">
+                          <div
+                            className="h-3 w-3 rounded-full"
+                            style={{
+                              backgroundColor: category.color || "#3B82F6",
+                            }}
+                          />
+                          <span>{category.name}</span>
+                        </div>
+                        {selectedCategories.includes(
+                          category.id || (category as any)._id
+                        ) && (
+                          <IconCheck className="h-4 w-4 text-primary" />
+                        )}
+                      </CommandItem>
+                    ))}
+                </CommandGroup>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 

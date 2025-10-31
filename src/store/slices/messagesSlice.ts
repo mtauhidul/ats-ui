@@ -7,6 +7,8 @@ import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
+export type MessageStatus = 'sending' | 'sent' | 'failed' | 'seen';
+
 export interface Message {
   id: string;
   conversationId: string;
@@ -21,6 +23,8 @@ export interface Message {
   message: string;
   read: boolean;
   sentAt: string;
+  status?: MessageStatus; // Frontend-only field for optimistic UI
+  tempId?: string; // Temporary ID for optimistic messages
 }
 
 export interface Conversation {
@@ -56,22 +60,35 @@ export const fetchMessages = createAsyncThunk("messages/fetchAll", async () => {
   const response = await authenticatedFetch(`${API_BASE_URL}/messages`);
   if (!response.ok) throw new Error("Failed to fetch messages");
   const result = await response.json();
-  return result.data?.messages || result.data || result;
+  // Backend returns {status: "success", data: {messages: [], conversations: [], total: n}}
+  return result.data || result;
 });
 
 export const sendMessage = createAsyncThunk(
   "messages/send",
   async (message: Omit<Message, "id" | "sentAt">) => {
-    const response = await authenticatedFetch(`${API_BASE_URL}/messages`, {
-      method: "POST",
-      body: JSON.stringify({
-        ...message,
-        sentAt: new Date().toISOString(),
-      }),
-    });
-    if (!response.ok) throw new Error("Failed to send message");
-    const result = await response.json();
-    return result.data || result;
+    try {
+      const response = await authenticatedFetch(`${API_BASE_URL}/messages`, {
+        method: "POST",
+        body: JSON.stringify({
+          ...message,
+          sentAt: new Date().toISOString(),
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Send message failed:', response.status, errorData);
+        throw new Error(errorData.message || "Failed to send message");
+      }
+      
+      const result = await response.json();
+      console.log('✅ Send message response:', result);
+      return result.data || result;
+    } catch (error) {
+      console.error('❌ Send message error:', error);
+      throw error;
+    }
   }
 );
 
@@ -110,6 +127,79 @@ const messagesSlice = createSlice({
     ) => {
       state.currentConversation = action.payload;
     },
+    // Optimistic update: add message immediately with 'sending' status
+    addOptimisticMessage: (state, action: PayloadAction<Message>) => {
+      const optimisticMsg = { ...action.payload, status: 'sending' as MessageStatus };
+
+      // Add to current conversation immediately
+      if (state.currentConversation &&
+          state.currentConversation.id === optimisticMsg.conversationId) {
+        state.currentConversation.messages.push(optimisticMsg);
+        state.currentConversation.lastMessage = optimisticMsg.message;
+        state.currentConversation.lastMessageTime = optimisticMsg.sentAt;
+      }
+
+      // Update conversation in list
+      const convIndex = state.conversations.findIndex(
+        c => c.id === optimisticMsg.conversationId
+      );
+      if (convIndex !== -1) {
+        state.conversations[convIndex].lastMessage = optimisticMsg.message;
+        state.conversations[convIndex].lastMessageTime = optimisticMsg.sentAt;
+        state.conversations[convIndex].messages.push(optimisticMsg);
+
+        // Move to top
+        const conv = state.conversations.splice(convIndex, 1)[0];
+        state.conversations.unshift(conv);
+      }
+    },
+    // Update message status (sent, failed, seen)
+    updateMessageStatus: (
+      state,
+      action: PayloadAction<{ tempId: string; status: MessageStatus; realId?: string }>
+    ) => {
+      const { tempId, status, realId } = action.payload;
+
+      // Update in current conversation
+      if (state.currentConversation) {
+        const msgIndex = state.currentConversation.messages.findIndex(
+          m => m.tempId === tempId || m.id === tempId
+        );
+        if (msgIndex !== -1) {
+          state.currentConversation.messages[msgIndex].status = status;
+          if (realId) {
+            state.currentConversation.messages[msgIndex].id = realId;
+          }
+        }
+      }
+
+      // Update in conversations list
+      state.conversations.forEach(conv => {
+        const msgIndex = conv.messages.findIndex(
+          m => m.tempId === tempId || m.id === tempId
+        );
+        if (msgIndex !== -1) {
+          conv.messages[msgIndex].status = status;
+          if (realId) {
+            conv.messages[msgIndex].id = realId;
+          }
+        }
+      });
+    },
+    // Remove failed message (for retry)
+    removeOptimisticMessage: (state, action: PayloadAction<string>) => {
+      const tempId = action.payload;
+
+      if (state.currentConversation) {
+        state.currentConversation.messages = state.currentConversation.messages.filter(
+          m => m.tempId !== tempId
+        );
+      }
+
+      state.conversations.forEach(conv => {
+        conv.messages = conv.messages.filter(m => m.tempId !== tempId);
+      });
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -120,63 +210,121 @@ const messagesSlice = createSlice({
       })
       .addCase(
         fetchMessages.fulfilled,
-        (state, action: PayloadAction<Message[]>) => {
+        (state, action: PayloadAction<any>) => {
           state.isLoading = false;
-          state.messages = action.payload;
-          // Build conversations from messages
-          state.conversations = buildConversations(action.payload);
+          // Backend returns {messages: [], conversations: []} already processed
+          const messages = (action.payload.messages || []).map((msg: any) => ({
+            ...msg,
+            status: msg.read ? 'seen' : 'sent', // Set default status based on read status
+          }));
+          const conversations = (action.payload.conversations || []).map((conv: any) => ({
+            ...conv,
+            messages: conv.messages.map((msg: any) => ({
+              ...msg,
+              status: msg.read ? 'seen' : 'sent',
+            })),
+          }));
+
+          state.messages = messages;
+          state.conversations = conversations;
+
+          // Update current conversation if it exists
+          if (state.currentConversation) {
+            const updatedConv = state.conversations.find(
+              c => c.id === state.currentConversation?.id
+            );
+            if (updatedConv) {
+              state.currentConversation = updatedConv;
+            }
+          }
         }
       )
       .addCase(fetchMessages.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to fetch messages";
       })
-      // Send message
+      // Send message - just update status from 'sending' to 'sent'
       .addCase(
         sendMessage.fulfilled,
         (state, action: PayloadAction<Message>) => {
-          state.messages.push(action.payload);
-          state.conversations = buildConversations(state.messages);
+          // The message was already added optimistically, just update its status
+          const newMessage = action.payload;
+          state.messages.push(newMessage);
+
+          // Note: The optimistic message is already in the UI
+          // We just need to update its status and real ID
+          // This will be handled by the component dispatching updateMessageStatus
+        }
+      )
+      .addCase(
+        sendMessage.rejected,
+        (state, action) => {
+          // Mark the optimistic message as failed
+          // This will be handled by the component dispatching updateMessageStatus with 'failed'
         }
       )
       // Mark as read
       .addCase(
         markMessageAsRead.fulfilled,
         (state, action: PayloadAction<Message>) => {
+          const updatedMessage = action.payload;
           const index = state.messages.findIndex(
-            (m) => m.id === action.payload.id
+            (m) => m.id === updatedMessage.id
           );
           if (index !== -1) {
-            state.messages[index] = action.payload;
+            state.messages[index] = updatedMessage;
           }
-          state.conversations = buildConversations(state.messages);
+          // Update in current conversation
+          if (state.currentConversation) {
+            const msgIndex = state.currentConversation.messages.findIndex(
+              m => m.id === updatedMessage.id
+            );
+            if (msgIndex !== -1) {
+              state.currentConversation.messages[msgIndex] = updatedMessage;
+            }
+          }
+          // Note: Marking as read doesn't need to rebuild conversations
         }
       )
       // Delete message
       .addCase(
         deleteMessage.fulfilled,
         (state, action: PayloadAction<string>) => {
+          const deletedId = action.payload;
           state.messages = state.messages.filter(
-            (m) => m.id !== action.payload
+            (m) => m.id !== deletedId
           );
-          state.conversations = buildConversations(state.messages);
+          // Remove from current conversation
+          if (state.currentConversation) {
+            state.currentConversation.messages = state.currentConversation.messages.filter(
+              m => m.id !== deletedId
+            );
+          }
+          // Note: Should refetch to properly update conversations list
         }
       );
   },
 });
 
 // Helper function to build conversations from messages
-function buildConversations(messages: Message[]): Conversation[] {
+function buildConversations(messages: Message[], currentUserId?: string): Conversation[] {
   const conversationMap = new Map<string, Conversation>();
 
   messages.forEach((msg) => {
     if (!conversationMap.has(msg.conversationId)) {
+      // Determine who the OTHER person is (not the current user)
+      const isCurrentUserSender = currentUserId && msg.senderId === currentUserId;
+      const participantId = isCurrentUserSender ? msg.recipientId : msg.senderId;
+      const participantName = isCurrentUserSender ? msg.recipientName : msg.senderName;
+      const participantAvatar = isCurrentUserSender ? msg.recipientAvatar : msg.senderAvatar;
+      const participantRole = isCurrentUserSender ? msg.recipientRole : msg.senderRole;
+
       conversationMap.set(msg.conversationId, {
         id: msg.conversationId,
-        participantId: msg.recipientId,
-        participantName: msg.recipientName,
-        participantAvatar: msg.recipientAvatar,
-        participantRole: msg.recipientRole,
+        participantId,
+        participantName,
+        participantAvatar,
+        participantRole,
         lastMessage: msg.message,
         lastMessageTime: msg.sentAt,
         unreadCount: 0,
@@ -192,7 +340,8 @@ function buildConversations(messages: Message[]): Conversation[] {
       conversation.lastMessageTime = msg.sentAt;
     }
 
-    if (!msg.read) {
+    // Only count unread messages that were sent BY the current user (not read by other person)
+    if (!msg.read && currentUserId && msg.senderId === currentUserId) {
       conversation.unreadCount++;
     }
   });
@@ -204,5 +353,10 @@ function buildConversations(messages: Message[]): Conversation[] {
   );
 }
 
-export const { setCurrentConversation } = messagesSlice.actions;
+export const {
+  setCurrentConversation,
+  addOptimisticMessage,
+  updateMessageStatus,
+  removeOptimisticMessage,
+} = messagesSlice.actions;
 export default messagesSlice.reducer;

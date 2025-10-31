@@ -26,6 +26,14 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api"
 // Extended type to handle locationType field from API
 type JobWithLocationType = Job & { locationType?: string };
 
+// Helper function to normalize job data from backend (handle _id to id conversion)
+const normalizeJob = (job: any): JobWithLocationType => {
+  return {
+    ...job,
+    id: job.id || job._id, // Handle both id and _id fields
+  };
+};
+
 export default function JobsPage() {
   const [jobs, setJobs] = useState<JobWithLocationType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,10 +58,13 @@ export default function JobsPage() {
       
       const result = await response.json();
       const jobsData = result.data?.jobs || result.data || result;
-      
-      // Ensure jobsData is an array before filtering
+
+      // Ensure jobsData is an array before filtering and normalizing
       if (Array.isArray(jobsData)) {
-        setJobs(jobsData.filter((job: Job) => job.status === "open"));
+        const normalizedJobs = jobsData
+          .filter((job: Job) => job.status === "open")
+          .map(normalizeJob);
+        setJobs(normalizedJobs);
       } else {
         console.error('Jobs data is not an array:', jobsData);
         setJobs([]);

@@ -1,24 +1,3 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  Activity,
-  AlertTriangle,
-  Clock,
-  Database,
-  Mail,
-  MoreVertical,
-  Pause,
-  Play,
-  Plus,
-  RefreshCw,
-  Shield,
-  Trash2,
-  XCircle,
-  Zap,
-  Server,
-  CheckCircle2,
-  TrendingUp,
-} from "lucide-react";
-import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,47 +24,64 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Switch } from "@/components/ui/switch";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import {
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  Clock,
+  Mail,
+  MoreVertical,
+  Pause,
+  Play,
+  Plus,
+  RefreshCw,
+  Server,
+  Shield,
+  Trash2,
+  Users,
+  Zap,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import { EmailConnectionDialog } from "./email-connection-dialog";
 
 interface EmailAccount {
-  id: string;
-  provider: string;
-  username: string;
-  server?: string;
-  port?: number;
-  automationEnabled: boolean;
+  _id: string;
+  name: string;
+  email: string;
+  provider: "gmail" | "outlook" | "custom";
+  imapHost: string;
+  imapPort: number;
+  imapUser: string;
+  imapTls: boolean;
   isActive: boolean;
+  autoProcessResumes: boolean;
+  defaultApplicationStatus: string;
   lastChecked?: string;
-  totalProcessed: number;
-  totalImported: number;
-  lastError?: string;
+  createdBy?: { firstName?: string; lastName?: string; email?: string };
   createdAt: string;
+  updatedAt: string;
 }
 
 interface AutomationStatus {
-  isRunning: boolean;
-  checkInterval: number;
-  activeProcesses: Array<{
-    accountId: string;
-    status: string;
-    totalEmails?: number;
-    processedEmails?: number;
-  }>;
-  stats: {
-    totalAccounts: number;
-    activeAccounts: number;
-    totalProcessed: number;
-    totalImported: number;
-    recentImports: number;
-    recentErrors: number;
+  enabled: boolean;
+  running: boolean;
+  stats?: {
+    totalEmailsProcessed: number;
+    totalCandidatesCreated: number;
+    totalErrors: number;
+    lastRunAt: string | null;
+    lastRunDuration: number;
   };
 }
 
 export function EmailMonitoringSettings() {
-  const [automationStatus, setAutomationStatus] = useState<AutomationStatus | null>(null);
+  const [automationStatus, setAutomationStatus] =
+    useState<AutomationStatus | null>(null);
   const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -163,24 +159,32 @@ export function EmailMonitoringSettings() {
   // Fetch automation status and accounts
   const fetchData = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "";
-      const apiKey = import.meta.env.VITE_API_KEY || "";
-
       const [statusResponse, accountsResponse] = await Promise.all([
-        fetch(`${apiUrl}/email/automation/status`, {
-          headers: { "X-API-KEY": apiKey },
-        }),
-        fetch(`${apiUrl}/email/automation/accounts`, {
-          headers: { "X-API-KEY": apiKey },
-        }),
+        authenticatedFetch("/email-automation/status"),
+        authenticatedFetch("/email-accounts"),
       ]);
 
       if (statusResponse.ok && accountsResponse.ok) {
         const statusData = await statusResponse.json();
         const accountsData = await accountsResponse.json();
 
-        setAutomationStatus(statusData.data);
-        setEmailAccounts(accountsData.data);
+        console.log("[Email Monitoring] Status data:", statusData);
+        console.log("[Email Monitoring] Accounts data:", accountsData);
+        console.log(
+          "[Email Monitoring] Accounts data.data:",
+          accountsData.data
+        );
+        console.log(
+          "[Email Monitoring] Accounts data.data.emailAccounts:",
+          accountsData.data?.emailAccounts
+        );
+
+        setAutomationStatus(statusData.data || null);
+        // Backend returns { data: { emailAccounts: [...], pagination: {...} } }
+        const accounts =
+          accountsData.data?.emailAccounts || accountsData.data || [];
+        console.log("[Email Monitoring] Setting emailAccounts to:", accounts);
+        setEmailAccounts(Array.isArray(accounts) ? accounts : []);
       } else {
         if (statusResponse.status === 429 || accountsResponse.status === 429) {
           toast.error("Rate limit exceeded. Please wait a moment.");
@@ -199,13 +203,9 @@ export function EmailMonitoringSettings() {
   const startAutomation = async () => {
     setActionLoading("start");
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ""}/email/automation/start`,
-        {
-          method: "POST",
-          headers: { "X-API-KEY": import.meta.env.VITE_API_KEY || "" },
-        }
-      );
+      const response = await authenticatedFetch("/email-automation/enable", {
+        method: "POST",
+      });
 
       if (response.ok) {
         toast.success("Email monitoring started successfully");
@@ -225,13 +225,9 @@ export function EmailMonitoringSettings() {
   const stopAutomation = async () => {
     setActionLoading("stop");
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ""}/email/automation/stop`,
-        {
-          method: "POST",
-          headers: { "X-API-KEY": import.meta.env.VITE_API_KEY || "" },
-        }
-      );
+      const response = await authenticatedFetch("/email-automation/disable", {
+        method: "POST",
+      });
 
       if (response.ok) {
         toast.success("Email monitoring stopped");
@@ -255,13 +251,12 @@ export function EmailMonitoringSettings() {
   ) => {
     setActionLoading(`toggle-${accountId}`);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ""}/email/automation/accounts/${accountId}`,
+      const response = await authenticatedFetch(
+        `/email-accounts/${accountId}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "X-API-KEY": import.meta.env.VITE_API_KEY || "",
           },
           body: JSON.stringify({ automationEnabled: enabled }),
         }
@@ -283,30 +278,27 @@ export function EmailMonitoringSettings() {
     }
   };
 
-  // Force check account
-  const forceCheckAccount = async (accountId: string) => {
-    setActionLoading(`check-${accountId}`);
+  // Force check all accounts - triggers email automation job manually
+  const forceCheckAllAccounts = async () => {
+    setActionLoading("check-all");
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ""}/email/automation/accounts/${accountId}/check`,
-        {
-          method: "POST",
-          headers: { "X-API-KEY": import.meta.env.VITE_API_KEY || "" },
-        }
-      );
+      const response = await authenticatedFetch("/email-automation/trigger", {
+        method: "POST",
+      });
 
       if (response.ok) {
         const result = await response.json();
-        toast.success(
-          `Check completed: ${result.data.imported || 0} candidates imported`
-        );
-        await fetchData();
+        toast.success(result.message || "Email check triggered successfully");
+        // Wait a bit for processing to complete, then refresh data
+        setTimeout(async () => {
+          await fetchData();
+        }, 2000);
       } else {
-        throw new Error("Failed to check account");
+        throw new Error("Failed to trigger email check");
       }
     } catch (err) {
-      console.error("Error checking account:", err);
-      toast.error("Failed to check account");
+      console.error("Error triggering email check:", err);
+      toast.error("Failed to trigger email check");
     } finally {
       setActionLoading(null);
     }
@@ -316,11 +308,10 @@ export function EmailMonitoringSettings() {
   const deleteAccount = async (accountId: string) => {
     setActionLoading(`delete-${accountId}`);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ""}/email/automation/accounts/${accountId}`,
+      const response = await authenticatedFetch(
+        `/email-accounts/${accountId}`,
         {
           method: "DELETE",
-          headers: { "X-API-KEY": import.meta.env.VITE_API_KEY || "" },
         }
       );
 
@@ -389,7 +380,7 @@ export function EmailMonitoringSettings() {
   return (
     <div className="space-y-6">
       {/* Status Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -398,8 +389,13 @@ export function EmailMonitoringSettings() {
                   System Status
                 </p>
                 <StatusIndicator
-                  status={automationStatus?.isRunning ? "running" : "stopped"}
+                  status={automationStatus?.enabled ? "running" : "stopped"}
                 />
+                {automationStatus?.enabled && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Checking emails every 5 minutes
+                  </p>
+                )}
               </div>
               <div className="rounded-full bg-primary/10 p-3">
                 <Activity className="h-5 w-5 text-primary" />
@@ -413,14 +409,18 @@ export function EmailMonitoringSettings() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
-                  Active Accounts
+                  Connected Accounts
                 </p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-bold">
-                    {automationStatus?.stats.activeAccounts || 0}
+                    {emailAccounts.length}
                   </span>
                   <span className="text-sm text-muted-foreground">
-                    / {automationStatus?.stats.totalAccounts || 0}
+                    {
+                      emailAccounts.filter((acc) => acc.autoProcessResumes)
+                        .length
+                    }{" "}
+                    active
                   </span>
                 </div>
               </div>
@@ -430,28 +430,145 @@ export function EmailMonitoringSettings() {
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        <Card>
+      {/* How It Works Info */}
+      {automationStatus?.enabled && emailAccounts.length > 0 && (
+        <Card className="bg-blue-50 border-blue-200">
           <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Total Processed
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold">
-                    {automationStatus?.stats.totalProcessed || 0}
-                  </span>
-                  <TrendingUp className="h-4 w-4 text-emerald-500" />
-                </div>
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-blue-100 p-2">
+                <Activity className="h-4 w-4 text-blue-600" />
               </div>
-              <div className="rounded-full bg-blue-500/10 p-3">
-                <Database className="h-5 w-5 text-blue-500" />
+              <div className="flex-1">
+                <h4 className="font-semibold text-blue-900 mb-1">
+                  Email Monitoring Active
+                </h4>
+                <p className="text-sm text-blue-700">
+                  The system is automatically checking your email accounts for
+                  new candidate applications. When a new email with a resume is
+                  detected, it will be automatically processed and added to your
+                  applications list.
+                </p>
+                <div className="mt-3 text-xs text-blue-600 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                    <span>Emails are checked every 5 minutes</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                    <span>
+                      Last checked times are updated below for each account
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                    <span>
+                      Use the refresh button on each account to check
+                      immediately
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
-      </div>
+      )}
+
+      {/* Automation Stats */}
+      {automationStatus?.stats && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Automation Statistics
+            </CardTitle>
+            <CardDescription>
+              Performance metrics for email automation engine
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4">
+              {/* Emails Processed */}
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Emails Processed
+                    </p>
+                    <p className="text-2xl font-bold mt-1">
+                      {automationStatus.stats.totalEmailsProcessed}
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-blue-500/10 p-3">
+                    <Mail className="h-5 w-5 text-blue-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Candidates Created */}
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Applications Created
+                    </p>
+                    <p className="text-2xl font-bold mt-1 text-emerald-600">
+                      {automationStatus.stats.totalCandidatesCreated}
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-emerald-500/10 p-3">
+                    <Users className="h-5 w-5 text-emerald-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Errors */}
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Total Errors
+                    </p>
+                    <p className="text-2xl font-bold mt-1 text-amber-600">
+                      {automationStatus.stats.totalErrors}
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-amber-500/10 p-3">
+                    <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Last Run */}
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Last Run
+                    </p>
+                    <p className="text-sm font-bold mt-1">
+                      {automationStatus.stats.lastRunAt
+                        ? new Date(
+                            automationStatus.stats.lastRunAt
+                          ).toLocaleTimeString()
+                        : "Never"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {automationStatus.stats.lastRunDuration
+                        ? `${automationStatus.stats.lastRunDuration}s duration`
+                        : "No data"}
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-purple-500/10 p-3">
+                    <Clock className="h-5 w-5 text-purple-600" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Control Panel */}
       <Card>
@@ -481,7 +598,7 @@ export function EmailMonitoringSettings() {
                 Refresh
               </Button>
 
-              {automationStatus?.isRunning ? (
+              {automationStatus?.enabled ? (
                 <AlertDialog
                   open={showStopDialog}
                   onOpenChange={setShowStopDialog}
@@ -530,7 +647,9 @@ export function EmailMonitoringSettings() {
                   disabled={actionLoading === "start"}
                 >
                   <Play className="h-4 w-4 mr-2" />
-                  {actionLoading === "start" ? "Starting..." : "Start Monitoring"}
+                  {actionLoading === "start"
+                    ? "Starting..."
+                    : "Start Monitoring"}
                 </Button>
               )}
             </div>
@@ -551,14 +670,29 @@ export function EmailMonitoringSettings() {
                 Manage email accounts for automated candidate monitoring
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAddAccountDialog(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Account
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => forceCheckAllAccounts()}
+                disabled={actionLoading === "check-all"}
+              >
+                <RefreshCw
+                  className={`h-4 w-4 mr-2 ${
+                    actionLoading === "check-all" ? "animate-spin" : ""
+                  }`}
+                />
+                Check Now
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddAccountDialog(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Account
+              </Button>
+            </div>
           </div>
         </CardHeader>
 
@@ -583,7 +717,7 @@ export function EmailMonitoringSettings() {
           ) : (
             <div className="space-y-4">
               {emailAccounts.map((account) => (
-                <Card key={account.id} className="border-2">
+                <Card key={account._id} className="border-2">
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4 flex-1 min-w-0">
@@ -594,20 +728,14 @@ export function EmailMonitoringSettings() {
                         <div className="flex-1 min-w-0 space-y-3">
                           <div>
                             <h4 className="font-semibold text-base truncate">
-                              {account.username}
+                              {account.email}
                             </h4>
                             <div className="flex flex-wrap items-center gap-2 mt-2">
                               <ProviderBadge provider={account.provider} />
-                              {account.automationEnabled && (
+                              {account.autoProcessResumes && (
                                 <Badge className="bg-emerald-500">
                                   <Zap className="h-3 w-3 mr-1" />
                                   Auto-Enabled
-                                </Badge>
-                              )}
-                              {account.lastError && (
-                                <Badge variant="destructive">
-                                  <AlertTriangle className="h-3 w-3 mr-1" />
-                                  Error
                                 </Badge>
                               )}
                             </div>
@@ -625,50 +753,29 @@ export function EmailMonitoringSettings() {
                                   : "Never"}
                               </span>
                             </div>
-
-                            {account.lastError && (
-                              <div className="flex items-start gap-2 text-destructive">
-                                <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                <span className="text-sm">{account.lastError}</span>
-                              </div>
-                            )}
-
-                            <div className="flex items-center gap-4 pt-2">
-                              <div className="flex items-center gap-2">
-                                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                                <span>
-                                  <strong>{account.totalProcessed}</strong> processed
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Database className="h-4 w-4 text-blue-500" />
-                                <span>
-                                  <strong>{account.totalImported}</strong> imported
-                                </span>
-                              </div>
-                            </div>
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0 ml-4">
                         <Switch
-                          checked={account.automationEnabled}
-                          disabled={actionLoading === `toggle-${account.id}`}
+                          checked={account.autoProcessResumes}
+                          disabled={actionLoading === `toggle-${account._id}`}
                           onCheckedChange={(checked) =>
-                            toggleAccountAutomation(account.id, checked)
+                            toggleAccountAutomation(account._id, checked)
                           }
                         />
 
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => forceCheckAccount(account.id)}
-                          disabled={actionLoading === `check-${account.id}`}
+                          onClick={() => forceCheckAllAccounts()}
+                          disabled={actionLoading === "check-all"}
+                          title="Force check all email accounts now"
                         >
                           <RefreshCw
                             className={`h-4 w-4 ${
-                              actionLoading === `check-${account.id}`
+                              actionLoading === "check-all"
                                 ? "animate-spin"
                                 : ""
                             }`}
@@ -700,21 +807,22 @@ export function EmailMonitoringSettings() {
                                   </AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to remove{" "}
-                                    <strong>{account.username}</strong>? This will
-                                    stop all automation for this account and cannot
-                                    be undone.
+                                    <strong>{account.email}</strong>? This will
+                                    stop all automation for this account and
+                                    cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => deleteAccount(account.id)}
+                                    onClick={() => deleteAccount(account._id)}
                                     disabled={
-                                      actionLoading === `delete-${account.id}`
+                                      actionLoading === `delete-${account._id}`
                                     }
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
-                                    {actionLoading === `delete-${account.id}` ? (
+                                    {actionLoading ===
+                                    `delete-${account._id}` ? (
                                       <>
                                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                                         Removing...
@@ -740,63 +848,6 @@ export function EmailMonitoringSettings() {
           )}
         </CardContent>
       </Card>
-
-      {/* Active Processes */}
-      {automationStatus?.activeProcesses &&
-        automationStatus.activeProcesses.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-amber-500" />
-                Active Processes
-              </CardTitle>
-              <CardDescription>
-                Real-time monitoring of email processing tasks
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent>
-              <div className="space-y-3">
-                {automationStatus.activeProcesses.map((process, index) => (
-                  <div
-                    key={index}
-                    className="p-4 border-2 border-amber-200 bg-amber-50 rounded-lg"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="h-2 w-2 bg-amber-500 rounded-full animate-pulse" />
-                        <span className="font-medium truncate">
-                          {emailAccounts.find(
-                            (acc) => acc.id === process.accountId
-                          )?.username || `Account ${process.accountId}`}
-                        </span>
-                        <Badge variant="outline" className="bg-white">
-                          {process.status}
-                        </Badge>
-                      </div>
-
-                      {process.totalEmails &&
-                        process.processedEmails !== undefined && (
-                          <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                            <span className="text-sm font-mono text-muted-foreground">
-                              {process.processedEmails} / {process.totalEmails}
-                            </span>
-                            <Progress
-                              value={
-                                (process.processedEmails / process.totalEmails) *
-                                100
-                              }
-                              className="w-24"
-                            />
-                          </div>
-                        )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
       {/* Email Connection Dialog */}
       <EmailConnectionDialog
