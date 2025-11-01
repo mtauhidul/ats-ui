@@ -337,11 +337,11 @@ export function ClientDetails({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-4 lg:px-6 py-4 border-b">
-        <div className="flex items-center justify-between mb-4">
+      <div className="px-3 md:px-4 lg:px-6 py-3 border-b">
+        <div className="flex items-center justify-between mb-3">
           <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Clients
+            <ArrowLeft className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Back to Clients</span>
           </Button>
           <div className="flex gap-2">
             <Button
@@ -364,19 +364,19 @@ export function ClientDetails({
           </div>
         </div>
 
-        <div className="flex items-start gap-4">
-          <Avatar className="h-16 w-16 rounded-lg">
+        <div className="flex items-start gap-3">
+          <Avatar className="h-14 w-14 md:h-16 md:w-16 rounded-lg">
             <AvatarImage src={client.logo} alt={client.companyName} />
             <AvatarFallback className="rounded-lg">
-              <Building2 className="h-8 w-8" />
+              <Building2 className="h-7 w-7 md:h-8 md:w-8" />
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold mb-1">{client.companyName}</h1>
-            <p className="text-muted-foreground mb-3">
+            <h1 className="text-xl md:text-2xl font-bold mb-1">{client.companyName}</h1>
+            <p className="text-sm text-muted-foreground mb-2">
               {client.description || "No description available"}
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               <Badge variant="outline" className={statusColors[client.status]}>
                 {client.status.replace("_", " ")}
               </Badge>
@@ -522,38 +522,49 @@ export function ClientDetails({
           onValueChange={setActiveTab}
           className="px-4 lg:px-6 py-6"
         >
-          <TabsList className="h-11 p-1 bg-card border border-border w-fit">
-            <TabsTrigger
-              value="overview"
-              className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger
-              value="jobs"
-              className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-            >
-              Jobs ({clientJobs.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="contacts"
-              className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-            >
-              Contacts ({client.contacts.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="communications"
-              className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-            >
-              Communications ({client.communicationNotes?.length || 0})
-            </TabsTrigger>
-            <TabsTrigger
-              value="activity"
-              className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-            >
-              Activity ({client.activityHistory?.length || 0})
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <TabsList className="h-11 p-1 bg-card border border-border w-full md:w-fit inline-flex">
+              <TabsTrigger
+                value="overview"
+                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+              >
+                <Building2 className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Overview</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="jobs"
+                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+              >
+                <Briefcase className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Jobs ({clientJobs.length})</span>
+                <span className="sm:hidden">({clientJobs.length})</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="contacts"
+                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+              >
+                <UsersIcon className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Contacts ({client.contacts.length})</span>
+                <span className="sm:hidden">({client.contacts.length})</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="communications"
+                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+              >
+                <MessageSquare className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Communications ({client.communicationNotes?.length || 0})</span>
+                <span className="sm:hidden">({client.communicationNotes?.length || 0})</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="activity"
+                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+              >
+                <Activity className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Activity ({client.activityHistory?.length || 0})</span>
+                <span className="sm:hidden">({client.activityHistory?.length || 0})</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" className="mt-6 space-y-6">
             <div className="grid md:grid-cols-2 gap-6">

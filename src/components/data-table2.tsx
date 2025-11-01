@@ -1790,7 +1790,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
         </div>
 
-        <DrawerFooter className="border-t gap-2">
+        <DrawerFooter className="border-t p-4">
           {showJobAssignDialog ? (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -1866,7 +1866,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                   </div>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3 w-full">
                 <Button
                   onClick={() => {
                     if (!selectedJobId) {
@@ -1885,8 +1885,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                       `Application approved and assigned to:\n${selectedJob?.title} (${selectedJobId})`
                     );
                   }}
-                  className="flex-1"
-                  size="default"
+                  className="flex-1 h-11"
                   disabled={!selectedJobId}
                 >
                   <IconCheck className="h-4 w-4 mr-2" />
@@ -1898,8 +1897,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     setShowJobAssignDialog(false);
                     setSearchQuery("");
                   }}
-                  className="flex-1"
-                  size="default"
+                  className="flex-1 h-11"
                 >
                   <IconX className="h-4 w-4 mr-2" />
                   Cancel
@@ -1907,7 +1905,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
               </div>
             </div>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex gap-3 w-full">
               <Button
                 onClick={() => {
                   // Pre-select the current job if it exists
@@ -1918,11 +1916,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                   }
                   setShowJobAssignDialog(true);
                 }}
-                className="flex-1"
-                size="default"
+                className="flex-1 h-11"
                 disabled={item.status === "Done"}
               >
-                <IconCheck className="h-4 w-4" />
+                <IconCheck className="h-4 w-4 mr-2" />
                 Approve
               </Button>
               <DrawerClose asChild>
@@ -1931,11 +1928,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                   onClick={() => {
                     console.log(`Rejecting application for ${item.header}`);
                   }}
-                  className="flex-1"
-                  size="default"
+                  className="flex-1 h-11"
                   disabled={item.status === "Rejected"}
                 >
-                  <IconX className="h-4 w-4" />
+                  <IconX className="h-4 w-4 mr-2" />
                   Reject
                 </Button>
               </DrawerClose>

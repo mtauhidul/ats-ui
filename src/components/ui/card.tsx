@@ -35,7 +35,7 @@ const cardVariants = cva('flex flex-col items-stretch text-card-foreground round
   },
 });
 
-const cardHeaderVariants = cva('flex items-center justify-between flex-wrap px-5 min-h-14 gap-2.5', {
+const cardHeaderVariants = cva('flex flex-col px-5 py-4 gap-2', {
   variants: {
     variant: {
       default: 'border-b border-border',

@@ -632,18 +632,18 @@ export default function SearchPage() {
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
-        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <div className="px-4 lg:px-6">
-            <div className="mb-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="rounded-lg bg-blue-600/10 p-2">
-                  <Search className="h-6 w-6 text-blue-600" />
+        <div className="flex flex-col gap-3 py-3 md:gap-4 md:py-4">
+          <div className="px-3 lg:px-4">
+            <div className="mb-4 md:mb-6">
+              <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+                <div className="rounded-lg bg-blue-600/10 p-1.5 md:p-2 shrink-0">
+                  <Search className="h-4 w-4 md:h-6 md:w-6 text-blue-600" />
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg md:text-2xl font-bold text-foreground">
                     Global Search
                   </h2>
-                  <p className="text-muted-foreground">
+                  <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">
                     Search across jobs, candidates, clients, applications, and
                     team members
                   </p>
@@ -651,16 +651,16 @@ export default function SearchPage() {
               </div>
 
               <div className="relative max-w-3xl">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Search className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                 <Input
                   id="global-search-input"
                   placeholder="Search for anything... (jobs, candidates, clients, applications, team)"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 pr-24 h-12 text-lg"
+                  className="pl-10 md:pl-12 pr-12 md:pr-24 h-10 md:h-12 text-sm md:text-lg"
                   autoFocus
                 />
-                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                <div className="absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
                   <kbd className="hidden sm:inline-block px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted border border-border rounded">
                     ⌘K
                   </kbd>
@@ -669,30 +669,31 @@ export default function SearchPage() {
 
               {/* Recent Searches */}
               {!searchQuery && recentSearches.length > 0 && (
-                <Card className="mt-4 max-w-3xl">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <p className="text-sm font-medium">Recent Searches</p>
+                <Card className="mt-3 md:mt-4 max-w-3xl">
+                  <CardContent className="p-3 md:p-4">
+                    <div className="flex items-center justify-between mb-2 md:mb-3">
+                      <div className="flex items-center gap-1.5 md:gap-2">
+                        <Clock className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
+                        <p className="text-xs md:text-sm font-medium">Recent Searches</p>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="h-7 w-7 md:h-8 md:w-8 p-0"
                         onClick={() => {
                           setRecentSearches([]);
                           localStorage.removeItem("recentSearches");
                         }}
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3 w-3 md:h-4 md:w-4" />
                       </Button>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5 md:gap-2">
                       {recentSearches.map((search, idx) => (
                         <Badge
                           key={idx}
                           variant="secondary"
-                          className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                          className="cursor-pointer hover:bg-primary hover:text-primary-foreground text-xs"
                           onClick={() => setSearchQuery(search)}
                         >
                           {search}
@@ -706,22 +707,22 @@ export default function SearchPage() {
 
             {searchQuery && (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-4 mb-4 md:mb-6">
                   <Card
                     className="cursor-pointer hover:shadow-md transition-shadow"
                     onClick={() => setFilterType("all")}
                   >
-                    <CardContent className="pt-6">
+                    <CardContent className="pt-4 md:pt-6 pb-3 md:pb-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] md:text-sm text-muted-foreground truncate">
                             All Results
                           </p>
-                          <p className="text-2xl font-bold">
+                          <p className="text-xl md:text-2xl font-bold">
                             {resultCounts.all}
                           </p>
                         </div>
-                        <Search className="h-8 w-8 text-muted-foreground" />
+                        <Search className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground shrink-0" />
                       </div>
                     </CardContent>
                   </Card>
@@ -729,15 +730,15 @@ export default function SearchPage() {
                     className="cursor-pointer hover:shadow-md transition-shadow"
                     onClick={() => setFilterType("job")}
                   >
-                    <CardContent className="pt-6">
+                    <CardContent className="pt-4 md:pt-6 pb-3 md:pb-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Jobs</p>
-                          <p className="text-2xl font-bold">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] md:text-sm text-muted-foreground truncate">Jobs</p>
+                          <p className="text-xl md:text-2xl font-bold">
                             {resultCounts.job}
                           </p>
                         </div>
-                        <Briefcase className="h-8 w-8 text-muted-foreground" />
+                        <Briefcase className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground shrink-0" />
                       </div>
                     </CardContent>
                   </Card>
@@ -745,17 +746,17 @@ export default function SearchPage() {
                     className="cursor-pointer hover:shadow-md transition-shadow"
                     onClick={() => setFilterType("candidate")}
                   >
-                    <CardContent className="pt-6">
+                    <CardContent className="pt-4 md:pt-6 pb-3 md:pb-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] md:text-sm text-muted-foreground truncate">
                             Candidates
                           </p>
-                          <p className="text-2xl font-bold">
+                          <p className="text-xl md:text-2xl font-bold">
                             {resultCounts.candidate}
                           </p>
                         </div>
-                        <UserCircle className="h-8 w-8 text-muted-foreground" />
+                        <UserCircle className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground shrink-0" />
                       </div>
                     </CardContent>
                   </Card>
@@ -763,17 +764,17 @@ export default function SearchPage() {
                     className="cursor-pointer hover:shadow-md transition-shadow"
                     onClick={() => setFilterType("client")}
                   >
-                    <CardContent className="pt-6">
+                    <CardContent className="pt-4 md:pt-6 pb-3 md:pb-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] md:text-sm text-muted-foreground truncate">
                             Clients
                           </p>
-                          <p className="text-2xl font-bold">
+                          <p className="text-xl md:text-2xl font-bold">
                             {resultCounts.client}
                           </p>
                         </div>
-                        <Building className="h-8 w-8 text-muted-foreground" />
+                        <Building className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground shrink-0" />
                       </div>
                     </CardContent>
                   </Card>
@@ -781,32 +782,32 @@ export default function SearchPage() {
                     className="cursor-pointer hover:shadow-md transition-shadow"
                     onClick={() => setFilterType("application")}
                   >
-                    <CardContent className="pt-6">
+                    <CardContent className="pt-4 md:pt-6 pb-3 md:pb-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] md:text-sm text-muted-foreground truncate">
                             Applications
                           </p>
-                          <p className="text-2xl font-bold">
+                          <p className="text-xl md:text-2xl font-bold">
                             {resultCounts.application}
                           </p>
                         </div>
-                        <FileText className="h-8 w-8 text-muted-foreground" />
+                        <FileText className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground shrink-0" />
                       </div>
                     </CardContent>
                   </Card>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 md:space-y-4">
                   {filteredResults.length === 0 ? (
                     <Card>
-                      <CardContent className="py-12">
+                      <CardContent className="py-8 md:py-12">
                         <div className="text-center text-muted-foreground">
-                          <Search className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                          <p className="text-lg font-medium mb-1">
+                          <Search className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-2 md:mb-3 opacity-50" />
+                          <p className="text-base md:text-lg font-medium mb-1">
                             No results found
                           </p>
-                          <p className="text-sm">
+                          <p className="text-xs md:text-sm px-4">
                             Try searching with different keywords or check your
                             filters
                           </p>
@@ -820,13 +821,13 @@ export default function SearchPage() {
                         key={result.id}
                         state={{ highlightId: result.id, searchQuery }}
                       >
-                        <Card className="hover:shadow-md transition-all cursor-pointer hover:border-primary/50">
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-4">
+                        <Card className="hover:shadow-md transition-all cursor-pointer hover:border-primary/50 mb-3 md:mb-4">
+                          <CardContent className="p-2.5 md:p-4">
+                            <div className="flex items-start gap-2 md:gap-3">
                               {result.type === "candidate" ||
                               result.type === "team" ? (
-                                <Avatar className="h-12 w-12">
-                                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                <Avatar className="h-10 w-10 md:h-12 md:w-12 shrink-0">
+                                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs md:text-sm">
                                     {result.title
                                       .split(" ")
                                       .map((n) => n[0])
@@ -836,49 +837,51 @@ export default function SearchPage() {
                                   </AvatarFallback>
                                 </Avatar>
                               ) : (
-                                <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
+                                <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
                                   {getTypeIcon(result.type)}
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-semibold text-foreground">
+                                <div className="flex items-start flex-wrap gap-1.5 mb-1">
+                                  <h4 className="font-semibold text-foreground text-sm md:text-base line-clamp-1 flex-1 min-w-0">
                                     {result.title}
                                   </h4>
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-xs ${getTypeBadgeColor(
-                                      result.type
-                                    )}`}
-                                  >
-                                    {result.type}
-                                  </Badge>
-                                  <div className="flex items-center gap-1 ml-auto">
-                                    <TrendingUp className="h-3 w-3 text-muted-foreground" />
-                                    <span className="text-xs text-muted-foreground">
-                                      {Math.round(result.relevance)}% match
-                                    </span>
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-[10px] md:text-xs ${getTypeBadgeColor(
+                                        result.type
+                                      )}`}
+                                    >
+                                      {result.type}
+                                    </Badge>
+                                    <div className="flex items-center gap-0.5 md:gap-1">
+                                      <TrendingUp className="h-2.5 w-2.5 md:h-3 md:w-3 text-muted-foreground" />
+                                      <span className="text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">
+                                        {Math.round(result.relevance)}%
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
-                                <p className="text-sm font-medium text-muted-foreground mb-2">
+                                <p className="text-xs md:text-sm font-medium text-muted-foreground mb-1 line-clamp-1">
                                   {result.subtitle}
                                 </p>
-                                <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                                <p className="text-xs md:text-sm text-muted-foreground mb-1.5 md:mb-2 line-clamp-2">
                                   {result.description}
                                 </p>
                                 {result.matchedFields.length > 0 && (
-                                  <p className="text-xs text-muted-foreground mb-2 italic">
+                                  <p className="text-[10px] md:text-xs text-muted-foreground mb-1.5 md:mb-2 italic line-clamp-1">
                                     Matched in: {result.matchedFields.join(", ")}
                                   </p>
                                 )}
-                                <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
                                   {result.badges
                                     .slice(0, 4)
                                     .map((badge, index) => (
                                       <Badge
                                         key={index}
                                         variant="secondary"
-                                        className="text-xs"
+                                        className="text-[10px] md:text-xs"
                                       >
                                         {badge}
                                       </Badge>
@@ -886,7 +889,7 @@ export default function SearchPage() {
                                   {result.badges.length > 4 && (
                                     <Badge
                                       variant="secondary"
-                                      className="text-xs"
+                                      className="text-[10px] md:text-xs"
                                     >
                                       +{result.badges.length - 4} more
                                     </Badge>
@@ -905,11 +908,11 @@ export default function SearchPage() {
 
             {!searchQuery && recentSearches.length === 0 && (
               <Card>
-                <CardContent className="py-16">
+                <CardContent className="py-12 md:py-16">
                   <div className="text-center text-muted-foreground">
-                    <Search className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium mb-2">Start searching</p>
-                    <p className="text-sm max-w-md mx-auto">
+                    <Search className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-3 md:mb-4 opacity-50" />
+                    <p className="text-base md:text-lg font-medium mb-2">Start searching</p>
+                    <p className="text-xs md:text-sm max-w-md mx-auto px-4">
                       Type in the search box above to find jobs, candidates,
                       clients, applications, or team members
                     </p>

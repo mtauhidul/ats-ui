@@ -1918,8 +1918,8 @@ function TableCellViewer({
           )}
         </div>
 
-        <DrawerFooter className="border-t gap-2">
-          <div className="flex gap-2">
+        <DrawerFooter className="border-t p-4">
+          <div className="flex gap-3 w-full">
             <Button
               onClick={async () => {
                 setApprovalAction('approve');
@@ -1927,14 +1927,13 @@ function TableCellViewer({
                 await fetchJobs();
                 setShowJobSelectionModal(true);
               }}
-              className="flex-1"
-              size="default"
+              className="flex-1 h-11"
               disabled={
                 item.status?.toLowerCase() === "approved" || 
                 item.status?.toLowerCase() === "rejected"
               }
             >
-              <IconCheck className="h-4 w-4" />
+              <IconCheck className="h-4 w-4 mr-2" />
               Approve
             </Button>
             <Button
@@ -1945,14 +1944,13 @@ function TableCellViewer({
                 await fetchJobs();
                 setShowJobSelectionModal(true);
               }}
-              className="flex-1"
-              size="default"
+              className="flex-1 h-11"
               disabled={
                 item.status?.toLowerCase() === "approved" || 
                 item.status?.toLowerCase() === "rejected"
               }
             >
-              <IconX className="h-4 w-4" />
+              <IconX className="h-4 w-4 mr-2" />
               Reject
             </Button>
           </div>

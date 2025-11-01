@@ -29,13 +29,12 @@ export function NavMain({
           <SidebarMenuItem className="flex items-center gap-2">
             <SidebarMenuButton
               tooltip="Quick Import"
-              className="bg-primary hover:!bg-accent active:!bg-accent min-w-8 duration-200 ease-linear [&]:!text-white [&:hover]:!text-foreground"
+              className="bg-primary hover:bg-primary/90 active:bg-primary/90 min-w-8 duration-200 ease-linear text-primary-foreground hover:text-primary-foreground"
               asChild
-              style={{ color: "white" }}
             >
               <Link to="/dashboard/candidates/quick-import">
                 <IconCirclePlusFilled />
-                <span className="text-white">Quick Import</span>
+                <span>Quick Import</span>
               </Link>
             </SidebarMenuButton>
             <Button

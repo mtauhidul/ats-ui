@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ArrowLeft,
   Mail,
@@ -227,66 +227,70 @@ export default function TeamMemberDetailPage() {
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
-        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <div className="px-4 lg:px-6">
+        <div className="flex flex-col gap-3 py-3 md:gap-4 md:py-4">
+          <div className="px-3 lg:px-4">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 mb-4 md:mb-6">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/dashboard/team")}
+                className="self-start"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <div>
-                <h2 className="text-2xl font-bold">Team Member Details</h2>
-                <p className="text-muted-foreground">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl md:text-2xl font-bold">Team Member Details</h2>
+                <p className="text-xs md:text-sm text-muted-foreground">
                   View and manage team member information
                 </p>
               </div>
             </div>
 
             {/* Profile Card */}
-            <Card className="mb-6">
-              <CardContent className="pt-6">
-                <div className="flex flex-col md:flex-row gap-6">
+            <Card className="mb-4 md:mb-6">
+              <CardContent className="pt-4 md:pt-6">
+                <div className="flex flex-col md:flex-row gap-4 md:gap-6">
                   <div className="flex flex-col items-center md:items-start">
-                    <Avatar className="h-24 w-24 mb-4">
-                      <AvatarFallback className="text-2xl">
+                    <Avatar className="h-20 w-20 md:h-24 md:w-24 mb-3 md:mb-4">
+                      {currentMember.avatar && !currentMember.avatar.includes('dicebear.com') && !currentMember.avatar.includes('api.dicebear') && (
+                        <AvatarImage src={currentMember.avatar} alt={`${currentMember.firstName} ${currentMember.lastName}`} />
+                      )}
+                      <AvatarFallback className="text-xl md:text-2xl">
                         {getInitials(currentMember.firstName, currentMember.lastName)}
                       </AvatarFallback>
                     </Avatar>
                     <Badge
                       variant="outline"
-                      className={getRoleBadgeColor(currentMember.role)}
+                      className={`${getRoleBadgeColor(currentMember.role)} text-xs md:text-sm`}
                     >
                       {formatRoleName(currentMember.role)}
                     </Badge>
                   </div>
 
-                  <div className="flex-1">
-                    <div className="mb-4">
-                      <h3 className="text-2xl font-bold mb-1">
+                  <div className="flex-1 min-w-0">
+                    <div className="mb-3 md:mb-4">
+                      <h3 className="text-xl md:text-2xl font-bold mb-1">
                         {currentMember.firstName} {currentMember.lastName}
                       </h3>
-                      <p className="text-lg text-muted-foreground">
+                      <p className="text-base md:text-lg text-muted-foreground">
                         {currentMember.title}
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
+                      <div className="flex items-center gap-2 text-xs md:text-sm">
+                        <Mail className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
                         <a
                           href={`mailto:${currentMember.email}`}
-                          className="hover:underline"
+                          className="hover:underline truncate"
                         >
                           {currentMember.email}
                         </a>
                       </div>
                       {currentMember.phone && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex items-center gap-2 text-xs md:text-sm">
+                          <Phone className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
                           <a
                             href={`tel:${currentMember.phone}`}
                             className="hover:underline"
@@ -295,12 +299,12 @@ export default function TeamMemberDetailPage() {
                           </a>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-sm">
-                        <Briefcase className="h-4 w-4 text-muted-foreground" />
-                        <span>{currentMember.department}</span>
+                      <div className="flex items-center gap-2 text-xs md:text-sm">
+                        <Briefcase className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
+                        <span className="truncate">{currentMember.department}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex items-center gap-2 text-xs md:text-sm">
+                        <Calendar className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
                         <span>
                           Joined{" "}
                           {new Date(currentMember.createdAt).toLocaleDateString()}
@@ -308,19 +312,21 @@ export default function TeamMemberDetailPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Activity className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        Last active:{" "}
-                        {currentMember.lastLoginAt ? new Date(currentMember.lastLoginAt).toLocaleString() : "Never"}
-                      </span>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
+                        <span className="text-xs md:text-sm text-muted-foreground">
+                          Last active:{" "}
+                          {currentMember.lastLoginAt ? new Date(currentMember.lastLoginAt).toLocaleString() : "Never"}
+                        </span>
+                      </div>
                       <Badge
                         variant="outline"
-                        className={
+                        className={`${
                           currentMember.status === "active"
-                            ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20 ml-2"
-                            : "bg-muted text-muted-foreground border ml-2"
-                        }
+                            ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20"
+                            : "bg-muted text-muted-foreground border"
+                        } text-xs`}
                       >
                         {currentMember.status}
                       </Badge>
@@ -331,71 +337,71 @@ export default function TeamMemberDetailPage() {
             </Card>
 
             {/* Statistics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 md:pt-6">
                   <div className="flex items-center justify-between mb-2">
-                    <Briefcase className="h-5 w-5 text-blue-600 dark:text-blue-500" />
+                    <Briefcase className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-500" />
                   </div>
-                  <div className="text-2xl font-bold">
+                  <div className="text-xl md:text-2xl font-bold">
                     {currentMember.statistics?.activeJobs || 0}
                   </div>
-                  <p className="text-xs text-muted-foreground">Active Jobs</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">Active Jobs</p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 md:pt-6">
                   <div className="flex items-center justify-between mb-2">
-                    <Users className="h-5 w-5 text-green-600 dark:text-green-500" />
+                    <Users className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-500" />
                   </div>
-                  <div className="text-2xl font-bold">
+                  <div className="text-xl md:text-2xl font-bold">
                     {currentMember.statistics?.placedCandidates || 0}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] md:text-xs text-muted-foreground">
                     Placed Candidates
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 md:pt-6">
                   <div className="flex items-center justify-between mb-2">
-                    <FileText className="h-5 w-5 text-orange-600 dark:text-orange-500" />
+                    <FileText className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-500" />
                   </div>
-                  <div className="text-2xl font-bold">
+                  <div className="text-xl md:text-2xl font-bold">
                     {currentMember.statistics?.pendingReviews || 0}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] md:text-xs text-muted-foreground">
                     Pending Reviews
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 md:pt-6">
                   <div className="flex items-center justify-between mb-2">
-                    <Mail className="h-5 w-5 text-purple-600 dark:text-purple-500" />
+                    <Mail className="h-4 w-4 md:h-5 md:w-5 text-purple-600 dark:text-purple-500" />
                   </div>
-                  <div className="text-2xl font-bold">
+                  <div className="text-xl md:text-2xl font-bold">
                     {currentMember.statistics?.emailsSent || 0}
                   </div>
-                  <p className="text-xs text-muted-foreground">Emails Sent</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">Emails Sent</p>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               {/* Permissions */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" />
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                    <Shield className="h-4 w-4 md:h-5 md:w-5" />
                     Permissions
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="p-4 md:p-6 pt-0">
+                  <div className="space-y-2 md:space-y-3">
                     {Object.entries(currentMember.permissions)
                       .filter(([key]) => key !== '_id' && key !== 'id')
                       .map(([key, value]) => (
@@ -403,7 +409,7 @@ export default function TeamMemberDetailPage() {
                           key={key}
                           className="flex items-center justify-between py-2 border-b last:border-0"
                         >
-                          <span className="text-sm">
+                          <span className="text-xs md:text-sm">
                             {key
                               .replace(/([A-Z])/g, " $1")
                               .replace(/^./, (str) => str.toUpperCase())
@@ -411,11 +417,11 @@ export default function TeamMemberDetailPage() {
                           </span>
                           <Badge
                             variant="outline"
-                            className={
+                            className={`${
                               value
                                 ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20"
                                 : "bg-red-500/10 text-red-600 dark:text-red-500 border-red-500/20"
-                            }
+                            } text-[10px] md:text-xs`}
                           >
                             {value ? "Allowed" : "Denied"}
                           </Badge>
@@ -428,13 +434,13 @@ export default function TeamMemberDetailPage() {
 
               {/* Assigned Jobs */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Briefcase className="h-5 w-5" />
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                    <Briefcase className="h-4 w-4 md:h-5 md:w-5" />
                     Assigned Jobs
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 md:p-6 pt-0">
                   {assignedJobs.length > 0 ? (
                     <div className="space-y-3">
                       {assignedJobs.map((job) => (
@@ -492,6 +498,9 @@ export default function TeamMemberDetailPage() {
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <Avatar className="h-10 w-10">
+                            {candidate.avatar && !candidate.avatar.includes('dicebear.com') && !candidate.avatar.includes('api.dicebear') && (
+                              <AvatarImage src={candidate.avatar} alt={`${candidate.firstName} ${candidate.lastName}`} />
+                            )}
                             <AvatarFallback>
                               {getInitials(
                                 candidate.firstName,

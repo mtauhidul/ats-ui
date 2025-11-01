@@ -1,42 +1,13 @@
+import { useEffect, useState } from "react";
+import { Plus, Search, Tag as TagIcon, Edit2, Trash2, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AddTagModal } from "@/components/modals/add-tag-modal";
 import { EditTagModal } from "@/components/modals/edit-tag-modal";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardToolbar,
-} from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useAppSelector, useTags } from "@/store/hooks/index";
+import type { Tag, CreateTagRequest, UpdateTagRequest } from "@/types/tag";
+import { useTags, useAppSelector } from "@/store/hooks/index";
 import { selectTags } from "@/store/selectors";
-import type { CreateTagRequest, Tag, UpdateTagRequest } from "@/types/tag";
-import {
-  AlertCircle,
-  Edit2,
-  MoreHorizontal,
-  Plus,
-  Search,
-  Tag as TagIcon,
-  Trash2,
-} from "lucide-react";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function TagsPage() {
@@ -64,7 +35,7 @@ export default function TagsPage() {
   };
 
   const handleDeleteTag = (tagId: string) => {
-    const tag = tags.find((t: Tag) => t.id === tagId);
+    const tag = tags.find((t: any) => t.id === tagId);
 
     if (tag?.isSystem) {
       toast.error("System tags cannot be deleted");
@@ -81,7 +52,7 @@ export default function TagsPage() {
   };
 
   // Filter and sort tags
-  const filteredTags = (tags as Tag[])
+  const filteredTags = (tags as any[])
     .filter((tag) => {
       // Search filter
       const matchesSearch =
@@ -101,13 +72,9 @@ export default function TagsPage() {
         case "name":
           return a.name.localeCompare(b.name);
         case "newest":
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         case "oldest":
-          return (
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         default:
           return 0;
       }
@@ -119,38 +86,38 @@ export default function TagsPage() {
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
-        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <div className="px-4 lg:px-6">
+        <div className="flex flex-col gap-3 py-3 md:gap-4 md:py-4">
+          <div className="px-3 lg:px-4">
             {/* Header */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground mb-2">
+            <div className="mb-4 md:mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3 md:mb-4">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl md:text-2xl font-bold text-foreground mb-1 md:mb-2">
                     Tags
                   </h2>
-                  <p className="text-muted-foreground">
+                  <p className="text-xs md:text-sm text-muted-foreground">
                     Manage tags for jobs and candidates
                   </p>
                 </div>
-                <Button onClick={() => setIsAddModalOpen(true)}>
+                <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto shrink-0">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Tag
                 </Button>
               </div>
 
               {/* Search and Filters */}
-              <div className="flex flex-col sm:flex-row gap-4 mt-6">
+              <div className="flex flex-col sm:flex-row gap-2 md:gap-4 mt-4 md:mt-6">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search tags by name or description..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className="pl-8 md:pl-10 h-8 md:h-9 text-xs md:text-sm"
                   />
                 </div>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[160px] md:w-[180px] h-8 md:h-9 text-xs md:text-sm">
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -160,7 +127,7 @@ export default function TagsPage() {
                   </SelectContent>
                 </Select>
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[160px] md:w-[180px] h-8 md:h-9 text-xs md:text-sm">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -172,130 +139,126 @@ export default function TagsPage() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-3 mt-6">
-                <div className="rounded-lg border bg-card p-3 shadow-sm">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="rounded-md bg-primary/10 p-1.5">
-                      <TagIcon className="h-4 w-4 text-primary" />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-3 mt-4 md:mt-6">
+                <div className="rounded-lg border bg-card p-2 md:p-3 shadow-sm">
+                  <div className="flex items-start justify-between mb-1 md:mb-2">
+                    <div className="rounded-md bg-primary/10 p-1.5 md:p-2">
+                      <TagIcon className="h-3 w-3 md:h-4 md:w-4 text-primary" />
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Total
-                    </span>
                   </div>
-                  <p className="text-xl font-bold">{tags.length}</p>
-                  <p className="text-xs text-muted-foreground">Tags</p>
+                  <p className="text-xl md:text-2xl font-bold mb-0.5">
+                    {tags.length}
+                  </p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">Total Tags</p>
                 </div>
-                <div className="rounded-lg border bg-card p-3 shadow-sm">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="rounded-md bg-blue-500/10 p-1.5">
-                      <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-500" />
+                <div className="rounded-lg border bg-card p-2 md:p-3 shadow-sm">
+                  <div className="flex items-start justify-between mb-1 md:mb-2">
+                    <div className="rounded-md bg-blue-500/10 p-1.5 md:p-2">
+                      <AlertCircle className="h-3 w-3 md:h-4 md:w-4 text-blue-600 dark:text-blue-500" />
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      System
-                    </span>
                   </div>
-                  <p className="text-xl font-bold text-blue-600 dark:text-blue-500">
+                  <p className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-500 mb-0.5">
                     {systemTags.length}
                   </p>
-                  <p className="text-xs text-muted-foreground">Built-in tags</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">System Tags</p>
                 </div>
-                <div className="rounded-lg border bg-card p-3 shadow-sm">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="rounded-md bg-green-500/10 p-1.5">
-                      <TagIcon className="h-4 w-4 text-green-600 dark:text-green-500" />
+                <div className="rounded-lg border bg-card p-2 md:p-3 shadow-sm">
+                  <div className="flex items-start justify-between mb-1 md:mb-2">
+                    <div className="rounded-md bg-green-500/10 p-1.5 md:p-2">
+                      <TagIcon className="h-3 w-3 md:h-4 md:w-4 text-green-600 dark:text-green-500" />
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Custom
-                    </span>
                   </div>
-                  <p className="text-xl font-bold text-green-600 dark:text-green-500">
+                  <p className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-500 mb-0.5">
                     {customTags.length}
                   </p>
-                  <p className="text-xs text-muted-foreground">User-created</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">Custom Tags</p>
                 </div>
               </div>
             </div>
 
-            {/* Tags Cards */}
-            {filteredTags.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {filteredTags.map((tag) => (
-                  <Card key={tag.id}>
-                    <CardHeader className="border-0">
-                      <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        <span
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium"
-                          style={{
-                            backgroundColor: `${tag.color}20`,
-                            color: tag.color,
-                            border: `1px solid ${tag.color}40`,
-                          }}
-                        >
-                          {tag.name}
-                        </span>
-                      </CardTitle>
-                      <CardToolbar>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
+            {/* Tags Table */}
+            <div className="rounded-lg border bg-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px]">
+                  <thead className="bg-muted/50 border-b">
+                    <tr>
+                      <th className="px-3 md:px-4 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Tag
+                      </th>
+                      <th className="px-3 md:px-4 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Description
+                      </th>
+                      <th className="px-3 md:px-4 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-3 md:px-4 py-2 md:py-3 text-right text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {filteredTags.map((tag) => (
+                      <tr key={tag.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-3 md:px-4 py-2 md:py-3">
+                          <span
+                            className="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-xs md:text-sm font-medium"
+                            style={{
+                              backgroundColor: `${tag.color}20`,
+                              color: tag.color,
+                              border: `1px solid ${tag.color}40`,
+                            }}
+                          >
+                            {tag.name}
+                          </span>
+                        </td>
+                        <td className="px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm text-muted-foreground">
+                          {tag.description || "—"}
+                        </td>
+                        <td className="px-3 md:px-4 py-2 md:py-3">
+                          {tag.isSystem && (
+                            <span className="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-500 border border-blue-500/20">
+                              System
+                            </span>
+                          )}
+                          {!tag.isSystem && (
+                            <span className="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded bg-muted text-muted-foreground border">
+                              Custom
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 md:px-4 py-2 md:py-3">
+                          <div className="flex items-center justify-end gap-1">
                             <Button
-                              variant="dim"
-                              size="sm"
-                              mode="icon"
-                              className="-me-1.5"
-                            >
-                              <MoreHorizontal />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" side="bottom">
-                            <DropdownMenuItem
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 md:h-8 md:w-8"
                               onClick={() => setEditingTag(tag)}
                             >
-                              <Edit2 className="h-4 w-4" />
-                              Edit Tag
-                            </DropdownMenuItem>
+                              <Edit2 className="h-3 w-3 md:h-4 md:w-4" />
+                            </Button>
                             {!tag.isSystem && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  variant="destructive"
-                                  onClick={() => handleDeleteTag(tag.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 md:h-8 md:w-8 text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-950"
+                                onClick={() => handleDeleteTag(tag.id)}
+                              >
+                                <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                              </Button>
                             )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </CardToolbar>
-                    </CardHeader>
-                    <CardContent className="space-y-2.5">
-                      {tag.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {tag.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 pt-2 border-t">
-                        {tag.isSystem ? (
-                          <Badge variant="info" appearance="light">
-                            <AlertCircle className="h-3 w-3" />
-                            System Tag
-                          </Badge>
-                        ) : (
-                          <Badge variant="success" appearance="light">
-                            <TagIcon className="h-3 w-3" />
-                            Custom Tag
-                          </Badge>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ) : (
-              <div className="text-center py-12">
-                <TagIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
+            </div>
+
+            {filteredTags.length === 0 && (
+              <div className="text-center py-8 md:py-12">
+                <TagIcon className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-3 md:mb-4" />
+                <p className="text-xs md:text-sm text-muted-foreground px-4">
                   {searchQuery
                     ? "No tags found matching your search"
                     : "No tags yet. Add your first tag to get started."}

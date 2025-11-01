@@ -164,21 +164,21 @@ function EmailConnectionDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogClose}>
-      <DialogContent className="sm:max-w-[480px] max-h-[85vh] overflow-y-auto">
-        <DialogHeader className="space-y-2">
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <Mail className="h-4 w-4 text-primary" />
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[480px] max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="space-y-1.5 md:space-y-2">
+          <DialogTitle className="flex items-center gap-1.5 md:gap-2 text-base md:text-lg">
+            <Mail className="h-4 w-4 md:h-5 md:w-5 text-primary" />
             Connect Email Account
           </DialogTitle>
-          <DialogDescription className="text-sm">
+          <DialogDescription className="text-xs md:text-sm">
             Connect your email to automatically monitor for candidates.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           {/* Provider Selection */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Email Provider</Label>
+          <div className="space-y-1.5 md:space-y-2">
+            <Label className="text-xs md:text-sm font-medium">Email Provider</Label>
             <RadioGroup
               value={provider}
               onValueChange={(value: string) =>
@@ -186,36 +186,36 @@ function EmailConnectionDialog({
               }
               className="grid grid-cols-1 gap-1.5"
             >
-              <div className="flex items-center space-x-2 p-2.5 border rounded-lg hover:bg-muted/50 transition-colors">
+              <div className="flex items-center space-x-2 p-2 md:p-2.5 border rounded-lg hover:bg-muted/50 transition-colors">
                 <RadioGroupItem value="gmail" id="provider-gmail" />
                 <Label
                   htmlFor="provider-gmail"
-                  className="flex items-center gap-2 cursor-pointer text-sm flex-1"
+                  className="flex items-center gap-2 cursor-pointer text-xs md:text-sm flex-1"
                 >
                   <div className="flex items-center gap-2 flex-1">
                     <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                     <span>Gmail</span>
                   </div>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-[10px] md:text-xs">
                     Popular
                   </Badge>
                 </Label>
               </div>
-              <div className="flex items-center space-x-2 p-2.5 border rounded-lg hover:bg-muted/50 transition-colors">
+              <div className="flex items-center space-x-2 p-2 md:p-2.5 border rounded-lg hover:bg-muted/50 transition-colors">
                 <RadioGroupItem value="outlook" id="provider-outlook" />
                 <Label
                   htmlFor="provider-outlook"
-                  className="flex items-center gap-2 cursor-pointer text-sm flex-1"
+                  className="flex items-center gap-2 cursor-pointer text-xs md:text-sm flex-1"
                 >
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <span>Outlook</span>
                 </Label>
               </div>
-              <div className="flex items-center space-x-2 p-2.5 border rounded-lg hover:bg-muted/50 transition-colors">
+              <div className="flex items-center space-x-2 p-2 md:p-2.5 border rounded-lg hover:bg-muted/50 transition-colors">
                 <RadioGroupItem value="other" id="provider-other" />
                 <Label
                   htmlFor="provider-other"
-                  className="flex items-center gap-2 cursor-pointer text-sm flex-1"
+                  className="flex items-center gap-2 cursor-pointer text-xs md:text-sm flex-1"
                 >
                   <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
                   <span>Other (IMAP)</span>
@@ -226,11 +226,11 @@ function EmailConnectionDialog({
 
           {/* Connection Form */}
           <Card className="border-dashed">
-            <CardContent className="p-3 space-y-3">
+            <CardContent className="p-2.5 md:p-3 space-y-2.5 md:space-y-3">
               {provider === "other" && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 md:gap-3">
                   <div>
-                    <Label htmlFor="imap-server" className="text-sm">
+                    <Label htmlFor="imap-server" className="text-xs md:text-sm">
                       IMAP Server
                     </Label>
                     <Input
@@ -238,12 +238,12 @@ function EmailConnectionDialog({
                       placeholder="imap.example.com"
                       value={imapServer}
                       onChange={(e) => setImapServer(e.target.value)}
-                      className="mt-1"
+                      className="mt-1 h-9 md:h-10 text-xs md:text-sm"
                       disabled={isConnecting}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="imap-port" className="text-sm">
+                    <Label htmlFor="imap-port" className="text-xs md:text-sm">
                       Port
                     </Label>
                     <Input
@@ -251,7 +251,7 @@ function EmailConnectionDialog({
                       placeholder="993"
                       value={imapPort}
                       onChange={(e) => setImapPort(e.target.value)}
-                      className="mt-1"
+                      className="mt-1 h-9 md:h-10 text-xs md:text-sm"
                       disabled={isConnecting}
                     />
                   </div>
@@ -259,7 +259,7 @@ function EmailConnectionDialog({
               )}
 
               <div>
-                <Label htmlFor="email-username" className="text-sm">
+                <Label htmlFor="email-username" className="text-xs md:text-sm">
                   Email Address
                 </Label>
                 <Input
@@ -268,13 +268,13 @@ function EmailConnectionDialog({
                   placeholder="user@example.com"
                   value={imapUsername}
                   onChange={(e) => setImapUsername(e.target.value)}
-                  className="mt-1"
+                  className="mt-1 h-9 md:h-10 text-xs md:text-sm"
                   disabled={isConnecting}
                 />
               </div>
 
               <div>
-                <Label htmlFor="email-password" className="text-sm">
+                <Label htmlFor="email-password" className="text-xs md:text-sm">
                   {provider !== "other"
                     ? "Password / App Password"
                     : "Password"}
@@ -285,21 +285,21 @@ function EmailConnectionDialog({
                   placeholder="Password"
                   value={imapPassword}
                   onChange={(e) => setImapPassword(e.target.value)}
-                  className="mt-1"
+                  className="mt-1 h-9 md:h-10 text-xs md:text-sm"
                   disabled={isConnecting}
                 />
                 {provider === "gmail" && (
-                  <div className="flex items-start gap-2 text-xs mt-2 bg-amber-50 text-amber-800 p-2 rounded-lg border border-amber-200">
-                    <Shield className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-                    <div>
+                  <div className="flex items-start gap-1.5 md:gap-2 text-xs mt-2 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 p-2 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <Shield className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    <div className="min-w-0">
                       <p className="font-medium">Use App Password</p>
-                      <p className="text-xs mt-0.5">
+                      <p className="text-[10px] md:text-xs mt-0.5 text-amber-800 dark:text-amber-300">
                         Required for Gmail.{" "}
                         <a
                           href="https://support.google.com/accounts/answer/185833"
                           target="_blank"
                           rel="noreferrer"
-                          className="underline hover:text-amber-900"
+                          className="underline hover:text-amber-950 dark:hover:text-amber-100"
                         >
                           Learn how
                         </a>
@@ -312,7 +312,7 @@ function EmailConnectionDialog({
               {/* Connection Progress */}
               {connectionProgress > 0 && (
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-[10px] md:text-xs">
                     <span className="text-muted-foreground">
                       {connectionProgress < 30
                         ? "Preparing connection..."
@@ -322,15 +322,15 @@ function EmailConnectionDialog({
                     </span>
                     <span className="font-medium">{connectionProgress}%</span>
                   </div>
-                  <Progress value={connectionProgress} className="h-2" />
+                  <Progress value={connectionProgress} className="h-1.5 md:h-2" />
                 </div>
               )}
 
               {/* Info about automation */}
-              <div className="bg-muted/50 border rounded-lg p-2.5">
-                <div className="flex items-start gap-2">
-                  <Bot className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
-                  <div className="text-xs">
+              <div className="bg-muted/50 border rounded-lg p-2 md:p-2.5">
+                <div className="flex items-start gap-1.5 md:gap-2">
+                  <Bot className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                  <div className="text-[10px] md:text-xs min-w-0">
                     <p className="font-medium">Auto-Monitoring Enabled</p>
                     <p className="text-muted-foreground mt-0.5">
                       Your email will be monitored for candidate emails.
@@ -342,26 +342,28 @@ function EmailConnectionDialog({
           </Card>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-2 pt-1">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-1">
             <Button
               variant="outline"
               onClick={() => handleDialogClose(false)}
               disabled={isConnecting}
+              className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm"
             >
               Cancel
             </Button>
             <Button
               onClick={connectToProvider}
               disabled={isConnecting || !imapUsername || !imapPassword}
+              className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm"
             >
               {isConnecting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2 animate-spin" />
                   Connecting...
                 </>
               ) : (
                 <>
-                  <Mail className="h-4 w-4 mr-2" />
+                  <Mail className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                   Connect
                 </>
               )}

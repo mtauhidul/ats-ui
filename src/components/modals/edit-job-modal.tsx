@@ -344,17 +344,17 @@ export function EditJobModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] p-0 flex flex-col gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-primary/5 to-primary/10 flex-shrink-0">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-5xl max-h-[90vh] p-0 flex flex-col gap-0">
+        <DialogHeader className="px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4 border-b bg-linear-to-r from-primary/5 to-primary/10 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
               <Briefcase className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-2xl font-bold">
+              <DialogTitle className="text-xl md:text-2xl font-bold">
                 Edit Job
               </DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground mt-1">
+              <DialogDescription className="text-xs md:text-sm text-muted-foreground mt-1">
                 Update the job details for {job.title}
               </DialogDescription>
             </div>
@@ -375,37 +375,39 @@ export function EditJobModal({
             value={currentTab}
             className="flex flex-col flex-1 min-h-0"
           >
-            <div className="px-6 pt-4 border-b flex-shrink-0">
-              <TabsList className="h-11 p-1 bg-card border border-border mb-4 w-full md:w-fit">
-                <TabsTrigger
-                  value="basic"
-                  disabled
-                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground cursor-default"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  <span className="text-sm md:text-base">Basic Info</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="requirements"
-                  disabled
-                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground cursor-default"
-                >
-                  <ListChecks className="h-4 w-4 mr-2" />
-                  <span className="text-sm md:text-base">Requirements</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="details"
-                  disabled
-                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground cursor-default"
-                >
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  <span className="text-sm md:text-base">Details</span>
-                </TabsTrigger>
-              </TabsList>
+            <div className="px-4 md:px-6 pt-4 border-b shrink-0">
+              <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+                <TabsList className="h-11 p-1 bg-card border border-border mb-4 w-full md:w-fit inline-flex">
+                  <TabsTrigger
+                    value="basic"
+                    disabled
+                    className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground cursor-default text-xs md:text-sm"
+                  >
+                    <FileText className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Basic Info</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="requirements"
+                    disabled
+                    className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground cursor-default text-xs md:text-sm"
+                  >
+                    <ListChecks className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Requirements</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="details"
+                    disabled
+                    className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground cursor-default text-xs md:text-sm"
+                  >
+                    <DollarSign className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Details</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-0">
-              <div className="px-6 py-6">
+              <div className="px-4 md:px-6 py-4 md:py-6">
                 {/* Basic Information Tab */}
                 <TabsContent value="basic" className="space-y-6 mt-0">
                 {/* Client Info - Read Only */}
@@ -1075,14 +1077,14 @@ export function EditJobModal({
           </Tabs>
 
           {/* Footer Actions */}
-          <div className="border-t px-6 py-4 bg-muted/30 flex items-center justify-between flex-shrink-0">
-            <div className="text-sm text-muted-foreground">
+          <div className="border-t px-4 md:px-6 py-3 md:py-4 bg-muted/30 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+            <div className="text-xs md:text-sm text-muted-foreground text-center sm:text-left">
               {currentTab === "basic" && "Step 1 of 3: Basic Information"}
               {currentTab === "requirements" && "Step 2 of 3: Requirements"}
               {currentTab === "details" && "Step 3 of 3: Additional Details"}
             </div>
-            <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={handleClose}>
+            <div className="flex gap-2 md:gap-3">
+              <Button type="button" variant="outline" onClick={handleClose} className="flex-1 sm:flex-initial text-xs md:text-sm">
                 Cancel
               </Button>
               {currentTab !== "basic" && (
@@ -1093,6 +1095,7 @@ export function EditJobModal({
                     if (currentTab === "requirements") setCurrentTab("basic");
                     else if (currentTab === "details") setCurrentTab("requirements");
                   }}
+                  className="flex-1 sm:flex-initial text-xs md:text-sm"
                 >
                   Back
                 </Button>
@@ -1101,11 +1104,12 @@ export function EditJobModal({
                 <Button
                   type="button"
                   onClick={handleNextStep}
+                  className="flex-1 sm:flex-initial text-xs md:text-sm"
                 >
                   Next Step
                 </Button>
               ) : (
-                <Button type="submit" className="min-w-[120px]">
+                <Button type="submit" className="flex-1 sm:flex-initial sm:min-w-[120px] text-xs md:text-sm">
                   <Save className="h-4 w-4 mr-2" />
                   Save Changes
                 </Button>

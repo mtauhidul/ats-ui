@@ -308,7 +308,7 @@ export default function QuickImportPage() {
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 overflow-y-auto">
           <div className="px-4 lg:px-6 max-w-[1600px] mx-auto w-full">
             {/* Header */}
-            <div className="mb-8">
+            <div className="mb-4 md:mb-8 hidden md:block">
               <div className="flex items-center gap-4 mb-6">
                 <Button 
                   variant="ghost" 
@@ -319,12 +319,25 @@ export default function QuickImportPage() {
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div className="flex-1">
-                  <h2 className="text-3xl font-bold text-foreground">Quick Import Candidate</h2>
-                  <p className="text-muted-foreground mt-1">
+                  <h2 className="text-2xl md:text-3xl font-bold text-foreground">Quick Import Candidate</h2>
+                  <p className="text-sm md:text-base text-muted-foreground mt-1">
                     Upload a resume and our AI will automatically extract candidate information
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Mobile Back Button */}
+            <div className="mb-4 md:hidden">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate("/dashboard/candidates")}
+                className="hover:bg-primary/10"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
             </div>
 
             {/* Main Content */}
@@ -735,17 +748,17 @@ export default function QuickImportPage() {
                       {/* Work Experience */}
                       {formData.experience && formData.experience.length > 0 && (
                         <div>
-                          <h4 className="text-sm font-semibold text-foreground mb-3">
+                          <h4 className="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">
                             Work Experience
                           </h4>
-                          <div className="space-y-3">
+                          <div className="space-y-2 md:space-y-3">
                             {formData.experience.map((exp, index) => (
-                              <div key={index} className="p-3 border rounded-lg bg-muted/20">
-                                <div className="font-semibold text-sm">{exp.title}</div>
-                                <div className="text-sm text-muted-foreground">{exp.company}</div>
-                                <div className="text-xs text-muted-foreground">{exp.duration}</div>
+                              <div key={index} className="p-2.5 md:p-3 border rounded-lg bg-muted/20">
+                                <div className="font-semibold text-xs md:text-sm">{exp.title}</div>
+                                <div className="text-xs md:text-sm text-muted-foreground">{exp.company}</div>
+                                <div className="text-[10px] md:text-xs text-muted-foreground">{exp.duration}</div>
                                 {exp.description && (
-                                  <div className="text-xs mt-2 text-muted-foreground">{exp.description}</div>
+                                  <div className="text-[10px] md:text-xs mt-1.5 md:mt-2 text-muted-foreground">{exp.description}</div>
                                 )}
                               </div>
                             ))}
@@ -756,19 +769,19 @@ export default function QuickImportPage() {
                       {/* Education */}
                       {formData.education && formData.education.length > 0 && (
                         <div>
-                          <h4 className="text-sm font-semibold text-foreground mb-3">
+                          <h4 className="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">
                             Education
                           </h4>
-                          <div className="space-y-3">
+                          <div className="space-y-2 md:space-y-3">
                             {formData.education.map((edu, index) => (
-                              <div key={index} className="p-3 border rounded-lg bg-muted/20">
-                                <div className="font-semibold text-sm">{edu.degree}</div>
-                                <div className="text-sm text-muted-foreground">{edu.institution}</div>
+                              <div key={index} className="p-2.5 md:p-3 border rounded-lg bg-muted/20">
+                                <div className="font-semibold text-xs md:text-sm">{edu.degree}</div>
+                                <div className="text-xs md:text-sm text-muted-foreground">{edu.institution}</div>
                                 {edu.field && (
-                                  <div className="text-xs text-muted-foreground">Field: {edu.field}</div>
+                                  <div className="text-[10px] md:text-xs text-muted-foreground">Field: {edu.field}</div>
                                 )}
                                 {edu.year && (
-                                  <div className="text-xs text-muted-foreground">Year: {edu.year}</div>
+                                  <div className="text-[10px] md:text-xs text-muted-foreground">Year: {edu.year}</div>
                                 )}
                               </div>
                             ))}
@@ -778,14 +791,18 @@ export default function QuickImportPage() {
 
                       {/* Certifications */}
                       {formData.certifications && formData.certifications.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-semibold text-foreground mb-3">
+                        <div className="w-full overflow-hidden">
+                          <h4 className="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">
                             Certifications
                           </h4>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-1.5 md:gap-2">
                             {formData.certifications.map((cert, index) => (
-                              <Badge key={index} variant="outline" className="text-sm">
-                                {cert}
+                              <Badge 
+                                key={index} 
+                                variant="outline" 
+                                className="text-xs md:text-sm max-w-full wrap-break-word"
+                              >
+                                <span className="line-clamp-2" title={cert}>{cert}</span>
                               </Badge>
                             ))}
                           </div>
@@ -794,14 +811,18 @@ export default function QuickImportPage() {
 
                       {/* Languages */}
                       {formData.languages && formData.languages.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-semibold text-foreground mb-3">
+                        <div className="w-full overflow-hidden">
+                          <h4 className="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">
                             Languages
                           </h4>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-1.5 md:gap-2">
                             {formData.languages.map((lang, index) => (
-                              <Badge key={index} variant="outline" className="text-sm">
-                                {lang}
+                              <Badge 
+                                key={index} 
+                                variant="outline" 
+                                className="text-xs md:text-sm max-w-full wrap-break-word"
+                              >
+                                <span className="line-clamp-1" title={lang}>{lang}</span>
                               </Badge>
                             ))}
                           </div>

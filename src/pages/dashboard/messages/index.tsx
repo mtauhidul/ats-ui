@@ -30,6 +30,8 @@ import {
   Plus,
   RotateCcw,
   Search,
+  Menu,
+  X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -112,6 +114,7 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [messageText, setMessageText] = useState("");
   const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch messages on mount
@@ -385,19 +388,19 @@ export default function MessagesPage() {
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
-        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <div className="px-4 lg:px-6">
+        <div className="flex flex-col gap-2 md:gap-4 py-2 md:py-4 lg:py-6">
+          <div className="px-2 md:px-4 lg:px-6">
             {/* Header */}
-            <div className="mb-6">
+            <div className="mb-4 md:mb-6 hidden md:block">
               <div className="flex items-center gap-3 mb-2">
                 <div className="rounded-lg bg-primary/10 p-2">
-                  <MessageSquare className="h-6 w-6 text-primary" />
+                  <MessageSquare className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">
+                  <h2 className="text-xl md:text-2xl font-bold text-foreground">
                     Messages
                   </h2>
-                  <p className="text-muted-foreground">
+                  <p className="text-xs md:text-sm text-muted-foreground">
                     Communicate with your team members
                   </p>
                 </div>
@@ -405,21 +408,59 @@ export default function MessagesPage() {
             </div>
 
             {/* Messages Container */}
-            <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-240px)] min-h-[500px]">
+            <div className="flex flex-col lg:flex-row gap-3 md:gap-4 h-[85vh] md:h-[calc(100vh-240px)] min-h-[500px] relative">
+              {/* Mobile Toggle Button - Only show when conversation is selected */}
+              {currentConversation && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="lg:hidden absolute top-2 left-2 z-10 bg-card shadow-lg"
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                >
+                  <Menu className="h-4 w-4 mr-2" />
+                  Conversations
+                  {conversations.filter(c => c.unreadCount > 0).length > 0 && (
+                    <span className="ml-2 h-5 min-w-5 px-1.5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {conversations.filter(c => c.unreadCount > 0).length}
+                    </span>
+                  )}
+                </Button>
+              )}
+
               {/* Conversations Sidebar */}
-              <div className="flex flex-col border rounded-lg bg-card overflow-hidden lg:w-[380px] h-full">
+              <div className={`flex flex-col border rounded-lg bg-card overflow-hidden w-full lg:w-[380px] transition-all duration-300 ${
+                isSidebarOpen 
+                  ? 'h-full absolute inset-0 z-20 lg:relative' 
+                  : currentConversation 
+                    ? 'hidden lg:flex lg:h-full' 
+                    : 'h-full lg:h-full'
+              }`}>
                 {/* Sidebar Header */}
-                <div className="p-4 border-b bg-card space-y-3 shrink-0">
+                <div className="p-3 md:p-4 border-b bg-card space-y-3 shrink-0">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Conversations</h3>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setIsNewMessageModalOpen(true)}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      New
-                    </Button>
+                    <h3 className="text-base md:text-lg font-semibold">Conversations</h3>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsNewMessageModalOpen(true)}
+                        className="h-8 px-2 md:px-3"
+                      >
+                        <Plus className="h-4 w-4 md:mr-2" />
+                        <span className="hidden md:inline">New</span>
+                      </Button>
+                      {/* Close button on mobile */}
+                      {isSidebarOpen && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="lg:hidden h-8 w-8 p-0"
+                          onClick={() => setIsSidebarOpen(false)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -446,23 +487,26 @@ export default function MessagesPage() {
                     filteredConversations.map((conversation, index) => (
                       <div
                         key={conversation.id}
-                        className={`p-4 border-b cursor-pointer transition-all hover:bg-muted/70 animate-in fade-in slide-in-from-left-4 duration-300 ${
+                        className={`p-3 md:p-4 border-b cursor-pointer transition-all hover:bg-muted/70 animate-in fade-in slide-in-from-left-4 duration-300 ${
                           currentConversation?.id === conversation.id
                             ? "bg-muted border-l-4 border-l-primary"
                             : "border-l-4 border-l-transparent"
                         }`}
                         style={{ animationDelay: `${index * 30}ms` }}
-                        onClick={() => setCurrentConversation(conversation)}
+                        onClick={() => {
+                          setCurrentConversation(conversation);
+                          setIsSidebarOpen(false); // Close sidebar on mobile when conversation is selected
+                        }}
                       >
-                        <div className="flex gap-3">
+                        <div className="flex gap-2 md:gap-3">
                           <div className="relative shrink-0">
-                            <Avatar className="h-11 w-11 ring-2 ring-background">
-                              <AvatarFallback className="bg-linear-to-br from-primary/20 to-primary/10 text-primary font-semibold text-sm">
+                            <Avatar className="h-9 w-9 md:h-11 md:w-11 ring-2 ring-background">
+                              <AvatarFallback className="bg-linear-to-br from-primary/20 to-primary/10 text-primary font-semibold text-xs md:text-sm">
                                 {getInitials(conversation.participantName)}
                               </AvatarFallback>
                             </Avatar>
                             {conversation.unreadCount > 0 && (
-                              <span className="absolute -top-1 -right-1 h-5 min-w-5 px-1.5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-200">
+                              <span className="absolute -top-1 -right-1 h-4 w-4 md:h-5 md:min-w-5 px-1 md:px-1.5 bg-primary text-white text-[10px] md:text-xs font-bold rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-200">
                                 {conversation.unreadCount > 9
                                   ? "9+"
                                   : conversation.unreadCount}
@@ -472,7 +516,7 @@ export default function MessagesPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2 mb-1">
                               <span
-                                className={`font-semibold text-sm truncate ${
+                                className={`font-semibold text-xs md:text-sm truncate ${
                                   conversation.unreadCount > 0
                                     ? "text-foreground"
                                     : "text-foreground/90"
@@ -480,15 +524,15 @@ export default function MessagesPage() {
                               >
                                 {conversation.participantName}
                               </span>
-                              <span className="text-xs text-muted-foreground shrink-0">
+                              <span className="text-[10px] md:text-xs text-muted-foreground shrink-0">
                                 {formatTime(conversation.lastMessageTime)}
                               </span>
                             </div>
-                            <p className="text-xs text-muted-foreground mb-1.5 capitalize">
+                            <p className="text-[10px] md:text-xs text-muted-foreground mb-1.5 capitalize">
                               {conversation.participantRole.replace(/_/g, " ")}
                             </p>
                             <p
-                              className={`text-sm truncate leading-tight ${
+                              className={`text-xs md:text-sm truncate leading-tight ${
                                 conversation.unreadCount > 0
                                   ? "font-medium text-foreground"
                                   : "text-muted-foreground"
@@ -509,19 +553,19 @@ export default function MessagesPage() {
                 {currentConversation ? (
                   <>
                     {/* Chat Header */}
-                    <CardHeader className="p-0! py-1.5! px-3! border-b shrink-0 bg-muted/20">
+                    <CardHeader className="p-2 md:p-3 md:py-1.5 border-b shrink-0 bg-muted/20">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8 ring-1 ring-background">
-                            <AvatarFallback className="bg-linear-to-br from-primary/20 to-primary/10 text-primary font-semibold text-xs">
+                          <Avatar className="h-7 w-7 md:h-8 md:w-8 ring-1 ring-background">
+                            <AvatarFallback className="bg-linear-to-br from-primary/20 to-primary/10 text-primary font-semibold text-[10px] md:text-xs">
                               {getInitials(currentConversation.participantName)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <CardTitle className="text-sm font-semibold">
+                            <CardTitle className="text-xs md:text-sm font-semibold">
                               {currentConversation.participantName}
                             </CardTitle>
-                            <p className="text-[11px] text-muted-foreground capitalize leading-tight">
+                            <p className="text-[10px] md:text-[11px] text-muted-foreground capitalize leading-tight">
                               {currentConversation.participantRole.replace(
                                 /_/g,
                                 " "
@@ -532,7 +576,7 @@ export default function MessagesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="shrink-0"
+                          className="shrink-0 h-8 w-8"
                         >
                           <MoreVertical className="h-4 w-4" />
                         </Button>
@@ -541,7 +585,7 @@ export default function MessagesPage() {
 
                     {/* Messages */}
                     <div
-                      className="flex-1 overflow-y-auto py-2 space-y-1"
+                      className="flex-1 overflow-y-auto py-2 md:py-3 space-y-1"
                       style={{ backgroundColor: "hsl(var(--muted) / 0.3)" }}
                     >
                       {currentConversation.messages.length === 0 ? (
@@ -577,22 +621,22 @@ export default function MessagesPage() {
                                   }}
                                 >
                                   <div
-                                    className={`flex gap-1 max-w-[95%] ${
+                                    className={`flex gap-1 max-w-[95%] md:max-w-[85%] ${
                                       isCurrentUser
                                         ? "flex-row-reverse"
                                         : "flex-row"
                                     }`}
                                   >
                                     {/* Avatar - only show for first message in group */}
-                                    <Avatar className="h-7 w-7 shrink-0">
-                                      <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
+                                    <Avatar className="h-6 w-6 md:h-7 md:w-7 shrink-0">
+                                      <AvatarFallback className="bg-primary/10 text-primary text-[9px] md:text-[10px] font-semibold">
                                         {getInitials(group[0].senderName)}
                                       </AvatarFallback>
                                     </Avatar>
 
                                     {/* Messages group */}
                                     <div
-                                      className={`flex flex-col gap-3 ${
+                                      className={`flex flex-col gap-2 md:gap-3 ${
                                         isCurrentUser
                                           ? "items-end"
                                           : "items-start"
@@ -600,7 +644,7 @@ export default function MessagesPage() {
                                     >
                                       {/* Sender name - only for received messages */}
                                       {!isCurrentUser && (
-                                        <span className="text-xs font-medium text-muted-foreground px-3">
+                                        <span className="text-[10px] md:text-xs font-medium text-muted-foreground px-2 md:px-3">
                                           {group[0].senderName}
                                         </span>
                                       )}
@@ -626,7 +670,7 @@ export default function MessagesPage() {
                                                 }}
                                               >
                                                 <div
-                                                  className={`inline-block rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
+                                                  className={`inline-block rounded-2xl px-2.5 py-1.5 md:px-3 md:py-2 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
                                                     isCurrentUser
                                                       ? "bg-primary rounded-tr-md"
                                                       : "bg-card border rounded-tl-md"
@@ -638,7 +682,7 @@ export default function MessagesPage() {
                                                       : "rounded-tl-2xl"
                                                   }`}
                                                 >
-                                                  <p className={`text-sm leading-relaxed whitespace-pre-wrap wrap-break-word ${
+                                                  <p className={`text-xs md:text-sm leading-relaxed whitespace-pre-wrap wrap-break-word ${
                                                     isCurrentUser ? "text-white" : ""
                                                   }`}>
                                                     {msg.message}
@@ -647,13 +691,13 @@ export default function MessagesPage() {
 
                                                 {/* Status and time - outside bubble */}
                                                 <div
-                                                  className={`flex items-center gap-1.5 mt-1 px-2 ${
+                                                  className={`flex items-center gap-1 md:gap-1.5 mt-0.5 md:mt-1 px-1.5 md:px-2 ${
                                                     isCurrentUser
                                                       ? "justify-end"
                                                       : "justify-start"
                                                   }`}
                                                 >
-                                                  <span className="text-xs text-muted-foreground">
+                                                  <span className="text-[10px] md:text-xs text-muted-foreground">
                                                     {formatTime(msg.sentAt)}
                                                   </span>
                                                   {isCurrentUser && (
@@ -717,7 +761,7 @@ export default function MessagesPage() {
                     </div>
 
                     {/* Message Input */}
-                    <div className="px-2 py-2 border-t shrink-0">
+                    <div className="px-1.5 py-1.5 md:px-2 md:py-2 border-t shrink-0">
                       <MessageInputAi
                         onSendMessage={(message) => {
                           handleSendMessage(message);

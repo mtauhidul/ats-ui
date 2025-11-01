@@ -366,10 +366,10 @@ export function EmailMonitoringSettings() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="animate-spin h-8 w-8 text-primary" />
-          <p className="text-sm text-muted-foreground">
+      <div className="flex items-center justify-center min-h-[300px] md:min-h-[400px]">
+        <div className="flex flex-col items-center gap-2 md:gap-3">
+          <RefreshCw className="animate-spin h-6 w-6 md:h-8 md:w-8 text-primary" />
+          <p className="text-xs md:text-sm text-muted-foreground">
             Loading email monitoring...
           </p>
         </div>
@@ -378,44 +378,44 @@ export function EmailMonitoringSettings() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Status Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">
+              <div className="space-y-0.5 md:space-y-1">
+                <p className="text-xs md:text-sm font-medium text-muted-foreground">
                   System Status
                 </p>
                 <StatusIndicator
                   status={automationStatus?.enabled ? "running" : "stopped"}
                 />
                 {automationStatus?.enabled && (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">
                     Checking emails every 5 minutes
                   </p>
                 )}
               </div>
-              <div className="rounded-full bg-primary/10 p-3">
-                <Activity className="h-5 w-5 text-primary" />
+              <div className="rounded-full bg-primary/10 p-2 md:p-3 shrink-0">
+                <Activity className="h-4 w-4 md:h-5 md:w-5 text-primary" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">
+              <div className="space-y-0.5 md:space-y-1">
+                <p className="text-xs md:text-sm font-medium text-muted-foreground">
                   Connected Accounts
                 </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold">
+                <div className="flex items-baseline gap-1.5 md:gap-2">
+                  <span className="text-xl md:text-2xl font-bold">
                     {emailAccounts.length}
                   </span>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-xs md:text-sm text-muted-foreground">
                     {
                       emailAccounts.filter((acc) => acc.autoProcessResumes)
                         .length
@@ -424,8 +424,8 @@ export function EmailMonitoringSettings() {
                   </span>
                 </div>
               </div>
-              <div className="rounded-full bg-emerald-500/10 p-3">
-                <Shield className="h-5 w-5 text-emerald-500" />
+              <div className="rounded-full bg-emerald-500/10 p-2 md:p-3 shrink-0">
+                <Shield className="h-4 w-4 md:h-5 md:w-5 text-emerald-500" />
               </div>
             </div>
           </CardContent>
@@ -435,34 +435,34 @@ export function EmailMonitoringSettings() {
       {/* How It Works Info */}
       {automationStatus?.enabled && emailAccounts.length > 0 && (
         <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
-              <div className="rounded-full bg-blue-100 p-2">
-                <Activity className="h-4 w-4 text-blue-600" />
+          <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
+            <div className="flex items-start gap-2 md:gap-3">
+              <div className="rounded-full bg-blue-100 p-1.5 md:p-2 shrink-0">
+                <Activity className="h-3 w-3 md:h-4 md:w-4 text-blue-600" />
               </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-blue-900 mb-1">
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-blue-900 mb-1 text-xs md:text-sm">
                   Email Monitoring Active
                 </h4>
-                <p className="text-sm text-blue-700">
+                <p className="text-xs md:text-sm text-blue-700">
                   The system is automatically checking your email accounts for
                   new candidate applications. When a new email with a resume is
                   detected, it will be automatically processed and added to your
                   applications list.
                 </p>
-                <div className="mt-3 text-xs text-blue-600 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                <div className="mt-2 md:mt-3 text-[10px] md:text-xs text-blue-600 space-y-0.5 md:space-y-1">
+                  <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-blue-600 shrink-0" />
                     <span>Emails are checked every 5 minutes</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                  <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-blue-600 shrink-0" />
                     <span>
                       Last checked times are updated below for each account
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                  <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-blue-600 shrink-0" />
                     <span>
                       Use the refresh button on each account to check
                       immediately
@@ -478,90 +478,90 @@ export function EmailMonitoringSettings() {
       {/* Automation Stats */}
       {automationStatus?.stats && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
+          <CardHeader className="p-3 md:p-6">
+            <CardTitle className="flex items-center gap-1.5 md:gap-2 text-base md:text-lg">
+              <BarChart3 className="h-4 w-4 md:h-5 md:w-5 text-primary" />
               Automation Statistics
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs md:text-sm">
               Performance metrics for email automation engine
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
+          <CardContent className="p-3 md:p-6 pt-0">
+            <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
               {/* Emails Processed */}
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
+              <div className="rounded-lg border bg-card p-3 md:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs md:text-sm font-medium text-muted-foreground">
                       Emails Processed
                     </p>
-                    <p className="text-2xl font-bold mt-1">
+                    <p className="text-lg md:text-2xl font-bold mt-0.5 md:mt-1 truncate">
                       {automationStatus.stats.totalEmailsProcessed}
                     </p>
                   </div>
-                  <div className="rounded-full bg-blue-500/10 p-3">
-                    <Mail className="h-5 w-5 text-blue-600" />
+                  <div className="rounded-full bg-blue-500/10 p-2 md:p-3 shrink-0">
+                    <Mail className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
                   </div>
                 </div>
               </div>
 
               {/* Candidates Created */}
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
+              <div className="rounded-lg border bg-card p-3 md:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs md:text-sm font-medium text-muted-foreground">
                       Applications Created
                     </p>
-                    <p className="text-2xl font-bold mt-1 text-emerald-600">
+                    <p className="text-lg md:text-2xl font-bold mt-0.5 md:mt-1 text-emerald-600 truncate">
                       {automationStatus.stats.totalCandidatesCreated}
                     </p>
                   </div>
-                  <div className="rounded-full bg-emerald-500/10 p-3">
-                    <Users className="h-5 w-5 text-emerald-600" />
+                  <div className="rounded-full bg-emerald-500/10 p-2 md:p-3 shrink-0">
+                    <Users className="h-4 w-4 md:h-5 md:w-5 text-emerald-600" />
                   </div>
                 </div>
               </div>
 
               {/* Errors */}
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
+              <div className="rounded-lg border bg-card p-3 md:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs md:text-sm font-medium text-muted-foreground">
                       Total Errors
                     </p>
-                    <p className="text-2xl font-bold mt-1 text-amber-600">
+                    <p className="text-lg md:text-2xl font-bold mt-0.5 md:mt-1 text-amber-600 truncate">
                       {automationStatus.stats.totalErrors}
                     </p>
                   </div>
-                  <div className="rounded-full bg-amber-500/10 p-3">
-                    <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  <div className="rounded-full bg-amber-500/10 p-2 md:p-3 shrink-0">
+                    <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-amber-600" />
                   </div>
                 </div>
               </div>
 
               {/* Last Run */}
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
+              <div className="rounded-lg border bg-card p-3 md:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs md:text-sm font-medium text-muted-foreground">
                       Last Run
                     </p>
-                    <p className="text-sm font-bold mt-1">
+                    <p className="text-xs md:text-sm font-bold mt-0.5 md:mt-1 truncate">
                       {automationStatus.stats.lastRunAt
                         ? new Date(
                             automationStatus.stats.lastRunAt
                           ).toLocaleTimeString()
                         : "Never"}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1 truncate">
                       {automationStatus.stats.lastRunDuration
                         ? `${automationStatus.stats.lastRunDuration}s duration`
                         : "No data"}
                     </p>
                   </div>
-                  <div className="rounded-full bg-purple-500/10 p-3">
-                    <Clock className="h-5 w-5 text-purple-600" />
+                  <div className="rounded-full bg-purple-500/10 p-2 md:p-3 shrink-0">
+                    <Clock className="h-4 w-4 md:h-5 md:w-5 text-purple-600" />
                   </div>
                 </div>
               </div>
@@ -572,26 +572,27 @@ export function EmailMonitoringSettings() {
 
       {/* Control Panel */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Server className="h-5 w-5 text-primary" />
+        <CardHeader className="p-3 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
+            <div className="min-w-0">
+              <CardTitle className="flex items-center gap-1.5 md:gap-2 text-base md:text-lg">
+                <Server className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                 Monitoring Control
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs md:text-sm">
                 Start or stop automatic email monitoring
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={fetchData}
                 disabled={actionLoading === "refresh"}
+                className="h-8 md:h-9 text-xs md:text-sm"
               >
                 <RefreshCw
-                  className={`h-4 w-4 mr-2 ${
+                  className={`h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2 ${
                     actionLoading === "refresh" ? "animate-spin" : ""
                   }`}
                 />
@@ -604,33 +605,34 @@ export function EmailMonitoringSettings() {
                   onOpenChange={setShowStopDialog}
                 >
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm">
-                      <Pause className="h-4 w-4 mr-2" />
-                      Stop Monitoring
+                    <Button variant="destructive" size="sm" className="h-8 md:h-9 text-xs md:text-sm">
+                      <Pause className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                      <span className="hidden sm:inline">Stop Monitoring</span>
+                      <span className="sm:hidden">Stop</span>
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-lg">
                     <AlertDialogHeader>
-                      <AlertDialogTitle className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                      <AlertDialogTitle className="flex items-center gap-1.5 md:gap-2 text-base md:text-lg">
+                        <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-destructive" />
                         Stop Email Monitoring
                       </AlertDialogTitle>
-                      <AlertDialogDescription>
+                      <AlertDialogDescription className="text-xs md:text-sm">
                         This will stop all active email monitoring processes.
                         You can restart monitoring at any time, but ongoing
                         imports may be interrupted.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+                      <AlertDialogCancel className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm">Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={stopAutomation}
                         disabled={actionLoading === "stop"}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         {actionLoading === "stop" ? (
                           <>
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            <RefreshCw className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2 animate-spin" />
                             Stopping...
                           </>
                         ) : (
@@ -645,11 +647,12 @@ export function EmailMonitoringSettings() {
                   size="sm"
                   onClick={startAutomation}
                   disabled={actionLoading === "start"}
+                  className="h-8 md:h-9 text-xs md:text-sm"
                 >
-                  <Play className="h-4 w-4 mr-2" />
+                  <Play className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                   {actionLoading === "start"
                     ? "Starting..."
-                    : "Start Monitoring"}
+                    : <><span className="hidden sm:inline">Start Monitoring</span><span className="sm:hidden">Start</span></>}
                 </Button>
               )}
             </div>
@@ -659,82 +662,86 @@ export function EmailMonitoringSettings() {
 
       {/* Email Accounts */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-primary" />
+        <CardHeader className="p-3 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
+            <div className="min-w-0">
+              <CardTitle className="flex items-center gap-1.5 md:gap-2 text-base md:text-lg">
+                <Mail className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                 Connected Email Accounts
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs md:text-sm">
                 Manage email accounts for automated candidate monitoring
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => forceCheckAllAccounts()}
                 disabled={actionLoading === "check-all"}
+                className="h-8 md:h-9 text-xs md:text-sm"
               >
                 <RefreshCw
-                  className={`h-4 w-4 mr-2 ${
+                  className={`h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2 ${
                     actionLoading === "check-all" ? "animate-spin" : ""
                   }`}
                 />
-                Check Now
+                <span className="hidden sm:inline">Check Now</span>
+                <span className="sm:hidden">Check</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowAddAccountDialog(true)}
+                className="h-8 md:h-9 text-xs md:text-sm"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Account
+                <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                <span className="hidden sm:inline">Add Account</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="p-3 md:p-6 pt-0">
           {emailAccounts.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
-                <Mail className="h-8 w-8 text-muted-foreground" />
+            <div className="text-center py-8 md:py-12">
+              <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4 bg-muted rounded-full flex items-center justify-center">
+                <Mail className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-medium mb-2">
+              <h3 className="text-base md:text-lg font-medium mb-1.5 md:mb-2">
                 No Email Accounts Connected
               </h3>
-              <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+              <p className="text-xs md:text-sm text-muted-foreground mb-4 md:mb-6 max-w-md mx-auto px-4">
                 Connect your first email account to start automated candidate
                 monitoring and resume processing.
               </p>
-              <Button onClick={() => setShowAddAccountDialog(true)}>
-                <Mail className="h-4 w-4 mr-2" />
+              <Button onClick={() => setShowAddAccountDialog(true)} className="h-9 md:h-10 text-sm">
+                <Mail className="h-3 w-3 md:h-4 md:w-4 mr-2" />
                 Connect Email Account
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {emailAccounts.map((account) => (
                 <Card key={account._id} className="border-2">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4 flex-1 min-w-0">
-                        <div className="rounded-full bg-primary/10 p-3 flex-shrink-0">
-                          <Mail className="h-5 w-5 text-primary" />
+                  <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 md:gap-4">
+                      <div className="flex items-start gap-2 md:gap-4 flex-1 min-w-0">
+                        <div className="rounded-full bg-primary/10 p-2 md:p-3 shrink-0">
+                          <Mail className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                         </div>
 
-                        <div className="flex-1 min-w-0 space-y-3">
+                        <div className="flex-1 min-w-0 space-y-2 md:space-y-3">
                           <div>
-                            <h4 className="font-semibold text-base truncate">
+                            <h4 className="font-semibold text-sm md:text-base truncate">
                               {account.email}
                             </h4>
-                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                            <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mt-1.5 md:mt-2">
                               <ProviderBadge provider={account.provider} />
                               {account.autoProcessResumes && (
-                                <Badge className="bg-emerald-500">
-                                  <Zap className="h-3 w-3 mr-1" />
+                                <Badge className="bg-emerald-500 text-[10px] md:text-xs">
+                                  <Zap className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
                                   Auto-Enabled
                                 </Badge>
                               )}
@@ -743,10 +750,10 @@ export function EmailMonitoringSettings() {
 
                           <Separator />
 
-                          <div className="space-y-2 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              <span>
+                          <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1.5 md:gap-2">
+                              <Clock className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
+                              <span className="truncate">
                                 Last checked:{" "}
                                 {account.lastChecked
                                   ? formatTimeAgo(account.lastChecked)
@@ -757,7 +764,7 @@ export function EmailMonitoringSettings() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                      <div className="flex items-center gap-1.5 md:gap-2 shrink-0 self-end sm:self-start">
                         <Switch
                           checked={account.autoProcessResumes}
                           disabled={actionLoading === `toggle-${account._id}`}
@@ -772,9 +779,10 @@ export function EmailMonitoringSettings() {
                           onClick={() => forceCheckAllAccounts()}
                           disabled={actionLoading === "check-all"}
                           title="Force check all email accounts now"
+                          className="h-8 w-8 md:h-9 md:w-9"
                         >
                           <RefreshCw
-                            className={`h-4 w-4 ${
+                            className={`h-3 w-3 md:h-4 md:w-4 ${
                               actionLoading === "check-all"
                                 ? "animate-spin"
                                 : ""
@@ -784,52 +792,52 @@ export function EmailMonitoringSettings() {
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="h-8 w-8 md:h-9 md:w-9">
+                              <MoreVertical className="h-3 w-3 md:h-4 md:w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <DropdownMenuItem
-                                  className="text-destructive"
+                                  className="text-destructive text-xs md:text-sm"
                                   onSelect={(e) => e.preventDefault()}
                                 >
-                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  <Trash2 className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                                   Delete Account
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
+                              <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-lg">
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle className="flex items-center gap-2">
-                                    <Trash2 className="h-5 w-5 text-destructive" />
+                                  <AlertDialogTitle className="flex items-center gap-1.5 md:gap-2 text-base md:text-lg">
+                                    <Trash2 className="h-4 w-4 md:h-5 md:w-5 text-destructive" />
                                     Remove Email Account
                                   </AlertDialogTitle>
-                                  <AlertDialogDescription>
+                                  <AlertDialogDescription className="text-xs md:text-sm">
                                     Are you sure you want to remove{" "}
                                     <strong>{account.email}</strong>? This will
                                     stop all automation for this account and
                                     cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+                                  <AlertDialogCancel className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm">Cancel</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => deleteAccount(account._id)}
                                     disabled={
                                       actionLoading === `delete-${account._id}`
                                     }
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
                                     {actionLoading ===
                                     `delete-${account._id}` ? (
                                       <>
-                                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                        <RefreshCw className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2 animate-spin" />
                                         Removing...
                                       </>
                                     ) : (
                                       <>
-                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        <Trash2 className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                                         Remove Account
                                       </>
                                     )}

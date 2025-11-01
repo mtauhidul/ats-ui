@@ -101,24 +101,24 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto p-4 md:p-6">
         <DialogHeader>
-          <DialogTitle>Edit Category</DialogTitle>
+          <DialogTitle className="text-lg md:text-xl">Edit Category</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+        <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4 pt-3 md:pt-4">
           {/* Has Children Notice */}
           {hasChildren && (
             <div className="rounded bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 p-2">
-              <p className="text-xs text-blue-800 dark:text-blue-400">
+              <p className="text-[10px] md:text-xs text-blue-800 dark:text-blue-400">
                 This category has subcategories. Parent cannot be changed.
               </p>
             </div>
           )}
 
           {/* Category Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">
+          <div className="space-y-1.5 md:space-y-2">
+            <Label htmlFor="name" className="text-xs md:text-sm">
               Category Name <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -129,16 +129,16 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
                 if (errors.name) setErrors({ ...errors, name: "" });
               }}
               placeholder="e.g., Technology, Marketing, Sales"
-              className={errors.name ? "border-red-500" : ""}
+              className={`h-8 md:h-9 text-xs md:text-sm ${errors.name ? "border-red-500" : ""}`}
             />
             {errors.name && (
-              <p className="text-sm text-red-500">{errors.name}</p>
+              <p className="text-xs md:text-sm text-red-500">{errors.name}</p>
             )}
           </div>
 
           {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
+          <div className="space-y-1.5 md:space-y-2">
+            <Label htmlFor="description" className="text-xs md:text-sm">Description (Optional)</Label>
             <Input
               id="description"
               value={formData.description}
@@ -146,12 +146,13 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
                 setFormData({ ...formData, description: e.target.value })
               }
               placeholder="Brief description of the category"
+              className="h-8 md:h-9 text-xs md:text-sm"
             />
           </div>
 
           {/* Parent Category */}
-          <div className="space-y-2">
-            <Label htmlFor="parentId">Parent Category (Optional)</Label>
+          <div className="space-y-1.5 md:space-y-2">
+            <Label htmlFor="parentId" className="text-xs md:text-sm">Parent Category (Optional)</Label>
             <Select
               value={formData.parentId || "none"}
               onValueChange={(value) => {
@@ -160,7 +161,7 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
               }}
               disabled={hasChildren}
             >
-              <SelectTrigger className={errors.parentId ? "border-red-500" : ""}>
+              <SelectTrigger className={`h-8 md:h-9 text-xs md:text-sm ${errors.parentId ? "border-red-500" : ""}`}>
                 <SelectValue placeholder="Select parent category" />
               </SelectTrigger>
               <SelectContent>
@@ -173,25 +174,25 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
               </SelectContent>
             </Select>
             {hasChildren && (
-              <p className="text-xs text-amber-600 dark:text-amber-400">
+              <p className="text-[10px] md:text-xs text-amber-600 dark:text-amber-400">
                 Cannot change parent while category has subcategories
               </p>
             )}
             {errors.parentId && (
-              <p className="text-sm text-red-500">{errors.parentId}</p>
+              <p className="text-xs md:text-sm text-red-500">{errors.parentId}</p>
             )}
           </div>
 
           {/* Active Status */}
-          <div className="space-y-2">
-            <Label htmlFor="isActive">Status</Label>
+          <div className="space-y-1.5 md:space-y-2">
+            <Label htmlFor="isActive" className="text-xs md:text-sm">Status</Label>
             <Select
               value={formData.isActive ? "active" : "inactive"}
               onValueChange={(value) =>
                 setFormData({ ...formData, isActive: value === "active" })
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-8 md:h-9 text-xs md:text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -202,8 +203,8 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
           </div>
 
           {/* Sort Order */}
-          <div className="space-y-2">
-            <Label htmlFor="sortOrder">Sort Order</Label>
+          <div className="space-y-1.5 md:space-y-2">
+            <Label htmlFor="sortOrder" className="text-xs md:text-sm">Sort Order</Label>
             <Input
               id="sortOrder"
               type="number"
@@ -213,22 +214,23 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
               }
               placeholder="0"
               min="0"
+              className="h-8 md:h-9 text-xs md:text-sm"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[10px] md:text-xs text-muted-foreground">
               Lower numbers appear first
             </p>
           </div>
 
           {/* Color */}
-          <div className="space-y-2">
-            <Label>Color</Label>
-            <div className="grid grid-cols-5 gap-2">
+          <div className="space-y-1.5 md:space-y-2">
+            <Label className="text-xs md:text-sm">Color</Label>
+            <div className="grid grid-cols-5 gap-1.5 md:gap-2">
               {COLOR_OPTIONS.map((color) => (
                 <button
                   key={color.value}
                   type="button"
                   onClick={() => setFormData({ ...formData, color: color.value })}
-                  className={`relative h-8 rounded border-2 transition-all ${
+                  className={`relative h-7 md:h-8 rounded border-2 transition-all ${
                     formData.color === color.value
                       ? "border-foreground scale-105"
                       : "border-transparent hover:border-muted-foreground"
@@ -238,14 +240,14 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
                 >
                   {formData.color === color.value && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="h-2 w-2 rounded-full bg-white" />
+                      <div className="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-white" />
                     </div>
                   )}
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2 mt-2">
-              <Label htmlFor="custom-color" className="text-sm">
+            <div className="flex items-center gap-2 mt-1.5 md:mt-2">
+              <Label htmlFor="custom-color" className="text-xs md:text-sm">
                 Custom:
               </Label>
               <input
@@ -255,32 +257,32 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
                 onChange={(e) =>
                   setFormData({ ...formData, color: e.target.value })
                 }
-                className="h-6 w-12 rounded border cursor-pointer"
+                className="h-6 w-10 md:w-12 rounded border cursor-pointer"
               />
-              <span className="text-xs text-muted-foreground">
+              <span className="text-[10px] md:text-xs text-muted-foreground">
                 {(formData.color || "#000000").toUpperCase()}
               </span>
             </div>
           </div>
 
           {/* Preview */}
-          <div className="space-y-2">
-            <Label>Preview</Label>
-            <div className="rounded border p-3 bg-muted/30">
+          <div className="space-y-1.5 md:space-y-2">
+            <Label className="text-xs md:text-sm">Preview</Label>
+            <div className="rounded border p-2 md:p-3 bg-muted/30">
               <div className="flex items-center gap-2 flex-wrap">
                 <div
-                  className="w-3 h-3 rounded-full"
+                  className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full"
                   style={{ backgroundColor: formData.color }}
                 />
-                <span className="font-medium">
+                <span className="font-medium text-xs md:text-sm">
                   {formData.name || "Category Name"}
                 </span>
                 {formData.parentId && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-[10px] md:text-xs text-muted-foreground">
                     (Subcategory of {parentCategories.find(c => c.id === formData.parentId)?.name})
                   </span>
                 )}
-                <span className={`text-xs px-2 py-0.5 rounded ${
+                <span className={`text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded ${
                   formData.isActive 
                     ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400"
                     : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
@@ -292,11 +294,11 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose}>
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 md:pt-4">
+            <Button type="button" variant="outline" onClick={handleClose} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit">Save Changes</Button>
+            <Button type="submit" className="w-full sm:w-auto">Save Changes</Button>
           </div>
         </form>
       </DialogContent>

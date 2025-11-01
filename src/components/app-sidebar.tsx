@@ -15,6 +15,7 @@ import {
   IconUsers,
 } from "@tabler/icons-react";
 import * as React from "react";
+import { Link } from "react-router-dom";
 
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
@@ -154,17 +155,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:p-2! data-[slot=sidebar-menu-button]:h-auto"
+            <Link 
+              to="/dashboard" 
+              className="flex items-center gap-2 p-2 cursor-pointer"
             >
-              <a href="#" className="flex items-center gap-2">
-                <div style={{ width: "24px", height: "24px", flexShrink: 0 }}>
-                  <LogoIcon size={24} color="#71abbf" />
-                </div>
-                <span className="text-base font-semibold">YTFCS ATS</span>
-              </a>
-            </SidebarMenuButton>
+              <div style={{ width: "24px", height: "24px", flexShrink: 0 }}>
+                <LogoIcon size={24} color="#71abbf" />
+              </div>
+              <span className="text-base font-semibold">YTFCS ATS</span>
+            </Link>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>

@@ -1,14 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import {
   Card,
   CardAction,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
+  CardHeading,
   CardTitle,
 } from "@/components/ui/card";
 import {
@@ -36,20 +38,26 @@ interface ChartDataPoint {
   date: string;
   applications: number;
   directSubmissions: number;
+  manualImports: number;
   emailApplications: number;
 }
 
 const chartConfig = {
   applications: {
-    label: "Applications",
+    label: "Total Applications",
+    color: "var(--chart-1)",
   },
   directSubmissions: {
     label: "Direct Submissions",
-    color: "var(--primary)",
+    color: "var(--chart-2)",
+  },
+  manualImports: {
+    label: "Manual Imports",
+    color: "var(--chart-5)",
   },
   emailApplications: {
     label: "Email Applications",
-    color: "var(--primary)",
+    color: "var(--chart-4)",
   },
 } satisfies ChartConfig;
 
@@ -65,7 +73,6 @@ export function ChartAreaInteractive() {
     }
   }, [isMobile]);
 
-  // Fetch analytics data from API
   React.useEffect(() => {
     const fetchAnalytics = async () => {
       try {
@@ -75,10 +82,22 @@ export function ChartAreaInteractive() {
         
         if (response.ok) {
           const result = await response.json();
-          setChartData(result.data || []);
+          console.log('[Dashboard Analytics] Raw data:', result.data);
+          // Ensure all fields have default values of 0
+          const normalizedData = (result.data || []).map((item: ChartDataPoint) => ({
+            ...item,
+            directSubmissions: item.directSubmissions || 0,
+            manualImports: item.manualImports || 0,
+            emailApplications: item.emailApplications || 0,
+            applications: item.applications || 0,
+          }));
+          console.log('[Dashboard Analytics] Normalized data:', normalizedData);
+          setChartData(normalizedData);
+        } else {
+          console.error('[Dashboard Analytics] API error:', response.status, response.statusText);
         }
       } catch (error) {
-        console.error('Failed to fetch analytics:', error);
+        console.error('[Dashboard Analytics] Failed to fetch analytics:', error);
       } finally {
         setIsLoading(false);
       }
@@ -87,16 +106,25 @@ export function ChartAreaInteractive() {
     fetchAnalytics();
   }, [timeRange]);
 
+  // Calculate summary statistics
+  const totalApplications = chartData.reduce((sum, item) => sum + item.applications, 0);
+  const totalDirect = chartData.reduce((sum, item) => sum + item.directSubmissions, 0);
+  const totalManual = chartData.reduce((sum, item) => sum + item.manualImports, 0);
+  const totalEmail = chartData.reduce((sum, item) => sum + item.emailApplications, 0);
+  const avgPerDay = chartData.length > 0 ? Math.round(totalApplications / chartData.length) : 0;
+
   return (
     <Card className="@container/card">
-      <CardHeader>
-        <CardTitle>Applications Received</CardTitle>
-        <CardDescription>
-          <span className="hidden @[540px]/card:block">
-            Track direct submissions and email applications
-          </span>
-          <span className="@[540px]/card:hidden">Application tracking</span>
-        </CardDescription>
+      <CardHeader className="flex-row items-start justify-between gap-4">
+        <CardHeading>
+          <CardTitle>Applications Received</CardTitle>
+          <CardDescription>
+            <span className="hidden @[540px]/card:block">
+              Track direct submissions and email applications
+            </span>
+            <span className="@[540px]/card:hidden">Application tracking</span>
+          </CardDescription>
+        </CardHeading>
         <CardAction>
           <ToggleGroup
             type="single"
@@ -151,11 +179,23 @@ export function ChartAreaInteractive() {
                 <stop
                   offset="5%"
                   stopColor="var(--color-directSubmissions)"
-                  stopOpacity={1.0}
+                  stopOpacity={0.8}
                 />
                 <stop
                   offset="95%"
                   stopColor="var(--color-directSubmissions)"
+                  stopOpacity={0.1}
+                />
+              </linearGradient>
+              <linearGradient id="fillManualImports" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-manualImports)"
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-manualImports)"
                   stopOpacity={0.1}
                 />
               </linearGradient>
@@ -212,6 +252,13 @@ export function ChartAreaInteractive() {
               stackId="a"
             />
             <Area
+              dataKey="manualImports"
+              type="natural"
+              fill="url(#fillManualImports)"
+              stroke="var(--color-manualImports)"
+              stackId="a"
+            />
+            <Area
               dataKey="directSubmissions"
               type="natural"
               fill="url(#fillDirectSubmissions)"
@@ -222,6 +269,45 @@ export function ChartAreaInteractive() {
         </ChartContainer>
         )}
       </CardContent>
+      {!isLoading && chartData.length > 0 && (
+        <CardFooter className="flex-col items-start gap-2 text-sm border-t-0 pt-0 pb-6">
+          <div className="grid grid-cols-2 gap-4 w-full @[540px]/card:grid-cols-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-muted-foreground text-xs font-medium">Total Applications</span>
+              <span className="text-2xl font-bold text-foreground">{totalApplications}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-muted-foreground text-xs font-medium">Direct Submissions</span>
+              <span className="text-2xl font-bold" style={{ color: "var(--chart-2)" }}>{totalDirect}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-muted-foreground text-xs font-medium">Manual Imports</span>
+              <span className="text-2xl font-bold" style={{ color: "var(--chart-5)" }}>{totalManual}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-muted-foreground text-xs font-medium">Email Applications</span>
+              <span className="text-2xl font-bold" style={{ color: "var(--chart-4)" }}>{totalEmail}</span>
+            </div>
+          </div>
+          <div className="flex gap-3 font-medium leading-none text-xs text-muted-foreground mt-2 flex-wrap">
+            <span className="inline-flex items-center gap-1">
+              <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: "var(--chart-2)" }}></span>
+              Direct: {totalDirect > 0 ? ((totalDirect / totalApplications) * 100).toFixed(0) : 0}%
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: "var(--chart-5)" }}></span>
+              Manual: {totalManual > 0 ? ((totalManual / totalApplications) * 100).toFixed(0) : 0}%
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: "var(--chart-4)" }}></span>
+              Email: {totalEmail > 0 ? ((totalEmail / totalApplications) * 100).toFixed(0) : 0}%
+            </span>
+            <span className="inline-flex items-center gap-1 ml-auto">
+              <span className="font-semibold text-foreground">{avgPerDay}</span> avg/day
+            </span>
+          </div>
+        </CardFooter>
+      )}
     </Card>
   );
 }

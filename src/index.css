@@ -64,7 +64,7 @@
   --popover-foreground: oklch(0.18 0.03 235);
 
   --primary: oklch(0.65 0.08 220); /* sky blue muted color */
-  --primary-foreground: oklch(0.985 0 0); /* white */
+  --primary-foreground: oklch(0.95 0.005 235); /* soft off-white, easier on eyes */
 
   --secondary: oklch(0.94 0.012 235); /* lighter cool gray-blue chip */
   --secondary-foreground: oklch(0.18 0.03 235);
@@ -111,25 +111,25 @@
   --popover-foreground: oklch(0.98 0 0);
 
   --primary: oklch(0.7 0.09 220); /* brighter sky blue for dark */
-  --primary-foreground: oklch(0.98 0 0);
+  --primary-foreground: oklch(0.95 0.005 235); /* soft off-white, easier on eyes */
 
-  --secondary: oklch(0.28 0.02 235);
-  --secondary-foreground: oklch(0.92 0 0);
+  --secondary: oklch(0.32 0.02 235); /* slightly lighter for better visibility */
+  --secondary-foreground: oklch(0.98 0 0); /* white text for better contrast */
 
-  --muted: oklch(0.28 0.02 235);
-  --muted-foreground: oklch(0.72 0.015 235);
+  --muted: oklch(0.3 0.02 235); /* lighter muted background */
+  --muted-foreground: oklch(0.78 0.015 235); /* lighter text for better readability */
 
-  --accent: oklch(0.88 0.1 145); /* green (deep) ≈ #ABE7B2 */
-  --accent-foreground: oklch(0.16 0.02 235);
+  --accent: oklch(0.42 0.03 235); /* neutral blue-gray instead of green */
+  --accent-foreground: oklch(0.98 0 0); /* white text for proper contrast */
 
   --destructive: oklch(0.66 0.18 27);
 
-  --border: oklch(0.34 0.015 235 / 40%);
-  --input: oklch(0.34 0.015 235 / 45%);
+  --border: oklch(0.38 0.015 235 / 50%); /* more visible borders */
+  --input: oklch(0.38 0.015 235 / 50%); /* more visible input borders */
   --ring: oklch(0.7 0.09 220);
 
   --chart-1: oklch(0.7 0.15 220); /* vibrant sky blue */
-  --chart-2: oklch(0.88 0.12 145); /* vibrant green ≈ #ABE7B2 */
+  --chart-2: oklch(0.65 0.12 200); /* teal instead of green */
   --chart-3: oklch(0.7 0.14 235); /* vibrant slate blue */
   --chart-4: oklch(0.6 0.13 190); /* vibrant teal */
   --chart-5: oklch(0.74 0.15 270); /* vibrant purple */
@@ -138,9 +138,9 @@
   --sidebar-foreground: oklch(0.98 0 0);
   --sidebar-primary: oklch(0.7 0.09 220);
   --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.88 0.1 145); /* green (deep) ≈ #ABE7B2 */
-  --sidebar-accent-foreground: oklch(0.16 0.02 235); /* dark text for visibility on green */
-  --sidebar-border: oklch(0.34 0.015 235 / 40%);
+  --sidebar-accent: oklch(0.42 0.03 235); /* neutral blue-gray instead of green */
+  --sidebar-accent-foreground: oklch(0.98 0 0); /* white text for visibility */
+  --sidebar-border: oklch(0.38 0.015 235 / 50%);
   --sidebar-ring: oklch(0.7 0.09 220);
 }
 

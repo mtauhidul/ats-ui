@@ -366,21 +366,21 @@ export default function TeamPage() {
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
-        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <div className="px-4 lg:px-6">
+        <div className="flex flex-col gap-3 py-3 md:gap-4 md:py-4">
+          <div className="px-3 lg:px-4">
             {/* Header */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground mb-2">Team Management</h2>
-                  <p className="text-muted-foreground">
+            <div className="mb-4 md:mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 md:gap-4">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl md:text-2xl font-bold text-foreground mb-1 md:mb-2">Team Management</h2>
+                  <p className="text-xs md:text-sm text-muted-foreground">
                     Manage team members, roles, and permissions
                   </p>
                 </div>
                 <Button onClick={() => {
                   resetForm();
                   setIsAddDialogOpen(true);
-                }}>
+                }} className="w-full sm:w-auto shrink-0">
                   <UserPlus className="h-4 w-4 mr-2" />
                   Add Member
                 </Button>
@@ -388,70 +388,70 @@ export default function TeamPage() {
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid gap-4 md:grid-cols-4 mb-6">
+            <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-4 md:mb-6">
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 md:pt-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Team Members</p>
-                      <p className="text-2xl font-bold mt-1">{members.length}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs md:text-sm font-medium text-muted-foreground">Team Members</p>
+                      <p className="text-xl md:text-2xl font-bold mt-1">{members.length}</p>
+                      <p className="text-[10px] md:text-xs text-muted-foreground mt-1">
                         {activeMembers} active
                       </p>
                     </div>
-                    <div className="rounded-full bg-primary/10 p-3">
-                      <Users className="h-5 w-5 text-primary" />
+                    <div className="rounded-full bg-primary/10 p-2 md:p-3 shrink-0">
+                      <Users className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 md:pt-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Active Jobs</p>
-                      <p className="text-2xl font-bold mt-1">{totalStats.activeJobs}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs md:text-sm font-medium text-muted-foreground">Active Jobs</p>
+                      <p className="text-xl md:text-2xl font-bold mt-1">{totalStats.activeJobs}</p>
+                      <p className="text-[10px] md:text-xs text-muted-foreground mt-1">
                         Across all members
                       </p>
                     </div>
-                    <div className="rounded-full bg-primary/10 p-3">
-                      <Briefcase className="h-5 w-5 text-primary" />
+                    <div className="rounded-full bg-primary/10 p-2 md:p-3 shrink-0">
+                      <Briefcase className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 md:pt-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Pending Reviews</p>
-                      <p className="text-2xl font-bold mt-1">{totalStats.totalReviews}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs md:text-sm font-medium text-muted-foreground">Pending Reviews</p>
+                      <p className="text-xl md:text-2xl font-bold mt-1">{totalStats.totalReviews}</p>
+                      <p className="text-[10px] md:text-xs text-muted-foreground mt-1">
                         Requires attention
                       </p>
                     </div>
-                    <div className="rounded-full bg-primary/10 p-3">
-                      <Shield className="h-5 w-5 text-primary" />
+                    <div className="rounded-full bg-primary/10 p-2 md:p-3 shrink-0">
+                      <Shield className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 md:pt-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Total Placements</p>
-                      <p className="text-2xl font-bold mt-1">{totalStats.placedCandidates}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs md:text-sm font-medium text-muted-foreground">Total Placements</p>
+                      <p className="text-xl md:text-2xl font-bold mt-1">{totalStats.placedCandidates}</p>
+                      <p className="text-[10px] md:text-xs text-muted-foreground mt-1">
                         Successful hires
                       </p>
                     </div>
-                    <div className="rounded-full bg-primary/10 p-3">
-                      <Trophy className="h-5 w-5 text-primary" />
+                    <div className="rounded-full bg-primary/10 p-2 md:p-3 shrink-0">
+                      <Trophy className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     </div>
                   </div>
                 </CardContent>
@@ -459,82 +459,84 @@ export default function TeamPage() {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center">
-              <div className="relative flex-1 max-w-md">
+            <div className="flex flex-col gap-2 mb-3 md:mb-4 sm:flex-row sm:items-center">
+              <div className="relative flex-1 max-w-full sm:max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by name, email, or department..."
-                  className="pl-9"
+                  className="pl-9 h-9 text-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="All Roles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="recruiter">Recruiter</SelectItem>
-                  <SelectItem value="hiring_manager">Hiring Manager</SelectItem>
-                  <SelectItem value="interviewer">Interviewer</SelectItem>
-                  <SelectItem value="coordinator">Coordinator</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger className="w-full sm:w-36 h-9 text-sm">
+                    <SelectValue placeholder="All Roles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="recruiter">Recruiter</SelectItem>
+                    <SelectItem value="hiring_manager">Hiring Manager</SelectItem>
+                    <SelectItem value="interviewer">Interviewer</SelectItem>
+                    <SelectItem value="coordinator">Coordinator</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-36 h-9 text-sm">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Team Members Grid */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {filteredMembers.map((member) => (
                 <Card
                   key={member.id}
                   className="hover:shadow-md transition-shadow cursor-pointer"
                   onClick={() => navigate(`/dashboard/team/${member.id}`)}
                 >
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <Avatar className="h-12 w-12 flex-shrink-0">
+                  <CardContent className="pt-4 md:pt-6">
+                    <div className="flex items-start justify-between mb-3 md:mb-4">
+                      <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
+                        <Avatar className="h-10 w-10 md:h-12 md:w-12 shrink-0">
                           {member.avatar && !member.avatar.includes('dicebear.com') && !member.avatar.includes('api.dicebear') ? (
                             <AvatarImage src={member.avatar} />
                           ) : null}
-                          <AvatarFallback className={`${roleColors[member.role]} text-white font-semibold text-base`}>
+                          <AvatarFallback className={`${roleColors[member.role]} text-white font-semibold text-sm md:text-base`}>
                             {getInitials(member.firstName, member.lastName)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold truncate">
+                          <h3 className="font-semibold text-sm md:text-base truncate">
                             {member.firstName} {member.lastName}
                           </h3>
-                          <p className="text-sm text-muted-foreground truncate">{member.title}</p>
-                          <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            <Badge variant="outline" className="text-xs">
+                          <p className="text-xs md:text-sm text-muted-foreground truncate">{member.title}</p>
+                          <div className="flex items-center gap-1.5 md:gap-2 mt-1.5 md:mt-2 flex-wrap">
+                            <Badge variant="outline" className="text-[10px] md:text-xs">
                               {roleLabels[member.role]}
                             </Badge>
                             {currentUser?.email === member.email && (
-                              <Badge className="text-xs bg-blue-500 hover:bg-blue-600">
+                              <Badge className="text-[10px] md:text-xs bg-blue-500 hover:bg-blue-600">
                                 You
                               </Badge>
                             )}
                             {member.status === "active" ? (
-                              <Badge variant="outline" className="text-xs">
-                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                              <Badge variant="outline" className="text-[10px] md:text-xs">
+                                <CheckCircle2 className="h-2.5 w-2.5 md:h-3 md:w-3 mr-1" />
                                 Active
                               </Badge>
                             ) : (
-                              <Badge variant="secondary" className="text-xs">
-                                <XCircle className="h-3 w-3 mr-1" />
+                              <Badge variant="secondary" className="text-[10px] md:text-xs">
+                                <XCircle className="h-2.5 w-2.5 md:h-3 md:w-3 mr-1" />
                                 Inactive
                               </Badge>
                             )}
@@ -546,7 +548,7 @@ export default function TeamPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="flex-shrink-0"
+                            className="shrink-0 h-8 w-8"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <MoreVertical className="h-4 w-4" />
@@ -588,39 +590,39 @@ export default function TeamPage() {
                       </DropdownMenu>
                     </div>
 
-                    <Separator className="my-3" />
+                    <Separator className="my-2 md:my-3" />
 
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                    <div className="space-y-1.5 md:space-y-2">
+                      <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                        <Mail className="h-3 w-3 md:h-3.5 md:w-3.5 shrink-0" />
                         <span className="truncate">{member.email}</span>
                       </div>
                       {member.phone && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                        <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                          <Phone className="h-3 w-3 md:h-3.5 md:w-3.5 shrink-0" />
                           <span className="truncate">{member.phone}</span>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
+                      <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                        <Building2 className="h-3 w-3 md:h-3.5 md:w-3.5 shrink-0" />
                         <span className="truncate">{member.department}</span>
                       </div>
                     </div>
 
-                    <Separator className="my-3" />
+                    <Separator className="my-2 md:my-3" />
 
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
-                        <p className="text-lg font-bold">{member.statistics?.activeJobs || 0}</p>
-                        <p className="text-xs text-muted-foreground">Jobs</p>
+                        <p className="text-base md:text-lg font-bold">{member.statistics?.activeJobs || 0}</p>
+                        <p className="text-[10px] md:text-xs text-muted-foreground">Jobs</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold">{member.statistics?.pendingReviews || 0}</p>
-                        <p className="text-xs text-muted-foreground">Reviews</p>
+                        <p className="text-base md:text-lg font-bold">{member.statistics?.pendingReviews || 0}</p>
+                        <p className="text-[10px] md:text-xs text-muted-foreground">Reviews</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold">{member.statistics?.placedCandidates || 0}</p>
-                        <p className="text-xs text-muted-foreground">Placements</p>
+                        <p className="text-base md:text-lg font-bold">{member.statistics?.placedCandidates || 0}</p>
+                        <p className="text-[10px] md:text-xs text-muted-foreground">Placements</p>
                       </div>
                     </div>
                   </CardContent>
@@ -649,17 +651,17 @@ export default function TeamPage() {
 
             {/* Add Member Dialog */}
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4 md:p-6">
                 <DialogHeader>
-                  <DialogTitle>Add New Team Member</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-lg md:text-xl">Add New Team Member</DialogTitle>
+                  <DialogDescription className="text-xs md:text-sm">
                     Add a new member to your team with specific roles and permissions
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="add-firstName">
+                <div className="grid gap-3 md:gap-4 py-3 md:py-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="add-firstName" className="text-xs md:text-sm">
                         First Name <span className="text-destructive">*</span>
                       </Label>
                       <Input
@@ -667,10 +669,11 @@ export default function TeamPage() {
                         value={formData.firstName}
                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                         placeholder="John"
+                        className="h-9 text-sm"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="add-lastName">
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="add-lastName" className="text-xs md:text-sm">
                         Last Name <span className="text-destructive">*</span>
                       </Label>
                       <Input
@@ -678,13 +681,14 @@ export default function TeamPage() {
                         value={formData.lastName}
                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                         placeholder="Smith"
+                        className="h-9 text-sm"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="add-email">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="add-email" className="text-xs md:text-sm">
                         Email <span className="text-destructive">*</span>
                       </Label>
                       <Input
@@ -693,47 +697,51 @@ export default function TeamPage() {
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="john@example.com"
+                        className="h-9 text-sm"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="add-phone">Phone</Label>
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="add-phone" className="text-xs md:text-sm">Phone</Label>
                       <Input
                         id="add-phone"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="+1 (555) 123-4567"
+                        className="h-9 text-sm"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="add-title">Job Title</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="add-title" className="text-xs md:text-sm">Job Title</Label>
                       <Input
                         id="add-title"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         placeholder="Senior Recruiter"
+                        className="h-9 text-sm"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="add-department">Department</Label>
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="add-department" className="text-xs md:text-sm">Department</Label>
                       <Input
                         id="add-department"
                         value={formData.department}
                         onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                         placeholder="Talent Acquisition"
+                        className="h-9 text-sm"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="add-role">Role</Label>
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Label htmlFor="add-role" className="text-xs md:text-sm">Role</Label>
                     <Select
                       value={formData.role}
                       onValueChange={(value) => setFormData({ ...formData, role: value as TeamRole })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-9">
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
@@ -749,8 +757,8 @@ export default function TeamPage() {
                   <Separator />
 
                   <div>
-                    <Label className="mb-3 block text-base font-semibold">Permissions</Label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <Label className="mb-2 md:mb-3 block text-sm md:text-base font-semibold">Permissions</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
                       {[
                         { key: "canManageJobs", label: "Manage Jobs" },
                         { key: "canReviewApplications", label: "Review Applications" },
@@ -778,7 +786,7 @@ export default function TeamPage() {
                               })
                             }
                           />
-                          <Label htmlFor={`add-${permission.key}`} className="text-sm font-normal cursor-pointer">
+                          <Label htmlFor={`add-${permission.key}`} className="text-xs md:text-sm font-normal cursor-pointer">
                             {permission.label}
                           </Label>
                         </div>
@@ -786,90 +794,96 @@ export default function TeamPage() {
                     </div>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="w-full sm:w-auto">
                     Cancel
                   </Button>
-                  <Button onClick={handleAddMember}>Add Member</Button>
+                  <Button onClick={handleAddMember} className="w-full sm:w-auto">Add Member</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
 
             {/* Edit Member Dialog */}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4 md:p-6">
                 <DialogHeader>
-                  <DialogTitle>Edit Team Member</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-lg md:text-xl">Edit Team Member</DialogTitle>
+                  <DialogDescription className="text-xs md:text-sm">
                     Update member information and role
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-firstName">First Name</Label>
+                <div className="grid gap-3 md:gap-4 py-3 md:py-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="edit-firstName" className="text-xs md:text-sm">First Name</Label>
                       <Input
                         id="edit-firstName"
                         value={formData.firstName}
                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        className="h-9 text-sm"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-lastName">Last Name</Label>
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="edit-lastName" className="text-xs md:text-sm">Last Name</Label>
                       <Input
                         id="edit-lastName"
                         value={formData.lastName}
                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        className="h-9 text-sm"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-email">Email</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="edit-email" className="text-xs md:text-sm">Email</Label>
                       <Input
                         id="edit-email"
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="h-9 text-sm"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-phone">Phone</Label>
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="edit-phone" className="text-xs md:text-sm">Phone</Label>
                       <Input
                         id="edit-phone"
                         value={formData.phone || ''}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="h-9 text-sm"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-title">Job Title</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="edit-title" className="text-xs md:text-sm">Job Title</Label>
                       <Input
                         id="edit-title"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        className="h-9 text-sm"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-department">Department</Label>
+                    <div className="space-y-1.5 md:space-y-2">
+                      <Label htmlFor="edit-department" className="text-xs md:text-sm">Department</Label>
                       <Input
                         id="edit-department"
                         value={formData.department}
                         onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                        className="h-9 text-sm"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-role">Role</Label>
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Label htmlFor="edit-role" className="text-xs md:text-sm">Role</Label>
                     <Select
                       value={formData.role}
                       onValueChange={(value) => setFormData({ ...formData, role: value as TeamRole })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-9">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -882,25 +896,25 @@ export default function TeamPage() {
                     </Select>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="w-full sm:w-auto">
                     Cancel
                   </Button>
-                  <Button onClick={handleEditMember}>Save Changes</Button>
+                  <Button onClick={handleEditMember} className="w-full sm:w-auto">Save Changes</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
 
             {/* Permissions Dialog */}
             <Dialog open={isPermissionsDialogOpen} onOpenChange={setIsPermissionsDialogOpen}>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-md p-4 md:p-6">
                 <DialogHeader>
-                  <DialogTitle>Manage Permissions</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-lg md:text-xl">Manage Permissions</DialogTitle>
+                  <DialogDescription className="text-xs md:text-sm">
                     {selectedMember && `Set permissions for ${selectedMember.firstName} ${selectedMember.lastName}`}
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-3 py-4">
+                <div className="space-y-2 md:space-y-3 py-3 md:py-4">
                   {[
                     { key: "canManageJobs", label: "Manage Jobs", icon: Briefcase },
                     { key: "canReviewApplications", label: "Review Applications", icon: CheckCircle2 },
@@ -912,10 +926,10 @@ export default function TeamPage() {
                   ].map((permission) => {
                     const Icon = permission.icon;
                     return (
-                      <div key={permission.key} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div key={permission.key} className="flex items-center justify-between p-2 md:p-3 border rounded-lg">
                         <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 text-muted-foreground" />
-                          <Label htmlFor={`perm-${permission.key}`} className="text-sm font-normal cursor-pointer">
+                          <Icon className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
+                          <Label htmlFor={`perm-${permission.key}`} className="text-xs md:text-sm font-normal cursor-pointer">
                             {permission.label}
                           </Label>
                         </div>
@@ -940,21 +954,21 @@ export default function TeamPage() {
                     );
                   })}
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsPermissionsDialogOpen(false)}>
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <Button variant="outline" onClick={() => setIsPermissionsDialogOpen(false)} className="w-full sm:w-auto">
                     Cancel
                   </Button>
-                  <Button onClick={handleUpdatePermissions}>Update Permissions</Button>
+                  <Button onClick={handleUpdatePermissions} className="w-full sm:w-auto">Update Permissions</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
 
             {/* Delete Dialog */}
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-md p-4 md:p-6">
                 <DialogHeader>
-                  <DialogTitle>Delete Team Member</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-lg md:text-xl">Delete Team Member</DialogTitle>
+                  <DialogDescription className="text-xs md:text-sm">
                     Are you sure you want to permanently delete{" "}
                     <span className="font-semibold">
                       {selectedMember && `${selectedMember.firstName} ${selectedMember.lastName}`}
@@ -966,16 +980,16 @@ export default function TeamPage() {
                       This action cannot be undone.
                     </span>
                     <br />
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       Note: Users with active candidates or job assignments cannot be deleted.
                     </span>
                   </DialogDescription>
                 </DialogHeader>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="w-full sm:w-auto">
                     Cancel
                   </Button>
-                  <Button variant="destructive" onClick={handleDeleteMember}>
+                  <Button variant="destructive" onClick={handleDeleteMember} className="w-full sm:w-auto">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Permanently
                   </Button>

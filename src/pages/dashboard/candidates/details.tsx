@@ -40,12 +40,16 @@ import {
   IconCircleCheckFilled,
   IconClockHour4,
   IconDownload,
+  IconEye,
   IconFileText,
+  IconHistory,
   IconMail,
   IconMapPin,
+  IconMessageCircle,
   IconPhone,
   IconTag,
   IconUserCheck,
+  IconUsers,
   IconX,
 } from "@tabler/icons-react";
 import * as React from "react";
@@ -588,32 +592,32 @@ export default function CandidateDetailsPage() {
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
-        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+        <div className="flex flex-col gap-3 md:gap-4 py-3 md:py-4 lg:py-6">
           {/* Header with Back Button */}
-          <div className="px-4 lg:px-6">
-            <div className="flex items-center gap-4 mb-6">
+          <div className="px-3 md:px-4 lg:px-6">
+            <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate("/dashboard/candidates")}
                 className="gap-2"
               >
-                <IconArrowLeft className="h-4 w-4" />
-                Back to Candidates
+                <IconArrowLeft className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Back to Candidates</span>
               </Button>
             </div>
 
             {/* Candidate Header Card */}
             <Card className="border-2">
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row gap-6">
+              <CardContent className="p-3 md:p-4 lg:p-6">
+                <div className="flex flex-col sm:flex-row gap-4 md:gap-6">
                   {/* Avatar */}
-                  <Avatar className="h-24 w-24 border-2 rounded-lg flex-shrink-0">
+                  <Avatar className="h-20 w-20 md:h-24 md:w-24 border-2 rounded-lg shrink-0">
                     <AvatarImage
                       src={candidate.photo || ""}
                       className="object-cover"
                     />
-                    <AvatarFallback className="text-2xl font-semibold rounded-lg">
+                    <AvatarFallback className="text-xl md:text-2xl font-semibold rounded-lg">
                       {candidate.firstName[0]}
                       {candidate.lastName[0]}
                     </AvatarFallback>
@@ -621,10 +625,10 @@ export default function CandidateDetailsPage() {
 
                   <div className="flex-1 min-w-0">
                     {/* Name and Title Row */}
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                    <div className="flex flex-col gap-3 mb-3 md:mb-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h1 className="text-2xl font-bold">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 md:gap-3 mb-2">
+                          <h1 className="text-xl md:text-2xl font-bold">
                             {candidate.fullName}
                           </h1>
                           {candidate.rating && candidate.rating > 0 && (
@@ -632,7 +636,7 @@ export default function CandidateDetailsPage() {
                               {Array.from({ length: 5 }).map((_, i) => (
                                 <svg
                                   key={i}
-                                  className={`h-4 w-4 ${
+                                  className={`h-3.5 w-3.5 md:h-4 md:w-4 ${
                                     i < candidate.rating!
                                       ? "fill-amber-500 text-amber-500"
                                       : "fill-muted text-muted"
@@ -646,8 +650,8 @@ export default function CandidateDetailsPage() {
                           )}
                         </div>
                         {candidate.currentTitle && (
-                          <p className="text-muted-foreground flex items-center gap-2">
-                            <IconBriefcase className="h-4 w-4" />
+                          <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-2">
+                            <IconBriefcase className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />
                             {candidate.currentTitle}
                             {candidate.currentCompany &&
                               ` at ${candidate.currentCompany}`}
@@ -657,9 +661,9 @@ export default function CandidateDetailsPage() {
                     </div>
 
                     {/* Contact Info Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3 text-xs md:text-sm mb-3 md:mb-4">
                       <div className="flex items-center gap-2 text-muted-foreground">
-                        <IconMail className="h-4 w-4 flex-shrink-0" />
+                        <IconMail className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />
                         <a
                           href={`mailto:${candidate.email}`}
                           className="hover:text-foreground truncate"
@@ -669,7 +673,7 @@ export default function CandidateDetailsPage() {
                       </div>
                       {candidate.phone && candidate.phone !== "N/A" && (
                         <div className="flex items-center gap-2 text-muted-foreground">
-                          <IconPhone className="h-4 w-4 flex-shrink-0" />
+                          <IconPhone className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />
                           <a
                             href={`tel:${candidate.phone}`}
                             className="hover:text-foreground"
@@ -680,15 +684,15 @@ export default function CandidateDetailsPage() {
                       )}
                       {candidate.location && (
                         <div className="flex items-center gap-2 text-muted-foreground">
-                          <IconMapPin className="h-4 w-4 flex-shrink-0" />
+                          <IconMapPin className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />
                           <span className="truncate">{candidate.location}</span>
                         </div>
                       )}
                     </div>
 
                     {/* Tags Section - Moved here for better visibility */}
-                    <div className="flex flex-wrap items-center gap-2 mb-4">
-                      <IconTag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <div className="flex flex-wrap items-center gap-2 mb-3 md:mb-4">
+                      <IconTag className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
                       {selectedTags.length === 0 ? (
                         <span className="text-sm text-muted-foreground">
                           No tags
@@ -835,56 +839,63 @@ export default function CandidateDetailsPage() {
           </div>
 
           {/* Tabs Section */}
-          <div className="px-4 lg:px-6">
+          <div className="px-3 md:px-4 lg:px-6">
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="h-11 p-1 bg-card border border-border w-full inline-flex">
-                <TabsTrigger
-                  value="overview"
-                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                >
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger
-                  value="candidacy"
-                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                >
-                  Current Candidacy
-                </TabsTrigger>
-                <TabsTrigger
-                  value="communications"
-                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                >
-                  Communications
-                </TabsTrigger>
-                <TabsTrigger
-                  value="interviews"
-                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                >
-                  Interviews
-                </TabsTrigger>
-                <TabsTrigger
-                  value="history"
-                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                >
-                  History
-                </TabsTrigger>
-              </TabsList>
+              <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0">
+                <TabsList className="h-9 md:h-10 lg:h-11 p-1 bg-card border border-border w-full inline-flex">
+                  <TabsTrigger
+                    value="overview"
+                    className="flex-1 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground px-2 md:px-3 gap-1.5"
+                  >
+                    <IconEye className="h-4 w-4 shrink-0" />
+                    <span className="hidden sm:inline">Overview</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="candidacy"
+                    className="flex-1 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground px-2 md:px-3 gap-1.5"
+                  >
+                    <IconUsers className="h-4 w-4 shrink-0" />
+                    <span className="hidden sm:inline">Candidacy</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="communications"
+                    className="flex-1 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground px-2 md:px-3 gap-1.5"
+                  >
+                    <IconMessageCircle className="h-4 w-4 shrink-0" />
+                    <span className="hidden sm:inline">Comms</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="interviews"
+                    className="flex-1 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground px-2 md:px-3 gap-1.5"
+                  >
+                    <IconCalendar className="h-4 w-4 shrink-0" />
+                    <span className="hidden sm:inline">Interviews</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="history"
+                    className="flex-1 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground px-2 md:px-3 gap-1.5"
+                  >
+                    <IconHistory className="h-4 w-4 shrink-0" />
+                    <span className="hidden sm:inline">History</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               {/* Overview Tab */}
-              <TabsContent value="overview" className="mt-6 space-y-6">
+              <TabsContent value="overview" className="mt-4 md:mt-6 space-y-4 md:space-y-6">
                 {/* Skills */}
                 {candidate.skills && candidate.skills.length > 0 && (
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Skills</CardTitle>
+                    <CardHeader className="p-3 md:p-4 lg:p-6">
+                      <CardTitle className="text-sm md:text-base">Skills</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
+                    <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
+                      <div className="flex flex-wrap gap-1.5 md:gap-2">
                         {candidate.skills.map((skill, index) => (
                           <Badge
                             key={index}
                             variant="secondary"
-                            className="text-sm font-normal"
+                            className="text-xs md:text-sm font-normal"
                           >
                             {typeof skill === "string" ? skill : skill.name}
                           </Badge>
@@ -897,13 +908,13 @@ export default function CandidateDetailsPage() {
                 {/* Work Experience */}
                 {candidate.experience && candidate.experience.length > 0 && (
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">
+                    <CardHeader className="p-3 md:p-4 lg:p-6">
+                      <CardTitle className="text-sm md:text-base">
                         Work Experience
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
+                    <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
+                      <div className="space-y-3 md:space-y-4">
                         {candidate.experience.map((exp, index) => {
                           const workExp = exp as {
                             company?: string;
@@ -920,20 +931,20 @@ export default function CandidateDetailsPage() {
                           return (
                             <div
                               key={index}
-                              className={`pb-4 ${
+                              className={`pb-3 md:pb-4 ${
                                 index !== candidate.experience.length - 1
                                   ? "border-b"
                                   : ""
                               }`}
                             >
-                              <div className="flex items-start justify-between gap-3 mb-2">
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 md:gap-3 mb-2">
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-sm">
+                                  <h4 className="font-semibold text-xs md:text-sm">
                                     {title}
                                   </h4>
                                   {workExp.company && (
-                                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                                      <IconBriefcase className="h-3 w-3" />
+                                    <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                      <IconBriefcase className="h-3 w-3 shrink-0" />
                                       {workExp.company}
                                     </p>
                                   )}
@@ -941,14 +952,14 @@ export default function CandidateDetailsPage() {
                                 {workExp.duration && (
                                   <Badge
                                     variant="outline"
-                                    className="text-xs whitespace-nowrap"
+                                    className="text-xs whitespace-nowrap shrink-0"
                                   >
                                     {workExp.duration}
                                   </Badge>
                                 )}
                               </div>
                               {workExp.description && (
-                                <p className="text-sm text-muted-foreground mt-2 whitespace-pre-line leading-relaxed">
+                                <p className="text-xs md:text-sm text-muted-foreground mt-2 whitespace-pre-line leading-relaxed">
                                   {workExp.description}
                                 </p>
                               )}
@@ -963,11 +974,11 @@ export default function CandidateDetailsPage() {
                 {/* Education */}
                 {candidate.education && candidate.education.length > 0 && (
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Education</CardTitle>
+                    <CardHeader className="p-3 md:p-4 lg:p-6">
+                      <CardTitle className="text-sm md:text-base">Education</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
+                    <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
+                      <div className="space-y-3 md:space-y-4">
                         {candidate.education.map((edu, index) => {
                           const education = edu as {
                             institution?: string;
@@ -979,23 +990,23 @@ export default function CandidateDetailsPage() {
                           return (
                             <div
                               key={index}
-                              className={`pb-4 ${
+                              className={`pb-3 md:pb-4 ${
                                 index !== candidate.education.length - 1
                                   ? "border-b"
                                   : ""
                               }`}
                             >
-                              <div className="flex items-start justify-between gap-3 mb-2">
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 md:gap-3 mb-2">
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-sm">
+                                  <h4 className="font-semibold text-xs md:text-sm">
                                     {education.degree || "Degree Not Specified"}
                                   </h4>
-                                  <p className="text-sm text-muted-foreground mt-1">
+                                  <p className="text-xs md:text-sm text-muted-foreground mt-1">
                                     {education.institution ||
                                       "Institution Not Specified"}
                                   </p>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-left sm:text-right">
                                   {education.year && (
                                     <Badge
                                       variant="outline"
@@ -1007,7 +1018,7 @@ export default function CandidateDetailsPage() {
                                 </div>
                               </div>
                               {education.field && (
-                                <p className="text-sm text-muted-foreground mt-1">
+                                <p className="text-xs md:text-sm text-muted-foreground mt-1">
                                   Field: {education.field}
                                 </p>
                               )}
@@ -1020,24 +1031,24 @@ export default function CandidateDetailsPage() {
                 )}
 
                 {/* Additional Qualifications */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                   {/* Certifications */}
                   {candidate.certifications &&
                     candidate.certifications.length > 0 && (
                       <Card>
-                        <CardHeader>
-                          <CardTitle className="text-base">
+                        <CardHeader className="p-3 md:p-4 lg:p-6">
+                          <CardTitle className="text-sm md:text-base">
                             Certifications
                           </CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <ul className="space-y-2">
+                        <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
+                          <ul className="space-y-1.5 md:space-y-2">
                             {candidate.certifications.map((cert, index) => (
                               <li
                                 key={index}
-                                className="flex items-start gap-2 text-sm"
+                                className="flex items-start gap-2 text-xs md:text-sm"
                               >
-                                <IconCircleCheckFilled className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                                <IconCircleCheckFilled className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
                                 <span>{cert}</span>
                               </li>
                             ))}
@@ -1049,16 +1060,16 @@ export default function CandidateDetailsPage() {
                   {/* Languages */}
                   {candidate.languages && candidate.languages.length > 0 && (
                     <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Languages</CardTitle>
+                      <CardHeader className="p-3 md:p-4 lg:p-6">
+                        <CardTitle className="text-sm md:text-base">Languages</CardTitle>
                       </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-wrap gap-2">
+                      <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
+                        <div className="flex flex-wrap gap-1.5 md:gap-2">
                           {candidate.languages.map((lang, index) => (
                             <Badge
                               key={index}
                               variant="outline"
-                              className="text-sm font-normal"
+                              className="text-xs md:text-sm font-normal"
                             >
                               {typeof lang === "string" ? lang : lang.name}
                             </Badge>
@@ -1072,14 +1083,14 @@ export default function CandidateDetailsPage() {
                 {/* AI Score & Analysis */}
                 {candidate.aiScore && (
                   <Card className="border-purple-200 dark:border-purple-800">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-base">
+                    <CardHeader className="p-3 md:p-4 lg:p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <CardTitle className="text-sm md:text-base">
                           AI Candidate Analysis
                         </CardTitle>
                         <Badge
                           variant="outline"
-                          className={`${
+                          className={`text-xs w-fit ${
                             candidate.aiScore.overallScore >= 80
                               ? "bg-green-100 text-green-700 border-green-200"
                               : candidate.aiScore.overallScore >= 60
@@ -1095,14 +1106,14 @@ export default function CandidateDetailsPage() {
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-3 md:space-y-4 p-3 md:p-4 lg:p-6 pt-0">
                       {/* Overall Score */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <Label className="text-sm font-medium">
+                          <Label className="text-xs md:text-sm font-medium">
                             Overall Match Score
                           </Label>
-                          <span className="text-2xl font-bold text-primary">
+                          <span className="text-xl md:text-2xl font-bold text-primary">
                             {candidate.aiScore.overallScore}%
                           </span>
                         </div>
@@ -1125,28 +1136,28 @@ export default function CandidateDetailsPage() {
                       </div>
 
                       {/* Detailed Scores */}
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="p-3 rounded-lg border bg-card">
-                          <Label className="text-xs text-muted-foreground">
+                      <div className="grid grid-cols-3 gap-2 md:gap-3">
+                        <div className="p-2 md:p-3 rounded-lg border bg-card">
+                          <Label className="text-[10px] md:text-xs text-muted-foreground">
                             Skills Match
                           </Label>
-                          <p className="text-xl font-bold mt-1">
+                          <p className="text-base md:text-xl font-bold mt-1">
                             {candidate.aiScore.skillsMatch}%
                           </p>
                         </div>
-                        <div className="p-3 rounded-lg border bg-card">
-                          <Label className="text-xs text-muted-foreground">
+                        <div className="p-2 md:p-3 rounded-lg border bg-card">
+                          <Label className="text-[10px] md:text-xs text-muted-foreground">
                             Experience Match
                           </Label>
-                          <p className="text-xl font-bold mt-1">
+                          <p className="text-base md:text-xl font-bold mt-1">
                             {candidate.aiScore.experienceMatch}%
                           </p>
                         </div>
-                        <div className="p-3 rounded-lg border bg-card">
-                          <Label className="text-xs text-muted-foreground">
+                        <div className="p-2 md:p-3 rounded-lg border bg-card">
+                          <Label className="text-[10px] md:text-xs text-muted-foreground">
                             Education Match
                           </Label>
-                          <p className="text-xl font-bold mt-1">
+                          <p className="text-base md:text-xl font-bold mt-1">
                             {candidate.aiScore.educationMatch}%
                           </p>
                         </div>
@@ -1154,11 +1165,11 @@ export default function CandidateDetailsPage() {
 
                       {/* Summary */}
                       {candidate.aiScore.summary && (
-                        <div className="p-3 rounded-lg bg-muted/50 border">
+                        <div className="p-2.5 md:p-3 rounded-lg bg-muted/50 border">
                           <Label className="text-xs text-muted-foreground mb-1.5 block">
                             AI Summary
                           </Label>
-                          <p className="text-sm leading-relaxed">
+                          <p className="text-xs md:text-sm leading-relaxed">
                             {candidate.aiScore.summary}
                           </p>
                         </div>
@@ -1168,8 +1179,8 @@ export default function CandidateDetailsPage() {
                       {candidate.aiScore.strengths &&
                         candidate.aiScore.strengths.length > 0 && (
                           <div>
-                            <Label className="text-sm font-medium mb-2 flex items-center gap-2">
-                              <IconCircleCheckFilled className="h-4 w-4 text-green-600" />
+                            <Label className="text-xs md:text-sm font-medium mb-2 flex items-center gap-2">
+                              <IconCircleCheckFilled className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600" />
                               Strengths
                             </Label>
                             <ul className="space-y-1.5">
@@ -1177,7 +1188,7 @@ export default function CandidateDetailsPage() {
                                 (strength, index) => (
                                   <li
                                     key={index}
-                                    className="flex items-start gap-2 text-sm"
+                                    className="flex items-start gap-2 text-xs md:text-sm"
                                   >
                                     <span className="text-green-600 mt-0.5">
                                       •
@@ -1194,8 +1205,8 @@ export default function CandidateDetailsPage() {
                       {candidate.aiScore.concerns &&
                         candidate.aiScore.concerns.length > 0 && (
                           <div>
-                            <Label className="text-sm font-medium mb-2 flex items-center gap-2">
-                              <IconX className="h-4 w-4 text-amber-600" />
+                            <Label className="text-xs md:text-sm font-medium mb-2 flex items-center gap-2">
+                              <IconX className="h-3.5 w-3.5 md:h-4 md:w-4 text-amber-600" />
                               Areas for Consideration
                             </Label>
                             <ul className="space-y-1.5">
@@ -1203,7 +1214,7 @@ export default function CandidateDetailsPage() {
                                 (concern, index) => (
                                   <li
                                     key={index}
-                                    className="flex items-start gap-2 text-sm"
+                                    className="flex items-start gap-2 text-xs md:text-sm"
                                   >
                                     <span className="text-amber-600 mt-0.5">
                                       •
@@ -1408,48 +1419,48 @@ export default function CandidateDetailsPage() {
               </TabsContent>
 
               {/* Current Candidacy Tab */}
-              <TabsContent value="candidacy" className="mt-6 space-y-6">
+              <TabsContent value="candidacy" className="mt-4 md:mt-6 space-y-4 md:space-y-6">
                 {/* Current Application Card */}
                 <Card className="border-primary/20">
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3 flex-1">
-                        <Avatar className="h-12 w-12 rounded-md border-2">
+                  <CardHeader className="p-3 md:p-4 lg:p-6">
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 md:gap-4">
+                      <div className="flex items-start gap-2 md:gap-3 flex-1">
+                        <Avatar className="h-10 w-10 md:h-12 md:w-12 rounded-md border-2 shrink-0">
                           <AvatarImage src={candidate.clientLogo} />
-                          <AvatarFallback className="rounded-md">
+                          <AvatarFallback className="rounded-md text-xs md:text-sm">
                             {candidate.clientName
                               .split(" ")
                               .map((n: string) => n[0])
                               .join("")}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <CardTitle className="text-lg">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-base md:text-lg">
                             {candidate.jobTitle}
                           </CardTitle>
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="text-xs md:text-sm text-muted-foreground mt-1">
                             {candidate.clientName}
                           </p>
                         </div>
                       </div>
 
                       {/* Assigned Under - Moved to Top Right */}
-                      <div className="bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/20 rounded-lg p-3 min-w-[200px]">
+                      <div className="bg-linear-to-br from-primary/10 to-primary/5 border-2 border-primary/20 rounded-lg p-2.5 md:p-3 w-full lg:min-w-[200px] lg:w-auto">
                         <Label className="text-xs text-muted-foreground mb-2 block">
                           Assigned under:
                         </Label>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10 border-2 border-primary/30">
+                        <div className="flex items-center gap-2 md:gap-3">
+                          <Avatar className="h-8 w-8 md:h-10 md:w-10 border-2 border-primary/30 shrink-0">
                             <AvatarImage src="" alt={candidate.reviewedBy} />
-                            <AvatarFallback className="text-sm font-semibold bg-primary/20 text-primary">
+                            <AvatarFallback className="text-xs md:text-sm font-semibold bg-primary/20 text-primary">
                               {candidate.reviewedBy
                                 .split(" ")
                                 .map((n) => n[0])
                                 .join("")}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <p className="text-sm font-semibold">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs md:text-sm font-semibold truncate">
                               {candidate.reviewedBy}
                             </p>
                           </div>
@@ -1457,34 +1468,34 @@ export default function CandidateDetailsPage() {
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-4 md:space-y-6 p-3 md:p-4 lg:p-6 pt-0">
                     {/* Job Information Grid */}
                     <div>
-                      <h4 className="text-sm font-semibold mb-3">
+                      <h4 className="text-xs md:text-sm font-semibold mb-2 md:mb-3">
                         Job Information
                       </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div className="p-3 rounded-lg border bg-muted/30">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                        <div className="p-2.5 md:p-3 rounded-lg border bg-muted/30">
                           <Label className="text-xs text-muted-foreground">
                             Job ID
                           </Label>
-                          <p className="text-sm font-medium font-mono mt-1">
+                          <p className="text-xs md:text-sm font-medium font-mono mt-1">
                             {candidate.jobId}
                           </p>
                         </div>
-                        <div className="p-3 rounded-lg border bg-muted/30">
+                        <div className="p-2.5 md:p-3 rounded-lg border bg-muted/30">
                           <Label className="text-xs text-muted-foreground">
                             Client
                           </Label>
-                          <p className="text-sm font-medium mt-1">
+                          <p className="text-xs md:text-sm font-medium mt-1 truncate">
                             {candidate.clientName}
                           </p>
                         </div>
-                        <div className="p-3 rounded-lg border bg-muted/30">
+                        <div className="p-2.5 md:p-3 rounded-lg border bg-muted/30">
                           <Label className="text-xs text-muted-foreground">
                             Job Title
                           </Label>
-                          <p className="text-sm font-medium mt-1">
+                          <p className="text-xs md:text-sm font-medium mt-1 truncate">
                             {candidate.jobTitle}
                           </p>
                         </div>
@@ -1493,40 +1504,40 @@ export default function CandidateDetailsPage() {
 
                     {/* Application Progress */}
                     <div>
-                      <h4 className="text-sm font-semibold mb-3">
+                      <h4 className="text-xs md:text-sm font-semibold mb-2 md:mb-3">
                         Application Progress
                       </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="p-3 rounded-lg border bg-card">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                        <div className="p-2.5 md:p-3 rounded-lg border bg-card">
                           <Label className="text-xs text-muted-foreground">
                             Current Stage
                           </Label>
-                          <p className="text-sm font-semibold mt-1 text-primary">
+                          <p className="text-xs md:text-sm font-semibold mt-1 text-primary">
                             {candidate.currentStage}
                           </p>
                         </div>
-                        <div className="p-3 rounded-lg border bg-card">
+                        <div className="p-2.5 md:p-3 rounded-lg border bg-card">
                           <Label className="text-xs text-muted-foreground">
                             Applied Date
                           </Label>
-                          <p className="text-sm font-medium mt-1">
+                          <p className="text-xs md:text-sm font-medium mt-1">
                             {candidate.appliedDate}
                           </p>
                         </div>
-                        <div className="p-3 rounded-lg border bg-card">
+                        <div className="p-2.5 md:p-3 rounded-lg border bg-card">
                           <Label className="text-xs text-muted-foreground">
                             Last Updated
                           </Label>
-                          <p className="text-sm font-medium mt-1">
+                          <p className="text-xs md:text-sm font-medium mt-1">
                             {candidate.lastStatusChange}
                           </p>
                         </div>
                         {candidate.interviewScheduled && (
-                          <div className="p-3 rounded-lg border bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+                          <div className="p-2.5 md:p-3 rounded-lg border bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
                             <Label className="text-xs text-amber-700 dark:text-amber-400">
                               Next Interview
                             </Label>
-                            <p className="text-sm font-semibold mt-1 text-amber-800 dark:text-amber-300">
+                            <p className="text-xs md:text-sm font-semibold mt-1 text-amber-800 dark:text-amber-300">
                               {new Date(
                                 candidate.interviewScheduled
                               ).toLocaleDateString()}
@@ -1539,16 +1550,16 @@ export default function CandidateDetailsPage() {
                     {/* Rating & Feedback */}
                     {candidate.rating && (
                       <div>
-                        <h4 className="text-sm font-semibold mb-3">
+                        <h4 className="text-xs md:text-sm font-semibold mb-2 md:mb-3">
                           Rating & Feedback
                         </h4>
-                        <div className="p-4 rounded-lg border bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/30 dark:to-orange-950/30 border-yellow-200 dark:border-yellow-800">
+                        <div className="p-3 md:p-4 rounded-lg border bg-linear-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/30 dark:to-orange-950/30 border-yellow-200 dark:border-yellow-800">
                           <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1">
                               {[...Array(5)].map((_, i) => (
                                 <IconCircleCheckFilled
                                   key={i}
-                                  className={`h-5 w-5 ${
+                                  className={`h-4 w-4 md:h-5 md:w-5 ${
                                     i < Math.floor(candidate.rating!)
                                       ? "text-yellow-500 fill-yellow-500"
                                       : "text-gray-300 dark:text-gray-600"
@@ -1556,10 +1567,10 @@ export default function CandidateDetailsPage() {
                                 />
                               ))}
                             </div>
-                            <span className="text-lg font-bold text-yellow-700 dark:text-yellow-400">
+                            <span className="text-base md:text-lg font-bold text-yellow-700 dark:text-yellow-400">
                               {candidate.rating.toFixed(1)}
                             </span>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-xs md:text-sm text-muted-foreground">
                               / 5.0
                             </span>
                           </div>
@@ -1574,51 +1585,51 @@ export default function CandidateDetailsPage() {
               </TabsContent>
 
               {/* Communications Tab */}
-              <TabsContent value="communications" className="mt-6 space-y-6">
+              <TabsContent value="communications" className="mt-4 md:mt-6 space-y-4 md:space-y-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">
+                  <CardHeader className="p-3 md:p-4 lg:p-6">
+                    <CardTitle className="text-sm md:text-base">
                       Email Communication History
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs md:text-sm text-muted-foreground">
                       All email communications with this candidate across all
                       jobs
                     </p>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
                     {/* Summary Stats */}
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                      <div className="p-4 rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 border-blue-200 dark:border-blue-800">
-                        <div className="flex items-center gap-2 mb-2">
-                          <IconMail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          <Label className="text-xs text-blue-700 dark:text-blue-400">
+                    <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
+                      <div className="p-2.5 md:p-4 rounded-lg border bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
+                          <IconMail className="h-3 w-3 md:h-4 md:w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                          <Label className="text-[10px] md:text-xs text-blue-700 dark:text-blue-400">
                             Total Emails
                           </Label>
                         </div>
-                        <p className="text-2xl font-bold text-blue-800 dark:text-blue-300">
+                        <p className="text-lg md:text-2xl font-bold text-blue-800 dark:text-blue-300">
                           {emails?.length || 0}
                         </p>
                       </div>
-                      <div className="p-4 rounded-lg border bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 border-green-200 dark:border-green-800">
-                        <div className="flex items-center gap-2 mb-2">
-                          <IconArrowUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          <Label className="text-xs text-green-700 dark:text-green-400">
+                      <div className="p-2.5 md:p-4 rounded-lg border bg-linear-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 border-green-200 dark:border-green-800">
+                        <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
+                          <IconArrowUp className="h-3 w-3 md:h-4 md:w-4 text-green-600 dark:text-green-400 shrink-0" />
+                          <Label className="text-[10px] md:text-xs text-green-700 dark:text-green-400">
                             Sent
                           </Label>
                         </div>
-                        <p className="text-2xl font-bold text-green-800 dark:text-green-300">
+                        <p className="text-lg md:text-2xl font-bold text-green-800 dark:text-green-300">
                           {emails?.filter((e) => e.direction === "outbound")
                             .length || 0}
                         </p>
                       </div>
-                      <div className="p-4 rounded-lg border bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 border-purple-200 dark:border-purple-800">
-                        <div className="flex items-center gap-2 mb-2">
-                          <IconArrowDown className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                          <Label className="text-xs text-purple-700 dark:text-purple-400">
+                      <div className="p-2.5 md:p-4 rounded-lg border bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 border-purple-200 dark:border-purple-800">
+                        <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
+                          <IconArrowDown className="h-3 w-3 md:h-4 md:w-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                          <Label className="text-[10px] md:text-xs text-purple-700 dark:text-purple-400">
                             Received
                           </Label>
                         </div>
-                        <p className="text-2xl font-bold text-purple-800 dark:text-purple-300">
+                        <p className="text-lg md:text-2xl font-bold text-purple-800 dark:text-purple-300">
                           {emails?.filter((e) => e.direction === "inbound")
                             .length || 0}
                         </p>
@@ -1626,12 +1637,12 @@ export default function CandidateDetailsPage() {
                     </div>
 
                     {/* Job-wise Communication Summary */}
-                    <div className="space-y-4">
+                    <div className="space-y-3 md:space-y-4">
                       {/* Current Job */}
-                      <div className="p-4 rounded-lg border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
-                        <div className="flex items-start justify-between gap-4 mb-3">
-                          <div className="flex items-start gap-3 flex-1 min-w-0">
-                            <Avatar className="h-10 w-10 rounded-md border-2 border-primary/20 flex-shrink-0">
+                      <div className="p-3 md:p-4 rounded-lg border-2 border-primary/30 bg-linear-to-br from-primary/5 to-primary/10">
+                        <div className="flex items-start justify-between gap-3 md:gap-4 mb-3">
+                          <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
+                            <Avatar className="h-8 w-8 md:h-10 md:w-10 rounded-md border-2 border-primary/20 shrink-0">
                               <AvatarImage src={candidate.clientLogo} />
                               <AvatarFallback className="rounded-md text-xs">
                                 {candidate.clientName
@@ -1641,21 +1652,21 @@ export default function CandidateDetailsPage() {
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-sm mb-1">
+                              <h4 className="font-semibold text-xs md:text-sm mb-1 truncate">
                                 {candidate.jobTitle}
                               </h4>
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-xs md:text-sm text-muted-foreground truncate">
                                 {candidate.clientName}
                               </p>
                             </div>
                           </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-3 text-xs">
+                        <div className="grid grid-cols-3 gap-2 md:gap-3 text-xs">
                           <div className="p-2 rounded-md bg-background/60 border">
                             <Label className="text-xs text-muted-foreground">
                               Job ID
                             </Label>
-                            <p className="font-mono mt-0.5 truncate">
+                            <p className="font-mono mt-0.5 truncate text-xs">
                               {candidate.jobId}
                             </p>
                           </div>
@@ -1663,7 +1674,7 @@ export default function CandidateDetailsPage() {
                             <Label className="text-xs text-muted-foreground">
                               Total Emails
                             </Label>
-                            <p className="font-semibold mt-0.5">
+                            <p className="font-semibold mt-0.5 text-xs">
                               {emails?.length || 0}
                             </p>
                           </div>
@@ -1671,7 +1682,7 @@ export default function CandidateDetailsPage() {
                             <Label className="text-xs text-muted-foreground">
                               Last Contact
                             </Label>
-                            <p className="mt-0.5 truncate">
+                            <p className="mt-0.5 truncate text-xs">
                               {emails && emails.length > 0
                                 ? new Date(
                                     emails[0].sentAt ||
@@ -1685,7 +1696,7 @@ export default function CandidateDetailsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="w-full mt-3"
+                          className="w-full mt-3 text-xs md:text-sm"
                           onClick={() =>
                             navigate(
                               `/dashboard/jobs/${candidate.jobId}/candidates/${candidate.id}/communication`
@@ -1877,19 +1888,19 @@ export default function CandidateDetailsPage() {
               </TabsContent>
 
               {/* Interviews Tab - Read-only overview across all jobs */}
-              <TabsContent value="interviews" className="mt-6">
+              <TabsContent value="interviews" className="mt-4 md:mt-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <IconCalendar className="h-5 w-5 text-primary" />
+                  <CardHeader className="p-3 md:p-4 lg:p-6">
+                    <CardTitle className="text-sm md:text-base flex items-center gap-2">
+                      <IconCalendar className="h-4 w-4 md:h-5 md:w-5 text-primary shrink-0" />
                       Interview History Across All Jobs
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs md:text-sm text-muted-foreground">
                       Read-only overview of all interviews this candidate has
                       had
                     </p>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
                     {isLoadingInterviews ? (
                       <div className="text-center py-12">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -1908,7 +1919,7 @@ export default function CandidateDetailsPage() {
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="space-y-2 md:space-y-3">
                         {interviews.map((interview) => {
                           const feedback =
                             interview.feedback && interview.feedback.length > 0
@@ -1920,7 +1931,7 @@ export default function CandidateDetailsPage() {
                           return (
                             <div
                               key={interview.id || interview._id}
-                              className={`p-3 rounded-lg border-2 transition-colors ${
+                              className={`p-2.5 md:p-3 rounded-lg border-2 transition-colors ${
                                 outcome === "strong_yes"
                                   ? "bg-green-50 dark:bg-green-950/30 border-green-300 dark:border-green-700"
                                   : outcome === "no"
@@ -1928,10 +1939,10 @@ export default function CandidateDetailsPage() {
                                   : "bg-card hover:bg-muted/30 border-border hover:border-primary/30"
                               }`}
                             >
-                              <div className="flex items-start justify-between gap-3 mb-2">
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 md:gap-3 mb-2">
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-0.5">
-                                    <h4 className="font-semibold text-sm truncate">
+                                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                                    <h4 className="font-semibold text-xs md:text-sm truncate">
                                       {interview.jobId?.title ||
                                         "Unknown Position"}
                                     </h4>
@@ -1943,9 +1954,9 @@ export default function CandidateDetailsPage() {
                                     </Badge>
                                   </div>
                                   <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <IconBriefcase className="h-3 w-3" />
-                                    {interview.clientId?.companyName ||
-                                      "Unknown Client"}
+                                    <IconBriefcase className="h-3 w-3 shrink-0" />
+                                    <span className="truncate">{interview.clientId?.companyName ||
+                                      "Unknown Client"}</span>
                                   </p>
                                 </div>
                                 <Badge
@@ -1963,9 +1974,9 @@ export default function CandidateDetailsPage() {
                                 </Badge>
                               </div>
 
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mb-2">
+                              <div className="flex flex-wrap gap-x-3 md:gap-x-4 gap-y-1 text-[10px] md:text-xs text-muted-foreground mb-2">
                                 <div className="flex items-center gap-1">
-                                  <IconCalendar className="h-3 w-3" />
+                                  <IconCalendar className="h-3 w-3 shrink-0" />
                                   <span>
                                     {new Date(
                                       interview.scheduledAt
@@ -1977,13 +1988,13 @@ export default function CandidateDetailsPage() {
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <IconClockHour4 className="h-3 w-3" />
+                                  <IconClockHour4 className="h-3 w-3 shrink-0" />
                                   <span>{interview.duration} min</span>
                                 </div>
                                 {interview.interviewerIds &&
                                   interview.interviewerIds.length > 0 && (
-                                    <div className="flex items-center gap-1">
-                                      <IconUserCheck className="h-3 w-3" />
+                                    <div className="flex items-center gap-1 min-w-0">
+                                      <IconUserCheck className="h-3 w-3 shrink-0" />
                                       <span className="truncate">
                                         {interview.interviewerIds
                                           .map((i) =>
@@ -1996,8 +2007,8 @@ export default function CandidateDetailsPage() {
                                       </span>
                                     </div>
                                   )}
-                                <div className="flex items-center gap-1 ml-auto">
-                                  <span className="font-mono text-muted-foreground">
+                                <div className="flex items-center gap-1 sm:ml-auto">
+                                  <span className="font-mono text-muted-foreground truncate">
                                     Job ID:{" "}
                                     {typeof interview.jobId === "object"
                                       ? (
@@ -2020,7 +2031,7 @@ export default function CandidateDetailsPage() {
 
                               {feedback && (
                                 <div className="mt-2 pt-2 border-t">
-                                  <div className="flex items-center justify-between gap-2 mb-1">
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
                                     <Label className="text-xs font-medium">
                                       Feedback
                                     </Label>
@@ -2083,20 +2094,20 @@ export default function CandidateDetailsPage() {
               </TabsContent>
 
               {/* History Tab */}
-              <TabsContent value="history" className="mt-6 space-y-6">
+              <TabsContent value="history" className="mt-4 md:mt-6 space-y-4 md:space-y-6">
                 {/* Career Timeline - Enhanced */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <IconClockHour4 className="h-5 w-5 text-primary" />
+                  <CardHeader className="p-3 md:p-4 lg:p-6">
+                    <CardTitle className="text-sm md:text-base flex items-center gap-2">
+                      <IconClockHour4 className="h-4 w-4 md:h-5 md:w-5 text-primary shrink-0" />
                       Career Timeline
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs md:text-sm text-muted-foreground">
                       Complete journey across all job applications with detailed
                       milestones
                     </p>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
                     {(() => {
                       // Create comprehensive timeline events
                       type TimelineEvent = {
@@ -2258,19 +2269,19 @@ export default function CandidateDetailsPage() {
                       }
 
                       return (
-                        <div className="relative space-y-4">
+                        <div className="relative space-y-3 md:space-y-4">
                           {/* Timeline line */}
-                          <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/50 via-border to-transparent"></div>
+                          <div className="absolute left-3 md:left-4 top-0 bottom-0 w-0.5 bg-linear-to-b from-primary/50 via-border to-transparent"></div>
 
                           {timelineEvents.map((event, index) => {
                             const Icon = event.icon;
                             const isLast = index === timelineEvents.length - 1;
 
                             return (
-                              <div key={event.id} className="relative pl-12">
+                              <div key={event.id} className="relative pl-10 md:pl-12">
                                 {/* Timeline dot */}
                                 <div
-                                  className={`absolute left-0 w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                                  className={`absolute left-0 w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center border-2 ${
                                     event.status === "success"
                                       ? "bg-green-100 dark:bg-green-900/30 border-green-500"
                                       : event.status === "error"
@@ -2281,7 +2292,7 @@ export default function CandidateDetailsPage() {
                                   }`}
                                 >
                                   <Icon
-                                    className={`h-4 w-4 ${
+                                    className={`h-3 w-3 md:h-4 md:w-4 ${
                                       event.status === "success"
                                         ? "text-green-600 dark:text-green-400"
                                         : event.status === "error"
@@ -2295,7 +2306,7 @@ export default function CandidateDetailsPage() {
 
                                 {/* Event card */}
                                 <div
-                                  className={`rounded-lg border-2 bg-card p-4 hover:shadow-md transition-shadow ${
+                                  className={`rounded-lg border-2 bg-card p-2.5 md:p-4 hover:shadow-md transition-shadow ${
                                     event.status === "success"
                                       ? "border-green-200 dark:border-green-800/50"
                                       : event.status === "error"
@@ -2303,12 +2314,12 @@ export default function CandidateDetailsPage() {
                                       : event.status === "warning"
                                       ? "border-yellow-200 dark:border-yellow-800/50"
                                       : "border-blue-200 dark:border-blue-800/50"
-                                  } ${isLast ? "" : "mb-4"}`}
+                                  } ${isLast ? "" : "mb-3 md:mb-4"}`}
                                 >
-                                  <div className="flex items-start justify-between gap-4 mb-2">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <h4 className="font-semibold text-sm">
+                                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 md:gap-4 mb-2">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                        <h4 className="font-semibold text-xs md:text-sm">
                                           {event.title}
                                         </h4>
                                         <Badge
@@ -2322,11 +2333,11 @@ export default function CandidateDetailsPage() {
                                           {event.type}
                                         </Badge>
                                       </div>
-                                      <p className="text-sm text-muted-foreground">
+                                      <p className="text-xs md:text-sm text-muted-foreground">
                                         {event.description}
                                       </p>
                                     </div>
-                                    <div className="flex flex-col items-end gap-1">
+                                    <div className="flex flex-row sm:flex-col items-start gap-1 flex-wrap sm:items-end">
                                       {event.jobTitle && (
                                         <Badge
                                           variant="outline"
@@ -2344,27 +2355,32 @@ export default function CandidateDetailsPage() {
                                   </div>
 
                                   {/* Metadata section */}
-                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground pt-2 border-t">
+                                  <div className="flex flex-wrap items-center gap-x-3 md:gap-x-4 gap-y-1 text-[10px] md:text-xs text-muted-foreground pt-2 border-t">
                                     {event.clientName && (
                                       <span className="flex items-center gap-1">
-                                        <IconBriefcase className="h-3 w-3" />
-                                        {event.clientName}
+                                        <IconBriefcase className="h-3 w-3 shrink-0" />
+                                        <span className="truncate">{event.clientName}</span>
                                       </span>
                                     )}
                                     <span className="flex items-center gap-1">
-                                      <IconCalendar className="h-3 w-3" />
-                                      {event.date.toLocaleDateString("en-US", {
+                                      <IconCalendar className="h-3 w-3 shrink-0" />
+                                      <span className="hidden sm:inline">{event.date.toLocaleDateString("en-US", {
                                         month: "short",
                                         day: "numeric",
                                         year: "numeric",
                                         hour: "2-digit",
                                         minute: "2-digit",
-                                      })}
+                                      })}</span>
+                                      <span className="sm:hidden">{event.date.toLocaleDateString("en-US", {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "2-digit",
+                                      })}</span>
                                     </span>
                                     {event.metadata?.stage && (
                                       <span className="flex items-center gap-1">
-                                        <IconClockHour4 className="h-3 w-3" />
-                                        {event.metadata.stage}
+                                        <IconClockHour4 className="h-3 w-3 shrink-0" />
+                                        <span className="truncate">{event.metadata.stage}</span>
                                       </span>
                                     )}
                                     {event.metadata?.rating && (
@@ -2382,9 +2398,10 @@ export default function CandidateDetailsPage() {
                                             `/dashboard/jobs/pipeline/${event.jobId}`
                                           )
                                         }
-                                        className="text-primary hover:underline flex items-center gap-1"
+                                        className="text-primary hover:underline flex items-center gap-1 shrink-0"
                                       >
-                                        View Job →
+                                        <span className="hidden sm:inline">View Job →</span>
+                                        <span className="sm:hidden">View →</span>
                                       </button>
                                     )}
                                   </div>

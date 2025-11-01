@@ -63,15 +63,15 @@ export function AddTagModal({ open, onClose, onSubmit }: AddTagModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto p-4 md:p-6">
         <DialogHeader>
-          <DialogTitle>Add New Tag</DialogTitle>
+          <DialogTitle className="text-lg md:text-xl">Add New Tag</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+        <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4 pt-3 md:pt-4">
           {/* Tag Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">
+          <div className="space-y-1.5 md:space-y-2">
+            <Label htmlFor="name" className="text-xs md:text-sm">
               Tag Name <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -82,16 +82,16 @@ export function AddTagModal({ open, onClose, onSubmit }: AddTagModalProps) {
                 if (errors.name) setErrors({ ...errors, name: "" });
               }}
               placeholder="e.g., Remote, Urgent, Senior Level"
-              className={errors.name ? "border-red-500" : ""}
+              className={`h-8 md:h-9 text-xs md:text-sm ${errors.name ? "border-red-500" : ""}`}
             />
             {errors.name && (
-              <p className="text-sm text-red-500">{errors.name}</p>
+              <p className="text-xs md:text-sm text-red-500">{errors.name}</p>
             )}
           </div>
 
           {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
+          <div className="space-y-1.5 md:space-y-2">
+            <Label htmlFor="description" className="text-xs md:text-sm">Description (Optional)</Label>
             <Input
               id="description"
               value={formData.description}
@@ -99,19 +99,20 @@ export function AddTagModal({ open, onClose, onSubmit }: AddTagModalProps) {
                 setFormData({ ...formData, description: e.target.value })
               }
               placeholder="Brief description of the tag"
+              className="h-8 md:h-9 text-xs md:text-sm"
             />
           </div>
 
           {/* Color */}
-          <div className="space-y-2">
-            <Label>Color</Label>
-            <div className="grid grid-cols-5 gap-2">
+          <div className="space-y-1.5 md:space-y-2">
+            <Label className="text-xs md:text-sm">Color</Label>
+            <div className="grid grid-cols-5 gap-1.5 md:gap-2">
               {COLOR_OPTIONS.map((color) => (
                 <button
                   key={color.value}
                   type="button"
                   onClick={() => setFormData({ ...formData, color: color.value })}
-                  className={`relative h-8 rounded border-2 transition-all ${
+                  className={`relative h-7 md:h-8 rounded border-2 transition-all ${
                     formData.color === color.value
                       ? "border-foreground scale-105"
                       : "border-transparent hover:border-muted-foreground"
@@ -121,14 +122,14 @@ export function AddTagModal({ open, onClose, onSubmit }: AddTagModalProps) {
                 >
                   {formData.color === color.value && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="h-2 w-2 rounded-full bg-white" />
+                      <div className="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-white" />
                     </div>
                   )}
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2 mt-2">
-              <Label htmlFor="custom-color" className="text-sm">
+            <div className="flex items-center gap-2 mt-1.5 md:mt-2">
+              <Label htmlFor="custom-color" className="text-xs md:text-sm">
                 Custom:
               </Label>
               <input
@@ -138,20 +139,20 @@ export function AddTagModal({ open, onClose, onSubmit }: AddTagModalProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, color: e.target.value })
                 }
-                className="h-6 w-12 rounded border cursor-pointer"
+                className="h-6 w-10 md:w-12 rounded border cursor-pointer"
               />
-              <span className="text-xs text-muted-foreground">
+              <span className="text-[10px] md:text-xs text-muted-foreground">
                 {(formData.color || "#000000").toUpperCase()}
               </span>
             </div>
           </div>
 
           {/* Preview */}
-          <div className="space-y-2">
-            <Label>Preview</Label>
-            <div className="rounded border p-3 bg-muted/30">
+          <div className="space-y-1.5 md:space-y-2">
+            <Label className="text-xs md:text-sm">Preview</Label>
+            <div className="rounded border p-2 md:p-3 bg-muted/30">
               <span
-                className="inline-flex items-center px-2 py-1 rounded text-sm"
+                className="inline-flex items-center px-2 py-1 rounded text-xs md:text-sm"
                 style={{
                   backgroundColor: `${formData.color}20`,
                   color: formData.color,
@@ -164,11 +165,11 @@ export function AddTagModal({ open, onClose, onSubmit }: AddTagModalProps) {
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose}>
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 md:pt-4">
+            <Button type="button" variant="outline" onClick={handleClose} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit">Add Tag</Button>
+            <Button type="submit" className="w-full sm:w-auto">Add Tag</Button>
           </div>
         </form>
       </DialogContent>

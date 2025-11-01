@@ -373,36 +373,36 @@ export default function HelpPage() {
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
-        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <div className="px-4 lg:px-6">
-            <div className="mb-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="rounded-lg bg-primary/10 p-2">
-                  <HelpCircle className="h-6 w-6 text-primary" />
+        <div className="flex flex-col gap-3 py-3 md:gap-4 md:py-4">
+          <div className="px-3 lg:px-4">
+            <div className="mb-4 md:mb-6">
+              <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+                <div className="rounded-lg bg-primary/10 p-1.5 md:p-2 shrink-0">
+                  <HelpCircle className="h-4 w-4 md:h-6 md:w-6 text-primary" />
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg md:text-2xl font-bold text-foreground">
                     Help Center
                   </h2>
-                  <p className="text-muted-foreground">
+                  <p className="text-xs md:text-sm text-muted-foreground">
                     Find answers to common questions and get support
                   </p>
                 </div>
               </div>
 
-              <div className="relative max-w-2xl mb-6">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <div className="relative max-w-2xl mb-4 md:mb-6">
+                <Search className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                 <Input
                   placeholder="Search for help..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 pr-24 h-12"
+                  className="pl-10 md:pl-12 pr-16 md:pr-24 h-10 md:h-12 text-sm md:text-base"
                 />
                 {searchQuery && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                    className="absolute right-1 md:right-2 top-1/2 transform -translate-y-1/2 h-8 md:h-9 text-xs md:text-sm"
                     onClick={() => setSearchQuery("")}
                   >
                     Clear
@@ -413,24 +413,24 @@ export default function HelpPage() {
 
             {/* Recent Searches */}
             {recentSearches.length > 0 && searchQuery === "" && (
-              <Card className="mb-6 bg-accent/50">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Recent Searches</CardTitle>
+              <Card className="mb-4 md:mb-6 bg-accent/50">
+                <CardHeader className="p-3 md:p-6">
+                  <div className="flex items-center gap-1.5 md:gap-2">
+                    <Clock className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                    <CardTitle className="text-sm md:text-lg">Recent Searches</CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
+                <CardContent className="p-3 md:p-6 pt-0">
+                  <div className="flex flex-wrap gap-1.5 md:gap-2">
                     {recentSearches.map((search, idx) => (
                       <Button
                         key={idx}
                         variant="outline"
                         size="sm"
                         onClick={() => setSearchQuery(search)}
-                        className="gap-2"
+                        className="gap-1.5 md:gap-2 h-7 md:h-8 text-xs md:text-sm"
                       >
-                        <Search className="h-3 w-3" />
+                        <Search className="h-2.5 w-2.5 md:h-3 md:w-3" />
                         {search}
                       </Button>
                     ))}
@@ -442,7 +442,7 @@ export default function HelpPage() {
                         localStorage.removeItem("help-recent-searches");
                         toast.success("Recent searches cleared");
                       }}
-                      className="text-muted-foreground"
+                      className="text-muted-foreground h-7 md:h-8 text-xs md:text-sm"
                     >
                       Clear
                     </Button>
@@ -451,27 +451,32 @@ export default function HelpPage() {
               </Card>
             )}
 
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-              <span className="text-sm font-medium text-muted-foreground">
+            <div className="flex items-center gap-1.5 md:gap-2 mb-3 md:mb-4 flex-wrap">
+              <span className="text-xs md:text-sm font-medium text-muted-foreground">
                 Category:
               </span>
               {categories.map((category) => (
                 <Button
                   key={category}
                   variant={
-                    selectedCategory === category ? "default" : "outline"
+                    selectedCategory === category ? "primary" : "outline"
                   }
                   size="sm"
                   onClick={() => setSelectedCategory(category)}
-                  className="gap-2"
+                  className={`gap-1 md:gap-2 transition-colors h-7 md:h-8 text-xs md:text-sm ${
+                    selectedCategory === category
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "hover:bg-accent hover:text-accent-foreground"
+                  }`}
                 >
                   {category !== "all" && getCategoryIcon(category)}
-                  {category === "all" ? "All" : category}
+                  <span className="hidden sm:inline">{category === "all" ? "All" : category}</span>
+                  <span className="sm:hidden">{category === "all" ? "All" : category.split(" ")[0]}</span>
                   <Badge
                     variant={
                       selectedCategory === category ? "secondary" : "outline"
                     }
-                    className="ml-1 text-xs"
+                    className="ml-0.5 md:ml-1 text-[10px] md:text-xs"
                   >
                     {getCategoryCount(category)}
                   </Badge>
@@ -480,11 +485,11 @@ export default function HelpPage() {
             </div>
 
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
+              <CardHeader className="p-3 md:p-6">
+                <div className="flex items-start md:items-center justify-between gap-2 flex-col md:flex-row">
                   <div>
-                    <CardTitle>Frequently Asked Questions</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-base md:text-lg">Frequently Asked Questions</CardTitle>
+                    <CardDescription className="text-xs md:text-sm">
                       {filteredFAQs.length} question
                       {filteredFAQs.length !== 1 ? "s" : ""} found
                     </CardDescription>
@@ -500,6 +505,7 @@ export default function HelpPage() {
                           setExpandedFAQs(filteredFAQs.map((faq) => faq.id));
                         }
                       }}
+                      className="w-full md:w-auto h-8 md:h-9 text-xs md:text-sm"
                     >
                       {expandedFAQs.length === filteredFAQs.length
                         ? "Collapse All"
@@ -508,46 +514,46 @@ export default function HelpPage() {
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-2 p-3 md:p-6 pt-0">
                 {filteredFAQs.length === 0 ? (
-                  <div className="py-12 text-center text-muted-foreground">
-                    <HelpCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>No FAQs found matching your search</p>
+                  <div className="py-8 md:py-12 text-center text-muted-foreground">
+                    <HelpCircle className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-2 md:mb-3 opacity-50" />
+                    <p className="text-xs md:text-sm px-4">No FAQs found matching your search</p>
                   </div>
                 ) : (
                   filteredFAQs.map((faq, index) => (
                     <div key={faq.id}>
                       <div
-                        className={`p-4 rounded-lg hover:bg-accent cursor-pointer transition-all group ${
+                        className={`p-3 md:p-4 rounded-lg hover:bg-accent cursor-pointer transition-all group ${
                           expandedFAQs.includes(faq.id)
                             ? "bg-accent/50 border-2 border-primary/30"
                             : "border-2 border-transparent"
                         }`}
                         onClick={() => toggleFAQ(faq.id)}
                       >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-start justify-between gap-2 md:gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
                               {getCategoryIcon(faq.category)}
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-[10px] md:text-xs">
                                 {faq.category}
                               </Badge>
                             </div>
-                            <h4 className="font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+                            <h4 className="font-semibold text-foreground mb-1.5 md:mb-2 group-hover:text-primary transition-colors text-sm md:text-base">
                               {faq.question}
                             </h4>
                             {expandedFAQs.includes(faq.id) && (
                               <>
-                                <Separator className="my-3" />
-                                <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
+                                <Separator className="my-2 md:my-3" />
+                                <p className="text-xs md:text-sm text-muted-foreground mb-2 md:mb-3 leading-relaxed">
                                   {faq.answer}
                                 </p>
-                                <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
                                   {faq.tags.map((tag) => (
                                     <Badge
                                       key={tag}
                                       variant="outline"
-                                      className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                                      className="text-[10px] md:text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setSearchQuery(tag);
@@ -563,56 +569,56 @@ export default function HelpPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className={`h-8 w-8 p-0 shrink-0 ${
+                            className={`h-7 w-7 md:h-8 md:w-8 p-0 shrink-0 ${
                               expandedFAQs.includes(faq.id)
                                 ? "bg-primary text-primary-foreground"
                                 : ""
                             }`}
                           >
                             {expandedFAQs.includes(faq.id) ? (
-                              <ChevronUp className="h-4 w-4" />
+                              <ChevronUp className="h-3 w-3 md:h-4 md:w-4" />
                             ) : (
-                              <ChevronDown className="h-4 w-4" />
+                              <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />
                             )}
                           </Button>
                         </div>
                       </div>
-                      {index < filteredFAQs.length - 1 && <Separator />}
+                      {index < filteredFAQs.length - 1 && <Separator className="my-1.5 md:my-2" />}
                     </div>
                   ))
                 )}
               </CardContent>
             </Card>
 
-            <Card className="mt-6 bg-primary/5 border-primary/20">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-lg bg-primary p-2">
-                    <Mail className="h-5 w-5 text-primary-foreground" />
+            <Card className="mt-4 md:mt-6 bg-primary/5 border-primary/20">
+              <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
+                <div className="flex items-start gap-2 md:gap-3">
+                  <div className="rounded-lg bg-primary p-1.5 md:p-2 shrink-0">
+                    <Mail className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-foreground mb-1 text-lg">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground mb-1 text-sm md:text-lg">
                       Need Technical Support?
                     </p>
-                    <p className="text-sm text-muted-foreground mb-3">
+                    <p className="text-xs md:text-sm text-muted-foreground mb-2 md:mb-3">
                       Contact the developer for assistance, bug reports, or
                       feature requests.
                     </p>
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-foreground p-2  rounded-lg">
-                        <Mail className="h-4 w-4 text-primary" />
+                    <div className="space-y-1.5 md:space-y-2 mb-3 md:mb-4">
+                      <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-foreground p-1.5 md:p-2 rounded-lg">
+                        <Mail className="h-3 w-3 md:h-4 md:w-4 text-primary shrink-0" />
                         <a
                           href="mailto:mislam.tauhidul@gmail.com"
-                          className="hover:underline font-medium hover:text-primary"
+                          className="hover:underline font-medium hover:text-primary break-all"
                         >
                           mislam.tauhidul@gmail.com
                         </a>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-foreground p-2  rounded-lg">
-                        <Mail className="h-4 w-4 text-primary" />
+                      <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-foreground p-1.5 md:p-2 rounded-lg">
+                        <Mail className="h-3 w-3 md:h-4 md:w-4 text-primary shrink-0" />
                         <a
                           href="mailto:mislam@aristagroups.com"
-                          className="hover:underline font-medium hover:text-primary"
+                          className="hover:underline font-medium hover:text-primary break-all"
                         >
                           mislam@aristagroups.com
                         </a>

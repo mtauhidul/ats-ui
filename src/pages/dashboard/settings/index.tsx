@@ -10,17 +10,17 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
-        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <div className="px-4 lg:px-6">
+        <div className="flex flex-col gap-3 py-3 md:gap-4 md:py-4">
+          <div className="px-3 lg:px-4">
             {/* Header */}
-            <div className="mb-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="rounded-lg bg-primary/10 p-2">
-                  <Settings className="h-6 w-6 text-primary" />
+            <div className="mb-4 md:mb-6">
+              <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
+                <div className="rounded-lg bg-primary/10 p-1.5 md:p-2 shrink-0">
+                  <Settings className="h-4 w-4 md:h-6 md:w-6 text-primary" />
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">Settings</h2>
-                  <p className="text-muted-foreground">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg md:text-2xl font-bold text-foreground">Settings</h2>
+                  <p className="text-xs md:text-sm text-muted-foreground">
                     Manage your application settings and preferences
                   </p>
                 </div>
@@ -29,28 +29,32 @@ export default function SettingsPage() {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="h-11 p-1 bg-card border border-border w-fit">
-                <TabsTrigger 
-                  value="email-templates" 
-                  className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Email Templates
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="email-monitoring" 
-                  className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                >
-                  <Activity className="h-4 w-4 mr-2" />
-                  Email Monitoring
-                </TabsTrigger>
-              </TabsList>
+              <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-4 md:mb-6">
+                <TabsList className="h-9 md:h-11 p-0.5 md:p-1 bg-card border border-border w-full md:w-fit inline-flex">
+                  <TabsTrigger 
+                    value="email-templates" 
+                    className="flex-1 md:flex-initial px-3 md:px-6 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap"
+                  >
+                    <Mail className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                    <span className="hidden sm:inline">Email Templates</span>
+                    <span className="sm:hidden">Templates</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="email-monitoring" 
+                    className="flex-1 md:flex-initial px-3 md:px-6 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap"
+                  >
+                    <Activity className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                    <span className="hidden sm:inline">Email Monitoring</span>
+                    <span className="sm:hidden">Monitoring</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
-              <TabsContent value="email-templates" className="mt-6">
+              <TabsContent value="email-templates" className="mt-0">
                 <EmailTemplatesSettings />
               </TabsContent>
 
-              <TabsContent value="email-monitoring" className="mt-6">
+              <TabsContent value="email-monitoring" className="mt-0">
                 <EmailMonitoringSettings />
               </TabsContent>
             </Tabs>

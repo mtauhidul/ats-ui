@@ -212,8 +212,8 @@ export default function AccountPage() {
     switch (role) {
       case "admin":
         return (
-          <Badge className="bg-purple-600">
-            <Shield className="h-3 w-3 mr-1" />
+          <Badge className="bg-purple-600 text-xs md:text-sm h-5 md:h-6">
+            <Shield className="h-2.5 w-2.5 md:h-3 md:w-3 mr-1" />
             Admin
           </Badge>
         );
@@ -221,7 +221,7 @@ export default function AccountPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-blue-50 text-blue-700 border-blue-200"
+            className="bg-blue-50 text-blue-700 border-blue-200 text-xs md:text-sm h-5 md:h-6"
           >
             Recruiter
           </Badge>
@@ -230,7 +230,7 @@ export default function AccountPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-green-50 text-green-700 border-green-200"
+            className="bg-green-50 text-green-700 border-green-200 text-xs md:text-sm h-5 md:h-6"
           >
             Hiring Manager
           </Badge>
@@ -239,13 +239,13 @@ export default function AccountPage() {
         return (
           <Badge
             variant="outline"
-            className="bg-gray-50 text-gray-700 border-gray-200"
+            className="bg-gray-50 text-gray-700 border-gray-200 text-xs md:text-sm h-5 md:h-6"
           >
             Viewer
           </Badge>
         );
       default:
-        return <Badge variant="outline">{role}</Badge>;
+        return <Badge variant="outline" className="text-xs md:text-sm h-5 md:h-6">{role}</Badge>;
     }
   };
 
@@ -265,16 +265,16 @@ export default function AccountPage() {
       <div className="@container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
           <div className="px-4 lg:px-6">
-            <div className="mb-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="rounded-lg bg-primary/10 p-2">
-                  <UserIcon className="h-6 w-6 text-primary" />
+            <div className="mb-4 md:mb-6">
+              <div className="flex items-center gap-2 md:gap-3 mb-2">
+                <div className="rounded-lg bg-primary/10 p-1.5 md:p-2 shrink-0">
+                  <UserIcon className="h-4 w-4 md:h-6 md:w-6 text-primary" />
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">
+                <div className="min-w-0">
+                  <h2 className="text-lg md:text-2xl font-bold text-foreground">
                     Account Settings
                   </h2>
-                  <p className="text-muted-foreground">
+                  <p className="text-xs md:text-sm text-muted-foreground">
                     Manage your profile information, security settings, and
                     preferences
                   </p>
@@ -282,40 +282,40 @@ export default function AccountPage() {
               </div>
             </div>
 
-            <Card className="mb-6">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-6">
-                  <Avatar className="h-24 w-24">
+            <Card className="mb-4 md:mb-6">
+              <CardContent className="pt-4 md:pt-6">
+                <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
+                  <Avatar className="h-20 w-20 md:h-24 md:w-24 shrink-0">
                     <AvatarImage
                       src={profilePhoto}
                       alt={profileData.firstName}
                     />
-                    <AvatarFallback className="text-2xl">
+                    <AvatarFallback className="text-xl md:text-2xl">
                       {getInitials(profileData.firstName, profileData.lastName)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-2xl font-bold">
+                  <div className="flex-1 min-w-0 w-full">
+                    <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
+                      <h3 className="text-xl md:text-2xl font-bold break-words">
                         {profileData.firstName} {profileData.lastName}
                       </h3>
                       {userRole && getRoleBadge(userRole)}
                     </div>
-                    <p className="text-muted-foreground mb-3">
+                    <p className="text-sm md:text-base text-muted-foreground mb-2 md:mb-3">
                       {profileData.title || "No title set"}
                     </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Mail className="h-4 w-4" />
-                        {profileData.email}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs md:text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+                        <Mail className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
+                        <span className="truncate">{profileData.email}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Phone className="h-4 w-4" />
-                        {profileData.phone || "No phone set"}
+                      <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+                        <Phone className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
+                        <span className="truncate">{profileData.phone || "No phone set"}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Building className="h-4 w-4" />
-                        {profileData.department || "No department set"}
+                      <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+                        <Building className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
+                        <span className="truncate">{profileData.department || "No department set"}</span>
                       </div>
                     </div>
                   </div>
@@ -324,56 +324,58 @@ export default function AccountPage() {
             </Card>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="h-11 p-1 bg-card border border-border w-fit">
-                <TabsTrigger
-                  value="profile"
-                  className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                >
-                  <UserIcon className="h-4 w-4 mr-2" />
-                  Profile
-                </TabsTrigger>
-                <TabsTrigger
-                  value="security"
-                  className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                >
-                  <Lock className="h-4 w-4 mr-2" />
-                  Security
-                </TabsTrigger>
-                <TabsTrigger
-                  value="permissions"
-                  className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                >
-                  <Shield className="h-4 w-4 mr-2" />
-                  Permissions
-                </TabsTrigger>
-              </TabsList>
+              <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+                <TabsList className="h-9 md:h-11 p-1 bg-card border border-border w-full md:w-fit inline-flex">
+                  <TabsTrigger
+                    value="profile"
+                    className="flex-1 md:flex-initial px-2 md:px-6 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap"
+                  >
+                    <UserIcon className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Profile</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="security"
+                    className="flex-1 md:flex-initial px-2 md:px-6 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap"
+                  >
+                    <Lock className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Security</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="permissions"
+                    className="flex-1 md:flex-initial px-2 md:px-6 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap"
+                  >
+                    <Shield className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Permissions</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
-              <TabsContent value="profile" className="mt-6">
+              <TabsContent value="profile" className="mt-4 md:mt-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Profile Information</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-base md:text-lg">Profile Information</CardTitle>
+                    <CardDescription className="text-xs md:text-sm">
                       Update your profile details and contact information
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={handleProfileSubmit} className="space-y-4">
+                    <form onSubmit={handleProfileSubmit} className="space-y-3 md:space-y-4">
                       <div className="space-y-2">
-                        <Label>Profile Photo</Label>
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-20 w-20">
+                        <Label className="text-xs md:text-sm">Profile Photo</Label>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+                          <Avatar className="h-16 w-16 md:h-20 md:w-20 shrink-0">
                             <AvatarImage
                               src={profilePhoto}
                               alt={profileData.firstName}
                             />
-                            <AvatarFallback className="text-xl">
+                            <AvatarFallback className="text-lg md:text-xl">
                               {getInitials(
                                 profileData.firstName,
                                 profileData.lastName
                               )}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
+                          <div className="w-full sm:w-auto">
                             <Label
                               htmlFor="photo-upload"
                               className="cursor-pointer"
@@ -382,11 +384,12 @@ export default function AccountPage() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
+                                className="h-8 md:h-9 text-xs md:text-sm w-full sm:w-auto"
                                 asChild
                                 disabled={isPhotoUploading}
                               >
                                 <span>
-                                  <Upload className="h-4 w-4 mr-2" />
+                                  <Upload className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                                   {isPhotoUploading
                                     ? "Uploading..."
                                     : "Change Photo"}
@@ -401,7 +404,7 @@ export default function AccountPage() {
                               onChange={handlePhotoUpload}
                               disabled={isPhotoUploading}
                             />
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-[10px] md:text-xs text-muted-foreground mt-1">
                               JPG, PNG or GIF. Max size 2MB.
                             </p>
                           </div>
@@ -410,11 +413,12 @@ export default function AccountPage() {
 
                       <Separator />
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="firstName">First Name</Label>
+                          <Label htmlFor="firstName" className="text-xs md:text-sm">First Name</Label>
                           <Input
                             id="firstName"
+                            className="h-9 md:h-10 text-xs md:text-sm"
                             value={profileData.firstName}
                             onChange={(e) =>
                               setProfileData({
@@ -425,9 +429,10 @@ export default function AccountPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="lastName">Last Name</Label>
+                          <Label htmlFor="lastName" className="text-xs md:text-sm">Last Name</Label>
                           <Input
                             id="lastName"
+                            className="h-9 md:h-10 text-xs md:text-sm"
                             value={profileData.lastName}
                             onChange={(e) =>
                               setProfileData({
@@ -440,24 +445,25 @@ export default function AccountPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
+                        <Label htmlFor="email" className="text-xs md:text-sm">Email Address</Label>
                         <Input
                           id="email"
                           type="email"
+                          className="h-9 md:h-10 text-xs md:text-sm bg-muted cursor-not-allowed"
                           value={profileData.email}
                           disabled
-                          className="bg-muted cursor-not-allowed"
                         />
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[10px] md:text-xs text-muted-foreground">
                           Email cannot be changed here. Contact your
                           administrator to update.
                         </p>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
+                        <Label htmlFor="phone" className="text-xs md:text-sm">Phone Number</Label>
                         <Input
                           id="phone"
+                          className="h-9 md:h-10 text-xs md:text-sm"
                           value={profileData.phone}
                           onChange={(e) =>
                             setProfileData({
@@ -468,11 +474,12 @@ export default function AccountPage() {
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="department">Department</Label>
+                          <Label htmlFor="department" className="text-xs md:text-sm">Department</Label>
                           <Input
                             id="department"
+                            className="h-9 md:h-10 text-xs md:text-sm"
                             value={profileData.department}
                             onChange={(e) =>
                               setProfileData({
@@ -483,9 +490,10 @@ export default function AccountPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="title">Job Title</Label>
+                          <Label htmlFor="title" className="text-xs md:text-sm">Job Title</Label>
                           <Input
                             id="title"
+                            className="h-9 md:h-10 text-xs md:text-sm"
                             value={profileData.title}
                             onChange={(e) =>
                               setProfileData({
@@ -497,18 +505,23 @@ export default function AccountPage() {
                         </div>
                       </div>
 
-                      <div className="flex justify-end gap-2 pt-4">
+                      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 md:pt-4">
                         <Button
                           type="button"
                           variant="outline"
+                          className="h-9 md:h-10 text-xs md:text-sm w-full sm:w-auto"
                           disabled={isProfileLoading}
                         >
                           Cancel
                         </Button>
-                        <Button type="submit" disabled={isProfileLoading}>
+                        <Button 
+                          type="submit" 
+                          className="h-9 md:h-10 text-xs md:text-sm w-full sm:w-auto"
+                          disabled={isProfileLoading}
+                        >
                           {isProfileLoading ? (
                             <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white mr-2"></div>
                               Saving...
                             </>
                           ) : (
@@ -521,24 +534,25 @@ export default function AccountPage() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="security" className="mt-6">
+              <TabsContent value="security" className="mt-4 md:mt-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Change Password</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-base md:text-lg">Change Password</CardTitle>
+                    <CardDescription className="text-xs md:text-sm">
                       Update your password to keep your account secure
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                    <form onSubmit={handlePasswordSubmit} className="space-y-3 md:space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="currentPassword">
+                        <Label htmlFor="currentPassword" className="text-xs md:text-sm">
                           Current Password
                         </Label>
                         <div className="relative">
                           <Input
                             id="currentPassword"
                             type={showCurrentPassword ? "text" : "password"}
+                            className="h-9 md:h-10 text-xs md:text-sm pr-10"
                             value={passwordData.currentPassword}
                             onChange={(e) =>
                               setPasswordData({
@@ -551,26 +565,27 @@ export default function AccountPage() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                            className="absolute right-0 top-0 h-9 md:h-10 px-2 md:px-3 hover:bg-transparent"
                             onClick={() =>
                               setShowCurrentPassword(!showCurrentPassword)
                             }
                           >
                             {showCurrentPassword ? (
-                              <EyeOff className="h-4 w-4" />
+                              <EyeOff className="h-3 w-3 md:h-4 md:w-4" />
                             ) : (
-                              <Eye className="h-4 w-4" />
+                              <Eye className="h-3 w-3 md:h-4 md:w-4" />
                             )}
                           </Button>
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="newPassword">New Password</Label>
+                        <Label htmlFor="newPassword" className="text-xs md:text-sm">New Password</Label>
                         <div className="relative">
                           <Input
                             id="newPassword"
                             type={showNewPassword ? "text" : "password"}
+                            className="h-9 md:h-10 text-xs md:text-sm pr-10"
                             value={passwordData.newPassword}
                             onChange={(e) =>
                               setPasswordData({
@@ -583,29 +598,30 @@ export default function AccountPage() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                            className="absolute right-0 top-0 h-9 md:h-10 px-2 md:px-3 hover:bg-transparent"
                             onClick={() => setShowNewPassword(!showNewPassword)}
                           >
                             {showNewPassword ? (
-                              <EyeOff className="h-4 w-4" />
+                              <EyeOff className="h-3 w-3 md:h-4 md:w-4" />
                             ) : (
-                              <Eye className="h-4 w-4" />
+                              <Eye className="h-3 w-3 md:h-4 md:w-4" />
                             )}
                           </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[10px] md:text-xs text-muted-foreground">
                           Must be at least 8 characters long
                         </p>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">
+                        <Label htmlFor="confirmPassword" className="text-xs md:text-sm">
                           Confirm New Password
                         </Label>
                         <div className="relative">
                           <Input
                             id="confirmPassword"
                             type={showConfirmPassword ? "text" : "password"}
+                            className="h-9 md:h-10 text-xs md:text-sm pr-10"
                             value={passwordData.confirmPassword}
                             onChange={(e) =>
                               setPasswordData({
@@ -618,24 +634,25 @@ export default function AccountPage() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                            className="absolute right-0 top-0 h-9 md:h-10 px-2 md:px-3 hover:bg-transparent"
                             onClick={() =>
                               setShowConfirmPassword(!showConfirmPassword)
                             }
                           >
                             {showConfirmPassword ? (
-                              <EyeOff className="h-4 w-4" />
+                              <EyeOff className="h-3 w-3 md:h-4 md:w-4" />
                             ) : (
-                              <Eye className="h-4 w-4" />
+                              <Eye className="h-3 w-3 md:h-4 md:w-4" />
                             )}
                           </Button>
                         </div>
                       </div>
 
-                      <div className="flex justify-end gap-2 pt-4">
+                      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 md:pt-4">
                         <Button
                           type="button"
                           variant="outline"
+                          className="h-9 md:h-10 text-xs md:text-sm w-full sm:w-auto"
                           disabled={isPasswordLoading}
                           onClick={() => {
                             setPasswordData({
@@ -647,10 +664,14 @@ export default function AccountPage() {
                         >
                           Cancel
                         </Button>
-                        <Button type="submit" disabled={isPasswordLoading}>
+                        <Button 
+                          type="submit" 
+                          className="h-9 md:h-10 text-xs md:text-sm w-full sm:w-auto"
+                          disabled={isPasswordLoading}
+                        >
                           {isPasswordLoading ? (
                             <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white mr-2"></div>
                               Updating...
                             </>
                           ) : (
@@ -663,90 +684,90 @@ export default function AccountPage() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="permissions" className="mt-6">
+              <TabsContent value="permissions" className="mt-4 md:mt-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Account Permissions</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-base md:text-lg">Account Permissions</CardTitle>
+                    <CardDescription className="text-xs md:text-sm">
                       Your current role and permissions in the system
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="text-sm font-medium">Your Role:</span>
+                  <CardContent className="space-y-3 md:space-y-4">
+                    <div className="flex flex-wrap items-center gap-2 mb-3 md:mb-4">
+                      <span className="text-xs md:text-sm font-medium">Your Role:</span>
                       {userRole && getRoleBadge(userRole)}
                     </div>
 
                     <Separator />
 
                     <div className="space-y-3">
-                      <h4 className="text-sm font-medium">Your Permissions</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <h4 className="text-xs md:text-sm font-medium">Your Permissions</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
                         {/* Always enabled base permissions */}
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="h-2 w-2 rounded-full bg-green-500" />
-                          View Dashboard
+                        <div className="flex items-center gap-2 text-xs md:text-sm">
+                          <div className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                          <span>View Dashboard</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="h-2 w-2 rounded-full bg-green-500" />
-                          Manage Profile
+                        <div className="flex items-center gap-2 text-xs md:text-sm">
+                          <div className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                          <span>Manage Profile</span>
                         </div>
 
                         {/* Dynamic permissions from backend */}
                         {user?.permissions?.canManageClients && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Manage Clients
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                            <span>Manage Clients</span>
                           </div>
                         )}
                         {user?.permissions?.canManageJobs && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Manage Jobs
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                            <span>Manage Jobs</span>
                           </div>
                         )}
                         {user?.permissions?.canReviewApplications && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Review Applications
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                            <span>Review Applications</span>
                           </div>
                         )}
                         {user?.permissions?.canManageCandidates && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Manage Candidates
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                            <span>Manage Candidates</span>
                           </div>
                         )}
                         {user?.permissions?.canSendEmails && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Send Emails
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                            <span>Send Emails</span>
                           </div>
                         )}
                         {user?.permissions?.canManageTeam && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Manage Team
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                            <span>Manage Team</span>
                           </div>
                         )}
                         {user?.permissions?.canAccessAnalytics && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                            Access Analytics
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <div className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                            <span>Access Analytics</span>
                           </div>
                         )}
                       </div>
 
                       {userRole === "admin" && (
-                        <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
-                          <p className="text-sm text-primary font-medium">
+                        <div className="mt-3 md:mt-4 p-2.5 md:p-3 rounded-lg bg-primary/10 border border-primary/20">
+                          <p className="text-xs md:text-sm text-primary font-medium">
                             🎉 As an admin, you have full access to all system
                             features and permissions.
                           </p>
                         </div>
                       )}
 
-                      <p className="text-xs text-muted-foreground mt-4">
+                      <p className="text-[10px] md:text-xs text-muted-foreground mt-3 md:mt-4">
                         Your specific permissions are determined by your role
                         and can be customized by your administrator.
                       </p>
@@ -756,14 +777,14 @@ export default function AccountPage() {
                       <>
                         <Separator />
 
-                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                          <div className="flex items-start gap-3">
-                            <Bell className="h-5 w-5 text-amber-600 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium text-amber-900">
+                        <div className="rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 p-3 md:p-4">
+                          <div className="flex items-start gap-2 md:gap-3">
+                            <Bell className="h-4 w-4 md:h-5 md:w-5 text-amber-600 dark:text-amber-500 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs md:text-sm font-medium text-amber-900 dark:text-amber-200">
                                 Need Additional Access?
                               </p>
-                              <p className="text-sm text-amber-700 mt-1">
+                              <p className="text-xs md:text-sm text-amber-700 dark:text-amber-300 mt-1">
                                 Contact your administrator if you need
                                 additional permissions or role changes.
                               </p>

@@ -32,6 +32,8 @@ import {
   Archive,
   ArrowLeft,
   CheckCheck,
+  ChevronDown,
+  ChevronUp,
   Clock,
   Download,
   FileText,
@@ -106,6 +108,7 @@ export function CandidateEmailCommunication({
   const [isSending, setIsSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [isInboxOpen, setIsInboxOpen] = useState(true);
 
   // Compose email state
   const [composeData, setComposeData] = useState({
@@ -349,45 +352,50 @@ export function CandidateEmailCommunication({
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-3 md:space-y-4 p-2 md:p-3 lg:p-4">
       {/* Header */}
-      <div className="flex items-start gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-2 md:gap-3">
         <Button
           variant="ghost"
           size="icon"
           onClick={onBack}
-          className="flex-shrink-0"
+          className="shrink-0 self-start"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-2">
-            <Avatar className="h-12 w-12 border-2 border-border">
+          <div className="flex items-center gap-2 md:gap-3 mb-1.5 md:mb-2">
+            <Avatar className="h-10 w-10 md:h-12 md:w-12 border-2 border-border shrink-0">
               <AvatarImage src={candidate.avatar} alt={fullName} />
-              <AvatarFallback className="text-sm font-semibold">
+              <AvatarFallback className="text-xs md:text-sm font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-foreground truncate">
+              <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-foreground truncate">
                 Email Communication
               </h1>
-              <p className="text-sm text-muted-foreground truncate">
+              <p className="text-xs md:text-sm text-muted-foreground truncate">
                 {fullName} • {candidate.email}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Mail className="h-4 w-4" />
-            <span>Regarding: {job.title}</span>
+          <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+            <Mail className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />
+            <span className="truncate">Regarding: {job.title}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
           <Button
             onClick={() => {
               setIsComposing(true);
               setSelectedEmail(null);
+              // Close inbox on mobile when composing
+              if (window.innerWidth < 1024) {
+                setIsInboxOpen(false);
+              }
             }}
+            className="flex-1 sm:flex-initial"
           >
             <Send className="h-4 w-4 mr-2" />
             New Email
@@ -395,57 +403,72 @@ export function CandidateEmailCommunication({
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-6">
+      <div className="grid lg:grid-cols-12 gap-3 md:gap-4">
         {/* Email List */}
         <div className="lg:col-span-5">
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Emails</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
+            <CardHeader className="p-2 md:p-3 lg:p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 md:gap-3 flex-1">
+                  <CardTitle className="text-base md:text-lg">Emails</CardTitle>
+                  <Badge variant="outline" className="text-xs w-fit">
                     {displayEmails.length} total
                   </Badge>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsInboxOpen(!isInboxOpen)}
+                  className="lg:hidden h-8 w-8"
+                >
+                  {isInboxOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
-              <div className="mt-4">
-                <Input
-                  placeholder="Search emails..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9"
-                />
-              </div>
+              {isInboxOpen && (
+                <div className="mt-2 md:mt-3">
+                  <Input
+                    placeholder="Search emails..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-8 md:h-9 text-xs md:text-sm"
+                  />
+                </div>
+              )}
             </CardHeader>
-            <CardContent className="p-0">
+            {isInboxOpen && (
+              <CardContent className="p-0">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <div className="px-6 pt-4 pb-3">
-                  <TabsList className="h-11 p-1 bg-card border border-border w-fit">
+                <div className="px-2 md:px-3 lg:px-4 pt-2 md:pt-3 pb-1.5 md:pb-2 overflow-x-auto">
+                  <TabsList className="h-9 md:h-10 lg:h-11 p-1 bg-card border border-border w-full min-w-max sm:w-fit">
                     <TabsTrigger
                       value="inbox"
-                      className="px-4 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                      className="px-2 md:px-3 lg:px-4 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground"
                     >
-                      <Inbox className="h-4 w-4 mr-2" />
-                      All
+                      <Inbox className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                      <span className="hidden sm:inline">All</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="sent"
-                      className="px-4 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                      className="px-2 md:px-3 lg:px-4 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground"
                     >
-                      <SendHorizontal className="h-4 w-4 mr-2" />
-                      Sent
+                      <SendHorizontal className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                      <span className="hidden sm:inline">Sent</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="received"
-                      className="px-4 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                      className="px-2 md:px-3 lg:px-4 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground"
                     >
-                      <Mail className="h-4 w-4 mr-2" />
-                      Received
+                      <Mail className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                      <span className="hidden sm:inline">Received</span>
                     </TabsTrigger>
                   </TabsList>
                 </div>
 
-                <div className="max-h-[600px] overflow-y-auto border-t">
+                <div className="max-h-[400px] md:max-h-[500px] lg:max-h-[600px] overflow-y-auto border-t">
                   {isLoading ? (
                     <div className="px-6 py-12 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
@@ -458,32 +481,36 @@ export function CandidateEmailCommunication({
                       <div key={email.id}>
                         <div
                           className={cn(
-                            "px-6 py-4 cursor-pointer hover:bg-muted/50 transition-colors",
+                            "px-2 py-2 md:px-3 md:py-3 lg:px-4 lg:py-3 cursor-pointer hover:bg-muted/50 transition-colors",
                             selectedEmail?.id === email.id && "bg-muted",
                             !email.isRead && "bg-blue-50/50 dark:bg-blue-950/20"
                           )}
                           onClick={() => {
                             setSelectedEmail(email);
                             setIsComposing(false);
+                            // Close inbox on mobile when email is selected
+                            if (window.innerWidth < 1024) {
+                              setIsInboxOpen(false);
+                            }
                           }}
                         >
-                          <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 mt-1">
+                          <div className="flex items-start gap-2 md:gap-3">
+                            <div className="shrink-0 mt-0.5 md:mt-1">
                               {email.direction === "outbound" ? (
-                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                  <SendHorizontal className="h-4 w-4 text-primary" />
+                                <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <SendHorizontal className="h-3 w-3 md:h-4 md:w-4 text-primary" />
                                 </div>
                               ) : (
-                                <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                                  <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                                  <Mail className="h-3 w-3 md:h-4 md:w-4 text-blue-600 dark:text-blue-400" />
                                 </div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2 mb-1">
+                              <div className="flex items-center justify-between gap-2 mb-0.5 md:mb-1">
                                 <p
                                   className={cn(
-                                    "text-sm truncate",
+                                    "text-xs md:text-sm truncate",
                                     !email.isRead
                                       ? "font-semibold"
                                       : "font-medium"
@@ -495,13 +522,13 @@ export function CandidateEmailCommunication({
                                       : "Unknown"
                                     : email.from || "Unknown"}
                                 </p>
-                                <span className="text-xs text-muted-foreground flex-shrink-0">
+                                <span className="text-[10px] md:text-xs text-muted-foreground shrink-0">
                                   {formatTimestamp(email.timestamp)}
                                 </span>
                               </div>
                               <p
                                 className={cn(
-                                  "text-sm mb-1 truncate",
+                                  "text-xs md:text-sm mb-0.5 md:mb-1 truncate",
                                   !email.isRead
                                     ? "font-medium text-foreground"
                                     : "text-muted-foreground"
@@ -509,12 +536,12 @@ export function CandidateEmailCommunication({
                               >
                                 {email.subject || "(No Subject)"}
                               </p>
-                              <p className="text-xs text-muted-foreground line-clamp-2">
+                              <p className="text-[10px] md:text-xs text-muted-foreground line-clamp-2">
                                 {email.body || ""}
                               </p>
                             </div>
                             {email.isStarred && (
-                              <Star className="h-4 w-4 fill-amber-500 text-amber-500 flex-shrink-0" />
+                              <Star className="h-3 w-3 md:h-4 md:w-4 fill-amber-500 text-amber-500 shrink-0" />
                             )}
                           </div>
                         </div>
@@ -522,12 +549,12 @@ export function CandidateEmailCommunication({
                       </div>
                     ))
                   ) : (
-                    <div className="px-6 py-12 text-center">
-                      <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
-                      <p className="text-sm text-muted-foreground">
+                    <div className="px-2 py-6 md:px-3 md:py-8 lg:px-4 lg:py-10 text-center">
+                      <Mail className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-2 md:mb-3 text-muted-foreground opacity-20" />
+                      <p className="text-xs md:text-sm text-muted-foreground">
                         {searchQuery ? "No emails found" : "No emails yet"}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-2">
+                      <p className="text-[10px] md:text-xs text-muted-foreground mt-1 md:mt-2">
                         {searchQuery
                           ? "Try a different search term"
                           : "Send your first email to this candidate"}
@@ -537,6 +564,7 @@ export function CandidateEmailCommunication({
                 </div>
               </Tabs>
             </CardContent>
+            )}
           </Card>
         </div>
 
@@ -544,15 +572,34 @@ export function CandidateEmailCommunication({
         <div className="lg:col-span-7">
           {isComposing ? (
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Compose Email</CardTitle>
+              <CardHeader className="p-2 md:p-3 lg:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-3">
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setIsComposing(false);
+                        setIsInboxOpen(true);
+                      }}
+                      className="lg:hidden h-8 w-8 shrink-0"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <CardTitle className="text-base md:text-lg">Compose Email</CardTitle>
+                  </div>
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setIsComposing(false)}
+                      onClick={() => {
+                        setIsComposing(false);
+                        if (window.innerWidth < 1024) {
+                          setIsInboxOpen(true);
+                        }
+                      }}
                       disabled={isSending}
+                      className="h-8 px-2 md:px-3 text-xs md:text-sm"
                     >
                       Cancel
                     </Button>
@@ -560,15 +607,16 @@ export function CandidateEmailCommunication({
                       size="sm"
                       onClick={handleSendEmail}
                       disabled={isSending}
+                      className="h-8 px-2 md:px-3 text-xs md:text-sm"
                     >
                       {isSending ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Sending...
+                          <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white mr-1.5 md:mr-2"></div>
+                          <span className="hidden sm:inline">Sending...</span>
                         </>
                       ) : (
                         <>
-                          <Send className="h-4 w-4 mr-2" />
+                          <Send className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                           Send
                         </>
                       )}
@@ -576,10 +624,10 @@ export function CandidateEmailCommunication({
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-2 md:p-3 lg:p-4 space-y-2 md:space-y-3">
                 {/* Template Selection */}
-                <div className="space-y-2">
-                  <Label htmlFor="template">Use Template (Optional)</Label>
+                <div className="space-y-1 md:space-y-1.5">
+                  <Label htmlFor="template" className="text-xs md:text-sm">Use Template (Optional)</Label>
                   <Select
                     onValueChange={(value) => {
                       if (value === "none") return;
@@ -607,22 +655,22 @@ export function CandidateEmailCommunication({
                       }
                     }}
                   >
-                    <SelectTrigger id="template">
+                    <SelectTrigger id="template" className="h-9 md:h-10 text-sm">
                       <SelectValue placeholder="Select a template..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
+                      <SelectItem value="none" className="text-sm">
+                        <div className="flex items-center gap-1.5 md:gap-2">
+                          <Mail className="h-3 w-3 md:h-4 md:w-4" />
                           <span>No template</span>
                         </div>
                       </SelectItem>
                       {emailTemplates.map((template) => {
                         const templateId = template._id || template.id || '';
                         return (
-                          <SelectItem key={templateId} value={templateId}>
-                            <div className="flex items-center gap-2">
-                              <FileText className="h-4 w-4" />
+                          <SelectItem key={templateId} value={templateId} className="text-sm">
+                            <div className="flex items-center gap-1.5 md:gap-2">
+                              <FileText className="h-3 w-3 md:h-4 md:w-4" />
                               <span>{template.name}</span>
                             </div>
                           </SelectItem>
@@ -633,8 +681,8 @@ export function CandidateEmailCommunication({
                 </div>
 
                 {/* To */}
-                <div className="space-y-2">
-                  <Label htmlFor="to">To</Label>
+                <div className="space-y-1 md:space-y-1.5">
+                  <Label htmlFor="to" className="text-xs md:text-sm">To</Label>
                   <Input
                     id="to"
                     value={composeData.to}
@@ -643,12 +691,13 @@ export function CandidateEmailCommunication({
                     }
                     placeholder="recipient@email.com"
                     disabled={isSending}
+                    className="h-8 md:h-9 text-xs md:text-sm"
                   />
                 </div>
 
                 {/* Subject */}
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
+                <div className="space-y-1 md:space-y-1.5">
+                  <Label htmlFor="subject" className="text-xs md:text-sm">Subject</Label>
                   <Input
                     id="subject"
                     value={composeData.subject}
@@ -660,12 +709,13 @@ export function CandidateEmailCommunication({
                     }
                     placeholder="Email subject..."
                     disabled={isSending}
+                    className="h-8 md:h-9 text-xs md:text-sm"
                   />
                 </div>
 
                 {/* Content */}
-                <div className="space-y-2">
-                  <Label htmlFor="content">Message</Label>
+                <div className="space-y-1 md:space-y-1.5">
+                  <Label htmlFor="content" className="text-xs md:text-sm">Message</Label>
                   <textarea
                     id="content"
                     value={composeData.content}
@@ -676,46 +726,55 @@ export function CandidateEmailCommunication({
                       })
                     }
                     placeholder="Write your message..."
-                    className="w-full min-h-[300px] px-3 py-2 text-sm rounded-md border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="w-full min-h-[200px] md:min-h-[300px] px-3 py-2 text-xs md:text-sm rounded-md border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     disabled={isSending}
                   />
                 </div>
 
                 {/* Compose Actions */}
-                <div className="flex items-center gap-2 pt-2">
-                  <Button variant="outline" size="sm" disabled={isSending}>
-                    <Paperclip className="h-4 w-4 mr-2" />
-                    Attach
+                <div className="flex items-center gap-2 pt-1 md:pt-2">
+                  <Button variant="outline" size="sm" disabled={isSending} className="h-8 px-2 md:px-3 text-xs md:text-sm">
+                    <Paperclip className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                    <span className="hidden sm:inline">Attach</span>
                   </Button>
-                  <Button variant="outline" size="sm" disabled={isSending}>
-                    <Image className="h-4 w-4 mr-2" />
-                    Image
+                  <Button variant="outline" size="sm" disabled={isSending} className="h-8 px-2 md:px-3 text-xs md:text-sm">
+                    <Image className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                    <span className="hidden sm:inline">Image</span>
                   </Button>
-                  <Button variant="outline" size="sm" disabled={isSending}>
-                    <Type className="h-4 w-4 mr-2" />
-                    Format
+                  <Button variant="outline" size="sm" disabled={isSending} className="h-8 px-2 md:px-3 text-xs md:text-sm">
+                    <Type className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                    <span className="hidden sm:inline">Format</span>
                   </Button>
                 </div>
               </CardContent>
             </Card>
           ) : selectedEmail ? (
             <Card>
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold mb-2">
-                      {selectedEmail.subject || "(No Subject)"}
-                    </h3>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback className="text-xs">
+              <CardHeader className="p-2 md:p-3 lg:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 md:gap-3">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsInboxOpen(true)}
+                      className="lg:hidden h-8 w-8 shrink-0"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-1.5">
+                        {selectedEmail.subject || "(No Subject)"}
+                      </h3>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-xs md:text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-5 w-5 md:h-6 md:w-6">
+                          <AvatarFallback className="text-[10px] md:text-xs">
                             {selectedEmail.direction === "outbound"
                               ? "You"
                               : initials}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-medium text-foreground">
+                        <span className="font-medium text-foreground truncate">
                           {selectedEmail.direction === "outbound"
                             ? selectedEmail.sentBy
                               ? `${selectedEmail.sentBy.firstName} ${selectedEmail.sentBy.lastName}`
@@ -723,19 +782,20 @@ export function CandidateEmailCommunication({
                             : selectedEmail.from || "Unknown"}
                         </span>
                       </div>
-                      <span>→</span>
-                      <span>
+                      <span className="hidden sm:inline">→</span>
+                      <span className="truncate">
                         {selectedEmail.direction === "outbound"
                           ? selectedEmail.to && selectedEmail.to.length > 0
                             ? selectedEmail.to[0]
                             : "Unknown"
                           : "You"}
                       </span>
+                      </div>
                     </div>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 md:h-9 md:w-9">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -765,14 +825,14 @@ export function CandidateEmailCommunication({
                   </DropdownMenu>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>{selectedEmail.timestamp.toLocaleString()}</span>
+              <CardContent className="p-2 md:p-3 lg:p-4 space-y-2 md:space-y-3">
+                <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3 md:h-3.5 md:w-3.5 shrink-0" />
+                  <span className="truncate">{selectedEmail.timestamp.toLocaleString()}</span>
                   {selectedEmail.direction === "outbound" &&
                     selectedEmail.status === "sent" && (
                       <>
-                        <CheckCheck className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                        <CheckCheck className="h-3 w-3 md:h-3.5 md:w-3.5 text-green-600 dark:text-green-400 shrink-0" />
                         <span className="text-green-600 dark:text-green-400">
                           Sent
                         </span>
@@ -783,7 +843,7 @@ export function CandidateEmailCommunication({
                 <Separator />
 
                 <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  <p className="whitespace-pre-wrap text-xs md:text-sm leading-relaxed">
                     {selectedEmail.body || "(No content)"}
                   </p>
                 </div>
@@ -793,7 +853,7 @@ export function CandidateEmailCommunication({
                     <>
                       <Separator />
                       <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">
+                        <Label className="text-[10px] md:text-xs text-muted-foreground">
                           Attachments
                         </Label>
                         <div className="grid gap-2">
@@ -801,14 +861,14 @@ export function CandidateEmailCommunication({
                             (attachment, index) => (
                               <div
                                 key={index}
-                                className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50"
+                                className="flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-lg border bg-muted/50"
                               >
-                                <Paperclip className="h-4 w-4 text-muted-foreground" />
+                                <Paperclip className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground shrink-0" />
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">
+                                  <p className="text-xs md:text-sm font-medium truncate">
                                     {attachment.filename}
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-[10px] md:text-xs text-muted-foreground">
                                     {formatFileSize(attachment.size)}
                                   </p>
                                 </div>
@@ -818,8 +878,9 @@ export function CandidateEmailCommunication({
                                   onClick={() =>
                                     window.open(attachment.url, "_blank")
                                   }
+                                  className="h-8 w-8 md:h-9 md:w-9 p-0"
                                 >
-                                  <Download className="h-4 w-4" />
+                                  <Download className="h-3 w-3 md:h-4 md:w-4" />
                                 </Button>
                               </div>
                             )
@@ -831,30 +892,30 @@ export function CandidateEmailCommunication({
 
                 <Separator />
 
-                <div className="flex gap-2">
-                  <Button onClick={() => handleReply(selectedEmail)}>
-                    <Reply className="h-4 w-4 mr-2" />
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button onClick={() => handleReply(selectedEmail)} className="w-full sm:w-auto text-xs md:text-sm h-8 md:h-9">
+                    <Reply className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                     Reply
                   </Button>
-                  <Button variant="outline">
-                    <Forward className="h-4 w-4 mr-2" />
+                  <Button variant="outline" className="w-full sm:w-auto text-xs md:text-sm h-8 md:h-9">
+                    <Forward className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                     Forward
                   </Button>
                 </div>
               </CardContent>
             </Card>
           ) : (
-            <Card className="h-[600px] flex items-center justify-center">
-              <div className="text-center">
-                <Mail className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-20" />
-                <p className="text-lg font-medium text-muted-foreground mb-2">
+            <Card className="h-[400px] md:h-[500px] lg:h-[600px] flex items-center justify-center">
+              <div className="text-center p-3 md:p-4">
+                <Mail className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-2 md:mb-3 text-muted-foreground opacity-20" />
+                <p className="text-base md:text-lg font-medium text-muted-foreground mb-1 md:mb-1.5">
                   No email selected
                 </p>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-xs md:text-sm text-muted-foreground mb-2 md:mb-3">
                   Select an email to view or compose a new one
                 </p>
-                <Button onClick={() => setIsComposing(true)}>
-                  <Send className="h-4 w-4 mr-2" />
+                <Button onClick={() => setIsComposing(true)} className="text-xs md:text-sm h-8 md:h-9">
+                  <Send className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                   Compose Email
                 </Button>
               </div>

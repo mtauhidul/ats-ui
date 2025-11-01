@@ -229,134 +229,139 @@ export default function NotificationsPage() {
       <div className="@container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
           <div className="px-4 lg:px-6">
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-blue-600/10 p-2">
-                    <Bell className="h-6 w-6 text-blue-600" />
+            <div className="mb-4 md:mb-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className="rounded-lg bg-blue-600/10 p-1.5 md:p-2 shrink-0">
+                    <Bell className="h-4 w-4 md:h-6 md:w-6 text-blue-600" />
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-foreground">Notifications</h2>
-                    <p className="text-muted-foreground">
+                  <div className="min-w-0">
+                    <h2 className="text-lg md:text-2xl font-bold text-foreground">Notifications</h2>
+                    <p className="text-xs md:text-sm text-muted-foreground">
                       Stay updated with your latest activities
                     </p>
                   </div>
                 </div>
                 {unreadCount > 0 && (
-                  <Button onClick={handleMarkAllAsRead} variant="outline" size="sm">
-                    <CheckCheck className="h-4 w-4 mr-2" />
+                  <Button onClick={handleMarkAllAsRead} variant="outline" size="sm" className="h-8 md:h-9 text-xs md:text-sm w-full sm:w-auto">
+                    <CheckCheck className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                     Mark all as read
                   </Button>
                 )}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 md:gap-4 mb-4 md:mb-6">
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total</p>
-                      <p className="text-2xl font-bold">{notifications.length}</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">Total</p>
+                      <p className="text-lg md:text-2xl font-bold">{notifications.length}</p>
                     </div>
-                    <Bell className="h-8 w-8 text-muted-foreground" />
+                    <Bell className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground shrink-0" />
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Unread</p>
-                      <p className="text-2xl font-bold text-blue-600">{unreadCount}</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">Unread</p>
+                      <p className="text-lg md:text-2xl font-bold text-blue-600">{unreadCount}</p>
                     </div>
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                      <span className="text-blue-600 font-bold">{unreadCount}</span>
+                    <div className="h-6 w-6 md:h-8 md:w-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                      <span className="text-blue-600 font-bold text-xs md:text-sm">{unreadCount}</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card className="border-primary/30">
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Important</p>
-                      <p className="text-2xl font-bold text-primary">{importantCount}</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">Important</p>
+                      <p className="text-lg md:text-2xl font-bold text-primary">{importantCount}</p>
                     </div>
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Shield className="h-5 w-5 text-primary" />
+                    <div className="h-6 w-6 md:h-8 md:w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Shield className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Applications</p>
-                      <p className="text-2xl font-bold">{notificationsByType.application || 0}</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">Applications</p>
+                      <p className="text-lg md:text-2xl font-bold">{notificationsByType.application || 0}</p>
                     </div>
-                    <FileText className="h-8 w-8 text-muted-foreground" />
+                    <FileText className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground shrink-0" />
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Interviews</p>
-                      <p className="text-2xl font-bold">{notificationsByType.interview || 0}</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">Interviews</p>
+                      <p className="text-lg md:text-2xl font-bold">{notificationsByType.interview || 0}</p>
                     </div>
-                    <Calendar className="h-8 w-8 text-muted-foreground" />
+                    <Calendar className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground shrink-0" />
                   </div>
                 </CardContent>
               </Card>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="h-11 p-1 bg-card border border-border w-fit mb-4">
-                <TabsTrigger
-                  value="all"
-                  className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                  onClick={() => setFilterType("all")}
-                >
-                  <Bell className="h-4 w-4 mr-2" />
-                  All ({notifications.length})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="unread"
-                  className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                  onClick={() => setFilterType("unread")}
-                >
-                  <AlertCircle className="h-4 w-4 mr-2" />
-                  Unread ({unreadCount})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="read"
-                  className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-                  onClick={() => setFilterType("read")}
-                >
-                  <CheckCheck className="h-4 w-4 mr-2" />
-                  Read ({notifications.length - unreadCount})
-                </TabsTrigger>
-                {isAdmin && (
+              <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 mb-3 md:mb-4">
+                <TabsList className="h-9 md:h-11 p-1 bg-card border border-border w-full md:w-fit inline-flex">
                   <TabsTrigger
-                    value="admin"
-                    className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                    value="all"
+                    className="flex-1 md:flex-initial px-2 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+                    onClick={() => setFilterType("all")}
                   >
-                    <Shield className="h-4 w-4 mr-2" />
-                    Admin Panel
+                    <Bell className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">All ({notifications.length})</span>
+                    <span className="md:hidden ml-1">({notifications.length})</span>
                   </TabsTrigger>
-                )}
-              </TabsList>
+                  <TabsTrigger
+                    value="unread"
+                    className="flex-1 md:flex-initial px-2 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+                    onClick={() => setFilterType("unread")}
+                  >
+                    <AlertCircle className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Unread ({unreadCount})</span>
+                    <span className="md:hidden ml-1">({unreadCount})</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="read"
+                    className="flex-1 md:flex-initial px-2 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+                    onClick={() => setFilterType("read")}
+                  >
+                    <CheckCheck className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Read ({notifications.length - unreadCount})</span>
+                    <span className="md:hidden ml-1">({notifications.length - unreadCount})</span>
+                  </TabsTrigger>
+                  {isAdmin && (
+                    <TabsTrigger
+                      value="admin"
+                      className="flex-1 md:flex-initial px-2 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+                    >
+                      <Shield className="h-4 w-4 md:mr-2" />
+                      <span className="hidden md:inline">Admin</span>
+                    </TabsTrigger>
+                  )}
+                </TabsList>
+              </div>
 
-              <TabsContent value="all" className="space-y-3">
+              <TabsContent value="all" className="space-y-2 md:space-y-3">
                 {sortedNotifications.length === 0 ? (
                   <Card>
-                    <CardContent className="py-12">
+                    <CardContent className="py-8 md:py-12">
                       <div className="text-center">
-                        <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                        <p className="text-muted-foreground">No notifications</p>
+                        <Bell className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-2 md:mb-3" />
+                        <p className="text-sm md:text-base text-muted-foreground">No notifications</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -372,65 +377,69 @@ export default function NotificationsPage() {
                             : ""
                       }`}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-4">
-                          <div className="mt-1">
+                      <CardContent className="p-3 md:p-4">
+                        <div className="flex items-start gap-2 md:gap-4">
+                          <div className="mt-0.5 md:mt-1 shrink-0">
                             {notification.isImportant ? (
-                              <div className="rounded-full bg-primary/10 p-2">
-                                <Shield className="h-5 w-5 text-primary" />
+                              <div className="rounded-full bg-primary/10 p-1.5 md:p-2">
+                                <Shield className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                               </div>
                             ) : (
-                              getNotificationIcon(notification.type)
+                              <div className="[&>svg]:h-4 [&>svg]:w-4 md:[&>svg]:h-5 md:[&>svg]:w-5">
+                                {getNotificationIcon(notification.type)}
+                              </div>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-1">
+                              <div className="flex items-center gap-1.5 md:gap-2 flex-wrap min-w-0">
                                 {notification.isImportant && (
-                                  <Badge className="bg-primary text-primary-foreground text-xs">
-                                    <Shield className="h-3 w-3 mr-1" />
+                                  <Badge className="bg-primary text-primary-foreground text-[10px] md:text-xs shrink-0">
+                                    <Shield className="h-2.5 w-2.5 md:h-3 md:w-3 mr-1" />
                                     IMPORTANT
                                   </Badge>
                                 )}
-                                <h4 className={`font-semibold ${notification.isImportant ? 'text-primary' : 'text-foreground'}`}>
+                                <h4 className={`font-semibold text-sm md:text-base ${notification.isImportant ? 'text-primary' : 'text-foreground'} wrap-break-word`}>
                                   {notification.title}
                                 </h4>
                                 {!notification.read && !notification.isImportant && (
-                                  <Badge className="bg-blue-600 text-white text-xs">New</Badge>
+                                  <Badge className="bg-blue-600 text-white text-[10px] md:text-xs shrink-0">New</Badge>
                                 )}
                                 {notification.priority && getPriorityBadge(notification.priority)}
                               </div>
                               <Badge
                                 variant="outline"
-                                className={`text-xs whitespace-nowrap ${getTypeBadgeColor(notification.type)}`}
+                                className={`text-[10px] md:text-xs whitespace-nowrap shrink-0 ${getTypeBadgeColor(notification.type)}`}
                               >
                                 {notification.type.replace(/_/g, ' ')}
                               </Badge>
                             </div>
-                            <p className={`text-sm mb-2 ${notification.isImportant ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                            <p className={`text-xs md:text-sm mb-2 ${notification.isImportant ? 'text-foreground font-medium' : 'text-muted-foreground'} wrap-break-word`}>
                               {notification.message}
                             </p>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-muted-foreground">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <span className="text-[10px] md:text-xs text-muted-foreground">
                                 {formatTime(notification.createdAt)}
                               </span>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 md:gap-2">
                                 {!notification.read && (
                                   <Button
                                     size="sm"
                                     variant="ghost"
+                                    className="h-7 md:h-8 text-xs md:text-sm px-2 md:px-3"
                                     onClick={() => handleMarkAsRead(notification.id)}
                                   >
-                                    <Check className="h-4 w-4 mr-1" />
-                                    Mark as read
+                                    <Check className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                                    <span className="hidden md:inline">Mark as read</span>
                                   </Button>
                                 )}
                                 <Button
                                   size="sm"
                                   variant="ghost"
+                                  className="h-7 md:h-8 px-2 md:px-3"
                                   onClick={() => handleDeleteNotification(notification.id)}
                                 >
-                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                  <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
                                 </Button>
                               </div>
                             </div>
@@ -442,13 +451,13 @@ export default function NotificationsPage() {
                 )}
               </TabsContent>
 
-              <TabsContent value="unread" className="space-y-3">
+              <TabsContent value="unread" className="space-y-2 md:space-y-3">
                 {sortedNotifications.length === 0 ? (
                   <Card>
-                    <CardContent className="py-12">
+                    <CardContent className="py-8 md:py-12">
                       <div className="text-center">
-                        <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                        <p className="text-muted-foreground">No unread notifications</p>
+                        <Bell className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-2 md:mb-3" />
+                        <p className="text-sm md:text-base text-muted-foreground">No unread notifications</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -464,65 +473,69 @@ export default function NotificationsPage() {
                             : ""
                       }`}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-4">
-                          <div className="mt-1">
+                      <CardContent className="p-3 md:p-4">
+                        <div className="flex items-start gap-2 md:gap-4">
+                          <div className="mt-0.5 md:mt-1 shrink-0">
                             {notification.isImportant ? (
-                              <div className="rounded-full bg-primary/10 p-2">
-                                <Shield className="h-5 w-5 text-primary" />
+                              <div className="rounded-full bg-primary/10 p-1.5 md:p-2">
+                                <Shield className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                               </div>
                             ) : (
-                              getNotificationIcon(notification.type)
+                              <div className="[&>svg]:h-4 [&>svg]:w-4 md:[&>svg]:h-5 md:[&>svg]:w-5">
+                                {getNotificationIcon(notification.type)}
+                              </div>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-1">
+                              <div className="flex items-center gap-1.5 md:gap-2 flex-wrap min-w-0">
                                 {notification.isImportant && (
-                                  <Badge className="bg-primary text-primary-foreground text-xs">
-                                    <Shield className="h-3 w-3 mr-1" />
+                                  <Badge className="bg-primary text-primary-foreground text-[10px] md:text-xs shrink-0">
+                                    <Shield className="h-2.5 w-2.5 md:h-3 md:w-3 mr-1" />
                                     IMPORTANT
                                   </Badge>
                                 )}
-                                <h4 className={`font-semibold ${notification.isImportant ? 'text-primary' : 'text-foreground'}`}>
+                                <h4 className={`font-semibold text-sm md:text-base ${notification.isImportant ? 'text-primary' : 'text-foreground'} wrap-break-word`}>
                                   {notification.title}
                                 </h4>
                                 {!notification.read && !notification.isImportant && (
-                                  <Badge className="bg-blue-600 text-white text-xs">New</Badge>
+                                  <Badge className="bg-blue-600 text-white text-[10px] md:text-xs shrink-0">New</Badge>
                                 )}
                                 {notification.priority && getPriorityBadge(notification.priority)}
                               </div>
                               <Badge
                                 variant="outline"
-                                className={`text-xs whitespace-nowrap ${getTypeBadgeColor(notification.type)}`}
+                                className={`text-[10px] md:text-xs whitespace-nowrap shrink-0 ${getTypeBadgeColor(notification.type)}`}
                               >
                                 {notification.type.replace(/_/g, ' ')}
                               </Badge>
                             </div>
-                            <p className={`text-sm mb-2 ${notification.isImportant ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                            <p className={`text-xs md:text-sm mb-2 ${notification.isImportant ? 'text-foreground font-medium' : 'text-muted-foreground'} wrap-break-word`}>
                               {notification.message}
                             </p>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-muted-foreground">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <span className="text-[10px] md:text-xs text-muted-foreground">
                                 {formatTime(notification.createdAt)}
                               </span>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 md:gap-2">
                                 {!notification.read && (
                                   <Button
                                     size="sm"
                                     variant="ghost"
+                                    className="h-7 md:h-8 text-xs md:text-sm px-2 md:px-3"
                                     onClick={() => handleMarkAsRead(notification.id)}
                                   >
-                                    <Check className="h-4 w-4 mr-1" />
-                                    Mark as read
+                                    <Check className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                                    <span className="hidden md:inline">Mark as read</span>
                                   </Button>
                                 )}
                                 <Button
                                   size="sm"
                                   variant="ghost"
+                                  className="h-7 md:h-8 px-2 md:px-3"
                                   onClick={() => handleDeleteNotification(notification.id)}
                                 >
-                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                  <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
                                 </Button>
                               </div>
                             </div>
@@ -534,13 +547,13 @@ export default function NotificationsPage() {
                 )}
               </TabsContent>
 
-              <TabsContent value="read" className="space-y-3">
+              <TabsContent value="read" className="space-y-2 md:space-y-3">
                 {sortedNotifications.length === 0 ? (
                   <Card>
-                    <CardContent className="py-12">
+                    <CardContent className="py-8 md:py-12">
                       <div className="text-center">
-                        <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                        <p className="text-muted-foreground">No read notifications</p>
+                        <Bell className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-2 md:mb-3" />
+                        <p className="text-sm md:text-base text-muted-foreground">No read notifications</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -556,65 +569,69 @@ export default function NotificationsPage() {
                             : ""
                       }`}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-4">
-                          <div className="mt-1">
+                      <CardContent className="p-3 md:p-4">
+                        <div className="flex items-start gap-2 md:gap-4">
+                          <div className="mt-0.5 md:mt-1 shrink-0">
                             {notification.isImportant ? (
-                              <div className="rounded-full bg-primary/10 p-2">
-                                <Shield className="h-5 w-5 text-primary" />
+                              <div className="rounded-full bg-primary/10 p-1.5 md:p-2">
+                                <Shield className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                               </div>
                             ) : (
-                              getNotificationIcon(notification.type)
+                              <div className="[&>svg]:h-4 [&>svg]:w-4 md:[&>svg]:h-5 md:[&>svg]:w-5">
+                                {getNotificationIcon(notification.type)}
+                              </div>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-1">
+                              <div className="flex items-center gap-1.5 md:gap-2 flex-wrap min-w-0">
                                 {notification.isImportant && (
-                                  <Badge className="bg-primary text-primary-foreground text-xs">
-                                    <Shield className="h-3 w-3 mr-1" />
+                                  <Badge className="bg-primary text-primary-foreground text-[10px] md:text-xs shrink-0">
+                                    <Shield className="h-2.5 w-2.5 md:h-3 md:w-3 mr-1" />
                                     IMPORTANT
                                   </Badge>
                                 )}
-                                <h4 className={`font-semibold ${notification.isImportant ? 'text-primary' : 'text-foreground'}`}>
+                                <h4 className={`font-semibold text-sm md:text-base ${notification.isImportant ? 'text-primary' : 'text-foreground'} wrap-break-word`}>
                                   {notification.title}
                                 </h4>
                                 {!notification.read && !notification.isImportant && (
-                                  <Badge className="bg-blue-600 text-white text-xs">New</Badge>
+                                  <Badge className="bg-blue-600 text-white text-[10px] md:text-xs shrink-0">New</Badge>
                                 )}
                                 {notification.priority && getPriorityBadge(notification.priority)}
                               </div>
                               <Badge
                                 variant="outline"
-                                className={`text-xs whitespace-nowrap ${getTypeBadgeColor(notification.type)}`}
+                                className={`text-[10px] md:text-xs whitespace-nowrap shrink-0 ${getTypeBadgeColor(notification.type)}`}
                               >
                                 {notification.type.replace(/_/g, ' ')}
                               </Badge>
                             </div>
-                            <p className={`text-sm mb-2 ${notification.isImportant ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                            <p className={`text-xs md:text-sm mb-2 ${notification.isImportant ? 'text-foreground font-medium' : 'text-muted-foreground'} wrap-break-word`}>
                               {notification.message}
                             </p>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-muted-foreground">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <span className="text-[10px] md:text-xs text-muted-foreground">
                                 {formatTime(notification.createdAt)}
                               </span>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 md:gap-2">
                                 {!notification.read && (
                                   <Button
                                     size="sm"
                                     variant="ghost"
+                                    className="h-7 md:h-8 text-xs md:text-sm px-2 md:px-3"
                                     onClick={() => handleMarkAsRead(notification.id)}
                                   >
-                                    <Check className="h-4 w-4 mr-1" />
-                                    Mark as read
+                                    <Check className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                                    <span className="hidden md:inline">Mark as read</span>
                                   </Button>
                                 )}
                                 <Button
                                   size="sm"
                                   variant="ghost"
+                                  className="h-7 md:h-8 px-2 md:px-3"
                                   onClick={() => handleDeleteNotification(notification.id)}
                                 >
-                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                  <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
                                 </Button>
                               </div>
                             </div>
@@ -627,29 +644,29 @@ export default function NotificationsPage() {
               </TabsContent>
 
               {isAdmin && (
-                <TabsContent value="admin" className="space-y-6">
+                <TabsContent value="admin" className="space-y-4 md:space-y-6">
                   {/* Important Notice Section */}
                   <Card className="border-primary/30 bg-primary/5">
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-primary">
-                        <Shield className="h-5 w-5" />
+                      <CardTitle className="flex items-center gap-2 text-primary text-base md:text-lg">
+                        <Shield className="h-4 w-4 md:h-5 md:w-5" />
                         Broadcast Important Notice
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="text-xs md:text-sm">
                         Send a high-priority important notice to all team members. This will be highlighted prominently in their notifications.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                    <CardContent className="space-y-3 md:space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="important-type">Notice Type</Label>
+                          <Label htmlFor="important-type" className="text-xs md:text-sm">Notice Type</Label>
                           <Select
                             value={importantNotice.type}
                             onValueChange={(value) =>
                               setImportantNotice({ ...importantNotice, type: value as NotificationType })
                             }
                           >
-                            <SelectTrigger id="important-type">
+                            <SelectTrigger id="important-type" className="h-9 md:h-10 text-xs md:text-sm">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -661,14 +678,14 @@ export default function NotificationsPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="important-priority">Priority Level</Label>
+                          <Label htmlFor="important-priority" className="text-xs md:text-sm">Priority Level</Label>
                           <Select
                             value={importantNotice.priority}
                             onValueChange={(value) =>
                               setImportantNotice({ ...importantNotice, priority: value as 'low' | 'medium' | 'high' | 'urgent' })
                             }
                           >
-                            <SelectTrigger id="important-priority">
+                            <SelectTrigger id="important-priority" className="h-9 md:h-10 text-xs md:text-sm">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -681,9 +698,10 @@ export default function NotificationsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="important-title">Title *</Label>
+                        <Label htmlFor="important-title" className="text-xs md:text-sm">Title *</Label>
                         <Input
                           id="important-title"
+                          className="h-9 md:h-10 text-xs md:text-sm"
                           placeholder="e.g., System Maintenance Scheduled"
                           value={importantNotice.title}
                           onChange={(e) =>
@@ -693,11 +711,12 @@ export default function NotificationsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="important-message">Message *</Label>
+                        <Label htmlFor="important-message" className="text-xs md:text-sm">Message *</Label>
                         <Textarea
                           id="important-message"
+                          className="text-xs md:text-sm"
                           placeholder="Enter detailed message for all team members..."
-                          rows={5}
+                          rows={4}
                           value={importantNotice.message}
                           onChange={(e) =>
                             setImportantNotice({ ...importantNotice, message: e.target.value })
@@ -706,28 +725,29 @@ export default function NotificationsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="important-expires">Expiration Date (Optional)</Label>
+                        <Label htmlFor="important-expires" className="text-xs md:text-sm">Expiration Date (Optional)</Label>
                         <Input
                           id="important-expires"
                           type="datetime-local"
+                          className="h-9 md:h-10 text-xs md:text-sm"
                           value={importantNotice.expiresAt}
                           onChange={(e) =>
                             setImportantNotice({ ...importantNotice, expiresAt: e.target.value })
                           }
                         />
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[10px] md:text-xs text-muted-foreground">
                           If set, the notice will be automatically hidden after this date
                         </p>
                       </div>
 
-                      <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
-                        <div className="flex items-start gap-3">
-                          <AlertCircle className="h-5 w-5 text-amber-700 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium text-amber-900">
+                      <div className="rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-3 md:p-4">
+                        <div className="flex items-start gap-2 md:gap-3">
+                          <AlertCircle className="h-4 w-4 md:h-5 md:w-5 text-amber-700 dark:text-amber-500 mt-0.5 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-xs md:text-sm font-medium text-amber-900 dark:text-amber-200">
                               Important Notice - High Visibility
                             </p>
-                            <p className="text-sm text-amber-800 mt-1">
+                            <p className="text-xs md:text-sm text-amber-800 dark:text-amber-300 mt-1">
                               This will be sent to ALL active team members and displayed prominently at the top of their notifications with a special badge.
                             </p>
                           </div>
@@ -735,8 +755,8 @@ export default function NotificationsPage() {
                       </div>
 
                       <div className="flex justify-end">
-                        <Button onClick={handleBroadcastImportantNotice}>
-                          <Megaphone className="h-4 w-4 mr-2" />
+                        <Button onClick={handleBroadcastImportantNotice} className="h-9 md:h-10 text-xs md:text-sm w-full sm:w-auto">
+                          <Megaphone className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                           Broadcast Important Notice
                         </Button>
                       </div>
@@ -746,24 +766,24 @@ export default function NotificationsPage() {
                   {/* Regular Notification Section */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Bell className="h-5 w-5" />
+                      <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                        <Bell className="h-4 w-4 md:h-5 md:w-5" />
                         Create Regular Notification
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="text-xs md:text-sm">
                         Send a standard notification to all users. Use this for general announcements or updates.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-3 md:space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="notif-type">Notification Type</Label>
+                        <Label htmlFor="notif-type" className="text-xs md:text-sm">Notification Type</Label>
                         <Select
                           value={newNotification.type}
                           onValueChange={(value) =>
                             setNewNotification({ ...newNotification, type: value as NotificationType })
                           }
                         >
-                          <SelectTrigger id="notif-type">
+                          <SelectTrigger id="notif-type" className="h-9 md:h-10 text-xs md:text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -781,9 +801,10 @@ export default function NotificationsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="notif-title">Title</Label>
+                        <Label htmlFor="notif-title" className="text-xs md:text-sm">Title</Label>
                         <Input
                           id="notif-title"
+                          className="h-9 md:h-10 text-xs md:text-sm"
                           placeholder="Enter notification title"
                           value={newNotification.title}
                           onChange={(e) =>
@@ -793,9 +814,10 @@ export default function NotificationsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="notif-message">Message</Label>
+                        <Label htmlFor="notif-message" className="text-xs md:text-sm">Message</Label>
                         <Textarea
                           id="notif-message"
+                          className="text-xs md:text-sm"
                           placeholder="Enter notification message"
                           rows={4}
                           value={newNotification.message}
@@ -805,14 +827,14 @@ export default function NotificationsPage() {
                         />
                       </div>
 
-                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                        <div className="flex items-start gap-3">
-                          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium text-amber-900">
+                      <div className="rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 p-3 md:p-4">
+                        <div className="flex items-start gap-2 md:gap-3">
+                          <AlertCircle className="h-4 w-4 md:h-5 md:w-5 text-amber-600 dark:text-amber-500 mt-0.5 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-xs md:text-sm font-medium text-amber-900 dark:text-amber-200">
                               Broadcasting to All Users
                             </p>
-                            <p className="text-sm text-amber-700 mt-1">
+                            <p className="text-xs md:text-sm text-amber-700 dark:text-amber-300 mt-1">
                               This notification will be sent to all users in the system. Make sure your message is clear and relevant.
                             </p>
                           </div>
@@ -820,8 +842,8 @@ export default function NotificationsPage() {
                       </div>
 
                       <div className="flex justify-end">
-                        <Button onClick={handleCreateNotification}>
-                          <Plus className="h-4 w-4 mr-2" />
+                        <Button onClick={handleCreateNotification} className="h-9 md:h-10 text-xs md:text-sm w-full sm:w-auto">
+                          <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                           Create & Send Notification
                         </Button>
                       </div>

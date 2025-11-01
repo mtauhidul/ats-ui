@@ -45,33 +45,33 @@ export function JobCard({ job, onClick, clientName }: JobCardProps) {
       className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary hover:border-l-primary/80"
       onClick={onClick}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <h3 className="text-base font-semibold text-foreground mb-1 line-clamp-1">
+      <CardContent className="p-3 md:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm md:text-base font-semibold text-foreground mb-1 line-clamp-1">
               {job.title}
             </h3>
             {clientName && (
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <Building2 className="h-3.5 w-3.5" />
-                <span>{clientName}</span>
+              <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground">
+                <Building2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                <span className="truncate">{clientName}</span>
               </div>
             )}
           </div>
-          <div className="flex gap-2 ml-4">
-            <Badge className={cn("border text-sm", statusColors[job.status])}>
+          <div className="flex gap-1.5 md:gap-2 flex-wrap sm:ml-4">
+            <Badge className={cn("border text-xs md:text-sm", statusColors[job.status])}>
               {job.status.replace(/_/g, ' ')}
             </Badge>
-            <Badge className={cn("border text-sm", typeColors[job.type])}>
+            <Badge className={cn("border text-xs md:text-sm", typeColors[job.type])}>
               {job.type.replace(/_/g, ' ')}
             </Badge>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 md:gap-2 mb-3">
           {job.location && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground">
+              <MapPin className="h-3 w-3 md:h-3.5 md:w-3.5 shrink-0" />
               <span className="truncate">
                 {typeof job.location === 'string'
                   ? job.location
@@ -79,17 +79,17 @@ export function JobCard({ job, onClick, clientName }: JobCardProps) {
               </span>
             </div>
           )}
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground">
+            <Briefcase className="h-3 w-3 md:h-3.5 md:w-3.5 shrink-0" />
             <span className="truncate">{job.workMode}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground">
+            <Clock className="h-3 w-3 md:h-3.5 md:w-3.5 shrink-0" />
             <span className="truncate">{job.experienceLevel}</span>
           </div>
           {job.salaryRange && job.salaryRange.min && job.salaryRange.max && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <DollarSign className="h-3.5 w-3.5 flex-shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground">
+              <DollarSign className="h-3 w-3 md:h-3.5 md:w-3.5 shrink-0" />
               <span className="truncate">
                 {job.salaryRange.currency || 'USD'} {job.salaryRange.min.toLocaleString()} - {job.salaryRange.max.toLocaleString()}
               </span>
@@ -131,31 +131,31 @@ export function JobCard({ job, onClick, clientName }: JobCardProps) {
         )}
 
         {/* Candidate Statistics */}
-        <div className="flex items-center justify-between pt-3 border-t">
-          <div className="flex items-center gap-3 text-sm">
-            <div className="flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5 text-muted-foreground" />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 pt-3 border-t">
+          <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm flex-wrap">
+            <div className="flex items-center gap-1 md:gap-1.5">
+              <Users className="h-3 w-3 md:h-3.5 md:w-3.5 text-muted-foreground" />
               <span className="font-medium">{totalCandidates}</span>
-              <span className="text-muted-foreground text-xs">Total</span>
+              <span className="text-muted-foreground text-[10px] md:text-xs">Total</span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 md:gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
               <span className="font-medium text-blue-600 dark:text-blue-400">{activeCandidates}</span>
-              <span className="text-muted-foreground text-xs">Active</span>
+              <span className="text-muted-foreground text-[10px] md:text-xs">Active</span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 md:gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
               <span className="font-medium text-green-600 dark:text-green-400">{hiredCandidates}</span>
-              <span className="text-muted-foreground text-xs">Hired</span>
+              <span className="text-muted-foreground text-[10px] md:text-xs">Hired</span>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-sm"
+            className="h-7 md:h-8 text-xs md:text-sm w-full sm:w-auto"
             onClick={handlePipelineClick}
           >
-            <Kanban className="h-3.5 w-3.5 mr-1.5" />
+            <Kanban className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1.5" />
             Pipeline
           </Button>
         </div>

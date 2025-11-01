@@ -79,7 +79,7 @@ export default function MessageInputAi({
           }}
         />
 
-        <div className="px-2 py-1.5 grow">
+        <div className="px-4 py-3 grow">
           <form onSubmit={handleSubmit}>
             <Textarea
               ref={textareaRef}
@@ -99,7 +99,7 @@ export default function MessageInputAi({
           </form>
         </div>
 
-        <div className="px-2 pb-1.5 flex items-center justify-between">
+        <div className="px-4 pb-3 flex items-center justify-between">
           <div className="flex items-center gap-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

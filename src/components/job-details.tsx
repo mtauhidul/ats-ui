@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Briefcase, MapPin, DollarSign, Users, Clock, CheckCircle2, XCircle, UserCheck, Building2, Calendar, Target, Edit, MoreVertical, Tag as IconTag, X as IconX, Check as IconCheck } from "lucide-react";
+import { ArrowLeft, Briefcase, MapPin, DollarSign, Users, Clock, CheckCircle2, XCircle, UserCheck, Building2, Calendar, Target, Edit, Tag as IconTag, X as IconX, Check as IconCheck, FileText, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -219,8 +219,9 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={onBack} className="h-9 w-9 p-0">
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="ghost" size="sm" onClick={onBack} className="h-9 px-3">
+            <ArrowLeft className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Back</span>
           </Button>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground truncate">{job.title}</h1>
@@ -232,14 +233,10 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
             <Button
               variant="outline"
               size="sm"
-              className="hidden sm:flex"
               onClick={() => setIsEditModalOpen(true)}
             >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-            <Button variant="ghost" size="sm" className="h-9 w-9 p-0 sm:hidden">
-              <MoreVertical className="h-4 w-4" />
+              <Edit className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Edit</span>
             </Button>
           </div>
         </div>
@@ -434,26 +431,32 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
 
       {/* Main Content with Tabs */}
       <Tabs defaultValue="pipeline" className="space-y-6">
-        <TabsList className="h-11 p-1 bg-card border border-border w-fit">
-          <TabsTrigger 
-            value="pipeline" 
-            className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-          >
-            Pipeline
-          </TabsTrigger>
-          <TabsTrigger 
-            value="candidates" 
-            className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-          >
-            Candidates ({sortedCandidates.length})
-          </TabsTrigger>
-          <TabsTrigger 
-            value="details" 
-            className="px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
-          >
-            Job Details
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <TabsList className="h-11 p-1 bg-card border border-border w-full md:w-fit inline-flex">
+            <TabsTrigger 
+              value="pipeline" 
+              className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground text-xs md:text-sm"
+            >
+              <BarChart3 className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Pipeline</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="candidates" 
+              className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground text-xs md:text-sm"
+            >
+              <Users className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Candidates</span>
+              <span className="ml-1.5 text-xs">({sortedCandidates.length})</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="details" 
+              className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground text-xs md:text-sm"
+            >
+              <FileText className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Job Details</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="pipeline" className="mt-6">
           <Card>
