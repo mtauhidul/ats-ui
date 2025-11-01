@@ -77,18 +77,23 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   return (
     <Link
       to={`/dashboard/candidates/${item.id}`}
-      className="group flex flex-col transition-all duration-200 cursor-pointer relative py-1 px-2 -mx-2 rounded-md hover:bg-primary/5"
+      className="group flex flex-col transition-all duration-200 cursor-pointer relative py-1 px-2 -mx-2 rounded-md hover:bg-primary/5 min-w-0"
     >
-      <span className="font-medium text-foreground group-hover:text-primary transition-all duration-200 flex items-center gap-1.5">
-        {item.header}
-        <IconChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transform -translate-x-1 group-hover:translate-x-0 transition-all duration-200" />
+      <span className="font-medium text-foreground group-hover:text-primary transition-all duration-200 flex items-center gap-1.5 min-w-0 max-w-full">
+        <span className="truncate">
+          {item.header}
+        </span>
+        <IconChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transform -translate-x-1 group-hover:translate-x-0 transition-all duration-200 shrink-0" />
       </span>
-      <span className="text-xs text-muted-foreground group-hover:text-primary/70 transition-colors duration-200">
+      <span className="text-xs text-muted-foreground group-hover:text-primary/70 transition-colors duration-200 truncate max-w-full">
         {item.email}
       </span>
     </Link>
   );
 }
+
+// Shared ref to prevent multiple fetches across all AssignedSelector instances
+const teamFetchedRef = { current: false };
 
 // Assigned team member selector component
 function AssignedSelector({
@@ -109,12 +114,11 @@ function AssignedSelector({
   const { teamMembers, fetchTeam } = useTeam();
   const { updateCandidate } = useCandidates();
 
-  // Fetch team members only once on initial mount (not on every render)
-  const hasFetchedRef = React.useRef(false);
+  // Fetch team members only once across all instances
   React.useEffect(() => {
-    if (!hasFetchedRef.current && teamMembers.length === 0) {
+    if (!teamFetchedRef.current && teamMembers.length === 0) {
       fetchTeam();
-      hasFetchedRef.current = true;
+      teamFetchedRef.current = true;
     }
   }, [fetchTeam, teamMembers.length]);
 
@@ -293,7 +297,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     accessorFn: (row) => row.header,
     cell: ({ row }) => {
       return (
-        <div className="min-w-[180px] max-w-[180px]">
+        <div className="min-w-[180px] max-w-[180px] overflow-hidden">
           <TableCellViewer item={row.original} />
         </div>
       );
@@ -334,9 +338,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       };
 
       return (
-        <div className="min-w-[200px] max-w-[200px]">
+        <div className="min-w-[200px] max-w-[200px] overflow-hidden">
           <div className="group flex items-center">
-            <span className="text-xs font-mono font-semibold text-foreground pr-2 py-1 rounded">
+            <span className="text-xs font-mono font-semibold text-foreground pr-2 py-1 rounded truncate">
               {jobId}
             </span>
             {jobId !== "N/A" && (
@@ -469,9 +473,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       };
 
       return (
-        <div className="min-w-[120px] max-w-[120px]">
+        <div className="min-w-[120px] max-w-[120px] overflow-hidden">
           <Badge
-            className={`px-2.5 py-1 text-xs font-medium w-fit ${getStageColor(
+            className={`px-2.5 py-1 text-xs font-medium w-fit truncate max-w-full ${getStageColor(
               stageName
             )}`}
           >
@@ -509,7 +513,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       const clientLogo = row.original.clientLogo;
 
       return (
-        <div className="min-w-[150px] max-w-[150px] flex items-center gap-1">
+        <div className="min-w-[150px] max-w-[150px] flex items-center gap-1 overflow-hidden">
           {clientLogo && (
             <Avatar className="size-6 rounded shrink-0">
               <AvatarImage src={clientLogo} alt={clientName} />
@@ -558,7 +562,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       }
 
       return (
-        <div className="min-w-40 max-w-40">
+        <div className="min-w-40 max-w-40 overflow-hidden">
           <AssignedSelector
             candidateId={row.original.id}
             initialAssignee={assignedName}

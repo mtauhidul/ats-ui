@@ -58,8 +58,7 @@ export default function DashboardJobsPage() {
   useEffect(() => {
     fetchJobs();
     fetchClients();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchJobs, fetchClients]);
 
   // Get client name helper
   const getClientName = (

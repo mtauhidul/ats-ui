@@ -50,7 +50,7 @@ import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import { EmailConnectionDialog } from "./email-connection-dialog";
 
 interface EmailAccount {
-  _id: string;
+  id: string;
   name: string;
   email: string;
   provider: "gmail" | "outlook" | "custom";
@@ -258,7 +258,7 @@ export function EmailMonitoringSettings() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ automationEnabled: enabled }),
+          body: JSON.stringify({ autoProcessResumes: enabled }),
         }
       );
 
@@ -740,7 +740,7 @@ export function EmailMonitoringSettings() {
           ) : (
             <div className="space-y-3 md:space-y-4">
               {emailAccounts.map((account) => (
-                <Card key={account._id} className="border-2">
+                <Card key={account.id} className="border-2">
                   <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 md:gap-4">
                       <div className="flex items-start gap-2 md:gap-4 flex-1 min-w-0">
@@ -783,9 +783,9 @@ export function EmailMonitoringSettings() {
                       <div className="flex items-center gap-1.5 md:gap-2 shrink-0 self-end sm:self-start">
                         <Switch
                           checked={account.autoProcessResumes}
-                          disabled={actionLoading === `toggle-${account._id}`}
+                          disabled={actionLoading === `toggle-${account.id}`}
                           onCheckedChange={(checked) =>
-                            toggleAccountAutomation(account._id, checked)
+                            toggleAccountAutomation(account.id, checked)
                           }
                         />
 
@@ -845,14 +845,14 @@ export function EmailMonitoringSettings() {
                                     Cancel
                                   </AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => deleteAccount(account._id)}
+                                    onClick={() => deleteAccount(account.id)}
                                     disabled={
-                                      actionLoading === `delete-${account._id}`
+                                      actionLoading === `delete-${account.id}`
                                     }
                                     className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
                                     {actionLoading ===
-                                    `delete-${account._id}` ? (
+                                    `delete-${account.id}` ? (
                                       <>
                                         <RefreshCw className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2 animate-spin" />
                                         Removing...

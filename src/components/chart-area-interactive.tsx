@@ -80,7 +80,7 @@ export function ChartAreaInteractive() {
         setIsLoading(true);
         const days = timeRange === "90d" ? 90 : timeRange === "30d" ? 30 : 7;
         const response = await authenticatedFetch(
-          `${API_BASE_URL}/candidates/analytics/dashboard?days=${days}`
+          `${API_BASE_URL}/applications/analytics/dashboard?days=${days}`
         );
 
         if (response.ok) {

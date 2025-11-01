@@ -1594,7 +1594,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                         <Badge
                           key={index}
                           variant="secondary"
-                          className="text-xs font-normal"
+                          className="text-xs font-normal wrap-break-word max-w-full"
                         >
                           {skill}
                         </Badge>
@@ -1612,7 +1612,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                         <Badge
                           key={index}
                           variant="outline"
-                          className="text-xs font-normal"
+                          className="text-xs font-normal wrap-break-word max-w-full"
                         >
                           {language}
                         </Badge>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -15,17 +14,20 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { Building2, Briefcase } from "lucide-react";
+import { Briefcase, Building2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface Job {
   _id?: string;
   id?: string; // Some APIs use id instead of _id
   title: string;
-  clientId: string | {
-    _id?: string;
-    id?: string;
-    companyName: string;
-  };
+  clientId:
+    | string
+    | {
+        _id?: string;
+        id?: string;
+        companyName: string;
+      };
 }
 
 interface JobSelectionModalProps {
@@ -54,26 +56,29 @@ export function JobSelectionModal({
   useEffect(() => {
     if (open) {
       setSelectedJobId(currentJobId || "");
-      console.log('Modal opened with jobs:', JSON.stringify(jobs, null, 2));
-      console.log('Job IDs:', jobs.map(j => ({ _id: j._id, id: j.id, title: j.title })));
-      console.log('Current job ID:', currentJobId);
+      console.log("Modal opened with jobs:", JSON.stringify(jobs, null, 2));
+      console.log(
+        "Job IDs:",
+        jobs.map((j) => ({ _id: j._id, id: j.id, title: j.title }))
+      );
+      console.log("Current job ID:", currentJobId);
     }
   }, [open, currentJobId, jobs]);
 
   const selectedJob = jobs.find((job) => getJobId(job) === selectedJobId);
-  
-  console.log('Selected job ID:', selectedJobId);
-  console.log('Found selected job:', selectedJob);
-  console.log('Selected job clientId:', selectedJob?.clientId);
-  
-  const clientId = selectedJob?.clientId 
-    ? (typeof selectedJob.clientId === 'string' 
-        ? selectedJob.clientId 
-        : (selectedJob.clientId._id || selectedJob.clientId.id || ''))
-    : '';
-  
-  console.log('Extracted client ID:', clientId);
-  console.log('Button disabled:', !selectedJobId || !clientId);
+
+  console.log("Selected job ID:", selectedJobId);
+  console.log("Found selected job:", selectedJob);
+  console.log("Selected job clientId:", selectedJob?.clientId);
+
+  const clientId = selectedJob?.clientId
+    ? typeof selectedJob.clientId === "string"
+      ? selectedJob.clientId
+      : selectedJob.clientId._id || selectedJob.clientId.id || ""
+    : "";
+
+  console.log("Extracted client ID:", clientId);
+  console.log("Button disabled:", !selectedJobId || !clientId);
 
   const handleConfirm = () => {
     if (selectedJobId && clientId) {
@@ -94,34 +99,41 @@ export function JobSelectionModal({
         <DialogHeader>
           <DialogTitle>Select Job for Application</DialogTitle>
           <DialogDescription>
-            Choose which job {applicationName} is applying for. The client will be
-            automatically assigned based on the job selection.
+            Choose which job {applicationName} is applying for. The client will
+            be automatically assigned based on the job selection.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="job-select">Job Position *</Label>
-            <Select 
-              value={selectedJobId} 
+            <Select
+              value={selectedJobId}
               onValueChange={(value) => {
-                console.log('Value changed to:', value);
-                console.log('Job object:', jobs.find(j => getJobId(j) === value));
+                console.log("Value changed to:", value);
+                console.log(
+                  "Job object:",
+                  jobs.find((j) => getJobId(j) === value)
+                );
                 setSelectedJobId(value);
               }}
             >
               <SelectTrigger id="job-select" className="w-full">
                 {selectedJobId && selectedJob ? (
                   <div className="flex items-center justify-between gap-4 w-full">
-                    <span className="font-medium truncate">{selectedJob.title}</span>
+                    <span className="font-medium truncate">
+                      {selectedJob.title}
+                    </span>
                     <span className="text-xs text-muted-foreground shrink-0">
-                      {typeof selectedJob.clientId === 'object' 
-                        ? selectedJob.clientId.companyName 
-                        : 'Unknown Client'}
+                      {typeof selectedJob.clientId === "object"
+                        ? selectedJob.clientId.companyName
+                        : "Unknown Client"}
                     </span>
                   </div>
                 ) : (
-                  <span className="text-muted-foreground">Select a job position</span>
+                  <span className="text-muted-foreground">
+                    Select a job position
+                  </span>
                 )}
               </SelectTrigger>
               <SelectContent position="popper" className="max-h-[300px]">
@@ -132,15 +144,24 @@ export function JobSelectionModal({
                 ) : (
                   jobs.map((job) => {
                     const jobId = getJobId(job);
-                    const clientName = typeof job.clientId === 'object' 
-                      ? job.clientId.companyName 
-                      : 'Unknown Client';
-                    console.log('Rendering job:', jobId, job.title);
+                    const clientName =
+                      typeof job.clientId === "object"
+                        ? job.clientId.companyName
+                        : "Unknown Client";
+                    console.log("Rendering job:", jobId, job.title);
                     return (
-                      <SelectItem key={jobId} value={jobId} className="cursor-pointer">
+                      <SelectItem
+                        key={jobId}
+                        value={jobId}
+                        className="cursor-pointer"
+                      >
                         <div className="flex items-center justify-between gap-4 w-full">
-                          <span className="font-medium truncate">{job.title}</span>
-                          <span className="text-xs text-muted-foreground shrink-0">{clientName}</span>
+                          <span className="font-medium truncate">
+                            {job.title}
+                          </span>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {clientName}
+                          </span>
                         </div>
                       </SelectItem>
                     );
@@ -157,10 +178,10 @@ export function JobSelectionModal({
                   <Building2 className="h-3.5 w-3.5" />
                   <span className="font-medium">Client</span>
                 </div>
-                <p className="text-sm pl-5 break-words">
-                  {typeof selectedJob.clientId === 'object' 
-                    ? selectedJob.clientId.companyName 
-                    : 'Unknown Client'}
+                <p className="text-sm pl-5 break-word">
+                  {typeof selectedJob.clientId === "object"
+                    ? selectedJob.clientId.companyName
+                    : "Unknown Client"}
                 </p>
               </div>
               <div className="flex flex-col gap-1">
@@ -168,9 +189,7 @@ export function JobSelectionModal({
                   <Briefcase className="h-3.5 w-3.5" />
                   <span className="font-medium">Position</span>
                 </div>
-                <p className="text-sm pl-5 break-words">
-                  {selectedJob.title}
-                </p>
+                <p className="text-sm pl-5 break-word">{selectedJob.title}</p>
               </div>
             </div>
           )}

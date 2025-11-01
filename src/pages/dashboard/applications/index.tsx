@@ -283,7 +283,7 @@ export default function ApplicationsPage() {
               </p>
             </div>
           </div>
-          <DataTable data={transformedData} />
+          <DataTable data={transformedData} jobs={jobs} />
         </div>
       </div>
     </div>

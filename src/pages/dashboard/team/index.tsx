@@ -98,7 +98,7 @@ export default function TeamPage() {
   const dispatch = useAppDispatch();
   const { user: currentUser, accessToken } = useAuth();
 
-  const { fetchTeam, updateTeamMember } = useTeam();
+  const { updateTeamMember } = useTeam();
   // Fetch all users instead of just team members to show admins too
   const users = useAppSelector(
     (state: { users: { users: BackendUser[] } }) => state.users.users || []
@@ -141,10 +141,9 @@ export default function TeamPage() {
   );
 
   useEffect(() => {
-    // Fetch both team members (for job assignments) and all users
-    fetchTeam();
+    // Fetch all users to display in the team page
     dispatch(fetchUsers());
-  }, [fetchTeam, dispatch]);
+  }, [dispatch]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");

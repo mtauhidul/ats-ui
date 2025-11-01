@@ -114,7 +114,14 @@ import { toast } from "sonner";
 import type { schema } from "./data-table-schema";
 
 // Create columns function
-const createColumns = (): ColumnDef<z.infer<typeof schema>>[] => [
+const createColumns = (
+  jobs: Array<{
+    _id?: string;
+    id?: string;
+    title: string;
+    clientId: string | { _id?: string; id?: string; companyName: string };
+  }> = []
+): ColumnDef<z.infer<typeof schema>>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -146,8 +153,8 @@ const createColumns = (): ColumnDef<z.infer<typeof schema>>[] => [
     header: "Applicant Name",
     cell: ({ row }) => {
       return (
-        <div className="w-48">
-          <TableCellViewer item={row.original} />
+        <div className="w-48 min-w-0 overflow-hidden">
+          <TableCellViewer item={row.original} jobs={jobs} />
         </div>
       );
     },
@@ -170,7 +177,7 @@ const createColumns = (): ColumnDef<z.infer<typeof schema>>[] => [
             <TooltipTrigger asChild>
               <button
                 onClick={handleCopyId}
-                className="text-left text-xs font-mono min-w-[200px] bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 py-1 rounded hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors cursor-pointer border border-green-200 dark:border-green-800"
+                className="text-left text-xs font-mono min-w-[200px] max-w-[200px] bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 py-1 rounded hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors cursor-pointer border border-green-200 dark:border-green-800 truncate"
               >
                 {appId}
               </button>
@@ -258,9 +265,12 @@ const createColumns = (): ColumnDef<z.infer<typeof schema>>[] => [
       const reviewerName = row.original.reviewer;
 
       return (
-        <div className="flex items-center gap-2 min-w-[120px]">
+        <div className="flex items-center gap-2 min-w-[120px] max-w-[180px] overflow-hidden">
           {reviewerName && reviewerName !== "Not Reviewed" ? (
-            <Badge variant="outline" className="text-xs px-2 py-0.5">
+            <Badge
+              variant="outline"
+              className="text-xs px-2 py-0.5 truncate max-w-full"
+            >
               {reviewerName}
             </Badge>
           ) : (
@@ -359,8 +369,15 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
 
 export function DataTable({
   data: initialData,
+  jobs = [],
 }: {
   data: z.infer<typeof schema>[];
+  jobs?: Array<{
+    _id?: string;
+    id?: string;
+    title: string;
+    clientId: string | { _id?: string; id?: string; companyName: string };
+  }>;
 }) {
   const [data, setData] = React.useState(() => initialData);
   const [rowSelection, setRowSelection] = React.useState({});
@@ -375,13 +392,6 @@ export function DataTable({
     pageSize: 10,
   });
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [jobs, setJobs] = React.useState<
-    Array<{
-      _id: string;
-      title: string;
-      clientId: string | { _id: string; companyName: string };
-    }>
-  >([]);
   const [showJobSelectionModal, setShowJobSelectionModal] =
     React.useState(false);
   const [currentApprovingId, setCurrentApprovingId] = React.useState<
@@ -396,37 +406,8 @@ export function DataTable({
     useSensor(KeyboardSensor, {})
   );
 
-  // Fetch jobs for approval flow
-  const fetchJobs = React.useCallback(async () => {
-    try {
-      console.log("Fetching jobs from API...");
-      const response = await authenticatedFetch(
-        "http://localhost:5001/api/jobs?limit=100&status=open",
-        { method: "GET" }
-      );
-      if (response.ok) {
-        const result = await response.json();
-        const fetchedJobs = result.data?.jobs || [];
-        console.log("Fetched jobs:", fetchedJobs.length, "open jobs");
-        console.log(
-          "Jobs data:",
-          JSON.stringify(fetchedJobs.slice(0, 3), null, 2)
-        ); // Log first 3 jobs
-        setJobs(fetchedJobs);
-      } else {
-        console.error("Failed to fetch jobs, status:", response.status);
-      }
-    } catch (error) {
-      console.error("Failed to fetch jobs:", error);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
-
-  // Generate columns
-  const columns = React.useMemo(() => createColumns(), []);
+  // Generate columns with jobs data
+  const columns = React.useMemo(() => createColumns(jobs), [jobs]);
 
   // Bulk action handlers
   const handleBulkApprove = async () => {
@@ -560,11 +541,6 @@ export function DataTable({
 
     setCurrentApprovingId(id);
     setCurrentApprovingName(application.header || "this candidate");
-
-    console.log("Approve clicked, refetching jobs...");
-    // Refetch jobs to get the latest list including newly created ones
-    await fetchJobs();
-    console.log("Jobs after refetch, count:", jobs.length);
 
     setShowJobSelectionModal(true);
   };
@@ -1324,9 +1300,10 @@ function JobSelectionWrapper({
   onClose: () => void;
   onConfirm: (jobId: string, clientId: string) => void;
   jobs: Array<{
-    _id: string;
+    _id?: string;
+    id?: string;
     title: string;
-    clientId: string | { _id: string; companyName: string };
+    clientId: string | { _id?: string; id?: string; companyName: string };
   }>;
   currentJobId?: string;
   applicationName: string;
@@ -1344,7 +1321,18 @@ function JobSelectionWrapper({
   );
 }
 
-function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
+function TableCellViewer({
+  item,
+  jobs = [],
+}: {
+  item: z.infer<typeof schema>;
+  jobs?: Array<{
+    _id?: string;
+    id?: string;
+    title: string;
+    clientId: string | { _id?: string; id?: string; companyName: string };
+  }>;
+}) {
   const isMobile = useIsMobile();
   const [showResumePreview, setShowResumePreview] = React.useState(false);
   const [showJobSelectionModal, setShowJobSelectionModal] =
@@ -1353,34 +1341,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
     "approve" | "reject" | null
   >(null);
 
-  // Load jobs data from API
-  const [jobs, setJobs] = React.useState<
-    Array<{
-      _id?: string;
-      id?: string;
-      title: string;
-      clientId: string | { _id: string; companyName: string };
-    }>
-  >([]);
-
-  const fetchJobs = React.useCallback(async () => {
-    try {
-      const response = await authenticatedFetch(
-        "http://localhost:5001/api/jobs?limit=100&status=open",
-        { method: "GET" }
-      );
-      if (response.ok) {
-        const result = await response.json();
-        setJobs(result.data?.jobs || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch jobs:", error);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+  // Jobs data is now passed as prop, no need to fetch
 
   // Handler for job selection and approval
   const handleJobConfirmation = async (jobId: string, clientId: string) => {
@@ -1561,13 +1522,13 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
       <DrawerTrigger asChild>
         <Button
           variant="ghost"
-          className="w-fit px-0 text-left group hover:no-underline"
+          className="w-fit max-w-full px-0 text-left group hover:no-underline"
         >
-          <span className="flex items-center gap-1.5 text-foreground group-hover:text-primary transition-colors">
-            <span className="group-hover:underline underline-offset-4">
+          <span className="flex items-center gap-1.5 text-foreground group-hover:text-primary transition-colors max-w-full">
+            <span className="group-hover:underline underline-offset-4 truncate">
               {item.header}
             </span>
-            <IconChevronRight className="h-3.5 w-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+            <IconChevronRight className="h-3.5 w-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
           </span>
         </Button>
       </DrawerTrigger>
@@ -1775,7 +1736,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                         <Badge
                           key={index}
                           variant="secondary"
-                          className="text-xs font-normal"
+                          className="text-xs font-normal wrap-break-word max-w-full"
                         >
                           {skill}
                         </Badge>
@@ -1793,7 +1754,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                         <Badge
                           key={index}
                           variant="outline"
-                          className="text-xs font-normal"
+                          className="text-xs font-normal wrap-break-word max-w-full"
                         >
                           {language}
                         </Badge>
@@ -1978,8 +1939,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
             <Button
               onClick={async () => {
                 setApprovalAction("approve");
-                // Refetch jobs to get the latest list including newly created ones
-                await fetchJobs();
+                // Jobs are passed as prop, no need to refetch
                 setShowJobSelectionModal(true);
               }}
               className="flex-1 h-11"
@@ -1995,8 +1955,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
               variant="destructive"
               onClick={async () => {
                 setApprovalAction("reject");
-                // Refetch jobs to get the latest list including newly created ones
-                await fetchJobs();
+                // Jobs are passed as prop, no need to refetch
                 setShowJobSelectionModal(true);
               }}
               className="flex-1 h-11"

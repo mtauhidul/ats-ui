@@ -285,27 +285,27 @@ function SortableRow({
                 <IconEye className="h-4 w-4" />
               </Button>
             </DrawerTrigger>
-            <DrawerContent className="max-h-[90vh]">
-              <DrawerHeader>
+            <DrawerContent className="max-h-[90vh] flex flex-col">
+              <DrawerHeader className="shrink-0">
                 <div className="flex items-center space-x-4">
-                  <Avatar className="h-12 w-12">
+                  <Avatar className="h-12 w-12 shrink-0">
                     <AvatarImage src={application.photo || ""} />
                     <AvatarFallback>
                       {application.firstName?.[0]}{application.lastName?.[0]}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <DrawerTitle>
+                  <div className="min-w-0 flex-1">
+                    <DrawerTitle className="truncate">
                       {application.firstName} {application.lastName}
                     </DrawerTitle>
-                    <DrawerDescription>
+                    <DrawerDescription className="truncate">
                       {application.currentTitle} at {application.currentCompany}
                     </DrawerDescription>
                   </div>
                 </div>
               </DrawerHeader>
               
-              <div className="px-6 pb-6">
+              <div className="flex-1 overflow-y-auto px-6 pb-6">
                 <Tabs defaultValue="details" className="w-full">
                   <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="details">
@@ -323,22 +323,22 @@ function SortableRow({
                   </TabsList>
                   
                   <TabsContent value="details" className="mt-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="min-w-0">
                         <Label className="text-sm font-medium">Contact Information</Label>
                         <div className="mt-2 space-y-2">
-                          <div><span className="text-sm text-muted-foreground">Email:</span> {application.email}</div>
-                          <div><span className="text-sm text-muted-foreground">Phone:</span> {application.phone || "Not provided"}</div>
-                          <div><span className="text-sm text-muted-foreground">Address:</span> {application.address || "Not provided"}</div>
+                          <div className="text-sm wrap-break-word"><span className="text-muted-foreground">Email:</span> {application.email}</div>
+                          <div className="text-sm wrap-break-word"><span className="text-muted-foreground">Phone:</span> {application.phone || "Not provided"}</div>
+                          <div className="text-sm wrap-break-word"><span className="text-muted-foreground">Address:</span> {application.address || "Not provided"}</div>
                         </div>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <Label className="text-sm font-medium">Professional Info</Label>
                         <div className="mt-2 space-y-2">
-                          <div><span className="text-sm text-muted-foreground">Current Title:</span> {application.currentTitle || "Not provided"}</div>
-                          <div><span className="text-sm text-muted-foreground">Company:</span> {application.currentCompany || "Not provided"}</div>
-                          <div>
-                            <span className="text-sm text-muted-foreground">Experience:</span>{" "}
+                          <div className="text-sm wrap-break-word"><span className="text-muted-foreground">Current Title:</span> {application.currentTitle || "Not provided"}</div>
+                          <div className="text-sm wrap-break-word"><span className="text-muted-foreground">Company:</span> {application.currentCompany || "Not provided"}</div>
+                          <div className="text-sm wrap-break-word">
+                            <span className="text-muted-foreground">Experience:</span>{" "}
                             {application.yearsOfExperience 
                               ? `${application.yearsOfExperience} years` 
                               : application.parsedData?.experience && application.parsedData.experience.length > 0
@@ -347,27 +347,29 @@ function SortableRow({
                           </div>
                         </div>
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-1 md:col-span-2 min-w-0">
                         <Label className="text-sm font-medium">Skills</Label>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {application.skills.map((skill, index) => (
-                            <Badge key={index} variant="secondary">{skill}</Badge>
+                            <Badge key={index} variant="secondary" className="wrap-break-word max-w-full text-xs">
+                              {skill}
+                            </Badge>
                           ))}
                         </div>
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-1 md:col-span-2 min-w-0">
                         <Label className="text-sm font-medium">Cover Letter</Label>
-                        <div className="mt-2 p-4 bg-muted/50 rounded-lg">
-                          <p className="text-sm">{application.coverLetter || "No cover letter provided"}</p>
+                        <div className="mt-2 p-4 bg-muted/50 rounded-lg max-w-full overflow-hidden">
+                          <p className="text-sm whitespace-pre-wrap wrap-break-word">{application.coverLetter || "No cover letter provided"}</p>
                         </div>
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-1 md:col-span-2 min-w-0">
                         <Label className="text-sm font-medium">AI Analysis</Label>
-                        <div className="mt-2 p-4 bg-muted/50 rounded-lg">
-                          <div className="flex items-center space-x-2 mb-2">
+                        <div className="mt-2 p-4 bg-muted/50 rounded-lg max-w-full overflow-hidden">
+                          <div className="flex items-center flex-wrap gap-2 mb-2">
                             {getAIValidityBadge(application.aiAnalysis.isValid)}
                           </div>
-                          <p className="text-sm">{application.aiAnalysis.summary}</p>
+                          <p className="text-sm whitespace-pre-wrap wrap-break-word">{application.aiAnalysis.summary}</p>
                         </div>
                       </div>
                     </div>
@@ -443,7 +445,7 @@ function SortableRow({
                   
                   <TabsContent value="text" className="mt-6">
                     <div className="max-h-96 overflow-y-auto">
-                      <pre className="text-sm whitespace-pre-wrap p-4 bg-muted/50 rounded-lg">
+                      <pre className="text-sm whitespace-pre-wrap wrap-break-word p-4 bg-muted/50 rounded-lg max-w-full overflow-x-hidden">
                         {application.resumeText || "No resume text available"}
                       </pre>
                     </div>
@@ -451,10 +453,9 @@ function SortableRow({
                 </Tabs>
               </div>
               
-              <DrawerFooter>
+              <DrawerFooter className="shrink-0">
                 <div className="flex justify-center space-x-3">
                   <Button 
-                    variant="default" 
                     className="bg-green-600 hover:bg-green-700 text-white"
                     onClick={() => onStatusChange(application.id, "approved")}
                   >
