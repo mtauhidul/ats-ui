@@ -2,6 +2,17 @@ import { JobKanbanBoard } from "@/components/job-kanban-board";
 import { PipelineBuilder } from "@/components/pipeline-builder";
 import { PipelineEmptyState } from "@/components/pipeline-empty-state";
 import { Button } from "@/components/ui/button";
+import {
+  useAppSelector,
+  useCandidates,
+  useJobs,
+  usePipelines,
+} from "@/store/hooks/index";
+import {
+  selectCandidates,
+  selectCurrentJob,
+  selectJobById,
+} from "@/store/selectors";
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
 import type { PipelineStage } from "@/types/pipeline";
@@ -10,8 +21,6 @@ import { ArrowLeft, Edit } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { useJobs, useCandidates, usePipelines, useAppSelector } from "@/store/hooks/index";
-import { selectJobById, selectCandidates, selectCurrentJob } from "@/store/selectors";
 
 export default function JobPipelinePage() {
   const navigate = useNavigate();
@@ -19,41 +28,60 @@ export default function JobPipelinePage() {
   const kanbanContainerRef = useRef<HTMLDivElement>(null);
 
   // Redux hooks
-  const { fetchJobById, fetchJobs, updateJob, isLoading: jobsLoading } = useJobs();
-  const { fetchCandidates, updateCandidate, updateCandidateStageOptimistic } = useCandidates();
-  const { 
-    fetchPipelineById, 
-    createPipeline, 
+  const {
+    fetchJobById,
+    fetchJobs,
+    updateJob,
+    isLoading: jobsLoading,
+  } = useJobs();
+  const { fetchCandidates, updateCandidate, updateCandidateStageOptimistic } =
+    useCandidates();
+  const {
+    fetchPipelineById,
+    createPipeline,
     updatePipeline,
     currentPipeline,
-    setCurrentPipeline
+    setCurrentPipeline,
   } = usePipelines();
-  
+
   // Try to get job from jobs array first, fallback to currentJob
-  const jobFromArray = useAppSelector(state => selectJobById(jobId || '')(state));
+  const jobFromArray = useAppSelector((state) =>
+    selectJobById(jobId || "")(state)
+  );
   const currentJob = useAppSelector(selectCurrentJob);
   const job = (jobFromArray || currentJob) as Job | undefined;
-  
+
   const allCandidates = useAppSelector(selectCandidates);
-  
+
   // Filter candidates for this job
   // Backend populates jobIds with full Job objects, so we need to access the id property
   const candidates = allCandidates.filter((c: Candidate) => {
     const jobIdsList = c.jobIds || [];
-    
-    const matches = jobIdsList.some((jobIdOrObject: string | { id?: string; _id?: string; toString?: () => string }) => {
-      // If it's a populated object with an id property, use that
-      const idString = typeof jobIdOrObject === 'string' 
-        ? jobIdOrObject 
-        : jobIdOrObject?.id || jobIdOrObject?._id || jobIdOrObject?.toString?.();
-      
-      return idString === jobId;
-    });
-    
+
+    const matches = jobIdsList.some(
+      (
+        jobIdOrObject:
+          | string
+          | { id?: string; _id?: string; toString?: () => string }
+      ) => {
+        // If it's a populated object with an id property, use that
+        const idString =
+          typeof jobIdOrObject === "string"
+            ? jobIdOrObject
+            : jobIdOrObject?.id ||
+              jobIdOrObject?._id ||
+              jobIdOrObject?.toString?.();
+
+        return idString === jobId;
+      }
+    );
+
     return matches;
   });
-  
-  console.log(`Pipeline page: ${candidates.length} candidates for job ${jobId}`);  // State
+
+  console.log(
+    `Pipeline page: ${candidates.length} candidates for job ${jobId}`
+  ); // State
   const [isBuilding, setIsBuilding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [hasFetchedJob, setHasFetchedJob] = useState(false);
@@ -65,7 +93,7 @@ export default function JobPipelinePage() {
       if (jobId && !hasFetchedJob) {
         // Check if job already exists in state
         const existingJob = jobFromArray || currentJob;
-        
+
         if (!existingJob || existingJob.id !== jobId) {
           // Only fetch if not already in state or different job
           console.log("Fetching job:", jobId);
@@ -77,11 +105,11 @@ export default function JobPipelinePage() {
         }
       }
     };
-    
+
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
-  
+
   // Fetch candidates and jobs list only once on mount
   useEffect(() => {
     fetchJobs();
@@ -109,8 +137,18 @@ export default function JobPipelinePage() {
         pipelineId = rawPipelineId;
       } else if (typeof rawPipelineId === "object") {
         const obj = rawPipelineId as Record<string, unknown>;
-  const idCandidate = obj['id'] ?? obj['_id'] ?? (typeof obj['toString'] === 'function' ? (obj['toString'] as () => string)() : undefined);
-        pipelineId = typeof idCandidate === 'string' ? idCandidate : (idCandidate ? String(idCandidate) : null);
+        const idCandidate =
+          obj["id"] ??
+          obj["_id"] ??
+          (typeof obj["toString"] === "function"
+            ? (obj["toString"] as () => string)()
+            : undefined);
+        pipelineId =
+          typeof idCandidate === "string"
+            ? idCandidate
+            : idCandidate
+            ? String(idCandidate)
+            : null;
       }
     }
 
@@ -180,7 +218,7 @@ export default function JobPipelinePage() {
         const result = await createPipeline({
           name: `${job.title} - ${template.name}`,
           description: template.description,
-          type: 'candidate',
+          type: "candidate",
           stages: template.stages.map((stage) => ({
             name: stage.name,
             description: stage.description,
@@ -193,18 +231,18 @@ export default function JobPipelinePage() {
         console.log("Create pipeline result:", result);
 
         // Update job with the new pipeline ID
-        if (result.payload && 'id' in result.payload) {
+        if (result.payload && "id" in result.payload) {
           const pipelineId = result.payload.id;
           console.log("Pipeline ID:", pipelineId);
           console.log("Updating job:", job.id, "with pipelineId:", pipelineId);
-          
+
           const updateResult = await updateJob(job.id, { pipelineId });
           console.log("Update job result:", updateResult);
-          
+
           // Refetch job to get updated data
           const fetchResult = await fetchJobById(job.id);
           console.log("Fetched job:", fetchResult);
-          
+
           // Fetch the newly created pipeline
           await fetchPipelineById(pipelineId);
         } else {
@@ -240,7 +278,7 @@ export default function JobPipelinePage() {
         const result = await createPipeline({
           name: `${job.title} Pipeline`,
           description: `Custom pipeline for ${job.title}`,
-          type: 'candidate',
+          type: "candidate",
           stages: stages.map((stage) => ({
             name: stage.name,
             description: stage.description,
@@ -251,7 +289,7 @@ export default function JobPipelinePage() {
         });
 
         // Update job with the new pipeline ID
-        if (result.payload && 'id' in result.payload) {
+        if (result.payload && "id" in result.payload) {
           const pipelineId = result.payload.id;
           await updateJob(job.id, { pipelineId });
           // Refetch job to get updated data
@@ -274,12 +312,15 @@ export default function JobPipelinePage() {
     navigate(`/dashboard/candidates/${candidate.id}`);
   };
 
-  const handleStatusChange = async (candidateId: string, newStageId: string) => {
+  const handleStatusChange = async (
+    candidateId: string,
+    newStageId: string
+  ) => {
     console.log("Status change:", { candidateId, newStageId });
-    
+
     // Find the new stage details for optimistic update
-    const newStage = currentPipeline?.stages.find(s => s.id === newStageId);
-    
+    const newStage = currentPipeline?.stages.find((s) => s.id === newStageId);
+
     // Optimistic update - update UI immediately
     if (newStage) {
       updateCandidateStageOptimistic({
@@ -290,25 +331,27 @@ export default function JobPipelinePage() {
           name: newStage.name,
           color: newStage.color,
           order: newStage.order,
-        }
+        },
       });
     }
-    
+
     try {
       // Update candidate's pipeline stage in backend
-      await updateCandidate(candidateId, { currentPipelineStageId: newStageId });
-      
+      await updateCandidate(candidateId, {
+        currentPipelineStageId: newStageId,
+      });
+
       // Refresh candidates to ensure consistency with backend
       await fetchCandidates();
-      
+
       // Dispatch custom event to notify other components to refetch
-      window.dispatchEvent(new CustomEvent('refetchCandidates'));
-      
+      window.dispatchEvent(new CustomEvent("refetchCandidates"));
+
       toast.success("Candidate moved to new stage!");
     } catch (error) {
       console.error("Failed to update candidate stage:", error);
       toast.error("Failed to move candidate");
-      
+
       // Revert optimistic update by refreshing from backend
       await fetchCandidates();
     }
@@ -348,7 +391,7 @@ export default function JobPipelinePage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate(-1)}
-                className="flex-shrink-0"
+                className="shrink-0"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -366,7 +409,7 @@ export default function JobPipelinePage() {
                 onClick={() => setIsEditing(true)}
                 variant="outline"
                 size="sm"
-                className="flex-shrink-0"
+                className="shrink-0"
               >
                 <Edit className="h-3.5 w-3.5 mr-1.5" />
                 Edit Pipeline
@@ -400,7 +443,8 @@ export default function JobPipelinePage() {
               </div>
             </div>
           ) : (
-            currentPipeline && jobId && (
+            currentPipeline &&
+            jobId && (
               <div ref={kanbanContainerRef} className="h-full overflow-hidden">
                 <JobKanbanBoard
                   pipeline={currentPipeline}

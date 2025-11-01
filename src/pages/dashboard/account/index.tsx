@@ -245,7 +245,11 @@ export default function AccountPage() {
           </Badge>
         );
       default:
-        return <Badge variant="outline" className="text-xs md:text-sm h-5 md:h-6">{role}</Badge>;
+        return (
+          <Badge variant="outline" className="text-xs md:text-sm h-5 md:h-6">
+            {role}
+          </Badge>
+        );
     }
   };
 
@@ -296,7 +300,7 @@ export default function AccountPage() {
                   </Avatar>
                   <div className="flex-1 min-w-0 w-full">
                     <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
-                      <h3 className="text-xl md:text-2xl font-bold break-words">
+                      <h3 className="text-xl md:text-2xl font-bold break-word">
                         {profileData.firstName} {profileData.lastName}
                       </h3>
                       {userRole && getRoleBadge(userRole)}
@@ -311,11 +315,15 @@ export default function AccountPage() {
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground min-w-0">
                         <Phone className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
-                        <span className="truncate">{profileData.phone || "No phone set"}</span>
+                        <span className="truncate">
+                          {profileData.phone || "No phone set"}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground min-w-0">
                         <Building className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
-                        <span className="truncate">{profileData.department || "No department set"}</span>
+                        <span className="truncate">
+                          {profileData.department || "No department set"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -353,15 +361,22 @@ export default function AccountPage() {
               <TabsContent value="profile" className="mt-4 md:mt-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base md:text-lg">Profile Information</CardTitle>
+                    <CardTitle className="text-base md:text-lg">
+                      Profile Information
+                    </CardTitle>
                     <CardDescription className="text-xs md:text-sm">
                       Update your profile details and contact information
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={handleProfileSubmit} className="space-y-3 md:space-y-4">
+                    <form
+                      onSubmit={handleProfileSubmit}
+                      className="space-y-3 md:space-y-4"
+                    >
                       <div className="space-y-2">
-                        <Label className="text-xs md:text-sm">Profile Photo</Label>
+                        <Label className="text-xs md:text-sm">
+                          Profile Photo
+                        </Label>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
                           <Avatar className="h-16 w-16 md:h-20 md:w-20 shrink-0">
                             <AvatarImage
@@ -415,7 +430,12 @@ export default function AccountPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="firstName" className="text-xs md:text-sm">First Name</Label>
+                          <Label
+                            htmlFor="firstName"
+                            className="text-xs md:text-sm"
+                          >
+                            First Name
+                          </Label>
                           <Input
                             id="firstName"
                             className="h-9 md:h-10 text-xs md:text-sm"
@@ -429,7 +449,12 @@ export default function AccountPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="lastName" className="text-xs md:text-sm">Last Name</Label>
+                          <Label
+                            htmlFor="lastName"
+                            className="text-xs md:text-sm"
+                          >
+                            Last Name
+                          </Label>
                           <Input
                             id="lastName"
                             className="h-9 md:h-10 text-xs md:text-sm"
@@ -445,7 +470,9 @@ export default function AccountPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="email" className="text-xs md:text-sm">Email Address</Label>
+                        <Label htmlFor="email" className="text-xs md:text-sm">
+                          Email Address
+                        </Label>
                         <Input
                           id="email"
                           type="email"
@@ -460,7 +487,9 @@ export default function AccountPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="phone" className="text-xs md:text-sm">Phone Number</Label>
+                        <Label htmlFor="phone" className="text-xs md:text-sm">
+                          Phone Number
+                        </Label>
                         <Input
                           id="phone"
                           className="h-9 md:h-10 text-xs md:text-sm"
@@ -476,7 +505,12 @@ export default function AccountPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="department" className="text-xs md:text-sm">Department</Label>
+                          <Label
+                            htmlFor="department"
+                            className="text-xs md:text-sm"
+                          >
+                            Department
+                          </Label>
                           <Input
                             id="department"
                             className="h-9 md:h-10 text-xs md:text-sm"
@@ -490,7 +524,9 @@ export default function AccountPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="title" className="text-xs md:text-sm">Job Title</Label>
+                          <Label htmlFor="title" className="text-xs md:text-sm">
+                            Job Title
+                          </Label>
                           <Input
                             id="title"
                             className="h-9 md:h-10 text-xs md:text-sm"
@@ -514,8 +550,8 @@ export default function AccountPage() {
                         >
                           Cancel
                         </Button>
-                        <Button 
-                          type="submit" 
+                        <Button
+                          type="submit"
                           className="h-9 md:h-10 text-xs md:text-sm w-full sm:w-auto"
                           disabled={isProfileLoading}
                         >
@@ -537,15 +573,23 @@ export default function AccountPage() {
               <TabsContent value="security" className="mt-4 md:mt-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base md:text-lg">Change Password</CardTitle>
+                    <CardTitle className="text-base md:text-lg">
+                      Change Password
+                    </CardTitle>
                     <CardDescription className="text-xs md:text-sm">
                       Update your password to keep your account secure
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={handlePasswordSubmit} className="space-y-3 md:space-y-4">
+                    <form
+                      onSubmit={handlePasswordSubmit}
+                      className="space-y-3 md:space-y-4"
+                    >
                       <div className="space-y-2">
-                        <Label htmlFor="currentPassword" className="text-xs md:text-sm">
+                        <Label
+                          htmlFor="currentPassword"
+                          className="text-xs md:text-sm"
+                        >
                           Current Password
                         </Label>
                         <div className="relative">
@@ -580,7 +624,12 @@ export default function AccountPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="newPassword" className="text-xs md:text-sm">New Password</Label>
+                        <Label
+                          htmlFor="newPassword"
+                          className="text-xs md:text-sm"
+                        >
+                          New Password
+                        </Label>
                         <div className="relative">
                           <Input
                             id="newPassword"
@@ -614,7 +663,10 @@ export default function AccountPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="confirmPassword" className="text-xs md:text-sm">
+                        <Label
+                          htmlFor="confirmPassword"
+                          className="text-xs md:text-sm"
+                        >
                           Confirm New Password
                         </Label>
                         <div className="relative">
@@ -664,8 +716,8 @@ export default function AccountPage() {
                         >
                           Cancel
                         </Button>
-                        <Button 
-                          type="submit" 
+                        <Button
+                          type="submit"
                           className="h-9 md:h-10 text-xs md:text-sm w-full sm:w-auto"
                           disabled={isPasswordLoading}
                         >
@@ -687,21 +739,27 @@ export default function AccountPage() {
               <TabsContent value="permissions" className="mt-4 md:mt-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base md:text-lg">Account Permissions</CardTitle>
+                    <CardTitle className="text-base md:text-lg">
+                      Account Permissions
+                    </CardTitle>
                     <CardDescription className="text-xs md:text-sm">
                       Your current role and permissions in the system
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3 md:space-y-4">
                     <div className="flex flex-wrap items-center gap-2 mb-3 md:mb-4">
-                      <span className="text-xs md:text-sm font-medium">Your Role:</span>
+                      <span className="text-xs md:text-sm font-medium">
+                        Your Role:
+                      </span>
                       {userRole && getRoleBadge(userRole)}
                     </div>
 
                     <Separator />
 
                     <div className="space-y-3">
-                      <h4 className="text-xs md:text-sm font-medium">Your Permissions</h4>
+                      <h4 className="text-xs md:text-sm font-medium">
+                        Your Permissions
+                      </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
                         {/* Always enabled base permissions */}
                         <div className="flex items-center gap-2 text-xs md:text-sm">

@@ -29,11 +29,14 @@ export function NavUtilities({
         {items.map((item) => {
           // Check if current path starts with the item's URL for nested route support
           const isActive = location.pathname.startsWith(item.url);
-          
+
           return (
             <SidebarMenuItem key={item.name}>
               <SidebarMenuButton asChild isActive={isActive}>
-                <Link to={item.url} className="[&:hover]:!text-black dark:[&:hover]:!text-white [&:hover>svg]:!text-black dark:[&:hover>svg]:!text-white">
+                <Link
+                  to={item.url}
+                  className="[&:hover]:text-black! dark:[&:hover]:text-white! [&:hover>svg]:text-black! dark:[&:hover>svg]:text-white!"
+                >
                   <item.icon />
                   <span>{item.name}</span>
                 </Link>

@@ -1,23 +1,64 @@
-import { useState, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Briefcase, MapPin, DollarSign, Users, Clock, CheckCircle2, XCircle, UserCheck, Building2, Calendar, Target, Edit, Tag as IconTag, X as IconX, Check as IconCheck, FileText, BarChart3 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { CandidateCard } from "@/components/candidate-card";
 import { JobCandidateDetails } from "@/components/job-candidate-details";
 import { EditJobModal } from "@/components/modals/edit-job-modal";
-import type { Job, UpdateJobRequest } from "@/types/job";
-import type { Candidate } from "@/types/candidate";
-import type { Client } from "@/types/client";
-import type { Category } from "@/types/category";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import { cn } from "@/lib/utils";
+import type { Candidate } from "@/types/candidate";
+import type { Category } from "@/types/category";
+import type { Client } from "@/types/client";
+import type { Job, UpdateJobRequest } from "@/types/job";
+import {
+  ArrowLeft,
+  BarChart3,
+  Briefcase,
+  Building2,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  Edit,
+  FileText,
+  Check as IconCheck,
+  Tag as IconTag,
+  X as IconX,
+  MapPin,
+  Target,
+  UserCheck,
+  Users,
+  XCircle,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface JobDetailsProps {
   job: Job;
@@ -32,44 +73,49 @@ interface JobDetailsProps {
 const statusColors = {
   draft: "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20",
   open: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
-  on_hold: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20",
+  on_hold:
+    "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20",
   closed: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
   cancelled: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
 } as const;
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
-export function JobDetails({ job, candidates, clients, clientName, onBack, onCandidateClick, onEditJob }: JobDetailsProps) {
+export function JobDetails({
+  job,
+  candidates,
+  clients,
+  clientName,
+  onBack,
+  onCandidateClick,
+  onEditJob,
+}: JobDetailsProps) {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
+    null
+  );
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Category management state
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [openCategoryPopover, setOpenCategoryPopover] = useState(false);
 
   // Filter candidates for this job
-  const jobCandidates = candidates.filter(candidate => {
+  const jobCandidates = candidates.filter((candidate) => {
     // Backend uses jobIds array, not jobApplications
     if (!candidate.jobIds || !Array.isArray(candidate.jobIds)) return false;
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return candidate.jobIds.some((jobId: any) => {
       // Handle both populated objects and string IDs
-      const id = typeof jobId === 'object' ? (jobId._id || jobId.id) : jobId;
+      const id = typeof jobId === "object" ? jobId._id || jobId.id : jobId;
       return id === job.id;
     });
   });
-
-  // Handle status change for candidate
-  const handleStatusChange = (candidateId: string, jobId: string, newStatus: string) => {
-    // This would update the candidate status in the parent component
-    console.log("Status change:", { candidateId, jobId, newStatus });
-  };
 
   const handleEditJob = (id: string, data: UpdateJobRequest) => {
     if (onEditJob) {
@@ -81,7 +127,6 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
   // Fetch all categories
   const fetchCategories = useCallback(async () => {
     try {
-      setIsLoadingCategories(true);
       const response = await authenticatedFetch(`${API_BASE_URL}/categories`);
 
       if (!response.ok) {
@@ -90,8 +135,9 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
 
       const result = await response.json();
       const categories = result.data || [];
-      // Ensure id field exists for compatibility
-      const categoriesWithId = categories.map((category: Category) => ({
+      // Ensure id field exists - backend may return _id
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const categoriesWithId = categories.map((category: any) => ({
         ...category,
         id: category.id || category._id,
       }));
@@ -99,8 +145,6 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
     } catch (error) {
       console.error("Failed to fetch categories:", error);
       setAllCategories([]);
-    } finally {
-      setIsLoadingCategories(false);
     }
   }, []);
 
@@ -111,7 +155,9 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
 
   // Load job's categories when job data is available
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (job && (job as any).categoryIds) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const categoryIds = (job as any).categoryIds.map((id: any) =>
         typeof id === "object" ? id._id || id.id || "" : id
       );
@@ -142,6 +188,7 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
 
         // Call onEditJob to trigger refetch if available
         if (onEditJob) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onEditJob(job.id, { categoryIds } as any);
         }
       } catch (error) {
@@ -167,13 +214,12 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
         candidate={selectedCandidate}
         job={job}
         onBack={() => setSelectedCandidate(null)}
-        onStatusChange={handleStatusChange}
       />
     );
   }
 
   // Apply filters
-  const filteredCandidates = jobCandidates.filter(candidate => {
+  const filteredCandidates = jobCandidates.filter((candidate) => {
     // Backend has status at candidate level, not per-job
     if (statusFilter === "all") return true;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -184,14 +230,20 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
   const sortedCandidates = [...filteredCandidates].sort((a, b) => {
     switch (sortBy) {
       case "newest":
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
       case "oldest":
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        return (
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
       case "rating":
         // Backend doesn't have per-job rating, skip for now
         return 0;
       case "name":
-        return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+        return `${a.firstName} ${a.lastName}`.localeCompare(
+          `${b.firstName} ${b.lastName}`
+        );
       default:
         return 0;
     }
@@ -200,18 +252,19 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
   // Calculate statistics by status (use candidate-level status)
   const stats = {
     total: jobCandidates.length,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    active: jobCandidates.filter((c: any) => 
-      c.status && !['hired', 'rejected', 'withdrawn'].includes(c.status)
+
+    active: jobCandidates.filter(
+      (c: Candidate) =>
+        c.status && !["hired", "rejected", "withdrawn"].includes(c.status)
     ).length,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    interviewing: jobCandidates.filter((c: any) => c.status === 'interviewing').length,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    hired: jobCandidates.filter((c: any) => c.status === 'hired').length,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    rejected: jobCandidates.filter((c: any) => c.status === 'rejected').length,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    withdrawn: jobCandidates.filter((c: any) => c.status === 'withdrawn').length,
+    interviewing: jobCandidates.filter(
+      (c: Candidate) => c.status === "interviewing"
+    ).length,
+    hired: jobCandidates.filter((c: Candidate) => c.status === "hired").length,
+    rejected: jobCandidates.filter((c: Candidate) => c.status === "rejected")
+      .length,
+    withdrawn: jobCandidates.filter((c: Candidate) => c.status === "withdrawn")
+      .length,
   };
 
   return (
@@ -219,16 +272,28 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={onBack} className="h-9 px-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="h-9 px-3"
+          >
             <ArrowLeft className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Back</span>
           </Button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground truncate">{job.title}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground truncate">
+              {job.title}
+            </h1>
           </div>
           <div className="flex items-center gap-2">
-            <Badge className={cn("border text-sm px-3 py-1 whitespace-nowrap", statusColors[job.status])}>
-              {job.status?.replace(/_/g, ' ') || job.status}
+            <Badge
+              className={cn(
+                "border text-sm px-3 py-1 whitespace-nowrap",
+                statusColors[job.status]
+              )}
+            >
+              {job.status?.replace(/_/g, " ") || job.status}
             </Badge>
             <Button
               variant="outline"
@@ -240,29 +305,33 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
             </Button>
           </div>
         </div>
-        
+
         {/* Client Info */}
         <div className="flex items-center gap-2 text-muted-foreground">
           <Building2 className="h-4 w-4" />
           <span className="text-sm md:text-base">{clientName}</span>
           <span className="text-xs">•</span>
           <Calendar className="h-4 w-4" />
-          <span className="text-sm">Posted {new Date(job.createdAt).toLocaleDateString()}</span>
+          <span className="text-sm">
+            Posted {new Date(job.createdAt).toLocaleDateString()}
+          </span>
         </div>
 
         {/* Categories Section */}
         <div className="flex flex-wrap items-center gap-2">
-          <IconTag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <IconTag className="h-4 w-4 text-muted-foreground shrink-0" />
           {selectedCategories.length === 0 ? (
             <span className="text-sm text-muted-foreground">No categories</span>
           ) : (
             selectedCategories.map((categoryId) => {
               const category = allCategories.find(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (c) => c.id === categoryId || (c as any)._id === categoryId
               );
               if (!category) return null;
               return (
                 <Badge
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   key={category.id || (category as any)._id}
                   variant="secondary"
                   style={{
@@ -274,7 +343,10 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                 >
                   {category.name}
                   <button
-                    onClick={() => toggleCategory(category.id || (category as any)._id)}
+                    onClick={() =>
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      toggleCategory(category.id || (category as any)._id)
+                    }
                     className="ml-1.5 hover:opacity-70"
                   >
                     <IconX className="h-3 w-3" />
@@ -283,7 +355,10 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
               );
             })
           )}
-          <Popover open={openCategoryPopover} onOpenChange={setOpenCategoryPopover}>
+          <Popover
+            open={openCategoryPopover}
+            onOpenChange={setOpenCategoryPopover}
+          >
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="h-7 text-xs">
                 <IconTag className="h-3 w-3 mr-1" />
@@ -299,9 +374,11 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                     .filter((category) => category.isActive)
                     .map((category) => (
                       <CommandItem
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         key={category.id || (category as any)._id}
                         value={category.name}
                         onSelect={() => {
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           toggleCategory(category.id || (category as any)._id);
                         }}
                       >
@@ -315,10 +392,9 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                           <span>{category.name}</span>
                         </div>
                         {selectedCategories.includes(
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           category.id || (category as any)._id
-                        ) && (
-                          <IconCheck className="h-4 w-4 text-primary" />
-                        )}
+                        ) && <IconCheck className="h-4 w-4 text-primary" />}
                       </CommandItem>
                     ))}
                 </CommandGroup>
@@ -337,7 +413,9 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
             </div>
             <p className="text-xs text-muted-foreground">Type</p>
           </div>
-          <p className="text-sm md:text-base font-semibold capitalize">{job.type?.replace(/_/g, ' ') || 'Not specified'}</p>
+          <p className="text-sm md:text-base font-semibold capitalize">
+            {job.type?.replace(/_/g, " ") || "Not specified"}
+          </p>
         </div>
 
         <div className="rounded-lg border bg-card p-3 shadow-sm">
@@ -347,7 +425,9 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
             </div>
             <p className="text-xs text-muted-foreground">Mode</p>
           </div>
-          <p className="text-sm md:text-base font-semibold capitalize">{job.workMode}</p>
+          <p className="text-sm md:text-base font-semibold capitalize">
+            {job.workMode}
+          </p>
         </div>
 
         <div className="rounded-lg border bg-card p-3 shadow-sm">
@@ -357,7 +437,9 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
             </div>
             <p className="text-xs text-muted-foreground">Level</p>
           </div>
-          <p className="text-sm md:text-base font-semibold capitalize">{job.experienceLevel}</p>
+          <p className="text-sm md:text-base font-semibold capitalize">
+            {job.experienceLevel}
+          </p>
         </div>
 
         <div className="rounded-lg border bg-card p-3 shadow-sm">
@@ -367,65 +449,93 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
             </div>
             <p className="text-xs text-muted-foreground">Openings</p>
           </div>
-          <p className="text-sm md:text-base font-semibold">{job.openings} {job.openings === 1 ? 'position' : 'positions'}</p>
+          <p className="text-sm md:text-base font-semibold">
+            {job.openings} {job.openings === 1 ? "position" : "positions"}
+          </p>
         </div>
       </div>
 
       {/* Statistics */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <div className="rounded-lg border bg-gradient-to-br from-card to-muted/20 p-3 shadow-sm">
+        <div className="rounded-lg border bg-linear-to-br from-card to-muted/20 p-3 shadow-sm">
           <div className="flex items-center justify-between mb-1.5">
             <div className="rounded-md bg-primary/10 p-1.5">
               <Users className="h-4 w-4 text-primary" />
             </div>
-            <span className="text-xs font-medium text-muted-foreground">Total</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              Total
+            </span>
           </div>
           <p className="text-xl font-bold">{stats.total}</p>
           <p className="text-xs text-muted-foreground">Candidates</p>
         </div>
 
-        <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100/20 dark:from-blue-950/20 dark:to-blue-900/10 p-3 shadow-sm">
+        <div className="rounded-lg border bg-linear-to-br from-blue-50 to-blue-100/20 dark:from-blue-950/20 dark:to-blue-900/10 p-3 shadow-sm">
           <div className="flex items-center justify-between mb-1.5">
             <div className="rounded-md bg-blue-500/10 p-1.5">
               <UserCheck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
-            <span className="text-xs font-medium text-blue-700 dark:text-blue-400">Active</span>
+            <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
+              Active
+            </span>
           </div>
-          <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{stats.active}</p>
-          <p className="text-xs text-blue-600/70 dark:text-blue-400/70">In Pipeline</p>
+          <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+            {stats.active}
+          </p>
+          <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
+            In Pipeline
+          </p>
         </div>
 
-        <div className="rounded-lg border bg-gradient-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
+        <div className="rounded-lg border bg-linear-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
           <div className="flex items-center justify-between mb-1.5">
             <div className="rounded-md bg-amber-500/10 p-1.5">
               <Users className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             </div>
-            <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Interview</span>
+            <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+              Interview
+            </span>
           </div>
-          <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{stats.interviewing}</p>
-          <p className="text-xs text-amber-600/70 dark:text-amber-400/70">Stage</p>
+          <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+            {stats.interviewing}
+          </p>
+          <p className="text-xs text-amber-600/70 dark:text-amber-400/70">
+            Stage
+          </p>
         </div>
 
-        <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
+        <div className="rounded-lg border bg-linear-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
           <div className="flex items-center justify-between mb-1.5">
             <div className="rounded-md bg-green-500/10 p-1.5">
               <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
             </div>
-            <span className="text-xs font-medium text-green-700 dark:text-green-400">Hired</span>
+            <span className="text-xs font-medium text-green-700 dark:text-green-400">
+              Hired
+            </span>
           </div>
-          <p className="text-xl font-bold text-green-600 dark:text-green-400">{stats.hired}</p>
-          <p className="text-xs text-green-600/70 dark:text-green-400/70">Success</p>
+          <p className="text-xl font-bold text-green-600 dark:text-green-400">
+            {stats.hired}
+          </p>
+          <p className="text-xs text-green-600/70 dark:text-green-400/70">
+            Success
+          </p>
         </div>
 
-        <div className="rounded-lg border bg-gradient-to-br from-red-50 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10 p-3 shadow-sm">
+        <div className="rounded-lg border bg-linear-to-br from-red-50 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10 p-3 shadow-sm">
           <div className="flex items-center justify-between mb-1.5">
             <div className="rounded-md bg-red-500/10 p-1.5">
               <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
             </div>
-            <span className="text-xs font-medium text-red-700 dark:text-red-400">Rejected</span>
+            <span className="text-xs font-medium text-red-700 dark:text-red-400">
+              Rejected
+            </span>
           </div>
-          <p className="text-xl font-bold text-red-600 dark:text-red-400">{stats.rejected}</p>
-          <p className="text-xs text-red-600/70 dark:text-red-400/70">Declined</p>
+          <p className="text-xl font-bold text-red-600 dark:text-red-400">
+            {stats.rejected}
+          </p>
+          <p className="text-xs text-red-600/70 dark:text-red-400/70">
+            Declined
+          </p>
         </div>
       </div>
 
@@ -433,23 +543,25 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
       <Tabs defaultValue="pipeline" className="space-y-6">
         <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
           <TabsList className="h-11 p-1 bg-card border border-border w-full md:w-fit inline-flex">
-            <TabsTrigger 
-              value="pipeline" 
+            <TabsTrigger
+              value="pipeline"
               className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground text-xs md:text-sm"
             >
               <BarChart3 className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Pipeline</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="candidates" 
+            <TabsTrigger
+              value="candidates"
               className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground text-xs md:text-sm"
             >
               <Users className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Candidates</span>
-              <span className="ml-1.5 text-xs">({sortedCandidates.length})</span>
+              <span className="ml-1.5 text-xs">
+                ({sortedCandidates.length})
+              </span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="details" 
+            <TabsTrigger
+              value="details"
               className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground text-xs md:text-sm"
             >
               <FileText className="h-4 w-4 sm:mr-2" />
@@ -467,9 +579,12 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                 </div>
                 <h3 className="text-lg font-semibold">Pipeline Management</h3>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Use the dedicated Pipeline page to manage candidates through your hiring stages with drag & drop functionality.
+                  Use the dedicated Pipeline page to manage candidates through
+                  your hiring stages with drag & drop functionality.
                 </p>
-                <Button onClick={() => navigate(`/dashboard/jobs/pipeline/${job.id}`)}>
+                <Button
+                  onClick={() => navigate(`/dashboard/jobs/pipeline/${job.id}`)}
+                >
                   Go to Pipeline
                 </Button>
               </div>
@@ -484,12 +599,13 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                 <div>
                   <CardTitle className="text-lg">All Candidates</CardTitle>
                   <CardDescription className="text-sm">
-                    Showing {sortedCandidates.length} of {jobCandidates.length} candidates
+                    Showing {sortedCandidates.length} of {jobCandidates.length}{" "}
+                    candidates
                   </CardDescription>
                 </div>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full sm:w-[160px]">
+                    <SelectTrigger className="w-full sm:w-40">
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -498,8 +614,12 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                       <SelectItem value="screening">Screening</SelectItem>
                       <SelectItem value="interviewing">Interviewing</SelectItem>
                       <SelectItem value="testing">Testing</SelectItem>
-                      <SelectItem value="reference_check">Reference Check</SelectItem>
-                      <SelectItem value="offer_extended">Offer Extended</SelectItem>
+                      <SelectItem value="reference_check">
+                        Reference Check
+                      </SelectItem>
+                      <SelectItem value="offer_extended">
+                        Offer Extended
+                      </SelectItem>
                       <SelectItem value="hired">Hired</SelectItem>
                       <SelectItem value="rejected">Rejected</SelectItem>
                       <SelectItem value="withdrawn">Withdrawn</SelectItem>
@@ -524,14 +644,17 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                 <div className="text-center py-12">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-sm text-muted-foreground">
-                    {statusFilter !== "all" ? "No candidates found with this status" : "No candidates have applied yet"}
+                    {statusFilter !== "all"
+                      ? "No candidates found with this status"
+                      : "No candidates have applied yet"}
                   </p>
                 </div>
               ) : (
                 <div className="grid gap-4">
                   {sortedCandidates.map((candidate) => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const key = (candidate as any)._id || candidate.id || candidate.email;
+                    const key =
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      (candidate as any)._id || candidate.id || candidate.email;
                     return (
                       <CandidateCard
                         key={key}
@@ -571,7 +694,9 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-medium mb-2">Experience Required</h4>
+                  <h4 className="text-sm font-medium mb-2">
+                    Experience Required
+                  </h4>
                   <p className="text-sm text-muted-foreground">
                     {job.requirements?.experience || "Not specified"}
                   </p>
@@ -581,7 +706,11 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                   <h4 className="text-sm font-medium mb-2">Required Skills</h4>
                   <div className="flex flex-wrap gap-2">
                     {job.requirements.skills.required.map((skill, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="text-xs"
+                      >
                         {skill}
                       </Badge>
                     ))}
@@ -591,13 +720,21 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                   <>
                     <Separator />
                     <div>
-                      <h4 className="text-sm font-medium mb-2">Preferred Skills</h4>
+                      <h4 className="text-sm font-medium mb-2">
+                        Preferred Skills
+                      </h4>
                       <div className="flex flex-wrap gap-2">
-                        {job.requirements.skills.preferred.map((skill, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {skill}
-                          </Badge>
-                        ))}
+                        {job.requirements.skills.preferred.map(
+                          (skill, index) => (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {skill}
+                            </Badge>
+                          )
+                        )}
                       </div>
                     </div>
                   </>
@@ -611,20 +748,25 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                 <CardTitle>Additional Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {job.salaryRange && job.salaryRange.min && job.salaryRange.max && (
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-md bg-purple-500/10 p-2">
-                      <DollarSign className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                {job.salaryRange &&
+                  job.salaryRange.min &&
+                  job.salaryRange.max && (
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-md bg-purple-500/10 p-2">
+                        <DollarSign className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Salary Range</p>
+                        <p className="text-sm text-muted-foreground">
+                          {job.salaryRange.currency || "USD"}{" "}
+                          {job.salaryRange.min.toLocaleString()} -{" "}
+                          {job.salaryRange.max.toLocaleString()}
+                          {job.salaryRange.period &&
+                            ` / ${job.salaryRange.period}`}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Salary Range</p>
-                      <p className="text-sm text-muted-foreground">
-                        {job.salaryRange.currency || 'USD'} {job.salaryRange.min.toLocaleString()} - {job.salaryRange.max.toLocaleString()}
-                        {job.salaryRange.period && ` / ${job.salaryRange.period}`}
-                      </p>
-                    </div>
-                  </div>
-                )}
+                  )}
                 {job.location && (
                   <div className="flex items-start gap-3">
                     <div className="rounded-md bg-blue-500/10 p-2">
@@ -633,9 +775,11 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                     <div className="flex-1">
                       <p className="text-sm font-medium">Location</p>
                       <p className="text-sm text-muted-foreground">
-                        {typeof job.location === 'string'
+                        {typeof job.location === "string"
                           ? job.location
-                          : `${job.location.city || ''}, ${job.location.country || ''}`}
+                          : `${job.location.city || ""}, ${
+                              job.location.country || ""
+                            }`}
                       </p>
                     </div>
                   </div>
@@ -647,7 +791,9 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">Department</p>
-                      <p className="text-sm text-muted-foreground">{job.department}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {job.department}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -657,7 +803,10 @@ export function JobDetails({ job, candidates, clients, clientName, onBack, onCan
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">Priority</p>
-                    <Badge variant="outline" className="text-xs capitalize mt-1">
+                    <Badge
+                      variant="outline"
+                      className="text-xs capitalize mt-1"
+                    >
                       {job.priority}
                     </Badge>
                   </div>

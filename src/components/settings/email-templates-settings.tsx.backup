@@ -210,7 +210,7 @@ export function EmailTemplatesSettings() {
       <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
         <CardContent className="pt-6">
           <div className="flex gap-3">
-            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
             <div className="text-sm text-blue-900 dark:text-blue-100">
               <p className="font-medium mb-1">Email Template Variables</p>
               <p className="text-blue-700 dark:text-blue-300">
@@ -261,7 +261,7 @@ export function EmailTemplatesSettings() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <Mail className="h-4 w-4 text-primary flex-shrink-0" />
+                      <Mail className="h-4 w-4 text-primary shrink-0" />
                       <CardTitle className="text-base truncate">{template.name}</CardTitle>
                       <Badge variant="outline" className="capitalize text-xs">
                         {template.type.replace("_", " ")}
@@ -271,7 +271,7 @@ export function EmailTemplatesSettings() {
                       {template.subject}
                     </CardDescription>
                   </div>
-                  <div className="flex gap-1 flex-shrink-0 ml-2">
+                  <div className="flex gap-1 shrink-0 ml-2">
                     <Button 
                       variant="ghost" 
                       size="sm" 

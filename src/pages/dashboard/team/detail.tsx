@@ -1,29 +1,30 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import { useCandidates } from "@/store/hooks/useCandidates";
+import { useJobs } from "@/store/hooks/useJobs";
+import { useTeam } from "@/store/hooks/useTeam";
+import type { Candidate } from "@/types/candidate";
+import type { Job } from "@/types/job";
 import {
+  Activity,
   ArrowLeft,
+  Briefcase,
+  Calendar,
+  FileText,
   Mail,
   Phone,
-  Calendar,
-  Briefcase,
-  Users,
-  FileText,
-  TrendingUp,
   Shield,
-  Activity,
+  TrendingUp,
+  Users,
 } from "lucide-react";
-import { useTeam } from "@/store/hooks/useTeam";
-import { useJobs } from "@/store/hooks/useJobs";
-import { useCandidates } from "@/store/hooks/useCandidates";
-import { authenticatedFetch } from "@/lib/authenticated-fetch";
-import type { Job } from "@/types/job";
-import type { Candidate } from "@/types/candidate";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 interface Activity {
   _id: string;
@@ -74,13 +75,15 @@ export default function TeamMemberDetailPage() {
   const fetchActivities = useCallback(async (userId: string) => {
     try {
       setIsLoadingActivities(true);
-      const response = await authenticatedFetch(`${API_BASE_URL}/activities/user/${userId}`);
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/activities/user/${userId}`
+      );
       if (response.ok) {
         const result = await response.json();
         setActivities(result.data || []);
       }
     } catch (error) {
-      console.error('Failed to fetch activities:', error);
+      console.error("Failed to fetch activities:", error);
     } finally {
       setIsLoadingActivities(false);
     }
@@ -93,58 +96,73 @@ export default function TeamMemberDetailPage() {
     }
     fetchJobs();
     fetchCandidates();
-  }, [memberId, fetchTeamMemberById, fetchActivities, fetchJobs, fetchCandidates]);
+  }, [
+    memberId,
+    fetchTeamMemberById,
+    fetchActivities,
+    fetchJobs,
+    fetchCandidates,
+  ]);
 
   // Stable callback for handling refetch events
   const handleRefetch = useCallback(() => {
-    console.log('🔔 Team detail page: Received refetchCandidates event!');
-    console.log('🔔 Team detail page: memberId:', memberId);
+    console.log("🔔 Team detail page: Received refetchCandidates event!");
+    console.log("🔔 Team detail page: memberId:", memberId);
     if (memberId) {
-      console.log('🔔 Team detail page: Fetching team member data...');
+      console.log("🔔 Team detail page: Fetching team member data...");
       fetchTeamMemberById(memberId);
       fetchActivities(memberId);
     }
-    console.log('🔔 Team detail page: Fetching all candidates...');
+    console.log("🔔 Team detail page: Fetching all candidates...");
     fetchCandidates();
   }, [memberId, fetchTeamMemberById, fetchActivities, fetchCandidates]);
 
   // Listen for refetchCandidates event (triggered when candidate is assigned)
   useEffect(() => {
-    console.log('👂 Team detail page: Adding event listener for refetchCandidates');
-    window.addEventListener('refetchCandidates', handleRefetch);
+    console.log(
+      "👂 Team detail page: Adding event listener for refetchCandidates"
+    );
+    window.addEventListener("refetchCandidates", handleRefetch);
     return () => {
-      console.log('🚫 Team detail page: Removing event listener for refetchCandidates');
-      window.removeEventListener('refetchCandidates', handleRefetch);
+      console.log(
+        "🚫 Team detail page: Removing event listener for refetchCandidates"
+      );
+      window.removeEventListener("refetchCandidates", handleRefetch);
     };
   }, [handleRefetch]);
 
   const formatActivityAction = (action: string): string => {
     const actionMap: Record<string, string> = {
-      login: 'Logged in',
-      logout: 'Logged out',
-      reviewed_candidate: 'Reviewed candidate',
-      updated_job: 'Updated job',
-      created_job: 'Created job',
-      sent_email: 'Sent email',
-      reviewed_application: 'Reviewed application',
-      updated_candidate: 'Updated candidate',
-      created_candidate: 'Created candidate',
-      completed_interview: 'Completed interview',
-      scheduled_interview: 'Scheduled interview',
-      created_zoom_meeting: 'Created Zoom meeting',
+      login: "Logged in",
+      logout: "Logged out",
+      reviewed_candidate: "Reviewed candidate",
+      updated_job: "Updated job",
+      created_job: "Created job",
+      sent_email: "Sent email",
+      reviewed_application: "Reviewed application",
+      updated_candidate: "Updated candidate",
+      created_candidate: "Created candidate",
+      completed_interview: "Completed interview",
+      scheduled_interview: "Scheduled interview",
+      created_zoom_meeting: "Created Zoom meeting",
     };
-    return actionMap[action] || action.replace(/_/g, ' ');
+    return actionMap[action] || action.replace(/_/g, " ");
   };
 
   const formatTimeAgo = (date: string): string => {
     const now = new Date();
     const activityDate = new Date(date);
-    const diffInSeconds = Math.floor((now.getTime() - activityDate.getTime()) / 1000);
+    const diffInSeconds = Math.floor(
+      (now.getTime() - activityDate.getTime()) / 1000
+    );
 
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600)
+      return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800)
+      return `${Math.floor(diffInSeconds / 86400)} days ago`;
     return activityDate.toLocaleDateString();
   };
 
@@ -201,28 +219,39 @@ export default function TeamMemberDetailPage() {
     );
   }
 
-  const assignedJobs = jobs.filter((job: Job) => job.assignedRecruiterId === currentMember.id);
-  
+  const assignedJobs = jobs.filter(
+    (job: Job) => job.assignedRecruiterId === currentMember.id
+  );
+
   // assignedTo references User ID (currentMember.userId), not TeamMember ID (currentMember.id)
   // assignedTo can be either a string (User ID) or a populated user object
   const userIdToMatch = currentMember.userId || currentMember.id;
   const assignedCandidates = candidates.filter((candidate: Candidate) => {
-    if (typeof candidate.assignedTo === 'string') {
+    if (typeof candidate.assignedTo === "string") {
       // assignedTo is a User ID string
       return candidate.assignedTo === userIdToMatch;
-    } else if (candidate.assignedTo && typeof candidate.assignedTo === 'object') {
+    } else if (
+      candidate.assignedTo &&
+      typeof candidate.assignedTo === "object"
+    ) {
       // assignedTo is a populated User object - check both id and _id fields
-      return candidate.assignedTo.id === userIdToMatch || candidate.assignedTo._id === userIdToMatch;
+      return (
+        candidate.assignedTo.id === userIdToMatch ||
+        candidate.assignedTo._id === userIdToMatch
+      );
     }
     return false;
   });
 
-  console.log('Team detail - currentMember.id:', currentMember.id);
-  console.log('Team detail - currentMember.userId:', currentMember.userId);
-  console.log('Team detail - userIdToMatch:', userIdToMatch);
-  console.log('Team detail - Total candidates:', candidates.length);
-  console.log('Team detail - Assigned candidates:', assignedCandidates.length);
-  console.log('Team detail - Sample candidate assignedTo values:', candidates.slice(0, 3).map(c => ({ id: c.id, assignedTo: c.assignedTo })));
+  console.log("Team detail - currentMember.id:", currentMember.id);
+  console.log("Team detail - currentMember.userId:", currentMember.userId);
+  console.log("Team detail - userIdToMatch:", userIdToMatch);
+  console.log("Team detail - Total candidates:", candidates.length);
+  console.log("Team detail - Assigned candidates:", assignedCandidates.length);
+  console.log(
+    "Team detail - Sample candidate assignedTo values:",
+    candidates.slice(0, 3).map((c) => ({ id: c.id, assignedTo: c.assignedTo }))
+  );
 
   return (
     <div className="flex flex-1 flex-col">
@@ -240,7 +269,9 @@ export default function TeamMemberDetailPage() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div className="flex-1 min-w-0">
-                <h2 className="text-xl md:text-2xl font-bold">Team Member Details</h2>
+                <h2 className="text-xl md:text-2xl font-bold">
+                  Team Member Details
+                </h2>
                 <p className="text-xs md:text-sm text-muted-foreground">
                   View and manage team member information
                 </p>
@@ -253,16 +284,26 @@ export default function TeamMemberDetailPage() {
                 <div className="flex flex-col md:flex-row gap-4 md:gap-6">
                   <div className="flex flex-col items-center md:items-start">
                     <Avatar className="h-20 w-20 md:h-24 md:w-24 mb-3 md:mb-4">
-                      {currentMember.avatar && !currentMember.avatar.includes('dicebear.com') && !currentMember.avatar.includes('api.dicebear') && (
-                        <AvatarImage src={currentMember.avatar} alt={`${currentMember.firstName} ${currentMember.lastName}`} />
-                      )}
+                      {currentMember.avatar &&
+                        !currentMember.avatar.includes("dicebear.com") &&
+                        !currentMember.avatar.includes("api.dicebear") && (
+                          <AvatarImage
+                            src={currentMember.avatar}
+                            alt={`${currentMember.firstName} ${currentMember.lastName}`}
+                          />
+                        )}
                       <AvatarFallback className="text-xl md:text-2xl">
-                        {getInitials(currentMember.firstName, currentMember.lastName)}
+                        {getInitials(
+                          currentMember.firstName,
+                          currentMember.lastName
+                        )}
                       </AvatarFallback>
                     </Avatar>
                     <Badge
                       variant="outline"
-                      className={`${getRoleBadgeColor(currentMember.role)} text-xs md:text-sm`}
+                      className={`${getRoleBadgeColor(
+                        currentMember.role
+                      )} text-xs md:text-sm`}
                     >
                       {formatRoleName(currentMember.role)}
                     </Badge>
@@ -301,13 +342,17 @@ export default function TeamMemberDetailPage() {
                       )}
                       <div className="flex items-center gap-2 text-xs md:text-sm">
                         <Briefcase className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
-                        <span className="truncate">{currentMember.department}</span>
+                        <span className="truncate">
+                          {currentMember.department}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-xs md:text-sm">
                         <Calendar className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
                         <span>
                           Joined{" "}
-                          {new Date(currentMember.createdAt).toLocaleDateString()}
+                          {new Date(
+                            currentMember.createdAt
+                          ).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
@@ -317,7 +362,11 @@ export default function TeamMemberDetailPage() {
                         <Activity className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
                         <span className="text-xs md:text-sm text-muted-foreground">
                           Last active:{" "}
-                          {currentMember.lastLoginAt ? new Date(currentMember.lastLoginAt).toLocaleString() : "Never"}
+                          {currentMember.lastLoginAt
+                            ? new Date(
+                                currentMember.lastLoginAt
+                              ).toLocaleString()
+                            : "Never"}
                         </span>
                       </div>
                       <Badge
@@ -346,7 +395,9 @@ export default function TeamMemberDetailPage() {
                   <div className="text-xl md:text-2xl font-bold">
                     {currentMember.statistics?.activeJobs || 0}
                   </div>
-                  <p className="text-[10px] md:text-xs text-muted-foreground">Active Jobs</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">
+                    Active Jobs
+                  </p>
                 </CardContent>
               </Card>
 
@@ -386,7 +437,9 @@ export default function TeamMemberDetailPage() {
                   <div className="text-xl md:text-2xl font-bold">
                     {currentMember.statistics?.emailsSent || 0}
                   </div>
-                  <p className="text-[10px] md:text-xs text-muted-foreground">Emails Sent</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">
+                    Emails Sent
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -403,7 +456,7 @@ export default function TeamMemberDetailPage() {
                 <CardContent className="p-4 md:p-6 pt-0">
                   <div className="space-y-2 md:space-y-3">
                     {Object.entries(currentMember.permissions)
-                      .filter(([key]) => key !== '_id' && key !== 'id')
+                      .filter(([key]) => key !== "_id" && key !== "id")
                       .map(([key, value]) => (
                         <div
                           key={key}
@@ -426,8 +479,7 @@ export default function TeamMemberDetailPage() {
                             {value ? "Allowed" : "Denied"}
                           </Badge>
                         </div>
-                      )
-                    )}
+                      ))}
                   </div>
                 </CardContent>
               </Card>
@@ -454,15 +506,14 @@ export default function TeamMemberDetailPage() {
                           <div className="flex-1 min-w-0">
                             <p className="font-medium truncate">{job.title}</p>
                             <p className="text-sm text-muted-foreground">
-                              {typeof job.location === 'string'
+                              {typeof job.location === "string"
                                 ? job.location
-                                : `${job.location?.city || ''}, ${job.location?.country || ''}`}
+                                : `${job.location?.city || ""}, ${
+                                    job.location?.country || ""
+                                  }`}
                             </p>
                           </div>
-                          <Badge
-                            variant="outline"
-                            className="ml-2 flex-shrink-0"
-                          >
+                          <Badge variant="outline" className="ml-2 shrink-0">
                             {job.status}
                           </Badge>
                         </div>
@@ -498,9 +549,14 @@ export default function TeamMemberDetailPage() {
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <Avatar className="h-10 w-10">
-                            {candidate.avatar && !candidate.avatar.includes('dicebear.com') && !candidate.avatar.includes('api.dicebear') && (
-                              <AvatarImage src={candidate.avatar} alt={`${candidate.firstName} ${candidate.lastName}`} />
-                            )}
+                            {candidate.avatar &&
+                              !candidate.avatar.includes("dicebear.com") &&
+                              !candidate.avatar.includes("api.dicebear") && (
+                                <AvatarImage
+                                  src={candidate.avatar}
+                                  alt={`${candidate.firstName} ${candidate.lastName}`}
+                                />
+                              )}
                             <AvatarFallback>
                               {getInitials(
                                 candidate.firstName,
@@ -517,24 +573,37 @@ export default function TeamMemberDetailPage() {
                             </p>
                             <p className="text-sm text-muted-foreground truncate">
                               {/* eslint-disable @typescript-eslint/no-explicit-any */}
-                              {candidate.jobIds && candidate.jobIds.length > 0 ? (
+                              {candidate.jobIds &&
+                              candidate.jobIds.length > 0 ? (
                                 <>
-                                  {typeof candidate.jobIds[0] === 'object' && (candidate.jobIds[0] as any).title 
-                                    ? (candidate.jobIds[0] as any).title 
-                                    : 'No job'}
-                                  {typeof candidate.jobIds[0] === 'object' && (candidate.jobIds[0] as any).clientId && 
-                                   typeof (candidate.jobIds[0] as any).clientId === 'object' && (candidate.jobIds[0] as any).clientId.companyName && (
-                                    <> • {(candidate.jobIds[0] as any).clientId.companyName}</>
-                                  )}
+                                  {typeof candidate.jobIds[0] === "object" &&
+                                  (candidate.jobIds[0] as any).title
+                                    ? (candidate.jobIds[0] as any).title
+                                    : "No job"}
+                                  {typeof candidate.jobIds[0] === "object" &&
+                                    (candidate.jobIds[0] as any).clientId &&
+                                    typeof (candidate.jobIds[0] as any)
+                                      .clientId === "object" &&
+                                    (candidate.jobIds[0] as any).clientId
+                                      .companyName && (
+                                      <>
+                                        {" "}
+                                        •{" "}
+                                        {
+                                          (candidate.jobIds[0] as any).clientId
+                                            .companyName
+                                        }
+                                      </>
+                                    )}
                                 </>
                               ) : (
-                                'No job assigned'
+                                "No job assigned"
                               )}
                               {/* eslint-enable @typescript-eslint/no-explicit-any */}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           <Badge variant="outline">
                             {candidate.status || "Active"}
                           </Badge>
@@ -562,7 +631,9 @@ export default function TeamMemberDetailPage() {
                 {isLoadingActivities ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="text-sm text-muted-foreground mt-2">Loading activities...</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Loading activities...
+                    </p>
                   </div>
                 ) : activities.length > 0 ? (
                   <div className="space-y-4">
@@ -571,7 +642,7 @@ export default function TeamMemberDetailPage() {
                         key={activity._id}
                         className="flex items-start gap-4 pb-4 border-b last:border-0"
                       >
-                        <div className="h-2 w-2 rounded-full bg-primary mt-2 flex-shrink-0" />
+                        <div className="h-2 w-2 rounded-full bg-primary mt-2 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium">
                             {formatActivityAction(activity.action)}
@@ -595,7 +666,8 @@ export default function TeamMemberDetailPage() {
                       No recent activity
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Activities will appear here as the user interacts with the system
+                      Activities will appear here as the user interacts with the
+                      system
                     </p>
                   </div>
                 )}

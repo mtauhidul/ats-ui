@@ -31,28 +31,31 @@ export default function CandidatesPage() {
     return () => window.removeEventListener('refetchCandidates', handleRefetch);
   }, [fetchCandidates]);
 
-  // Refetch candidates when window regains focus (for real-time sync)
-  useEffect(() => {
-    const handleFocus = () => {
-      console.log('Window focused, refetching candidates for real-time sync...');
-      fetchCandidates();
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [fetchCandidates]);
+  // DISABLED: Excessive refetching causes performance issues and API spam
+  // Only refetch on user action (delete, update) or manual page refresh
+  // 
+  // // Refetch candidates when window regains focus (for real-time sync)
+  // useEffect(() => {
+  //   const handleFocus = () => {
+  //     console.log('Window focused, refetching candidates for real-time sync...');
+  //     fetchCandidates();
+  //   };
+  //   
+  //   window.addEventListener('focus', handleFocus);
+  //   return () => window.removeEventListener('focus', handleFocus);
+  // }, [fetchCandidates]);
 
-  // Poll for updates every 30 seconds when tab is visible
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        console.log('Polling for candidate updates...');
-        fetchCandidates();
-      }
-    }, 30000); // 30 seconds
+  // // Poll for updates every 30 seconds when tab is visible
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     if (document.visibilityState === 'visible') {
+  //       console.log('Polling for candidate updates...');
+  //       fetchCandidates();
+  //     }
+  //   }, 30000); // 30 seconds
 
-    return () => clearInterval(interval);
-  }, [fetchCandidates]);
+  //   return () => clearInterval(interval);
+  // }, [fetchCandidates]);
   
   const handleDeleteCandidate = async (candidateId: string) => {
     try {

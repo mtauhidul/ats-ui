@@ -34,15 +34,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Copy, Edit, Info, Mail, Plus, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
 import {
-  getEmailTemplates,
   createEmailTemplate,
-  updateEmailTemplate,
   deleteEmailTemplate as deleteEmailTemplateAPI,
+  getEmailTemplates,
+  updateEmailTemplate,
 } from "@/services/emailTemplate.service";
+import { Copy, Edit, Info, Mail, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface EmailTemplate {
   id?: string;
@@ -50,7 +50,13 @@ interface EmailTemplate {
   name: string;
   subject: string;
   body: string;
-  type: "interview" | "offer" | "rejection" | "follow_up" | "application_received" | "general";
+  type:
+    | "interview"
+    | "offer"
+    | "rejection"
+    | "follow_up"
+    | "application_received"
+    | "general";
   variables: string[];
   isDefault?: boolean;
   isActive?: boolean;
@@ -172,7 +178,7 @@ export function EmailTemplatesSettings() {
           toast.error("Invalid template ID");
           return;
         }
-        
+
         await deleteEmailTemplateAPI(templateId);
         toast.success("Template deleted successfully");
         await loadTemplates();
@@ -199,7 +205,7 @@ export function EmailTemplatesSettings() {
           toast.error("Invalid template ID");
           return;
         }
-        
+
         await updateEmailTemplate(templateId, formData);
         toast.success("Template updated successfully");
       } else {
@@ -255,7 +261,10 @@ export function EmailTemplatesSettings() {
               <p className="font-medium mb-1">Email Template Variables</p>
               <p className="text-blue-700 dark:text-blue-300">
                 Use variables like{" "}
-                <Badge variant="secondary" className="mx-1 text-[10px] md:text-xs">
+                <Badge
+                  variant="secondary"
+                  className="mx-1 text-[10px] md:text-xs"
+                >
                   {"{{firstName}}"}
                 </Badge>{" "}
                 in your templates. They will be automatically replaced with
@@ -268,12 +277,17 @@ export function EmailTemplatesSettings() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
         <div className="min-w-0">
-          <h3 className="text-base md:text-lg font-semibold">Email Templates</h3>
+          <h3 className="text-base md:text-lg font-semibold">
+            Email Templates
+          </h3>
           <p className="text-xs md:text-sm text-muted-foreground">
             Create and manage reusable email templates with dynamic variables
           </p>
         </div>
-        <Button onClick={handleAdd} className="w-full sm:w-auto shrink-0 h-9 md:h-10 text-sm">
+        <Button
+          onClick={handleAdd}
+          className="w-full sm:w-auto shrink-0 h-9 md:h-10 text-sm"
+        >
           <Plus className="h-3 w-3 md:h-4 md:w-4 mr-2" />
           Add Template
         </Button>
@@ -287,7 +301,9 @@ export function EmailTemplatesSettings() {
                 <div className="w-10 h-10 md:w-12 md:h-12 bg-muted rounded-full flex items-center justify-center mx-auto">
                   <Mail className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground animate-pulse" />
                 </div>
-                <p className="text-xs md:text-sm text-muted-foreground">Loading templates...</p>
+                <p className="text-xs md:text-sm text-muted-foreground">
+                  Loading templates...
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -298,7 +314,9 @@ export function EmailTemplatesSettings() {
                 <div className="w-10 h-10 md:w-12 md:h-12 bg-muted rounded-full flex items-center justify-center mx-auto">
                   <Mail className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
                 </div>
-                <h3 className="text-base md:text-lg font-semibold">No Templates Yet</h3>
+                <h3 className="text-base md:text-lg font-semibold">
+                  No Templates Yet
+                </h3>
                 <p className="text-xs md:text-sm text-muted-foreground max-w-md mx-auto">
                   Create your first email template to streamline candidate
                   communication
@@ -324,7 +342,10 @@ export function EmailTemplatesSettings() {
                       <CardTitle className="text-sm md:text-base truncate break-all">
                         {template.name}
                       </CardTitle>
-                      <Badge variant="outline" className="capitalize text-[10px] md:text-xs shrink-0 whitespace-nowrap">
+                      <Badge
+                        variant="outline"
+                        className="capitalize text-[10px] md:text-xs shrink-0 whitespace-nowrap"
+                      >
                         {template.type.replace("_", " ")}
                       </Badge>
                     </div>
@@ -365,7 +386,7 @@ export function EmailTemplatesSettings() {
               </CardHeader>
               <CardContent className="p-3 md:p-6 pt-0">
                 <div className="space-y-2 md:space-y-3">
-                  <p className="text-xs md:text-sm text-muted-foreground line-clamp-3 break-words overflow-hidden">
+                  <p className="text-xs md:text-sm text-muted-foreground line-clamp-3 wrap-break-word overflow-hidden">
                     {template.body}
                   </p>
                   {template.variables.length > 0 && (
@@ -384,13 +405,17 @@ export function EmailTemplatesSettings() {
                   <div className="flex items-center gap-2 md:gap-4 text-[10px] md:text-xs text-muted-foreground pt-1.5 md:pt-2 border-t flex-wrap overflow-hidden">
                     {template.createdAt && (
                       <span className="shrink-0">
-                        Created: {new Date(template.createdAt).toLocaleDateString()}
+                        Created:{" "}
+                        {new Date(template.createdAt).toLocaleDateString()}
                       </span>
                     )}
-                    {template.createdAt && template.updatedAt && <span className="hidden sm:inline shrink-0">•</span>}
+                    {template.createdAt && template.updatedAt && (
+                      <span className="hidden sm:inline shrink-0">•</span>
+                    )}
                     {template.updatedAt && (
                       <span className="shrink-0">
-                        Updated: {new Date(template.updatedAt).toLocaleDateString()}
+                        Updated:{" "}
+                        {new Date(template.updatedAt).toLocaleDateString()}
                       </span>
                     )}
                   </div>
@@ -455,12 +480,19 @@ export function EmailTemplatesSettings() {
                       })
                     }
                   >
-                    <SelectTrigger id="type" className="h-9 md:h-10 text-xs md:text-sm">
+                    <SelectTrigger
+                      id="type"
+                      className="h-9 md:h-10 text-xs md:text-sm"
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {templateTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value} className="text-xs md:text-sm">
+                        <SelectItem
+                          key={type.value}
+                          value={type.value}
+                          className="text-xs md:text-sm"
+                        >
                           {type.label}
                         </SelectItem>
                       ))}
@@ -506,7 +538,9 @@ export function EmailTemplatesSettings() {
               {/* Variables Section - Simplified */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <Label className="text-xs md:text-sm">Available Variables</Label>
+                  <Label className="text-xs md:text-sm">
+                    Available Variables
+                  </Label>
                   <Button
                     type="button"
                     variant="ghost"
@@ -515,7 +549,9 @@ export function EmailTemplatesSettings() {
                     className="h-6 md:h-7 text-[10px] md:text-xs px-2"
                   >
                     <Plus className="h-2.5 w-2.5 md:h-3 md:w-3 mr-1" />
-                    <span className="hidden sm:inline">Add Custom Variable</span>
+                    <span className="hidden sm:inline">
+                      Add Custom Variable
+                    </span>
                     <span className="sm:hidden">Custom</span>
                   </Button>
                 </div>
@@ -526,11 +562,11 @@ export function EmailTemplatesSettings() {
                     How to use variables:
                   </p>
                   <ul className="list-disc list-inside space-y-0.5 ml-1">
-                    <li className="break-words">
+                    <li className="wrap-break-word">
                       Click any variable button below to insert it at your
                       cursor position
                     </li>
-                    <li className="break-words">
+                    <li className="wrap-break-word">
                       Variables like{" "}
                       <code className="bg-background px-1 py-0.5 rounded text-primary text-[9px] md:text-[10px]">
                         {"{{firstName}}"}
@@ -609,7 +645,10 @@ export function EmailTemplatesSettings() {
             >
               Cancel
             </Button>
-            <Button onClick={handleSave} className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm">
+            <Button
+              onClick={handleSave}
+              className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm"
+            >
               {editingTemplate ? "Update Template" : "Create Template"}
             </Button>
           </DialogFooter>
@@ -623,14 +662,18 @@ export function EmailTemplatesSettings() {
       >
         <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-base md:text-lg">Delete Email Template?</AlertDialogTitle>
+            <AlertDialogTitle className="text-base md:text-lg">
+              Delete Email Template?
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-xs md:text-sm">
               Are you sure you want to delete "{deleteTemplate?.name}"? This
               action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
-            <AlertDialogCancel className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm bg-destructive text-destructive-foreground hover:bg-destructive/90"

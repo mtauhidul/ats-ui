@@ -372,7 +372,9 @@ export function ClientDetails({
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <h1 className="text-xl md:text-2xl font-bold mb-1">{client.companyName}</h1>
+            <h1 className="text-xl md:text-2xl font-bold mb-1">
+              {client.companyName}
+            </h1>
             <p className="text-sm text-muted-foreground mb-2">
               {client.description || "No description available"}
             </p>
@@ -401,7 +403,7 @@ export function ClientDetails({
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mt-6">
-          <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100/20 dark:from-blue-950/20 dark:to-blue-900/10 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-blue-50 to-blue-100/20 dark:from-blue-950/20 dark:to-blue-900/10 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-blue-500/10 p-1.5">
                 <FolderOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -418,7 +420,7 @@ export function ClientDetails({
               / {client.statistics.draftJobs}D
             </p>
           </div>
-          <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-green-500/10 p-1.5">
                 <Briefcase className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -441,7 +443,7 @@ export function ClientDetails({
               % of total
             </p>
           </div>
-          <div className="rounded-lg border bg-gradient-to-br from-purple-50 to-purple-100/20 dark:from-purple-950/20 dark:to-purple-900/10 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-purple-50 to-purple-100/20 dark:from-purple-950/20 dark:to-purple-900/10 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-purple-500/10 p-1.5">
                 <UsersIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -457,7 +459,7 @@ export function ClientDetails({
               {client.statistics.activeCandidates} active
             </p>
           </div>
-          <div className="rounded-lg border bg-gradient-to-br from-cyan-50 to-cyan-100/20 dark:from-cyan-950/20 dark:to-cyan-900/10 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-cyan-50 to-cyan-100/20 dark:from-cyan-950/20 dark:to-cyan-900/10 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-cyan-500/10 p-1.5">
                 <UsersIcon className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
@@ -473,7 +475,7 @@ export function ClientDetails({
               In pipeline
             </p>
           </div>
-          <div className="rounded-lg border bg-gradient-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-amber-500/10 p-1.5">
                 <UserCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -496,7 +498,7 @@ export function ClientDetails({
               % success rate
             </p>
           </div>
-          <div className="rounded-lg border bg-gradient-to-br from-red-50 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-red-50 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-red-500/10 p-1.5">
                 <UserCheck className="h-4 w-4 text-red-600 dark:text-red-400" />
@@ -526,42 +528,54 @@ export function ClientDetails({
             <TabsList className="h-11 p-1 bg-card border border-border w-full md:w-fit inline-flex">
               <TabsTrigger
                 value="overview"
-                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
               >
                 <Building2 className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Overview</span>
               </TabsTrigger>
               <TabsTrigger
                 value="jobs"
-                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
               >
                 <Briefcase className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Jobs ({clientJobs.length})</span>
+                <span className="hidden sm:inline">
+                  Jobs ({clientJobs.length})
+                </span>
                 <span className="sm:hidden">({clientJobs.length})</span>
               </TabsTrigger>
               <TabsTrigger
                 value="contacts"
-                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
               >
                 <UsersIcon className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Contacts ({client.contacts.length})</span>
+                <span className="hidden sm:inline">
+                  Contacts ({client.contacts.length})
+                </span>
                 <span className="sm:hidden">({client.contacts.length})</span>
               </TabsTrigger>
               <TabsTrigger
                 value="communications"
-                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
               >
                 <MessageSquare className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Communications ({client.communicationNotes?.length || 0})</span>
-                <span className="sm:hidden">({client.communicationNotes?.length || 0})</span>
+                <span className="hidden sm:inline">
+                  Communications ({client.communicationNotes?.length || 0})
+                </span>
+                <span className="sm:hidden">
+                  ({client.communicationNotes?.length || 0})
+                </span>
               </TabsTrigger>
               <TabsTrigger
                 value="activity"
-                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
+                className="flex-1 md:flex-initial px-3 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap text-xs md:text-sm"
               >
                 <Activity className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Activity ({client.activityHistory?.length || 0})</span>
-                <span className="sm:hidden">({client.activityHistory?.length || 0})</span>
+                <span className="hidden sm:inline">
+                  Activity ({client.activityHistory?.length || 0})
+                </span>
+                <span className="sm:hidden">
+                  ({client.activityHistory?.length || 0})
+                </span>
               </TabsTrigger>
             </TabsList>
           </div>

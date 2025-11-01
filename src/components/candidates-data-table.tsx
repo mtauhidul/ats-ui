@@ -69,9 +69,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { useCandidates, useTeam } from "@/store/hooks/index";
 import type { schema } from "./data-table-schema.tsx";
-import { useTeam } from "@/store/hooks/index";
-import { useCandidates } from "@/store/hooks/index";
 
 // Table cell viewer component for candidate name - decorated like applications table
 function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
@@ -110,15 +109,19 @@ function AssignedSelector({
   const { teamMembers, fetchTeam } = useTeam();
   const { updateCandidate } = useCandidates();
 
-  // Fetch team members on mount
+  // Fetch team members only once on initial mount (not on every render)
+  const hasFetchedRef = React.useRef(false);
   React.useEffect(() => {
-    fetchTeam();
-  }, [fetchTeam]);
+    if (!hasFetchedRef.current && teamMembers.length === 0) {
+      fetchTeam();
+      hasFetchedRef.current = true;
+    }
+  }, [fetchTeam, teamMembers.length]);
 
   // Debug: Log team members
   React.useEffect(() => {
-    console.log('AssignedSelector - Team members:', teamMembers);
-    console.log('AssignedSelector - Team members count:', teamMembers.length);
+    console.log("AssignedSelector - Team members:", teamMembers);
+    console.log("AssignedSelector - Team members count:", teamMembers.length);
   }, [teamMembers]);
 
   // Update selected member when initialAssignee changes (e.g., after data refresh)
@@ -131,35 +134,43 @@ function AssignedSelector({
       // Handle unassign
       const previousAssignee = selectedMember;
       setSelectedMember(null);
-      
+
       try {
         await updateCandidate(candidateId.toString(), { assignedTo: null });
         onUpdate?.(); // Trigger parent refresh
         toast.success("Team member unassigned");
       } catch (error) {
-        console.error('Failed to unassign candidate:', error);
-        toast.error('Failed to unassign team member');
+        console.error("Failed to unassign candidate:", error);
+        toast.error("Failed to unassign team member");
         setSelectedMember(previousAssignee);
       }
     } else {
       // Find the team member by ID (value is the member ID)
-      const member = teamMembers.find(m => m.id === value);
+      const member = teamMembers.find((m) => m.id === value);
       if (member) {
-        const memberName = `${member.firstName} ${member.lastName}`.trim() || member.email;
+        const memberName =
+          `${member.firstName} ${member.lastName}`.trim() || member.email;
         setSelectedMember(memberName);
-        
+
         try {
           // Use userId (the actual user's ID), not id (the team member document ID)
           const userIdToAssign = member.userId || member.id;
-          console.log('🔵 Assigning candidate:', candidateId, 'to user:', userIdToAssign);
-          console.log('🔵 Member object:', member);
-          await updateCandidate(candidateId.toString(), { assignedTo: userIdToAssign });
-          console.log('✅ Assignment successful');
+          console.log(
+            "🔵 Assigning candidate:",
+            candidateId,
+            "to user:",
+            userIdToAssign
+          );
+          console.log("🔵 Member object:", member);
+          await updateCandidate(candidateId.toString(), {
+            assignedTo: userIdToAssign,
+          });
+          console.log("✅ Assignment successful");
           onUpdate?.(); // Trigger parent refresh
           toast.success(`Assigned ${memberName} to candidate`);
         } catch (error) {
-          console.error('Failed to assign candidate:', error);
-          toast.error('Failed to assign team member');
+          console.error("Failed to assign candidate:", error);
+          toast.error("Failed to assign team member");
           setSelectedMember(initialAssignee || null);
         }
       }
@@ -170,7 +181,7 @@ function AssignedSelector({
   const currentValue = React.useMemo(() => {
     if (!selectedMember) return "unassigned";
     // Find member ID by name
-    const member = teamMembers.find(m => {
+    const member = teamMembers.find((m) => {
       const name = `${m.firstName} ${m.lastName}`.trim() || m.email;
       return name === selectedMember;
     });
@@ -198,7 +209,8 @@ function AssignedSelector({
             </div>
           ) : (
             teamMembers.map((member) => {
-              const memberName = `${member.firstName} ${member.lastName}`.trim() || member.email;
+              const memberName =
+                `${member.firstName} ${member.lastName}`.trim() || member.email;
               return (
                 <SelectItem
                   key={member.id}
@@ -324,14 +336,14 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       return (
         <div className="min-w-[200px] max-w-[200px]">
           <div className="group flex items-center">
-            <span className="text-xs font-mono font-semibold text-foreground bg-muted pr-2 py-1 rounded">
+            <span className="text-xs font-mono font-semibold text-foreground pr-2 py-1 rounded">
               {jobId}
             </span>
             {jobId !== "N/A" && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                 onClick={handleCopy}
               >
                 <IconCopy className="h-3 w-3" />
@@ -422,10 +434,14 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     ),
     cell: ({ row }) => {
       // currentStage can be either a string or an object { id, name, color, order }
-      const currentStage = row.original.currentStage as string | { name?: string } | undefined;
-      const stageName = typeof currentStage === 'string' 
-        ? currentStage 
-        : currentStage?.name || "Not Started";
+      const currentStage = row.original.currentStage as
+        | string
+        | { name?: string }
+        | undefined;
+      const stageName =
+        typeof currentStage === "string"
+          ? currentStage
+          : currentStage?.name || "Not Started";
 
       // Define stage colors
       const getStageColor = (stage: string) => {
@@ -495,7 +511,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       return (
         <div className="min-w-[150px] max-w-[150px] flex items-center gap-1">
           {clientLogo && (
-            <Avatar className="size-6 rounded flex-shrink-0">
+            <Avatar className="size-6 rounded shrink-0">
               <AvatarImage src={clientLogo} alt={clientName} />
               <AvatarFallback className="text-xs rounded">
                 {clientName.substring(0, 2).toUpperCase()}
@@ -516,26 +532,43 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     header: "Assigned",
     cell: ({ row }) => {
       // Get assignedTo - can be a string (ID) or populated object
-      const assignedTo = row.original.assignedTo as string | { id?: string; _id?: string; firstName?: string; lastName?: string; email?: string } | null | undefined;
+      const assignedTo = row.original.assignedTo as
+        | string
+        | {
+            id?: string;
+            _id?: string;
+            firstName?: string;
+            lastName?: string;
+            email?: string;
+          }
+        | null
+        | undefined;
       let assignedName: string | null = null;
-      
+
       if (assignedTo) {
-        if (typeof assignedTo === 'object') {
+        if (typeof assignedTo === "object") {
           // Populated user object
-          assignedName = `${assignedTo.firstName || ''} ${assignedTo.lastName || ''}`.trim() || assignedTo.email || null;
+          assignedName =
+            `${assignedTo.firstName || ""} ${
+              assignedTo.lastName || ""
+            }`.trim() ||
+            assignedTo.email ||
+            null;
         }
       }
-      
+
       return (
-        <div className="min-w-[160px] max-w-[160px]">
+        <div className="min-w-40 max-w-40">
           <AssignedSelector
             candidateId={row.original.id}
             initialAssignee={assignedName}
             onUpdate={() => {
               // Trigger a refetch of candidates when assignment changes
               // This will be handled by the parent component
-              console.log('📢 CandidatesDataTable: Dispatching refetchCandidates event');
-              window.dispatchEvent(new CustomEvent('refetchCandidates'));
+              console.log(
+                "📢 CandidatesDataTable: Dispatching refetchCandidates event"
+              );
+              window.dispatchEvent(new CustomEvent("refetchCandidates"));
             }}
           />
         </div>
@@ -848,7 +881,7 @@ export function CandidatesDataTable({
       <div className="flex flex-col gap-4 px-4 lg:px-6">
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="rounded-lg border bg-gradient-to-br from-card to-muted/20 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-card to-muted/20 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-primary/10 p-1.5">
                 <IconUsers className="h-4 w-4 text-primary" />
@@ -860,7 +893,7 @@ export function CandidatesDataTable({
             <p className="text-xl font-bold">{totalCandidates}</p>
             <p className="text-xs text-muted-foreground">Candidates</p>
           </div>
-          <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-green-500/10 p-1.5">
                 <IconUserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -879,7 +912,7 @@ export function CandidatesDataTable({
               % of total
             </p>
           </div>
-          <div className="rounded-lg border bg-gradient-to-br from-red-50 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-red-50 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-red-500/10 p-1.5">
                 <IconUserX className="h-4 w-4 text-red-600 dark:text-red-400" />
@@ -898,7 +931,7 @@ export function CandidatesDataTable({
               % of total
             </p>
           </div>
-          <div className="rounded-lg border bg-gradient-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-amber-500/10 p-1.5">
                 <IconClockHour4 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -1119,7 +1152,9 @@ export function CandidatesDataTable({
                   Status (A → Z)
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => setSorting([{ id: "jobIdDisplay", desc: false }])}
+                  onClick={() =>
+                    setSorting([{ id: "jobIdDisplay", desc: false }])
+                  }
                 >
                   Job ID (A → Z)
                 </DropdownMenuItem>

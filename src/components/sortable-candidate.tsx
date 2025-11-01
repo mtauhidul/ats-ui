@@ -1,7 +1,7 @@
+import type { Candidate } from "@/types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
-import type { Candidate } from "@/types";
 
 interface SortableCandidateProps {
   candidate: Candidate;
@@ -36,7 +36,7 @@ export function SortableCandidate({ candidate }: SortableCandidateProps) {
       <div className="flex items-center gap-3 min-w-0">
         {/* Drag Handle */}
         <button
-          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground flex-shrink-0"
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0"
           {...listeners}
         >
           <GripVertical className="h-4 w-4" />
@@ -53,7 +53,7 @@ export function SortableCandidate({ candidate }: SortableCandidateProps) {
         </div>
 
         {/* Date */}
-        <div className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+        <div className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
           {new Date(candidate.createdAt).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
@@ -69,14 +69,14 @@ export function CandidateCard({ candidate }: SortableCandidateProps) {
   return (
     <div className="bg-card border border-border rounded-lg px-3 py-2.5 shadow-xl ring-2 ring-primary w-80">
       <div className="flex items-center gap-3 min-w-0">
-        <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+        <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
         <div className="font-medium text-sm text-card-foreground truncate min-w-0 flex-1">
           {candidate.firstName} {candidate.lastName}
         </div>
         <div className="text-xs text-muted-foreground truncate min-w-0 flex-shrink max-w-[120px]">
           {candidate.email}
         </div>
-        <div className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+        <div className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
           {new Date(candidate.createdAt).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",

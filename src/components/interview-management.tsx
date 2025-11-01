@@ -1,24 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  Calendar,
-  Clock,
-  Video,
-  Users,
-  Plus,
-  X,
-  Phone,
-  FileText,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  ArrowLeft,
-  Loader2,
-  Copy,
-  ExternalLink,
-  Star,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -30,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -39,13 +19,34 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import { useTeam } from "@/store/hooks/useTeam";
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
-import { useTeam } from "@/store/hooks/useTeam";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Copy,
+  ExternalLink,
+  FileText,
+  Loader2,
+  Phone,
+  Plus,
+  Star,
+  Users,
+  Video,
+  X,
+  XCircle,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 interface Interview {
   _id?: string;
@@ -64,21 +65,32 @@ interface Interview {
   meetingLink?: string;
   meetingId?: string;
   meetingPassword?: string;
-  interviewerIds: Array<string | {
-    id?: string;
-    _id?: string;
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-  }>;
-  organizerId?: string | {
-    id?: string;
-    _id?: string;
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-  };
-  status: "scheduled" | "confirmed" | "in-progress" | "completed" | "cancelled" | "no-show";
+  interviewerIds: Array<
+    | string
+    | {
+        id?: string;
+        _id?: string;
+        firstName?: string;
+        lastName?: string;
+        email?: string;
+      }
+  >;
+  organizerId?:
+    | string
+    | {
+        id?: string;
+        _id?: string;
+        firstName?: string;
+        lastName?: string;
+        email?: string;
+      };
+  status:
+    | "scheduled"
+    | "confirmed"
+    | "in-progress"
+    | "completed"
+    | "cancelled"
+    | "no-show";
   feedback?: Array<{
     interviewerId: string;
     rating: number;
@@ -104,31 +116,50 @@ const interviewTypeConfig = {
   phone: { label: "Phone Interview", icon: Phone, color: "text-blue-500" },
   video: { label: "Video Interview", icon: Video, color: "text-purple-500" },
   "in-person": { label: "In-Person", icon: Users, color: "text-green-500" },
-  technical: { label: "Technical Round", icon: FileText, color: "text-orange-500" },
+  technical: {
+    label: "Technical Round",
+    icon: FileText,
+    color: "text-orange-500",
+  },
   hr: { label: "HR Round", icon: Users, color: "text-teal-500" },
-  final: { label: "Final Round", icon: CheckCircle2, color: "text-emerald-500" },
+  final: {
+    label: "Final Round",
+    icon: CheckCircle2,
+    color: "text-emerald-500",
+  },
 };
 
 const statusConfig = {
   scheduled: { label: "Scheduled", color: "bg-blue-500", icon: Clock },
   confirmed: { label: "Confirmed", color: "bg-indigo-500", icon: CheckCircle2 },
-  "in-progress": { label: "In Progress", color: "bg-yellow-500", icon: AlertCircle },
+  "in-progress": {
+    label: "In Progress",
+    color: "bg-yellow-500",
+    icon: AlertCircle,
+  },
   completed: { label: "Completed", color: "bg-green-500", icon: CheckCircle2 },
   cancelled: { label: "Cancelled", color: "bg-gray-500", icon: XCircle },
   "no-show": { label: "No Show", color: "bg-red-500", icon: AlertCircle },
 };
 
-export function InterviewManagement({ candidate, job, clientName, onBack }: InterviewManagementProps) {
+export function InterviewManagement({
+  candidate,
+  job,
+  clientName,
+  onBack,
+}: InterviewManagementProps) {
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
+  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(
+    null
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isCreatingZoom, setIsCreatingZoom] = useState(false);
-  
+
   const { teamMembers, fetchTeam } = useTeam();
-  
+
   const [formData, setFormData] = useState({
     title: "",
     type: "video" as Interview["type"],
@@ -144,7 +175,8 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
 
   // State for complete & review dialog
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
-  const [reviewingInterview, setReviewingInterview] = useState<Interview | null>(null);
+  const [reviewingInterview, setReviewingInterview] =
+    useState<Interview | null>(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewData, setReviewData] = useState({
     rating: 5,
@@ -154,10 +186,12 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
     weaknesses: "",
   });
 
-  // Fetch team members
+  // OPTIMIZED: Only fetch team if not already loaded
   useEffect(() => {
-    fetchTeam();
-  }, [fetchTeam]);
+    if (teamMembers.length === 0) {
+      fetchTeam();
+    }
+  }, [fetchTeam, teamMembers.length]);
 
   // Fetch interviews for this candidate and job
   const fetchInterviews = useCallback(async () => {
@@ -166,20 +200,20 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
       const response = await authenticatedFetch(
         `${API_BASE_URL}/interviews?candidateId=${candidate.id}&jobId=${job.id}`
       );
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch interviews");
       }
-      
+
       const result = await response.json();
       const interviewsData = result.data?.interviews || result.data || [];
-      
+
       // Normalize IDs
       const normalizedInterviews = interviewsData.map((int: Interview) => ({
         ...int,
         id: int.id || int._id,
       }));
-      
+
       setInterviews(normalizedInterviews);
     } catch (error) {
       console.error("Failed to fetch interviews:", error);
@@ -206,10 +240,12 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
 
     try {
       setIsSaving(true);
-      
+
       // Combine date and time
-      const scheduledAt = new Date(`${formData.scheduledDate}T${formData.scheduledTime}`);
-      
+      const scheduledAt = new Date(
+        `${formData.scheduledDate}T${formData.scheduledTime}`
+      );
+
       const interviewData = {
         candidateId: candidate.id,
         jobId: job.id,
@@ -237,13 +273,15 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
 
       await response.json();
       toast.success("Interview scheduled and email sent to candidate!");
-      
+
       setIsAddDialogOpen(false);
       resetForm();
       fetchInterviews();
     } catch (error: unknown) {
       console.error("Failed to schedule interview:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to schedule interview");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to schedule interview"
+      );
     } finally {
       setIsSaving(false);
     }
@@ -252,10 +290,10 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
   const handleCreateInstantZoomMeeting = async () => {
     try {
       setIsCreatingInstantZoom(true);
-      
+
       const now = new Date();
       const startTime = new Date(now.getTime() + 5 * 60000);
-      
+
       const interviewData = {
         candidateId: candidate.id,
         jobId: job.id,
@@ -279,17 +317,23 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create instant meeting");
+        throw new Error(
+          errorData.message || "Failed to create instant meeting"
+        );
       }
 
       await response.json();
       toast.success("Instant Zoom meeting created and link sent to candidate!");
-      
+
       setIsInstantZoomDialogOpen(false);
       fetchInterviews();
     } catch (error: unknown) {
       console.error("Failed to create instant meeting:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create instant meeting");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to create instant meeting"
+      );
     } finally {
       setIsCreatingInstantZoom(false);
     }
@@ -303,9 +347,11 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
 
     try {
       setIsCreatingZoom(true);
-      
+
       const response = await authenticatedFetch(
-        `${API_BASE_URL}/interviews/${interview.id || interview._id}/zoom-meeting`,
+        `${API_BASE_URL}/interviews/${
+          interview.id || interview._id
+        }/zoom-meeting`,
         {
           method: "POST",
         }
@@ -318,11 +364,13 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
 
       await response.json();
       toast.success("Zoom meeting created successfully!");
-      
+
       fetchInterviews();
     } catch (error: unknown) {
       console.error("Failed to create Zoom meeting:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create Zoom meeting");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create Zoom meeting"
+      );
     } finally {
       setIsCreatingZoom(false);
     }
@@ -379,7 +427,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
 
       // Submit review and mark interview as completed
       const response = await authenticatedFetch(
-        `${API_BASE_URL}/interviews/${reviewingInterview.id || reviewingInterview._id}/complete`,
+        `${API_BASE_URL}/interviews/${
+          reviewingInterview.id || reviewingInterview._id
+        }/complete`,
         {
           method: "POST",
           body: JSON.stringify({
@@ -405,7 +455,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
       fetchInterviews();
     } catch (error: unknown) {
       console.error("Failed to submit review:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to submit review");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit review"
+      );
     } finally {
       setIsSubmittingReview(false);
     }
@@ -443,64 +495,102 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
     toast.success("Copied to clipboard");
   };
 
-  const getInterviewerName = (interviewer: string | { firstName?: string; lastName?: string; email?: string }) => {
+  const getInterviewerName = (
+    interviewer:
+      | string
+      | { firstName?: string; lastName?: string; email?: string }
+  ) => {
     if (typeof interviewer === "string") return "Interviewer";
-    return `${interviewer.firstName || ""} ${interviewer.lastName || ""}`.trim() || interviewer.email || "Interviewer";
+    return (
+      `${interviewer.firstName || ""} ${interviewer.lastName || ""}`.trim() ||
+      interviewer.email ||
+      "Interviewer"
+    );
   };
 
   return (
     <div className="flex flex-1 flex-col">
       {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center justify-between px-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={onBack}>
-              <ArrowLeft className="h-5 w-5" />
+      <div className="border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+        <div className="flex flex-col sm:flex-row h-auto sm:h-16 items-start sm:items-center justify-between px-3 md:px-6 py-3 sm:py-0 gap-3 sm:gap-0">
+          <div className="flex items-center gap-2 md:gap-4 min-w-0 w-full sm:w-auto">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 md:h-10 md:w-10 shrink-0"
+              onClick={onBack}
+            >
+              <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
             </Button>
-            <div>
-              <h1 className="text-lg font-semibold">Interview Management</h1>
-              <p className="text-sm text-muted-foreground">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base md:text-lg font-semibold truncate">
+                Interview Management
+              </h1>
+              <p className="text-xs md:text-sm text-muted-foreground truncate">
                 {candidate.firstName} {candidate.lastName} • {job.title}
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => setIsInstantZoomDialogOpen(true)} variant="outline">
-              <Video className="h-4 w-4 mr-2" />
-              Instant Zoom Meeting
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              onClick={() => setIsInstantZoomDialogOpen(true)}
+              variant="outline"
+              className="flex-1 sm:flex-initial h-8 md:h-10 text-xs md:text-sm"
+            >
+              <Video className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">Instant Zoom Meeting</span>
+              <span className="md:hidden">Zoom</span>
             </Button>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Schedule Interview
+            <Button
+              onClick={() => setIsAddDialogOpen(true)}
+              className="flex-1 sm:flex-initial h-8 md:h-10 text-xs md:text-sm"
+            >
+              <Plus className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden sm:inline">Schedule Interview</span>
+              <span className="sm:hidden">Schedule</span>
             </Button>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-6">
-        <div className="mx-auto max-w-6xl space-y-6">
+      <div className="flex-1 overflow-auto p-3 md:p-6">
+        <div className="mx-auto max-w-6xl space-y-4 md:space-y-6">
           {/* Candidate & Job Info */}
           <Card>
             <CardHeader>
-              <CardTitle>Interview Details</CardTitle>
+              <CardTitle className="text-base md:text-lg">
+                Interview Details
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-4 md:gap-6 sm:grid-cols-2">
                 <div>
-                  <Label className="text-muted-foreground">Candidate</Label>
-                  <p className="text-lg font-medium">
+                  <Label className="text-xs md:text-sm text-muted-foreground">
+                    Candidate
+                  </Label>
+                  <p className="text-base md:text-lg font-medium break-word">
                     {candidate.firstName} {candidate.lastName}
                   </p>
-                  <p className="text-sm text-muted-foreground">{candidate.email}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground break-all">
+                    {candidate.email}
+                  </p>
                   {candidate.phone && (
-                    <p className="text-sm text-muted-foreground">{candidate.phone}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      {candidate.phone}
+                    </p>
                   )}
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Position</Label>
-                  <p className="text-lg font-medium">{job.title}</p>
-                  <p className="text-sm text-muted-foreground">{clientName}</p>
+                  <Label className="text-xs md:text-sm text-muted-foreground">
+                    Position
+                  </Label>
+                  <p className="text-base md:text-lg font-medium break-word">
+                    {job.title}
+                  </p>
+                  <p className="text-xs md:text-sm text-muted-foreground break-word">
+                    {clientName}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -508,25 +598,30 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
 
           {/* Interviews List */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-8 md:py-12">
+              <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-muted-foreground" />
             </div>
           ) : interviews.length === 0 ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium mb-2">No interviews scheduled</p>
-                <p className="text-sm text-muted-foreground mb-4">
+              <CardContent className="flex flex-col items-center justify-center py-8 md:py-12">
+                <Calendar className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mb-3 md:mb-4" />
+                <p className="text-base md:text-lg font-medium mb-2">
+                  No interviews scheduled
+                </p>
+                <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4 text-center px-4">
                   Schedule your first interview to get started
                 </p>
-                <Button onClick={() => setIsAddDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button
+                  onClick={() => setIsAddDialogOpen(true)}
+                  className="h-8 md:h-10 text-xs md:text-sm"
+                >
+                  <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                   Schedule Interview
                 </Button>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {interviews.map((interview) => {
                 const typeConfig = interviewTypeConfig[interview.type];
                 const statusConf = statusConfig[interview.status];
@@ -535,85 +630,122 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                 const dateTime = formatDateTime(interview.scheduledAt);
 
                 return (
-                  <Card key={interview.id || interview._id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className={`p-2 rounded-lg bg-muted ${typeConfig.color}`}>
-                              <TypeIcon className="h-5 w-5" />
+                  <Card
+                    key={interview.id || interview._id}
+                    className="hover:shadow-md transition-shadow"
+                  >
+                    <CardContent className="p-3 md:p-6">
+                      <div className="flex flex-col lg:flex-row items-start justify-between gap-3 lg:gap-4">
+                        <div className="flex-1 w-full min-w-0">
+                          <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
+                            <div
+                              className={`p-1.5 md:p-2 rounded-lg bg-muted ${typeConfig.color} shrink-0`}
+                            >
+                              <TypeIcon className="h-4 w-4 md:h-5 md:w-5" />
                             </div>
-                            <div>
-                              <h3 className="font-semibold text-lg">{interview.title}</h3>
-                              <p className="text-sm text-muted-foreground">Round {interview.round}</p>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-semibold text-sm md:text-lg truncate">
+                                {interview.title}
+                              </h3>
+                              <p className="text-xs md:text-sm text-muted-foreground">
+                                Round {interview.round}
+                              </p>
                             </div>
                           </div>
 
-                          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 mt-4">
-                            <div className="flex items-center gap-2 text-sm">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span>{dateTime.date}</span>
+                          <div className="grid gap-2 md:gap-3 grid-cols-2 lg:grid-cols-4 mt-3 md:mt-4">
+                            <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm min-w-0">
+                              <Calendar className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground shrink-0" />
+                              <span className="truncate">{dateTime.date}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span>{dateTime.time}</span>
+                            <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm min-w-0">
+                              <Clock className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground shrink-0" />
+                              <span className="truncate">{dateTime.time}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span>{interview.duration} minutes</span>
+                            <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm min-w-0">
+                              <Clock className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground shrink-0" />
+                              <span className="truncate">
+                                {interview.duration} min
+                              </span>
                             </div>
-                            <Badge className={`${statusConf.color} text-white w-fit`}>
-                              <StatusIcon className="h-3 w-3 mr-1" />
+                            <Badge
+                              className={`${statusConf.color} text-white w-fit text-[10px] md:text-xs`}
+                            >
+                              <StatusIcon className="h-2.5 w-2.5 md:h-3 md:w-3 mr-1" />
                               {statusConf.label}
                             </Badge>
                           </div>
 
                           {interview.description && (
-                            <p className="text-sm text-muted-foreground mt-3">
+                            <p className="text-xs md:text-sm text-muted-foreground mt-2 md:mt-3 line-clamp-2">
                               {interview.description}
                             </p>
                           )}
 
-                          {interview.interviewerIds && interview.interviewerIds.length > 0 && (
-                            <div className="mt-3">
-                              <Label className="text-xs text-muted-foreground">Interviewers:</Label>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {interview.interviewerIds.map((interviewer, idx) => (
-                                  <Badge key={idx} variant="outline">
-                                    {getInterviewerName(interviewer)}
-                                  </Badge>
-                                ))}
+                          {interview.interviewerIds &&
+                            interview.interviewerIds.length > 0 && (
+                              <div className="mt-2 md:mt-3">
+                                <Label className="text-[10px] md:text-xs text-muted-foreground">
+                                  Interviewers:
+                                </Label>
+                                <div className="flex flex-wrap gap-1.5 md:gap-2 mt-1">
+                                  {interview.interviewerIds.map(
+                                    (interviewer, idx) => (
+                                      <Badge
+                                        key={idx}
+                                        variant="outline"
+                                        className="text-[10px] md:text-xs"
+                                      >
+                                        {getInterviewerName(interviewer)}
+                                      </Badge>
+                                    )
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
 
                           {interview.meetingLink && (
-                            <div className="mt-4 p-3 bg-muted rounded-lg">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Video className="h-4 w-4 text-purple-500" />
-                                  <span className="text-sm font-medium">Zoom Meeting</span>
+                            <div className="mt-3 md:mt-4 p-2 md:p-3 bg-muted rounded-lg">
+                              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 md:gap-2">
+                                  <Video className="h-3 w-3 md:h-4 md:w-4 text-purple-500 shrink-0" />
+                                  <span className="text-xs md:text-sm font-medium">
+                                    Zoom Meeting
+                                  </span>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-1.5 md:gap-2 w-full sm:w-auto">
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => copyToClipboard(interview.meetingLink!)}
+                                    className="flex-1 sm:flex-initial h-7 md:h-8 text-[10px] md:text-xs"
+                                    onClick={() =>
+                                      copyToClipboard(interview.meetingLink!)
+                                    }
                                   >
-                                    <Copy className="h-3 w-3 mr-1" />
-                                    Copy Link
+                                    <Copy className="h-2.5 w-2.5 md:h-3 md:w-3 md:mr-1" />
+                                    <span className="hidden md:inline">
+                                      Copy Link
+                                    </span>
                                   </Button>
                                   <Button
                                     size="sm"
-                                    onClick={() => window.open(interview.meetingLink, "_blank")}
+                                    className="flex-1 sm:flex-initial h-7 md:h-8 text-[10px] md:text-xs"
+                                    onClick={() =>
+                                      window.open(
+                                        interview.meetingLink,
+                                        "_blank"
+                                      )
+                                    }
                                   >
-                                    <ExternalLink className="h-3 w-3 mr-1" />
-                                    Join
+                                    <ExternalLink className="h-2.5 w-2.5 md:h-3 md:w-3 md:mr-1" />
+                                    <span className="hidden md:inline">
+                                      Join
+                                    </span>
                                   </Button>
                                 </div>
                               </div>
                               {interview.meetingPassword && (
-                                <div className="mt-2 text-xs text-muted-foreground">
+                                <div className="mt-1.5 md:mt-2 text-[10px] md:text-xs text-muted-foreground">
                                   Password: {interview.meetingPassword}
                                 </div>
                               )}
@@ -621,25 +753,35 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                           )}
                         </div>
 
-                        <div className="flex gap-2 ml-4">
-                          {!interview.meetingLink && interview.type === "video" && interview.status === "scheduled" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleAddZoomToInterview(interview)}
-                              disabled={isCreatingZoom}
-                            >
-                              {isCreatingZoom ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Video className="h-4 w-4 mr-1" />
-                              )}
-                              Create Zoom
-                            </Button>
-                          )}
+                        <div className="flex flex-row lg:flex-col gap-2 w-full lg:w-auto lg:ml-4">
+                          {!interview.meetingLink &&
+                            interview.type === "video" &&
+                            interview.status === "scheduled" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 lg:flex-initial h-7 md:h-8 text-[10px] md:text-xs"
+                                onClick={() =>
+                                  handleAddZoomToInterview(interview)
+                                }
+                                disabled={isCreatingZoom}
+                              >
+                                {isCreatingZoom ? (
+                                  <Loader2 className="h-3 w-3 md:h-4 md:w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Video className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                                    <span className="hidden md:inline">
+                                      Create Zoom
+                                    </span>
+                                  </>
+                                )}
+                              </Button>
+                            )}
                           <Button
                             size="sm"
                             variant="outline"
+                            className="flex-1 lg:flex-initial h-7 md:h-8 text-[10px] md:text-xs whitespace-nowrap"
                             onClick={() => {
                               setSelectedInterview(interview);
                               setIsDetailDialogOpen(true);
@@ -651,19 +793,28 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                             <>
                               <Button
                                 size="sm"
-                                variant="default"
-                                onClick={() => handleOpenReviewDialog(interview)}
-                                className="bg-green-600 hover:bg-green-700"
+                                className="flex-1 lg:flex-initial h-7 md:h-8 text-[10px] md:text-xs bg-green-600 hover:bg-green-700 whitespace-nowrap"
+                                onClick={() =>
+                                  handleOpenReviewDialog(interview)
+                                }
                               >
-                                <CheckCircle2 className="h-4 w-4 mr-1" />
-                                Complete & Review
+                                <CheckCircle2 className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                                <span className="hidden md:inline">
+                                  Complete & Review
+                                </span>
+                                <span className="md:hidden">Complete</span>
                               </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleCancelInterview(interview.id || interview._id!)}
+                                className="h-7 md:h-8 px-2 md:px-3"
+                                onClick={() =>
+                                  handleCancelInterview(
+                                    interview.id || interview._id!
+                                  )
+                                }
                               >
-                                <X className="h-4 w-4" />
+                                <X className="h-3 w-3 md:h-4 md:w-4" />
                               </Button>
                             </>
                           )}
@@ -680,98 +831,154 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
 
       {/* Add Interview Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4 md:p-6">
           <DialogHeader>
-            <DialogTitle>Schedule Interview</DialogTitle>
-            <DialogDescription>
-              Schedule a new interview for {candidate.firstName} {candidate.lastName}
+            <DialogTitle className="text-base md:text-lg">
+              Schedule Interview
+            </DialogTitle>
+            <DialogDescription className="text-xs md:text-sm">
+              Schedule a new interview for {candidate.firstName}{" "}
+              {candidate.lastName}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="title">Interview Title *</Label>
+          <div className="space-y-3 md:space-y-4 py-3 md:py-4">
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="title" className="text-xs md:text-sm">
+                Interview Title *
+              </Label>
               <Input
                 id="title"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
                 placeholder="e.g., Initial Phone Screen"
+                className="h-9 md:h-10 text-xs md:text-sm"
               />
             </div>
 
-            <div>
-              <Label htmlFor="type">Interview Type *</Label>
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="type" className="text-xs md:text-sm">
+                Interview Type *
+              </Label>
               <Select
                 value={formData.type}
-                onValueChange={(value: string) => setFormData({ ...formData, type: value as Interview["type"] })}
+                onValueChange={(value: string) =>
+                  setFormData({ ...formData, type: value as Interview["type"] })
+                }
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-9 md:h-10 text-xs md:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="phone">Phone Interview</SelectItem>
-                  <SelectItem value="video">Video Interview</SelectItem>
-                  <SelectItem value="in-person">In-Person</SelectItem>
-                  <SelectItem value="technical">Technical Round</SelectItem>
-                  <SelectItem value="hr">HR Round</SelectItem>
-                  <SelectItem value="final">Final Round</SelectItem>
+                  <SelectItem value="phone" className="text-xs md:text-sm">
+                    Phone Interview
+                  </SelectItem>
+                  <SelectItem value="video" className="text-xs md:text-sm">
+                    Video Interview
+                  </SelectItem>
+                  <SelectItem value="in-person" className="text-xs md:text-sm">
+                    In-Person
+                  </SelectItem>
+                  <SelectItem value="technical" className="text-xs md:text-sm">
+                    Technical Round
+                  </SelectItem>
+                  <SelectItem value="hr" className="text-xs md:text-sm">
+                    HR Round
+                  </SelectItem>
+                  <SelectItem value="final" className="text-xs md:text-sm">
+                    Final Round
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="scheduledDate">Date *</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="scheduledDate" className="text-xs md:text-sm">
+                  Date *
+                </Label>
                 <Input
                   id="scheduledDate"
                   type="date"
                   value={formData.scheduledDate}
-                  onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, scheduledDate: e.target.value })
+                  }
                   min={new Date().toISOString().split("T")[0]}
+                  className="h-9 md:h-10 text-xs md:text-sm"
                 />
               </div>
-              <div>
-                <Label htmlFor="scheduledTime">Time *</Label>
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="scheduledTime" className="text-xs md:text-sm">
+                  Time *
+                </Label>
                 <Input
                   id="scheduledTime"
                   type="time"
                   value={formData.scheduledTime}
-                  onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, scheduledTime: e.target.value })
+                  }
+                  className="h-9 md:h-10 text-xs md:text-sm"
                 />
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="duration">Duration (minutes) *</Label>
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="duration" className="text-xs md:text-sm">
+                Duration (minutes) *
+              </Label>
               <Select
                 value={formData.duration.toString()}
-                onValueChange={(value) => setFormData({ ...formData, duration: parseInt(value) })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, duration: parseInt(value) })
+                }
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-9 md:h-10 text-xs md:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="30">30 minutes</SelectItem>
-                  <SelectItem value="45">45 minutes</SelectItem>
-                  <SelectItem value="60">1 hour</SelectItem>
-                  <SelectItem value="90">1.5 hours</SelectItem>
-                  <SelectItem value="120">2 hours</SelectItem>
+                  <SelectItem value="30" className="text-xs md:text-sm">
+                    30 minutes
+                  </SelectItem>
+                  <SelectItem value="45" className="text-xs md:text-sm">
+                    45 minutes
+                  </SelectItem>
+                  <SelectItem value="60" className="text-xs md:text-sm">
+                    1 hour
+                  </SelectItem>
+                  <SelectItem value="90" className="text-xs md:text-sm">
+                    1.5 hours
+                  </SelectItem>
+                  <SelectItem value="120" className="text-xs md:text-sm">
+                    2 hours
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="interviewers">Interviewers *</Label>
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="interviewers" className="text-xs md:text-sm">
+                Interviewers *
+              </Label>
               <Select
                 value={formData.interviewerIds[0] || ""}
-                onValueChange={(value) => setFormData({ ...formData, interviewerIds: [value] })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, interviewerIds: [value] })
+                }
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-9 md:h-10 text-xs md:text-sm">
                   <SelectValue placeholder="Select interviewer" />
                 </SelectTrigger>
                 <SelectContent>
                   {teamMembers.map((member) => (
-                    <SelectItem key={member.id} value={member.userId || member.id}>
+                    <SelectItem
+                      key={member.id}
+                      value={member.userId || member.id}
+                      className="text-xs md:text-sm"
+                    >
                       {member.firstName} {member.lastName} ({member.email})
                     </SelectItem>
                   ))}
@@ -780,14 +987,23 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={isSaving}>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsAddDialogOpen(false)}
+              disabled={isSaving}
+              className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm"
+            >
               Cancel
             </Button>
-            <Button onClick={handleScheduleInterview} disabled={isSaving}>
+            <Button
+              onClick={handleScheduleInterview}
+              disabled={isSaving}
+              className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm"
+            >
               {isSaving ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-3 w-3 md:h-4 md:w-4 mr-2 animate-spin" />
                   Scheduling...
                 </>
               ) : (
@@ -799,54 +1015,71 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
       </Dialog>
 
       {/* Instant Zoom Meeting Dialog */}
-      <Dialog open={isInstantZoomDialogOpen} onOpenChange={setIsInstantZoomDialogOpen}>
-        <DialogContent>
+      <Dialog
+        open={isInstantZoomDialogOpen}
+        onOpenChange={setIsInstantZoomDialogOpen}
+      >
+        <DialogContent className="p-4 md:p-6">
           <DialogHeader>
-            <DialogTitle>Create Instant Zoom Meeting</DialogTitle>
-            <DialogDescription>
-              This will create a Zoom meeting starting in 5 minutes and send the link to the candidate's email.
+            <DialogTitle className="text-base md:text-lg">
+              Create Instant Zoom Meeting
+            </DialogTitle>
+            <DialogDescription className="text-xs md:text-sm">
+              This will create a Zoom meeting starting in 5 minutes and send the
+              link to the candidate's email.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Candidate</Label>
-              <p className="text-sm font-medium">{candidate.firstName} {candidate.lastName}</p>
-              <p className="text-sm text-muted-foreground">{candidate.email}</p>
+          <div className="space-y-3 md:space-y-4 py-3 md:py-4">
+            <div className="space-y-1 md:space-y-2">
+              <Label className="text-xs md:text-sm">Candidate</Label>
+              <p className="text-sm md:text-base font-medium">
+                {candidate.firstName} {candidate.lastName}
+              </p>
+              <p className="text-xs md:text-sm text-muted-foreground break-all">
+                {candidate.email}
+              </p>
             </div>
-            
-            <div className="space-y-2">
-              <Label>Meeting Details</Label>
-              <p className="text-sm text-muted-foreground">
-                • Meeting starts in 5 minutes<br />
-                • Duration: 60 minutes<br />
-                • Type: Video (Zoom)<br />
-                • Email notification will be sent to candidate
+
+            <div className="space-y-1 md:space-y-2">
+              <Label className="text-xs md:text-sm">Meeting Details</Label>
+              <p className="text-xs md:text-sm text-muted-foreground">
+                • Meeting starts in 5 minutes
+                <br />
+                • Duration: 60 minutes
+                <br />
+                • Type: Video (Zoom)
+                <br />• Email notification will be sent to candidate
               </p>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsInstantZoomDialogOpen(false)} 
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsInstantZoomDialogOpen(false)}
               disabled={isCreatingInstantZoom}
+              className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm"
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleCreateInstantZoomMeeting} 
+            <Button
+              onClick={handleCreateInstantZoomMeeting}
               disabled={isCreatingInstantZoom}
+              className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm"
             >
               {isCreatingInstantZoom ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-3 w-3 md:h-4 md:w-4 mr-2 animate-spin" />
                   Creating...
                 </>
               ) : (
                 <>
-                  <Video className="h-4 w-4 mr-2" />
-                  Create Instant Meeting
+                  <Video className="h-3 w-3 md:h-4 md:w-4 mr-2" />
+                  <span className="hidden xs:inline">
+                    Create Instant Meeting
+                  </span>
+                  <span className="inline xs:hidden">Create Meeting</span>
                 </>
               )}
             </Button>
@@ -856,19 +1089,22 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
 
       {/* Complete & Review Dialog */}
       <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4 md:p-6">
           <DialogHeader>
-            <DialogTitle>Complete Interview & Submit Review</DialogTitle>
-            <DialogDescription>
-              Mark this interview as completed and provide your feedback for {candidate.firstName} {candidate.lastName}
+            <DialogTitle className="text-base md:text-lg">
+              Complete Interview & Submit Review
+            </DialogTitle>
+            <DialogDescription className="text-xs md:text-sm">
+              Mark this interview as completed and provide your feedback for{" "}
+              {candidate.firstName} {candidate.lastName}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 md:space-y-4 py-3 md:py-4">
             {/* Rating */}
-            <div>
-              <Label>Overall Rating *</Label>
-              <div className="flex items-center gap-2 mt-2">
+            <div className="space-y-1.5 md:space-y-2">
+              <Label className="text-xs md:text-sm">Overall Rating *</Label>
+              <div className="flex items-center gap-1 md:gap-2">
                 {[1, 2, 3, 4, 5].map((rating) => (
                   <button
                     key={rating}
@@ -877,7 +1113,7 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                     className="focus:outline-none transition-colors"
                   >
                     <Star
-                      className={`h-8 w-8 ${
+                      className={`h-6 w-6 md:h-8 md:w-8 ${
                         rating <= reviewData.rating
                           ? "fill-yellow-400 text-yellow-400"
                           : "text-gray-300"
@@ -885,46 +1121,55 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                     />
                   </button>
                 ))}
-                <span className="ml-2 text-sm text-muted-foreground">
+                <span className="ml-1 md:ml-2 text-xs md:text-sm text-muted-foreground">
                   {reviewData.rating} out of 5
                 </span>
               </div>
             </div>
 
             {/* Recommendation */}
-            <div>
-              <Label htmlFor="recommendation">Recommendation *</Label>
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="recommendation" className="text-xs md:text-sm">
+                Recommendation *
+              </Label>
               <Select
                 value={reviewData.recommendation}
-                onValueChange={(value: string) => 
-                  setReviewData({ ...reviewData, recommendation: value as "hire" | "reject" | "pending" | "hold" })
+                onValueChange={(value: string) =>
+                  setReviewData({
+                    ...reviewData,
+                    recommendation: value as
+                      | "hire"
+                      | "reject"
+                      | "pending"
+                      | "hold",
+                  })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-9 md:h-10 text-xs md:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="hire">
+                  <SelectItem value="hire" className="text-xs md:text-sm">
                     <div className="flex items-center">
-                      <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
+                      <CheckCircle2 className="h-3 w-3 md:h-4 md:w-4 mr-2 text-green-600" />
                       Hire - Strong candidate
                     </div>
                   </SelectItem>
-                  <SelectItem value="hold">
+                  <SelectItem value="hold" className="text-xs md:text-sm">
                     <div className="flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-2 text-yellow-600" />
+                      <AlertCircle className="h-3 w-3 md:h-4 md:w-4 mr-2 text-yellow-600" />
                       Hold - Need more evaluation
                     </div>
                   </SelectItem>
-                  <SelectItem value="reject">
+                  <SelectItem value="reject" className="text-xs md:text-sm">
                     <div className="flex items-center">
-                      <XCircle className="h-4 w-4 mr-2 text-red-600" />
+                      <XCircle className="h-3 w-3 md:h-4 md:w-4 mr-2 text-red-600" />
                       Reject - Not a good fit
                     </div>
                   </SelectItem>
-                  <SelectItem value="pending">
+                  <SelectItem value="pending" className="text-xs md:text-sm">
                     <div className="flex items-center">
-                      <Clock className="h-4 w-4 mr-2 text-gray-600" />
+                      <Clock className="h-3 w-3 md:h-4 md:w-4 mr-2 text-gray-600" />
                       Pending - Undecided
                     </div>
                   </SelectItem>
@@ -933,74 +1178,91 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
             </div>
 
             {/* Feedback */}
-            <div>
-              <Label htmlFor="feedback">Overall Feedback *</Label>
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="feedback" className="text-xs md:text-sm">
+                Overall Feedback *
+              </Label>
               <Textarea
                 id="feedback"
                 value={reviewData.feedback}
-                onChange={(e) => setReviewData({ ...reviewData, feedback: e.target.value })}
+                onChange={(e) =>
+                  setReviewData({ ...reviewData, feedback: e.target.value })
+                }
                 placeholder="Provide detailed feedback about the candidate's performance during the interview..."
                 rows={4}
-                className="mt-1"
+                className="text-xs md:text-sm"
               />
             </div>
 
             {/* Strengths */}
-            <div>
-              <Label htmlFor="strengths">Key Strengths</Label>
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="strengths" className="text-xs md:text-sm">
+                Key Strengths
+              </Label>
               <Textarea
                 id="strengths"
                 value={reviewData.strengths}
-                onChange={(e) => setReviewData({ ...reviewData, strengths: e.target.value })}
+                onChange={(e) =>
+                  setReviewData({ ...reviewData, strengths: e.target.value })
+                }
                 placeholder="What did the candidate excel at? (e.g., technical skills, communication, problem-solving)"
                 rows={3}
-                className="mt-1"
+                className="text-xs md:text-sm"
               />
             </div>
 
             {/* Weaknesses */}
-            <div>
-              <Label htmlFor="weaknesses">Areas for Improvement</Label>
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="weaknesses" className="text-xs md:text-sm">
+                Areas for Improvement
+              </Label>
               <Textarea
                 id="weaknesses"
                 value={reviewData.weaknesses}
-                onChange={(e) => setReviewData({ ...reviewData, weaknesses: e.target.value })}
+                onChange={(e) =>
+                  setReviewData({ ...reviewData, weaknesses: e.target.value })
+                }
                 placeholder="What areas could the candidate improve on?"
                 rows={3}
-                className="mt-1"
+                className="text-xs md:text-sm"
               />
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> This review will be added to the candidate's profile and your interview history.
-                The interview will be marked as completed and can no longer be edited.
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-3 md:p-4">
+              <p className="text-xs md:text-sm text-blue-800 dark:text-blue-200">
+                <strong>Note:</strong> This review will be added to the
+                candidate's profile and your interview history. The interview
+                will be marked as completed and can no longer be edited.
               </p>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsReviewDialogOpen(false)} 
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsReviewDialogOpen(false)}
               disabled={isSubmittingReview}
+              className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm"
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleSubmitReview} 
+            <Button
+              onClick={handleSubmitReview}
               disabled={isSubmittingReview}
-              className="bg-green-600 hover:bg-green-700"
+              className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm bg-green-600 hover:bg-green-700"
             >
               {isSubmittingReview ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-3 w-3 md:h-4 md:w-4 mr-2 animate-spin" />
                   Submitting...
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Complete & Submit Review
+                  <CheckCircle2 className="h-3 w-3 md:h-4 md:w-4 mr-2" />
+                  <span className="hidden xs:inline">
+                    Complete & Submit Review
+                  </span>
+                  <span className="inline xs:hidden">Submit Review</span>
                 </>
               )}
             </Button>
@@ -1010,25 +1272,37 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
 
       {/* Interview Details Dialog */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl p-4 md:p-6">
           {selectedInterview && (
             <>
               <DialogHeader>
-                <DialogTitle>{selectedInterview.title}</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-base md:text-lg">
+                  {selectedInterview.title}
+                </DialogTitle>
+                <DialogDescription className="text-xs md:text-sm">
                   Interview details and information
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3 md:space-y-4 py-3 md:py-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                   <div>
-                    <Label className="text-muted-foreground">Type</Label>
-                    <p className="font-medium">{interviewTypeConfig[selectedInterview.type].label}</p>
+                    <Label className="text-xs md:text-sm text-muted-foreground">
+                      Type
+                    </Label>
+                    <p className="font-medium text-sm md:text-base">
+                      {interviewTypeConfig[selectedInterview.type].label}
+                    </p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Status</Label>
-                    <Badge className={`${statusConfig[selectedInterview.status].color} text-white`}>
+                    <Label className="text-xs md:text-sm text-muted-foreground">
+                      Status
+                    </Label>
+                    <Badge
+                      className={`${
+                        statusConfig[selectedInterview.status].color
+                      } text-white text-[10px] md:text-xs`}
+                    >
                       {statusConfig[selectedInterview.status].label}
                     </Badge>
                   </div>
@@ -1036,40 +1310,58 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
 
                 <Separator />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                   <div>
-                    <Label className="text-muted-foreground">Date & Time</Label>
-                    <p className="font-medium">
+                    <Label className="text-xs md:text-sm text-muted-foreground">
+                      Date & Time
+                    </Label>
+                    <p className="font-medium text-sm md:text-base">
                       {formatDateTime(selectedInterview.scheduledAt).date}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs md:text-sm text-muted-foreground">
                       {formatDateTime(selectedInterview.scheduledAt).time}
                     </p>
                   </div>
                   <div>
-                    <Label className="text-muted-foreground">Duration</Label>
-                    <p className="font-medium">{selectedInterview.duration} minutes</p>
+                    <Label className="text-xs md:text-sm text-muted-foreground">
+                      Duration
+                    </Label>
+                    <p className="font-medium text-sm md:text-base">
+                      {selectedInterview.duration} minutes
+                    </p>
                   </div>
                 </div>
 
                 {selectedInterview.location && (
                   <div>
-                    <Label className="text-muted-foreground">Location</Label>
-                    <p className="font-medium">{selectedInterview.location}</p>
+                    <Label className="text-xs md:text-sm text-muted-foreground">
+                      Location
+                    </Label>
+                    <p className="font-medium text-sm md:text-base break-word">
+                      {selectedInterview.location}
+                    </p>
                   </div>
                 )}
 
                 {selectedInterview.description && (
                   <div>
-                    <Label className="text-muted-foreground">Description</Label>
-                    <p className="text-sm">{selectedInterview.description}</p>
+                    <Label className="text-xs md:text-sm text-muted-foreground">
+                      Description
+                    </Label>
+                    <p className="text-xs md:text-sm">
+                      {selectedInterview.description}
+                    </p>
                   </div>
                 )}
 
                 {selectedInterview.notes && (
                   <div>
-                    <Label className="text-muted-foreground">Internal Notes</Label>
-                    <p className="text-sm text-muted-foreground">{selectedInterview.notes}</p>
+                    <Label className="text-xs md:text-sm text-muted-foreground">
+                      Internal Notes
+                    </Label>
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      {selectedInterview.notes}
+                    </p>
                   </div>
                 )}
 
@@ -1077,19 +1369,24 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                   <>
                     <Separator />
                     <div>
-                      <Label className="text-muted-foreground">Zoom Meeting</Label>
+                      <Label className="text-xs md:text-sm text-muted-foreground">
+                        Zoom Meeting
+                      </Label>
                       <div className="mt-2 space-y-2">
                         <Button
                           variant="outline"
-                          className="w-full"
-                          onClick={() => window.open(selectedInterview.meetingLink, "_blank")}
+                          className="w-full h-9 md:h-10 text-xs md:text-sm"
+                          onClick={() =>
+                            window.open(selectedInterview.meetingLink, "_blank")
+                          }
                         >
-                          <ExternalLink className="h-4 w-4 mr-2" />
+                          <ExternalLink className="h-3 w-3 md:h-4 md:w-4 mr-2" />
                           Join Zoom Meeting
                         </Button>
                         {selectedInterview.meetingPassword && (
-                          <div className="p-2 bg-muted rounded text-sm">
-                            <span className="font-medium">Password:</span> {selectedInterview.meetingPassword}
+                          <div className="p-2 bg-muted rounded text-xs md:text-sm">
+                            <span className="font-medium">Password:</span>{" "}
+                            {selectedInterview.meetingPassword}
                           </div>
                         )}
                       </div>
@@ -1099,7 +1396,12 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
               </div>
 
               <DialogFooter>
-                <Button onClick={() => setIsDetailDialogOpen(false)}>Close</Button>
+                <Button
+                  onClick={() => setIsDetailDialogOpen(false)}
+                  className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm"
+                >
+                  Close
+                </Button>
               </DialogFooter>
             </>
           )}

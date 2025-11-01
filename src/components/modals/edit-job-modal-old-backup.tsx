@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,30 +18,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import type { Client } from "@/types/client";
+import type { Priority } from "@/types/common";
 import type {
-  Job,
-  UpdateJobRequest,
-  JobType,
-  JobStatus,
   ExperienceLevel,
+  Job,
+  JobStatus,
+  JobType,
+  UpdateJobRequest,
   WorkMode,
 } from "@/types/job";
-import type { Priority } from "@/types/common";
-import type { Client } from "@/types/client";
 import {
-  Plus,
-  X,
   Briefcase,
-  ListChecks,
-  FileText,
   Building2,
-  DollarSign,
   Calendar,
-  Users,
+  DollarSign,
+  FileText,
+  ListChecks,
+  Plus,
   Save,
+  Users,
+  X,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface EditJobModalProps {
   open: boolean;
@@ -212,7 +212,7 @@ export function EditJobModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] p-0 flex flex-col gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-primary/5 to-primary/10 flex-shrink-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-primary/5 to-primary/10 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
               <Briefcase className="h-5 w-5 text-primary" />
@@ -226,34 +226,31 @@ export function EditJobModal({
           </div>
         </DialogHeader>
 
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col flex-1 min-h-0"
-        >
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <Tabs
             value={currentTab}
             onValueChange={setCurrentTab}
             className="flex flex-col flex-1 min-h-0"
           >
-            <div className="px-6 pt-4 border-b flex-shrink-0">
+            <div className="px-6 pt-4 border-b shrink-0">
               <TabsList className="h-11 p-1 bg-card border border-border mb-4 w-full md:w-fit">
                 <TabsTrigger
                   value="basic"
-                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground"
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   <span className="text-sm md:text-base">Basic Info</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="requirements"
-                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground"
                 >
                   <ListChecks className="h-4 w-4 mr-2" />
                   <span className="text-sm md:text-base">Requirements</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="details"
-                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground"
+                  className="flex-1 md:flex-initial px-4 md:px-6 data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground"
                 >
                   <DollarSign className="h-4 w-4 mr-2" />
                   <span className="text-sm md:text-base">Details</span>
@@ -271,13 +268,15 @@ export function EditJobModal({
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <Building2 className="h-4 w-4 text-primary" />
-                          <Label className="text-base font-semibold">Client</Label>
+                          <Label className="text-base font-semibold">
+                            Client
+                          </Label>
                         </div>
                         <div className="flex items-center gap-2 h-11 px-3 rounded-md border border-input bg-muted/50">
                           <Building2 className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">
-                            {clients?.find((c) => c.id === job.clientId)?.companyName ||
-                              "Unknown Client"}
+                            {clients?.find((c) => c.id === job.clientId)
+                              ?.companyName || "Unknown Client"}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground">
@@ -314,7 +313,10 @@ export function EditJobModal({
                   {/* Job Title & Description */}
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <Label htmlFor="title" className="text-base font-semibold">
+                      <Label
+                        htmlFor="title"
+                        className="text-base font-semibold"
+                      >
                         Job Title <span className="text-red-500">*</span>
                       </Label>
                       <Input
@@ -325,7 +327,9 @@ export function EditJobModal({
                           if (errors.title) setErrors({ ...errors, title: "" });
                         }}
                         placeholder="e.g., Senior Software Engineer"
-                        className={`h-11 ${errors.title ? "border-red-500" : ""}`}
+                        className={`h-11 ${
+                          errors.title ? "border-red-500" : ""
+                        }`}
                       />
                       {errors.title && (
                         <p className="text-sm text-red-500 flex items-center gap-1">
@@ -335,7 +339,10 @@ export function EditJobModal({
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="description" className="text-base font-semibold">
+                      <Label
+                        htmlFor="description"
+                        className="text-base font-semibold"
+                      >
                         Job Description <span className="text-red-500">*</span>
                       </Label>
                       <textarea
@@ -357,7 +364,8 @@ export function EditJobModal({
                       />
                       {errors.description && (
                         <p className="text-sm text-red-500 flex items-center gap-1">
-                          <span className="text-xs">⚠</span> {errors.description}
+                          <span className="text-xs">⚠</span>{" "}
+                          {errors.description}
                         </p>
                       )}
                     </div>
@@ -390,7 +398,9 @@ export function EditJobModal({
                             <SelectItem value="part_time">Part Time</SelectItem>
                             <SelectItem value="contract">Contract</SelectItem>
                             <SelectItem value="freelance">Freelance</SelectItem>
-                            <SelectItem value="internship">Internship</SelectItem>
+                            <SelectItem value="internship">
+                              Internship
+                            </SelectItem>
                             <SelectItem value="temporary">Temporary</SelectItem>
                           </SelectContent>
                         </Select>
@@ -465,13 +475,16 @@ export function EditJobModal({
                         <Input
                           id="location-city"
                           value={
-                            typeof formData.location === 'string'
+                            typeof formData.location === "string"
                               ? formData.location
-                              : (formData.location?.city || "")
+                              : formData.location?.city || ""
                           }
                           onChange={(e) => {
                             const currentLocation = formData.location;
-                            if (typeof currentLocation === 'string' || !currentLocation) {
+                            if (
+                              typeof currentLocation === "string" ||
+                              !currentLocation
+                            ) {
                               setFormData({
                                 ...formData,
                                 location: { city: e.target.value, country: "" },
@@ -501,13 +514,16 @@ export function EditJobModal({
                         <Input
                           id="location-country"
                           value={
-                            typeof formData.location === 'string'
+                            typeof formData.location === "string"
                               ? ""
-                              : (formData.location?.country || "")
+                              : formData.location?.country || ""
                           }
                           onChange={(e) => {
                             const currentLocation = formData.location;
-                            if (typeof currentLocation === 'string' || !currentLocation) {
+                            if (
+                              typeof currentLocation === "string" ||
+                              !currentLocation
+                            ) {
                               setFormData({
                                 ...formData,
                                 location: { city: "", country: e.target.value },
@@ -616,7 +632,8 @@ export function EditJobModal({
                       htmlFor="experience"
                       className="text-base font-semibold"
                     >
-                      Experience Required <span className="text-red-500">*</span>
+                      Experience Required{" "}
+                      <span className="text-red-500">*</span>
                     </Label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -670,7 +687,8 @@ export function EditJobModal({
 
                     <Card className="border-dashed">
                       <CardContent className="p-4">
-                        {(formData.requirements?.skills?.required?.length || 0) === 0 ? (
+                        {(formData.requirements?.skills?.required?.length ||
+                          0) === 0 ? (
                           <div className="text-center py-8 text-muted-foreground">
                             <ListChecks className="h-8 w-8 mx-auto mb-2 opacity-50" />
                             <p className="text-sm">No skills added yet</p>
@@ -745,9 +763,12 @@ export function EditJobModal({
                         {(formData.responsibilities?.length || 0) === 0 ? (
                           <div className="text-center py-8 text-muted-foreground">
                             <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">No responsibilities added yet</p>
+                            <p className="text-sm">
+                              No responsibilities added yet
+                            </p>
                             <p className="text-xs mt-1">
-                              Click "Add Responsibility" to add key responsibilities
+                              Click "Add Responsibility" to add key
+                              responsibilities
                             </p>
                           </div>
                         ) : (
@@ -775,8 +796,10 @@ export function EditJobModal({
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleRemoveResponsibility(index)}
-                                  className="h-10 w-10 p-0 opacity-50 hover:opacity-100 hover:bg-red-50 hover:text-red-600 flex-shrink-0 mt-1"
+                                  onClick={() =>
+                                    handleRemoveResponsibility(index)
+                                  }
+                                  className="h-10 w-10 p-0 opacity-50 hover:opacity-100 hover:bg-red-50 hover:text-red-600 shrink-0 mt-1"
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
@@ -831,7 +854,8 @@ export function EditJobModal({
                                     max: formData.salaryRange?.max || 0,
                                     currency:
                                       formData.salaryRange?.currency || "USD",
-                                    period: formData.salaryRange?.period || "yearly",
+                                    period:
+                                      formData.salaryRange?.period || "yearly",
                                   },
                                 })
                               }
@@ -861,7 +885,8 @@ export function EditJobModal({
                                     max: parseInt(e.target.value) || 0,
                                     currency:
                                       formData.salaryRange?.currency || "USD",
-                                    period: formData.salaryRange?.period || "yearly",
+                                    period:
+                                      formData.salaryRange?.period || "yearly",
                                   },
                                 })
                               }
@@ -887,7 +912,10 @@ export function EditJobModal({
 
                   {/* Department */}
                   <div className="space-y-2">
-                    <Label htmlFor="department" className="text-base font-semibold">
+                    <Label
+                      htmlFor="department"
+                      className="text-base font-semibold"
+                    >
                       Department (Optional)
                     </Label>
                     <Input
@@ -939,7 +967,7 @@ export function EditJobModal({
           </Tabs>
 
           {/* Footer Actions */}
-          <div className="border-t px-6 py-4 bg-muted/30 flex items-center justify-between flex-shrink-0">
+          <div className="border-t px-6 py-4 bg-muted/30 flex items-center justify-between shrink-0">
             <div className="text-sm text-muted-foreground">
               {currentTab === "basic" && "Step 1 of 3: Basic Information"}
               {currentTab === "requirements" && "Step 2 of 3: Requirements"}

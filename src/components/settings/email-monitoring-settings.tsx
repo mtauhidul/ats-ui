@@ -160,7 +160,7 @@ export function EmailMonitoringSettings() {
   const fetchData = async () => {
     try {
       const [statusResponse, accountsResponse] = await Promise.all([
-        authenticatedFetch("/email-automation/status"),
+        authenticatedFetch("/emails/automation/status"),
         authenticatedFetch("/email-accounts"),
       ]);
 
@@ -203,7 +203,7 @@ export function EmailMonitoringSettings() {
   const startAutomation = async () => {
     setActionLoading("start");
     try {
-      const response = await authenticatedFetch("/email-automation/enable", {
+      const response = await authenticatedFetch("/emails/automation/enable", {
         method: "POST",
       });
 
@@ -225,7 +225,7 @@ export function EmailMonitoringSettings() {
   const stopAutomation = async () => {
     setActionLoading("stop");
     try {
-      const response = await authenticatedFetch("/email-automation/disable", {
+      const response = await authenticatedFetch("/emails/automation/disable", {
         method: "POST",
       });
 
@@ -453,17 +453,19 @@ export function EmailMonitoringSettings() {
                 <div className="mt-2 md:mt-3 text-[10px] md:text-xs text-blue-600 space-y-0.5 md:space-y-1">
                   <div className="flex items-center gap-1.5 md:gap-2">
                     <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-blue-600 shrink-0" />
-                    <span>Emails are checked every 5 minutes</span>
+                    <span className="text-blue-700">
+                      Emails are checked every 5 minutes
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5 md:gap-2">
                     <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-blue-600 shrink-0" />
-                    <span>
+                    <span className="text-blue-700">
                       Last checked times are updated below for each account
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 md:gap-2">
                     <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-blue-600 shrink-0" />
-                    <span>
+                    <span className="text-blue-700">
                       Use the refresh button on each account to check
                       immediately
                     </span>
@@ -605,7 +607,11 @@ export function EmailMonitoringSettings() {
                   onOpenChange={setShowStopDialog}
                 >
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm" className="h-8 md:h-9 text-xs md:text-sm">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-8 md:h-9 text-xs md:text-sm"
+                    >
                       <Pause className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                       <span className="hidden sm:inline">Stop Monitoring</span>
                       <span className="sm:hidden">Stop</span>
@@ -624,7 +630,9 @@ export function EmailMonitoringSettings() {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
-                      <AlertDialogCancel className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm">Cancel</AlertDialogCancel>
+                      <AlertDialogCancel className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm">
+                        Cancel
+                      </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={stopAutomation}
                         disabled={actionLoading === "stop"}
@@ -650,9 +658,14 @@ export function EmailMonitoringSettings() {
                   className="h-8 md:h-9 text-xs md:text-sm"
                 >
                   <Play className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
-                  {actionLoading === "start"
-                    ? "Starting..."
-                    : <><span className="hidden sm:inline">Start Monitoring</span><span className="sm:hidden">Start</span></>}
+                  {actionLoading === "start" ? (
+                    "Starting..."
+                  ) : (
+                    <>
+                      <span className="hidden sm:inline">Start Monitoring</span>
+                      <span className="sm:hidden">Start</span>
+                    </>
+                  )}
                 </Button>
               )}
             </div>
@@ -716,7 +729,10 @@ export function EmailMonitoringSettings() {
                 Connect your first email account to start automated candidate
                 monitoring and resume processing.
               </p>
-              <Button onClick={() => setShowAddAccountDialog(true)} className="h-9 md:h-10 text-sm">
+              <Button
+                onClick={() => setShowAddAccountDialog(true)}
+                className="h-9 md:h-10 text-sm"
+              >
                 <Mail className="h-3 w-3 md:h-4 md:w-4 mr-2" />
                 Connect Email Account
               </Button>
@@ -792,7 +808,11 @@ export function EmailMonitoringSettings() {
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 md:h-9 md:w-9">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 md:h-9 md:w-9"
+                            >
                               <MoreVertical className="h-3 w-3 md:h-4 md:w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -821,7 +841,9 @@ export function EmailMonitoringSettings() {
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
-                                  <AlertDialogCancel className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm">Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm">
+                                    Cancel
+                                  </AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => deleteAccount(account._id)}
                                     disabled={

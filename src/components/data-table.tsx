@@ -19,6 +19,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   IconArrowsSort,
+  IconBriefcase,
   IconCheck,
   IconChevronDown,
   IconChevronLeft,
@@ -32,16 +33,15 @@ import {
   IconFilter,
   IconLayoutColumns,
   IconLoader,
+  IconMail,
   IconSearch,
   IconTrash,
+  IconUpload,
   IconUserCheck,
   IconUsers,
   IconUserX,
-  IconX,
-  IconMail,
   IconWorld,
-  IconUpload,
-  IconBriefcase,
+  IconX,
 } from "@tabler/icons-react";
 import {
   flexRender,
@@ -84,6 +84,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { JobSelectionModal } from "@/components/modals/job-selection-modal";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -109,7 +110,6 @@ import {
 } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
-import { JobSelectionModal } from "@/components/modals/job-selection-modal";
 import { toast } from "sonner";
 import type { schema } from "./data-table-schema";
 
@@ -158,12 +158,12 @@ const createColumns = (): ColumnDef<z.infer<typeof schema>>[] => [
     header: () => <div className="w-full text-left">Application ID</div>,
     cell: ({ row }) => {
       const appId = row.original.jobIdDisplay || "-";
-      
+
       const handleCopyId = () => {
         navigator.clipboard.writeText(appId);
         toast.success("Application ID copied to clipboard!");
       };
-      
+
       return (
         <TooltipProvider>
           <Tooltip delayDuration={300}>
@@ -175,9 +175,9 @@ const createColumns = (): ColumnDef<z.infer<typeof schema>>[] => [
                 {appId}
               </button>
             </TooltipTrigger>
-            <TooltipContent 
-              side="top" 
-              className="!bg-slate-900 !text-white !border-slate-700 px-3 py-2 font-medium"
+            <TooltipContent
+              side="top"
+              className="bg-slate-900! text-white! border-slate-700! px-3 py-2 font-medium"
               sideOffset={5}
             >
               Click to copy ID
@@ -256,7 +256,7 @@ const createColumns = (): ColumnDef<z.infer<typeof schema>>[] => [
     header: "Reviewed By",
     cell: ({ row }) => {
       const reviewerName = row.original.reviewer;
-      
+
       return (
         <div className="flex items-center gap-2 min-w-[120px]">
           {reviewerName && reviewerName !== "Not Reviewed" ? (
@@ -286,7 +286,7 @@ const createActionsColumn = (handlers: {
   cell: ({ row }) => {
     const status = row.original.status?.toLowerCase();
     const isProcessed = status === "approved" || status === "rejected";
-    
+
     return (
       <TooltipProvider>
         <div className="flex items-center gap-1">
@@ -303,7 +303,9 @@ const createActionsColumn = (handlers: {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {isProcessed ? "Application already processed" : "Approve Application"}
+              {isProcessed
+                ? "Application already processed"
+                : "Approve Application"}
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -319,7 +321,9 @@ const createActionsColumn = (handlers: {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {isProcessed ? "Application already processed" : "Reject Application"}
+              {isProcessed
+                ? "Application already processed"
+                : "Reject Application"}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -371,10 +375,20 @@ export function DataTable({
     pageSize: 10,
   });
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [jobs, setJobs] = React.useState<Array<{ _id: string; title: string; clientId: string | { _id: string; companyName: string } }>>([]);
-  const [showJobSelectionModal, setShowJobSelectionModal] = React.useState(false);
-  const [currentApprovingId, setCurrentApprovingId] = React.useState<number | string | null>(null);
-  const [currentApprovingName, setCurrentApprovingName] = React.useState<string>("");
+  const [jobs, setJobs] = React.useState<
+    Array<{
+      _id: string;
+      title: string;
+      clientId: string | { _id: string; companyName: string };
+    }>
+  >([]);
+  const [showJobSelectionModal, setShowJobSelectionModal] =
+    React.useState(false);
+  const [currentApprovingId, setCurrentApprovingId] = React.useState<
+    number | string | null
+  >(null);
+  const [currentApprovingName, setCurrentApprovingName] =
+    React.useState<string>("");
   const sortableId = React.useId();
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -385,7 +399,7 @@ export function DataTable({
   // Fetch jobs for approval flow
   const fetchJobs = React.useCallback(async () => {
     try {
-      console.log('Fetching jobs from API...');
+      console.log("Fetching jobs from API...");
       const response = await authenticatedFetch(
         "http://localhost:5001/api/jobs?limit=100&status=open",
         { method: "GET" }
@@ -393,11 +407,14 @@ export function DataTable({
       if (response.ok) {
         const result = await response.json();
         const fetchedJobs = result.data?.jobs || [];
-        console.log('Fetched jobs:', fetchedJobs.length, 'open jobs');
-        console.log('Jobs data:', JSON.stringify(fetchedJobs.slice(0, 3), null, 2)); // Log first 3 jobs
+        console.log("Fetched jobs:", fetchedJobs.length, "open jobs");
+        console.log(
+          "Jobs data:",
+          JSON.stringify(fetchedJobs.slice(0, 3), null, 2)
+        ); // Log first 3 jobs
         setJobs(fetchedJobs);
       } else {
-        console.error('Failed to fetch jobs, status:', response.status);
+        console.error("Failed to fetch jobs, status:", response.status);
       }
     } catch (error) {
       console.error("Failed to fetch jobs:", error);
@@ -409,16 +426,13 @@ export function DataTable({
   }, [fetchJobs]);
 
   // Generate columns
-  const columns = React.useMemo(
-    () => createColumns(),
-    []
-  );
+  const columns = React.useMemo(() => createColumns(), []);
 
   // Bulk action handlers
   const handleBulkApprove = async () => {
     const selectedRows = table.getFilteredSelectedRowModel().rows;
     const selectedIds = selectedRows.map((r) => r.original.id);
-    
+
     if (selectedIds.length === 0) {
       toast.error("No applications selected");
       return;
@@ -433,13 +447,15 @@ export function DataTable({
     const selectedIds = table
       .getFilteredSelectedRowModel()
       .rows.map((r) => r.original.id);
-    
+
     if (selectedIds.length === 0) {
       toast.error("No applications selected");
       return;
     }
 
-    const loadingToast = toast.loading(`Rejecting ${selectedIds.length} application(s)...`);
+    const loadingToast = toast.loading(
+      `Rejecting ${selectedIds.length} application(s)...`
+    );
 
     try {
       const response = await authenticatedFetch(
@@ -447,9 +463,9 @@ export function DataTable({
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             applicationIds: selectedIds,
-            status: "rejected"
+            status: "rejected",
           }),
         }
       );
@@ -468,7 +484,9 @@ export function DataTable({
 
       table.resetRowSelection();
       toast.dismiss(loadingToast);
-      toast.success(`Successfully rejected ${selectedIds.length} application(s)`);
+      toast.success(
+        `Successfully rejected ${selectedIds.length} application(s)`
+      );
     } catch (error) {
       toast.dismiss(loadingToast);
       const message =
@@ -490,7 +508,9 @@ export function DataTable({
     }
 
     // Show loading toast
-    const loadingToast = toast.loading(`Deleting ${selectedIds.length} application(s)...`);
+    const loadingToast = toast.loading(
+      `Deleting ${selectedIds.length} application(s)...`
+    );
 
     try {
       const response = await authenticatedFetch(
@@ -537,15 +557,15 @@ export function DataTable({
   const handleApprove = async (id: number | string) => {
     const application = data.find((item) => item.id === id);
     if (!application) return;
-    
+
     setCurrentApprovingId(id);
     setCurrentApprovingName(application.header || "this candidate");
-    
-    console.log('Approve clicked, refetching jobs...');
+
+    console.log("Approve clicked, refetching jobs...");
     // Refetch jobs to get the latest list including newly created ones
     await fetchJobs();
-    console.log('Jobs after refetch, count:', jobs.length);
-    
+    console.log("Jobs after refetch, count:", jobs.length);
+
     setShowJobSelectionModal(true);
   };
 
@@ -573,13 +593,15 @@ export function DataTable({
 
       toast.dismiss(loadingToast);
       toast.success("Application approved and candidate created successfully");
-      
+
       // Reload the page to fetch updated data
       window.location.reload();
     } catch (error) {
       toast.dismiss(loadingToast);
       const message =
-        error instanceof Error ? error.message : "Failed to approve application";
+        error instanceof Error
+          ? error.message
+          : "Failed to approve application";
       toast.error(message);
     } finally {
       setCurrentApprovingId(null);
@@ -714,574 +736,577 @@ export function DataTable({
         defaultValue="outline"
         className="w-full flex-col justify-start gap-6"
       >
-      <div className="flex flex-col gap-4 px-4 lg:px-6">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="rounded-lg border bg-gradient-to-br from-card to-muted/20 p-3 shadow-sm">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="rounded-md bg-primary/10 p-1.5">
-                <IconUsers className="h-4 w-4 text-primary" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">
-                Total
-              </span>
-            </div>
-            <p className="text-xl font-bold">{totalApplications}</p>
-            <p className="text-xs text-muted-foreground">Applications</p>
-          </div>
-          <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="rounded-md bg-green-500/10 p-1.5">
-                <IconUserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
-              </div>
-              <span className="text-xs font-medium text-green-700 dark:text-green-400">
-                Approved
-              </span>
-            </div>
-            <p className="text-xl font-bold text-green-600 dark:text-green-400">
-              {approvedCount}
-            </p>
-            <p className="text-xs text-green-600/70 dark:text-green-400/70">
-              {totalApplications > 0
-                ? Math.round((approvedCount / totalApplications) * 100)
-                : 0}
-              % of total
-            </p>
-          </div>
-          <div className="rounded-lg border bg-gradient-to-br from-red-50 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10 p-3 shadow-sm">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="rounded-md bg-red-500/10 p-1.5">
-                <IconUserX className="h-4 w-4 text-red-600 dark:text-red-400" />
-              </div>
-              <span className="text-xs font-medium text-red-700 dark:text-red-400">
-                Rejected
-              </span>
-            </div>
-            <p className="text-xl font-bold text-red-600 dark:text-red-400">
-              {rejectedCount}
-            </p>
-            <p className="text-xs text-red-600/70 dark:text-red-400/70">
-              {totalApplications > 0
-                ? Math.round((rejectedCount / totalApplications) * 100)
-                : 0}
-              % of total
-            </p>
-          </div>
-          <div className="rounded-lg border bg-gradient-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="rounded-md bg-amber-500/10 p-1.5">
-                <IconClockHour4 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              </div>
-              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                Pending
-              </span>
-            </div>
-            <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
-              {inProcessCount}
-            </p>
-            <p className="text-xs text-amber-600/70 dark:text-amber-400/70">
-              {totalApplications > 0
-                ? Math.round((inProcessCount / totalApplications) * 100)
-                : 0}
-              % of total
-            </p>
-          </div>
-        </div>
-
-        {/* Search, Filter, Sort Bar */}
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-1 items-center gap-2">
-            <div className="relative flex-1 max-w-md">
-              <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search by name, email, job, company..."
-                value={globalFilter ?? ""}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                className="w-full h-9 pl-9 pr-4 text-sm rounded-md border bg-background shadow-xs focus:outline-none focus:ring-2 focus:ring-ring/50"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Bulk Actions - Show when rows are selected */}
-            {table.getFilteredSelectedRowModel().rows.length > 0 && (
-              <div className="flex items-center gap-2 mr-2 px-3 py-1.5 rounded-md bg-primary/10 border border-primary/20">
-                <span className="text-sm font-medium">
-                  {table.getFilteredSelectedRowModel().rows.length} selected
+        <div className="flex flex-col gap-4 px-4 lg:px-6">
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="rounded-lg border bg-linear-to-br from-card to-muted/20 p-3 shadow-sm">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="rounded-md bg-primary/10 p-1.5">
+                  <IconUsers className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground">
+                  Total
                 </span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-7 px-2">
-                      Actions
-                      <IconChevronDown className="h-3 w-3 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={handleBulkApprove}>
-                      <IconCheck className="h-4 w-4 mr-2 text-green-600" />
-                      Approve Selected
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleBulkReject}>
-                      <IconX className="h-4 w-4 mr-2 text-red-600" />
-                      Reject Selected
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={handleBulkDelete}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <IconTrash className="h-4 w-4 mr-2" />
-                      Delete Selected
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => table.resetRowSelection()}
-                      className="text-muted-foreground"
-                    >
-                      Clear Selection
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
-            )}
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <IconFilter className="h-4 w-4" />
-                  <span className="hidden sm:inline">Filter</span>
-                  {columnFilters.length > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-1 h-5 w-5 rounded-full p-0 text-xs"
-                    >
-                      {columnFilters.length}
-                    </Badge>
-                  )}
-                  <IconChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <div className="px-2 py-1.5 text-xs font-semibold">
-                  Filter by Status
+              <p className="text-xl font-bold">{totalApplications}</p>
+              <p className="text-xs text-muted-foreground">Applications</p>
+            </div>
+            <div className="rounded-lg border bg-linear-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="rounded-md bg-green-500/10 p-1.5">
+                  <IconUserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem
-                  checked={!columnFilters.find((f) => f.id === "status")}
-                  onCheckedChange={() => {
-                    setColumnFilters((prev) =>
-                      prev.filter((f) => f.id !== "status")
-                    );
-                  }}
-                >
-                  All Statuses
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={
-                    columnFilters.find((f) => f.id === "status")?.value ===
-                    "Approved"
-                  }
-                  onCheckedChange={(checked) => {
-                    setColumnFilters((prev) =>
-                      checked
-                        ? [
-                            ...prev.filter((f) => f.id !== "status"),
-                            { id: "status", value: "Approved" },
-                          ]
-                        : prev.filter((f) => f.id !== "status")
-                    );
-                  }}
-                >
-                  <IconUserCheck className="h-3 w-3 mr-2 text-green-600" />
+                <span className="text-xs font-medium text-green-700 dark:text-green-400">
                   Approved
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={
-                    columnFilters.find((f) => f.id === "status")?.value ===
-                    "In Process"
-                  }
-                  onCheckedChange={(checked) => {
-                    setColumnFilters((prev) =>
-                      checked
-                        ? [
-                            ...prev.filter((f) => f.id !== "status"),
-                            { id: "status", value: "In Process" },
-                          ]
-                        : prev.filter((f) => f.id !== "status")
-                    );
-                  }}
-                >
-                  <IconClockHour4 className="h-3 w-3 mr-2 text-amber-600" />
-                  In Process
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={
-                    columnFilters.find((f) => f.id === "status")?.value ===
-                    "Rejected"
-                  }
-                  onCheckedChange={(checked) => {
-                    setColumnFilters((prev) =>
-                      checked
-                        ? [
-                            ...prev.filter((f) => f.id !== "status"),
-                            { id: "status", value: "Rejected" },
-                          ]
-                        : prev.filter((f) => f.id !== "status")
-                    );
-                  }}
-                >
-                  <IconUserX className="h-3 w-3 mr-2 text-red-600" />
+                </span>
+              </div>
+              <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                {approvedCount}
+              </p>
+              <p className="text-xs text-green-600/70 dark:text-green-400/70">
+                {totalApplications > 0
+                  ? Math.round((approvedCount / totalApplications) * 100)
+                  : 0}
+                % of total
+              </p>
+            </div>
+            <div className="rounded-lg border bg-linear-to-br from-red-50 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10 p-3 shadow-sm">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="rounded-md bg-red-500/10 p-1.5">
+                  <IconUserX className="h-4 w-4 text-red-600 dark:text-red-400" />
+                </div>
+                <span className="text-xs font-medium text-red-700 dark:text-red-400">
                   Rejected
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuSeparator />
-                <div className="px-2 py-1.5 text-xs font-semibold">
-                  Filter by AI
+                </span>
+              </div>
+              <p className="text-xl font-bold text-red-600 dark:text-red-400">
+                {rejectedCount}
+              </p>
+              <p className="text-xs text-red-600/70 dark:text-red-400/70">
+                {totalApplications > 0
+                  ? Math.round((rejectedCount / totalApplications) * 100)
+                  : 0}
+                % of total
+              </p>
+            </div>
+            <div className="rounded-lg border bg-linear-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="rounded-md bg-amber-500/10 p-1.5">
+                  <IconClockHour4 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem
-                  checked={!columnFilters.find((f) => f.id === "type")}
-                  onCheckedChange={() => {
-                    setColumnFilters((prev) =>
-                      prev.filter((f) => f.id !== "type")
-                    );
-                  }}
-                >
-                  All AI Results
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={
-                    columnFilters.find((f) => f.id === "type")?.value ===
-                    "valid"
-                  }
-                  onCheckedChange={(checked) => {
-                    setColumnFilters((prev) =>
-                      checked
-                        ? [
-                            ...prev.filter((f) => f.id !== "type"),
-                            { id: "type", value: "valid" },
-                          ]
-                        : prev.filter((f) => f.id !== "type")
-                    );
-                  }}
-                >
-                  <IconCheck className="h-3 w-3 mr-2 text-green-600" />
-                  AI Approved
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={
-                    columnFilters.find((f) => f.id === "type")?.value ===
-                    "invalid"
-                  }
-                  onCheckedChange={(checked) => {
-                    setColumnFilters((prev) =>
-                      checked
-                        ? [
-                            ...prev.filter((f) => f.id !== "type"),
-                            { id: "type", value: "invalid" },
-                          ]
-                        : prev.filter((f) => f.id !== "type")
-                    );
-                  }}
-                >
-                  <IconX className="h-3 w-3 mr-2 text-red-600" />
-                  AI Rejected
-                </DropdownMenuCheckboxItem>
-                {columnFilters.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => setColumnFilters([])}
-                      className="text-destructive"
-                    >
-                      Clear All Filters
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <IconArrowsSort className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sort</span>
-                  <IconChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={() => setSorting([{ id: "header", desc: false }])}
-                >
-                  Name (A → Z)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSorting([{ id: "header", desc: true }])}
-                >
-                  Name (Z → A)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    setSorting([{ id: "dateApplied", desc: true }])
-                  }
-                >
-                  Date (Newest)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    setSorting([{ id: "dateApplied", desc: false }])
-                  }
-                >
-                  Date (Oldest)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSorting([{ id: "status", desc: false }])}
-                >
-                  Status (A → Z)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    setSorting([{ id: "jobIdDisplay", desc: false }])
-                  }
-                >
-                  Job ID (Low → High)
-                </DropdownMenuItem>
-                {sorting.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => setSorting([])}
-                      className="text-destructive"
-                    >
-                      Clear Sorting
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <IconLayoutColumns />
-                  <span className="hidden lg:inline">Columns</span>
-                  <IconChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <div className="px-2 py-1.5 text-xs font-semibold">
-                  Toggle Columns
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem
-                  checked={table.getColumn("header")?.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    table.getColumn("header")?.toggleVisibility(!!value)
-                  }
-                >
-                  Applicant Name
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={table.getColumn("type")?.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    table.getColumn("type")?.toggleVisibility(!!value)
-                  }
-                >
-                  AI Recommendation
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={table.getColumn("status")?.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    table.getColumn("status")?.toggleVisibility(!!value)
-                  }
-                >
-                  Status
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={table.getColumn("limit")?.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    table.getColumn("limit")?.toggleVisibility(!!value)
-                  }
-                >
-                  Job ID
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={table.getColumn("reviewer")?.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    table.getColumn("reviewer")?.toggleVisibility(!!value)
-                  }
-                >
-                  Reviewer
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                  Pending
+                </span>
+              </div>
+              <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                {inProcessCount}
+              </p>
+              <p className="text-xs text-amber-600/70 dark:text-amber-400/70">
+                {totalApplications > 0
+                  ? Math.round((inProcessCount / totalApplications) * 100)
+                  : 0}
+                % of total
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <TabsContent
-        value="outline"
-        className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
-      >
-        <div className="overflow-hidden rounded-lg border">
-          <DndContext
-            collisionDetection={closestCenter}
-            modifiers={[restrictToVerticalAxis]}
-            onDragEnd={handleDragEnd}
-            sensors={sensors}
-            id={sortableId}
-          >
-            <Table>
-              <TableHeader className="bg-muted sticky top-0 z-10">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead key={header.id} colSpan={header.colSpan}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </TableHead>
+          {/* Search, Filter, Sort Bar */}
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-1 items-center gap-2">
+              <div className="relative flex-1 max-w-md">
+                <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, job, company..."
+                  value={globalFilter ?? ""}
+                  onChange={(e) => setGlobalFilter(e.target.value)}
+                  className="w-full h-9 pl-9 pr-4 text-sm rounded-md border bg-background shadow-xs focus:outline-none focus:ring-2 focus:ring-ring/50"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Bulk Actions - Show when rows are selected */}
+              {table.getFilteredSelectedRowModel().rows.length > 0 && (
+                <div className="flex items-center gap-2 mr-2 px-3 py-1.5 rounded-md bg-primary/10 border border-primary/20">
+                  <span className="text-sm font-medium">
+                    {table.getFilteredSelectedRowModel().rows.length} selected
+                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-7 px-2">
+                        Actions
+                        <IconChevronDown className="h-3 w-3 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem onClick={handleBulkApprove}>
+                        <IconCheck className="h-4 w-4 mr-2 text-green-600" />
+                        Approve Selected
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleBulkReject}>
+                        <IconX className="h-4 w-4 mr-2 text-red-600" />
+                        Reject Selected
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleBulkDelete}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <IconTrash className="h-4 w-4 mr-2" />
+                        Delete Selected
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => table.resetRowSelection()}
+                        className="text-muted-foreground"
+                      >
+                        Clear Selection
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <IconFilter className="h-4 w-4" />
+                    <span className="hidden sm:inline">Filter</span>
+                    {columnFilters.length > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 h-5 w-5 rounded-full p-0 text-xs"
+                      >
+                        {columnFilters.length}
+                      </Badge>
+                    )}
+                    <IconChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <div className="px-2 py-1.5 text-xs font-semibold">
+                    Filter by Status
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem
+                    checked={!columnFilters.find((f) => f.id === "status")}
+                    onCheckedChange={() => {
+                      setColumnFilters((prev) =>
+                        prev.filter((f) => f.id !== "status")
                       );
-                    })}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody className="**:data-[slot=table-cell]:first:w-8">
-                {table.getRowModel().rows?.length ? (
-                  <SortableContext
-                    items={dataIds}
-                    strategy={verticalListSortingStrategy}
+                    }}
                   >
-                    {table.getRowModel().rows.map((row) => (
-                      <DraggableRow key={row.id} row={row} />
-                    ))}
-                  </SortableContext>
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
-                      No results.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </DndContext>
-        </div>
-        <div className="flex items-center justify-between px-4">
-          <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
+                    All Statuses
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={
+                      columnFilters.find((f) => f.id === "status")?.value ===
+                      "Approved"
+                    }
+                    onCheckedChange={(checked) => {
+                      setColumnFilters((prev) =>
+                        checked
+                          ? [
+                              ...prev.filter((f) => f.id !== "status"),
+                              { id: "status", value: "Approved" },
+                            ]
+                          : prev.filter((f) => f.id !== "status")
+                      );
+                    }}
+                  >
+                    <IconUserCheck className="h-3 w-3 mr-2 text-green-600" />
+                    Approved
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={
+                      columnFilters.find((f) => f.id === "status")?.value ===
+                      "In Process"
+                    }
+                    onCheckedChange={(checked) => {
+                      setColumnFilters((prev) =>
+                        checked
+                          ? [
+                              ...prev.filter((f) => f.id !== "status"),
+                              { id: "status", value: "In Process" },
+                            ]
+                          : prev.filter((f) => f.id !== "status")
+                      );
+                    }}
+                  >
+                    <IconClockHour4 className="h-3 w-3 mr-2 text-amber-600" />
+                    In Process
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={
+                      columnFilters.find((f) => f.id === "status")?.value ===
+                      "Rejected"
+                    }
+                    onCheckedChange={(checked) => {
+                      setColumnFilters((prev) =>
+                        checked
+                          ? [
+                              ...prev.filter((f) => f.id !== "status"),
+                              { id: "status", value: "Rejected" },
+                            ]
+                          : prev.filter((f) => f.id !== "status")
+                      );
+                    }}
+                  >
+                    <IconUserX className="h-3 w-3 mr-2 text-red-600" />
+                    Rejected
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-1.5 text-xs font-semibold">
+                    Filter by AI
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem
+                    checked={!columnFilters.find((f) => f.id === "type")}
+                    onCheckedChange={() => {
+                      setColumnFilters((prev) =>
+                        prev.filter((f) => f.id !== "type")
+                      );
+                    }}
+                  >
+                    All AI Results
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={
+                      columnFilters.find((f) => f.id === "type")?.value ===
+                      "valid"
+                    }
+                    onCheckedChange={(checked) => {
+                      setColumnFilters((prev) =>
+                        checked
+                          ? [
+                              ...prev.filter((f) => f.id !== "type"),
+                              { id: "type", value: "valid" },
+                            ]
+                          : prev.filter((f) => f.id !== "type")
+                      );
+                    }}
+                  >
+                    <IconCheck className="h-3 w-3 mr-2 text-green-600" />
+                    AI Approved
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={
+                      columnFilters.find((f) => f.id === "type")?.value ===
+                      "invalid"
+                    }
+                    onCheckedChange={(checked) => {
+                      setColumnFilters((prev) =>
+                        checked
+                          ? [
+                              ...prev.filter((f) => f.id !== "type"),
+                              { id: "type", value: "invalid" },
+                            ]
+                          : prev.filter((f) => f.id !== "type")
+                      );
+                    }}
+                  >
+                    <IconX className="h-3 w-3 mr-2 text-red-600" />
+                    AI Rejected
+                  </DropdownMenuCheckboxItem>
+                  {columnFilters.length > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => setColumnFilters([])}
+                        className="text-destructive"
+                      >
+                        Clear All Filters
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <IconArrowsSort className="h-4 w-4" />
+                    <span className="hidden sm:inline">Sort</span>
+                    <IconChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    onClick={() => setSorting([{ id: "header", desc: false }])}
+                  >
+                    Name (A → Z)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSorting([{ id: "header", desc: true }])}
+                  >
+                    Name (Z → A)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      setSorting([{ id: "dateApplied", desc: true }])
+                    }
+                  >
+                    Date (Newest)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      setSorting([{ id: "dateApplied", desc: false }])
+                    }
+                  >
+                    Date (Oldest)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSorting([{ id: "status", desc: false }])}
+                  >
+                    Status (A → Z)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      setSorting([{ id: "jobIdDisplay", desc: false }])
+                    }
+                  >
+                    Job ID (Low → High)
+                  </DropdownMenuItem>
+                  {sorting.length > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => setSorting([])}
+                        className="text-destructive"
+                      >
+                        Clear Sorting
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <IconLayoutColumns />
+                    <span className="hidden lg:inline">Columns</span>
+                    <IconChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <div className="px-2 py-1.5 text-xs font-semibold">
+                    Toggle Columns
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem
+                    checked={table.getColumn("header")?.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      table.getColumn("header")?.toggleVisibility(!!value)
+                    }
+                  >
+                    Applicant Name
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={table.getColumn("type")?.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      table.getColumn("type")?.toggleVisibility(!!value)
+                    }
+                  >
+                    AI Recommendation
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={table.getColumn("status")?.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      table.getColumn("status")?.toggleVisibility(!!value)
+                    }
+                  >
+                    Status
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={table.getColumn("limit")?.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      table.getColumn("limit")?.toggleVisibility(!!value)
+                    }
+                  >
+                    Job ID
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={table.getColumn("reviewer")?.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      table.getColumn("reviewer")?.toggleVisibility(!!value)
+                    }
+                  >
+                    Reviewer
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-          <div className="flex w-full items-center gap-8 lg:w-fit">
-            <div className="hidden items-center gap-2 lg:flex">
-              <Label htmlFor="rows-per-page" className="text-sm font-medium">
-                Rows per page
-              </Label>
-              <Select
-                value={`${table.getState().pagination.pageSize}`}
-                onValueChange={(value) => {
-                  table.setPageSize(Number(value));
-                }}
-              >
-                <SelectTrigger size="sm" className="w-20" id="rows-per-page">
-                  <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
-                  />
-                </SelectTrigger>
-                <SelectContent side="top">
-                  {[10, 20, 30, 40, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                      {pageSize}
-                    </SelectItem>
+        </div>
+
+        <TabsContent
+          value="outline"
+          className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
+        >
+          <div className="overflow-hidden rounded-lg border">
+            <DndContext
+              collisionDetection={closestCenter}
+              modifiers={[restrictToVerticalAxis]}
+              onDragEnd={handleDragEnd}
+              sensors={sensors}
+              id={sortableId}
+            >
+              <Table>
+                <TableHeader className="bg-muted sticky top-0 z-10">
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => {
+                        return (
+                          <TableHead key={header.id} colSpan={header.colSpan}>
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </TableHead>
+                        );
+                      })}
+                    </TableRow>
                   ))}
-                </SelectContent>
-              </Select>
+                </TableHeader>
+                <TableBody className="**:data-[slot=table-cell]:first:w-8">
+                  {table.getRowModel().rows?.length ? (
+                    <SortableContext
+                      items={dataIds}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {table.getRowModel().rows.map((row) => (
+                        <DraggableRow key={row.id} row={row} />
+                      ))}
+                    </SortableContext>
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-24 text-center"
+                      >
+                        No results.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </DndContext>
+          </div>
+          <div className="flex items-center justify-between px-4">
+            <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
+              {table.getFilteredSelectedRowModel().rows.length} of{" "}
+              {table.getFilteredRowModel().rows.length} row(s) selected.
             </div>
-            <div className="flex w-fit items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
-              {table.getPageCount()}
-            </div>
-            <div className="ml-auto flex items-center gap-2 lg:ml-0">
-              <Button
-                variant="outline"
-                className="hidden h-8 w-8 p-0 lg:flex"
-                onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
-              >
-                <span className="sr-only">Go to first page</span>
-                <IconChevronsLeft />
-              </Button>
-              <Button
-                variant="outline"
-                className="size-8"
-                size="icon"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-              >
-                <span className="sr-only">Go to previous page</span>
-                <IconChevronLeft />
-              </Button>
-              <Button
-                variant="outline"
-                className="size-8"
-                size="icon"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-              >
-                <span className="sr-only">Go to next page</span>
-                <IconChevronRight />
-              </Button>
-              <Button
-                variant="outline"
-                className="hidden size-8 lg:flex"
-                size="icon"
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
-              >
-                <span className="sr-only">Go to last page</span>
-                <IconChevronsRight />
-              </Button>
+            <div className="flex w-full items-center gap-8 lg:w-fit">
+              <div className="hidden items-center gap-2 lg:flex">
+                <Label htmlFor="rows-per-page" className="text-sm font-medium">
+                  Rows per page
+                </Label>
+                <Select
+                  value={`${table.getState().pagination.pageSize}`}
+                  onValueChange={(value) => {
+                    table.setPageSize(Number(value));
+                  }}
+                >
+                  <SelectTrigger size="sm" className="w-20" id="rows-per-page">
+                    <SelectValue
+                      placeholder={table.getState().pagination.pageSize}
+                    />
+                  </SelectTrigger>
+                  <SelectContent side="top">
+                    {[10, 20, 30, 40, 50].map((pageSize) => (
+                      <SelectItem key={pageSize} value={`${pageSize}`}>
+                        {pageSize}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex w-fit items-center justify-center text-sm font-medium">
+                Page {table.getState().pagination.pageIndex + 1} of{" "}
+                {table.getPageCount()}
+              </div>
+              <div className="ml-auto flex items-center gap-2 lg:ml-0">
+                <Button
+                  variant="outline"
+                  className="hidden h-8 w-8 p-0 lg:flex"
+                  onClick={() => table.setPageIndex(0)}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  <span className="sr-only">Go to first page</span>
+                  <IconChevronsLeft />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="size-8"
+                  size="icon"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  <span className="sr-only">Go to previous page</span>
+                  <IconChevronLeft />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="size-8"
+                  size="icon"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                >
+                  <span className="sr-only">Go to next page</span>
+                  <IconChevronRight />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="hidden size-8 lg:flex"
+                  size="icon"
+                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                  disabled={!table.getCanNextPage()}
+                >
+                  <span className="sr-only">Go to last page</span>
+                  <IconChevronsRight />
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </TabsContent>
-      <TabsContent
-        value="past-performance"
-        className="flex flex-col px-4 lg:px-6"
-      >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
-      <TabsContent value="key-personnel" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
-      <TabsContent
-        value="focus-documents"
-        className="flex flex-col px-4 lg:px-6"
-      >
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
-    </Tabs>
-    
-    {/* Job Selection Modal for Approval */}
-    <JobSelectionWrapper
-      open={showJobSelectionModal}
-      onClose={() => {
-        setShowJobSelectionModal(false);
-        setCurrentApprovingId(null);
-        setCurrentApprovingName("");
-      }}
-      onConfirm={handleJobConfirmation}
-      jobs={jobs}
-      currentJobId={undefined}
-      applicationName={currentApprovingName}
-    />
+        </TabsContent>
+        <TabsContent
+          value="past-performance"
+          className="flex flex-col px-4 lg:px-6"
+        >
+          <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+        </TabsContent>
+        <TabsContent
+          value="key-personnel"
+          className="flex flex-col px-4 lg:px-6"
+        >
+          <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+        </TabsContent>
+        <TabsContent
+          value="focus-documents"
+          className="flex flex-col px-4 lg:px-6"
+        >
+          <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Job Selection Modal for Approval */}
+      <JobSelectionWrapper
+        open={showJobSelectionModal}
+        onClose={() => {
+          setShowJobSelectionModal(false);
+          setCurrentApprovingId(null);
+          setCurrentApprovingName("");
+        }}
+        onConfirm={handleJobConfirmation}
+        jobs={jobs}
+        currentJobId={undefined}
+        applicationName={currentApprovingName}
+      />
     </>
   );
 }
@@ -1298,7 +1323,11 @@ function JobSelectionWrapper({
   open: boolean;
   onClose: () => void;
   onConfirm: (jobId: string, clientId: string) => void;
-  jobs: Array<{ _id: string; title: string; clientId: string | { _id: string; companyName: string } }>;
+  jobs: Array<{
+    _id: string;
+    title: string;
+    clientId: string | { _id: string; companyName: string };
+  }>;
   currentJobId?: string;
   applicationName: string;
 }) {
@@ -1315,18 +1344,24 @@ function JobSelectionWrapper({
   );
 }
 
-function TableCellViewer({ 
-  item
-}: { 
-  item: z.infer<typeof schema>;
-}) {
+function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   const isMobile = useIsMobile();
   const [showResumePreview, setShowResumePreview] = React.useState(false);
-  const [showJobSelectionModal, setShowJobSelectionModal] = React.useState(false);
-  const [approvalAction, setApprovalAction] = React.useState<'approve' | 'reject' | null>(null);
+  const [showJobSelectionModal, setShowJobSelectionModal] =
+    React.useState(false);
+  const [approvalAction, setApprovalAction] = React.useState<
+    "approve" | "reject" | null
+  >(null);
 
   // Load jobs data from API
-  const [jobs, setJobs] = React.useState<Array<{ _id?: string; id?: string; title: string; clientId: string | { _id: string; companyName: string } }>>([]);
+  const [jobs, setJobs] = React.useState<
+    Array<{
+      _id?: string;
+      id?: string;
+      title: string;
+      clientId: string | { _id: string; companyName: string };
+    }>
+  >([]);
 
   const fetchJobs = React.useCallback(async () => {
     try {
@@ -1350,7 +1385,7 @@ function TableCellViewer({
   // Handler for job selection and approval
   const handleJobConfirmation = async (jobId: string, clientId: string) => {
     try {
-      if (approvalAction === 'approve') {
+      if (approvalAction === "approve") {
         const response = await authenticatedFetch(
           `http://localhost:5001/api/applications/${item.id}/approve`,
           {
@@ -1361,13 +1396,13 @@ function TableCellViewer({
         );
 
         if (response.ok) {
-          toast.success('Application approved successfully');
+          toast.success("Application approved successfully");
           window.location.reload();
         } else {
           const error = await response.json();
-          toast.error(error.message || 'Failed to approve application');
+          toast.error(error.message || "Failed to approve application");
         }
-      } else if (approvalAction === 'reject') {
+      } else if (approvalAction === "reject") {
         const response = await authenticatedFetch(
           `http://localhost:5001/api/applications/${item.id}`,
           {
@@ -1378,11 +1413,11 @@ function TableCellViewer({
         );
 
         if (response.ok) {
-          toast.success('Application rejected successfully');
+          toast.success("Application rejected successfully");
           window.location.reload();
         } else {
           const error = await response.json();
-          toast.error(error.message || 'Failed to reject application');
+          toast.error(error.message || "Failed to reject application");
         }
       }
     } catch (error) {
@@ -1455,48 +1490,59 @@ function TableCellViewer({
   const getSourceBadge = (source?: string) => {
     if (!source) return null;
 
-    const sourceConfig: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
+    const sourceConfig: Record<
+      string,
+      { icon: React.ReactNode; label: string; color: string }
+    > = {
       direct_application: {
         icon: <IconWorld className="h-3 w-3 mr-1" />,
         label: "Direct Apply",
-        color: "bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/20",
+        color:
+          "bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/20",
       },
       recruiter: {
         icon: <IconUpload className="h-3 w-3 mr-1" />,
         label: "Manual Import",
-        color: "bg-purple-500/10 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400 border-purple-500/20",
+        color:
+          "bg-purple-500/10 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400 border-purple-500/20",
       },
       website: {
         icon: <IconWorld className="h-3 w-3 mr-1" />,
         label: "Website",
-        color: "bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/20",
+        color:
+          "bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-500/20",
       },
       linkedin: {
         icon: <IconBriefcase className="h-3 w-3 mr-1" />,
         label: "LinkedIn",
-        color: "bg-sky-500/10 text-sky-700 dark:bg-sky-500/20 dark:text-sky-400 border-sky-500/20",
+        color:
+          "bg-sky-500/10 text-sky-700 dark:bg-sky-500/20 dark:text-sky-400 border-sky-500/20",
       },
       referral: {
         icon: <IconUsers className="h-3 w-3 mr-1" />,
         label: "Referral",
-        color: "bg-indigo-500/10 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400 border-indigo-500/20",
+        color:
+          "bg-indigo-500/10 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400 border-indigo-500/20",
       },
       job_board: {
         icon: <IconBriefcase className="h-3 w-3 mr-1" />,
         label: "Job Board",
-        color: "bg-teal-500/10 text-teal-700 dark:bg-teal-500/20 dark:text-teal-400 border-teal-500/20",
+        color:
+          "bg-teal-500/10 text-teal-700 dark:bg-teal-500/20 dark:text-teal-400 border-teal-500/20",
       },
       email: {
         icon: <IconMail className="h-3 w-3 mr-1" />,
         label: "Email",
-        color: "bg-orange-500/10 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 border-orange-500/20",
+        color:
+          "bg-orange-500/10 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 border-orange-500/20",
       },
     };
 
     const config = sourceConfig[source.toLowerCase()] || {
       icon: <IconUpload className="h-3 w-3 mr-1" />,
       label: source.replace(/_/g, " "),
-      color: "bg-gray-500/10 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400 border-gray-500/20",
+      color:
+        "bg-gray-500/10 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400 border-gray-500/20",
     };
 
     return (
@@ -1513,8 +1559,8 @@ function TableCellViewer({
       onOpenChange={setIsDrawerOpen}
     >
       <DrawerTrigger asChild>
-        <Button 
-          variant="link" 
+        <Button
+          variant="ghost"
           className="w-fit px-0 text-left group hover:no-underline"
         >
           <span className="flex items-center gap-1.5 text-foreground group-hover:text-primary transition-colors">
@@ -1564,7 +1610,9 @@ function TableCellViewer({
               {/* Application ID with highlighting */}
               {item.jobIdDisplay && (
                 <div className="mt-2 inline-block">
-                  <div className="text-[10px] text-muted-foreground mb-0.5">APPLICATION ID</div>
+                  <div className="text-[10px] text-muted-foreground mb-0.5">
+                    APPLICATION ID
+                  </div>
                   <div className="text-xs font-mono font-medium bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 px-2 py-1 rounded border border-green-200 dark:border-green-800 break-all">
                     {item.jobIdDisplay}
                   </div>
@@ -1602,13 +1650,19 @@ function TableCellViewer({
                 </p>
               </div>
               <div className="rounded-lg border bg-card p-3">
-                <Label className="text-xs text-muted-foreground">Experience</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Experience
+                </Label>
                 <p className="text-sm font-medium mt-1">
-                  {typeof item.yearsOfExperience === 'number' && item.yearsOfExperience > 0
+                  {typeof item.yearsOfExperience === "number" &&
+                  item.yearsOfExperience > 0
                     ? `${item.yearsOfExperience} years`
-                    : item.parsedData?.experience && item.parsedData.experience.length > 0
-                      ? `${item.parsedData.experience.length} position${item.parsedData.experience.length !== 1 ? 's' : ''}`
-                      : 'Not Specified'}
+                    : item.parsedData?.experience &&
+                      item.parsedData.experience.length > 0
+                    ? `${item.parsedData.experience.length} position${
+                        item.parsedData.experience.length !== 1 ? "s" : ""
+                      }`
+                    : "Not Specified"}
                 </p>
               </div>
             </div>
@@ -1790,13 +1844,14 @@ function TableCellViewer({
                         </Button>
                         <Button
                           variant="ghost"
-                          size="icon-sm"
+                          size="icon"
                           onClick={() => {
                             if (item.resumeUrl) {
                               const link = document.createElement("a");
                               link.href = item.resumeUrl;
-                              link.download = item.resumeFilename || 'resume.pdf';
-                              link.target = '_blank';
+                              link.download =
+                                item.resumeFilename || "resume.pdf";
+                              link.target = "_blank";
                               link.click();
                             }
                           }}
@@ -1922,14 +1977,14 @@ function TableCellViewer({
           <div className="flex gap-3 w-full">
             <Button
               onClick={async () => {
-                setApprovalAction('approve');
+                setApprovalAction("approve");
                 // Refetch jobs to get the latest list including newly created ones
                 await fetchJobs();
                 setShowJobSelectionModal(true);
               }}
               className="flex-1 h-11"
               disabled={
-                item.status?.toLowerCase() === "approved" || 
+                item.status?.toLowerCase() === "approved" ||
                 item.status?.toLowerCase() === "rejected"
               }
             >
@@ -1939,14 +1994,14 @@ function TableCellViewer({
             <Button
               variant="destructive"
               onClick={async () => {
-                setApprovalAction('reject');
+                setApprovalAction("reject");
                 // Refetch jobs to get the latest list including newly created ones
                 await fetchJobs();
                 setShowJobSelectionModal(true);
               }}
               className="flex-1 h-11"
               disabled={
-                item.status?.toLowerCase() === "approved" || 
+                item.status?.toLowerCase() === "approved" ||
                 item.status?.toLowerCase() === "rejected"
               }
             >
@@ -1955,7 +2010,7 @@ function TableCellViewer({
             </Button>
           </div>
         </DrawerFooter>
-        
+
         {/* Job Selection Modal */}
         {showJobSelectionModal && (
           <JobSelectionModal

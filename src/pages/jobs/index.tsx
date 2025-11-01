@@ -34,6 +34,7 @@ const API_BASE_URL =
 type JobWithLocationType = Job & { locationType?: string };
 
 // Helper function to normalize job data from backend (handle _id to id conversion)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const normalizeJob = (job: any): JobWithLocationType => {
   return {
     ...job,
@@ -244,7 +245,7 @@ export default function JobsPage() {
                 className="group bg-background/10 backdrop-blur-sm border border-border/30 rounded-xl hover:bg-background/20 hover:border-primary/50 transition-all duration-300 overflow-hidden"
               >
                 {/* Color accent bar */}
-                <div className="h-1 bg-gradient-to-r from-primary via-primary/70 to-primary/40" />
+                <div className="h-1 bg-linear-to-r from-primary via-primary/70 to-primary/40" />
 
                 <div className="p-6">
                   {/* Header Section */}
@@ -346,7 +347,7 @@ export default function JobsPage() {
                           <p className="text-xs text-muted-foreground">
                             Salary
                           </p>
-                          <p className="text-sm font-medium break-words">
+                          <p className="text-sm font-medium break-word">
                             {formatSalary(job.salaryRange)}
                           </p>
                         </div>

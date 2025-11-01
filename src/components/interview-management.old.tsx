@@ -1,25 +1,5 @@
-import { useState, useEffect } from "react";
-import {
-  Calendar,
-  Clock,
-  Video,
-  Users,
-  MapPin,
-  Star,
-  Plus,
-  Edit,
-  X,
-  Phone,
-  FileText,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  UserCheck,
-  ArrowLeft,
-  Loader2,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -31,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -40,13 +19,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
-import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import { Textarea } from "@/components/ui/textarea";
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
-import { useTeam } from "@/store/hooks/useTeam";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Edit,
+  FileText,
+  MapPin,
+  Phone,
+  Plus,
+  Star,
+  UserCheck,
+  Users,
+  Video,
+  X,
+  XCircle,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 interface Interview {
   id: string;
@@ -76,7 +74,13 @@ interface Interview {
     lastName: string;
     email: string;
   };
-  status: "scheduled" | "confirmed" | "in-progress" | "completed" | "cancelled" | "no-show";
+  status:
+    | "scheduled"
+    | "confirmed"
+    | "in-progress"
+    | "completed"
+    | "cancelled"
+    | "no-show";
   feedback?: Array<{
     interviewerId: string;
     rating: number;
@@ -102,8 +106,16 @@ const interviewTypeConfig = {
   phone: { label: "Phone Interview", icon: Phone, color: "text-blue-500" },
   video: { label: "Video Interview", icon: Video, color: "text-purple-500" },
   in_person: { label: "In-Person", icon: Users, color: "text-green-500" },
-  technical: { label: "Technical Round", icon: FileText, color: "text-orange-500" },
-  final: { label: "Final Round", icon: CheckCircle2, color: "text-emerald-500" },
+  technical: {
+    label: "Technical Round",
+    icon: FileText,
+    color: "text-orange-500",
+  },
+  final: {
+    label: "Final Round",
+    icon: CheckCircle2,
+    color: "text-emerald-500",
+  },
 };
 
 const statusConfig = {
@@ -119,7 +131,12 @@ const outcomeConfig = {
   failed: { label: "Failed", color: "bg-red-500" },
 };
 
-export function InterviewManagement({ candidate, job, clientName, onBack }: InterviewManagementProps) {
+export function InterviewManagement({
+  candidate,
+  job,
+  clientName,
+  onBack,
+}: InterviewManagementProps) {
   const [interviews, setInterviews] = useState<Interview[]>([
     // Mock data - replace with real data
     {
@@ -133,7 +150,8 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
       status: "completed",
       outcome: "passed",
       rating: 4,
-      feedback: "Great communication skills and technical knowledge. Candidate demonstrated strong problem-solving abilities.",
+      feedback:
+        "Great communication skills and technical knowledge. Candidate demonstrated strong problem-solving abilities.",
       notes: "Follow up with technical round",
     },
   ]);
@@ -141,7 +159,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
+  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(
+    null
+  );
   const [formData, setFormData] = useState<Partial<Interview>>({
     date: "",
     time: "",
@@ -155,11 +175,16 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
     meetingLink: "",
   });
 
-  const hasScheduledInterview = interviews.some((int) => int.status === "scheduled");
-  const completedInterviews = interviews.filter((int) => int.status === "completed");
+  const hasScheduledInterview = interviews.some(
+    (int) => int.status === "scheduled"
+  );
+  const completedInterviews = interviews.filter(
+    (int) => int.status === "completed"
+  );
   const averageRating =
     completedInterviews.length > 0
-      ? completedInterviews.reduce((acc, int) => acc + (int.rating || 0), 0) / completedInterviews.length
+      ? completedInterviews.reduce((acc, int) => acc + (int.rating || 0), 0) /
+        completedInterviews.length
       : 0;
 
   const handleScheduleInterview = () => {
@@ -261,14 +286,20 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-            <Button variant="ghost" size="sm" onClick={onBack} className="h-auto p-0 hover:bg-transparent">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="h-auto p-0 hover:bg-transparent"
+            >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Back
             </Button>
           </div>
           <h2 className="text-2xl font-bold">Interview Management</h2>
           <p className="text-muted-foreground mt-1">
-            {candidate.firstName} {candidate.lastName} • {job.title} at {clientName}
+            {candidate.firstName} {candidate.lastName} • {job.title} at{" "}
+            {clientName}
           </p>
         </div>
         <Button
@@ -291,7 +322,8 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
               <div>
                 <p className="font-medium">Interview Already Scheduled</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  An interview is already scheduled for this candidate. Complete or cancel the existing interview before scheduling a new one.
+                  An interview is already scheduled for this candidate. Complete
+                  or cancel the existing interview before scheduling a new one.
                 </p>
               </div>
             </div>
@@ -305,7 +337,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Interviews</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Interviews
+                </p>
                 <p className="text-2xl font-bold mt-1">{interviews.length}</p>
               </div>
               <div className="rounded-full bg-blue-500/10 p-3">
@@ -319,8 +353,12 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold mt-1">{completedInterviews.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Completed
+                </p>
+                <p className="text-2xl font-bold mt-1">
+                  {completedInterviews.length}
+                </p>
               </div>
               <div className="rounded-full bg-green-500/10 p-3">
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -333,9 +371,13 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Average Rating</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Average Rating
+                </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <p className="text-2xl font-bold">{averageRating.toFixed(1)}</p>
+                  <p className="text-2xl font-bold">
+                    {averageRating.toFixed(1)}
+                  </p>
                   <Star className="h-5 w-5 fill-yellow-500 text-yellow-500" />
                 </div>
               </div>
@@ -350,11 +392,15 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Pass Rate</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Pass Rate
+                </p>
                 <p className="text-2xl font-bold mt-1">
                   {completedInterviews.length > 0
                     ? Math.round(
-                        (completedInterviews.filter((int) => int.outcome === "passed").length /
+                        (completedInterviews.filter(
+                          (int) => int.outcome === "passed"
+                        ).length /
                           completedInterviews.length) *
                           100
                       )
@@ -379,7 +425,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
           {interviews.length === 0 ? (
             <div className="text-center py-12">
               <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Interviews Scheduled</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                No Interviews Scheduled
+              </h3>
               <p className="text-muted-foreground mb-4">
                 Schedule the first interview to begin the evaluation process
               </p>
@@ -391,7 +439,10 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
           ) : (
             <div className="space-y-4">
               {interviews
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .sort(
+                  (a, b) =>
+                    new Date(b.date).getTime() - new Date(a.date).getTime()
+                )
                 .map((interview) => {
                   const TypeIcon = interviewTypeConfig[interview.type].icon;
 
@@ -400,19 +451,35 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                       <CardContent className="pt-6">
                         <div className="flex items-start justify-between">
                           <div className="flex items-start gap-4 flex-1">
-                            <div className={`rounded-full bg-${statusConfig[interview.status].color}/10 p-3`}>
-                              <TypeIcon className={`h-5 w-5 ${interviewTypeConfig[interview.type].color}`} />
+                            <div
+                              className={`rounded-full bg-${
+                                statusConfig[interview.status].color
+                              }/10 p-3`}
+                            >
+                              <TypeIcon
+                                className={`h-5 w-5 ${
+                                  interviewTypeConfig[interview.type].color
+                                }`}
+                              />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2">
                                 <h3 className="font-semibold">
                                   {interviewTypeConfig[interview.type].label}
                                 </h3>
-                                <Badge className={`${statusConfig[interview.status].color} text-white`}>
+                                <Badge
+                                  className={`${
+                                    statusConfig[interview.status].color
+                                  } text-white`}
+                                >
                                   {statusConfig[interview.status].label}
                                 </Badge>
                                 {interview.outcome && (
-                                  <Badge className={`${outcomeConfig[interview.outcome].color} text-white`}>
+                                  <Badge
+                                    className={`${
+                                      outcomeConfig[interview.outcome].color
+                                    } text-white`}
+                                  >
                                     {outcomeConfig[interview.outcome].label}
                                   </Badge>
                                 )}
@@ -421,7 +488,10 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                               <div className="space-y-1.5 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-2">
                                   <Calendar className="h-3.5 w-3.5" />
-                                  <span>{formatDate(interview.date)} at {interview.time}</span>
+                                  <span>
+                                    {formatDate(interview.date)} at{" "}
+                                    {interview.time}
+                                  </span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Clock className="h-3.5 w-3.5" />
@@ -431,25 +501,27 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                                   <Users className="h-3.5 w-3.5" />
                                   <span>{interview.interviewer}</span>
                                 </div>
-                                {interview.type === "video" && interview.meetingLink && (
-                                  <div className="flex items-center gap-2">
-                                    <Video className="h-3.5 w-3.5" />
-                                    <a
-                                      href={interview.meetingLink}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:underline"
-                                    >
-                                      Join Meeting
-                                    </a>
-                                  </div>
-                                )}
-                                {interview.type === "in_person" && interview.location && (
-                                  <div className="flex items-center gap-2">
-                                    <MapPin className="h-3.5 w-3.5" />
-                                    <span>{interview.location}</span>
-                                  </div>
-                                )}
+                                {interview.type === "video" &&
+                                  interview.meetingLink && (
+                                    <div className="flex items-center gap-2">
+                                      <Video className="h-3.5 w-3.5" />
+                                      <a
+                                        href={interview.meetingLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                      >
+                                        Join Meeting
+                                      </a>
+                                    </div>
+                                  )}
+                                {interview.type === "in_person" &&
+                                  interview.location && (
+                                    <div className="flex items-center gap-2">
+                                      <MapPin className="h-3.5 w-3.5" />
+                                      <span>{interview.location}</span>
+                                    </div>
+                                  )}
                               </div>
 
                               {interview.rating && (
@@ -472,13 +544,15 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
 
                               {interview.feedback && (
                                 <div className="mt-3 p-3 bg-muted rounded-lg">
-                                  <p className="text-sm">{interview.feedback}</p>
+                                  <p className="text-sm">
+                                    {interview.feedback}
+                                  </p>
                                 </div>
                               )}
                             </div>
                           </div>
 
-                          <div className="flex gap-2 flex-shrink-0">
+                          <div className="flex gap-2 shrink-0">
                             <Button
                               variant="outline"
                               size="sm"
@@ -498,7 +572,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleCancelInterview(interview.id)}
+                                  onClick={() =>
+                                    handleCancelInterview(interview.id)
+                                  }
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
@@ -521,7 +597,8 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
           <DialogHeader>
             <DialogTitle>Schedule New Interview</DialogTitle>
             <DialogDescription>
-              Schedule an interview for {candidate.firstName} {candidate.lastName}
+              Schedule an interview for {candidate.firstName}{" "}
+              {candidate.lastName}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4 overflow-y-auto max-h-[calc(85vh-180px)] px-1">
@@ -534,7 +611,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                   id="date"
                   type="date"
                   value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, date: e.target.value })
+                  }
                   min={new Date().toISOString().split("T")[0]}
                   className="w-full"
                 />
@@ -547,7 +626,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                   id="time"
                   type="time"
                   value={formData.time}
-                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, time: e.target.value })
+                  }
                   className="w-full"
                 />
               </div>
@@ -558,7 +639,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                 <Label htmlFor="type">Interview Type</Label>
                 <Select
                   value={formData.type}
-                  onValueChange={(value: Interview["type"]) => setFormData({ ...formData, type: value })}
+                  onValueChange={(value: Interview["type"]) =>
+                    setFormData({ ...formData, type: value })
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -604,7 +687,10 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                   type="number"
                   value={formData.duration}
                   onChange={(e) =>
-                    setFormData({ ...formData, duration: parseInt(e.target.value) || 30 })
+                    setFormData({
+                      ...formData,
+                      duration: parseInt(e.target.value) || 30,
+                    })
                   }
                   min={15}
                   step={15}
@@ -621,7 +707,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                 <Input
                   id="interviewer"
                   value={formData.interviewer}
-                  onChange={(e) => setFormData({ ...formData, interviewer: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, interviewer: e.target.value })
+                  }
                   placeholder="John Smith"
                   className="w-full"
                 />
@@ -633,7 +721,10 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                   type="email"
                   value={formData.interviewerEmail}
                   onChange={(e) =>
-                    setFormData({ ...formData, interviewerEmail: e.target.value })
+                    setFormData({
+                      ...formData,
+                      interviewerEmail: e.target.value,
+                    })
                   }
                   placeholder="john@company.com"
                   className="w-full"
@@ -652,7 +743,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                 <Input
                   id="meetingLink"
                   value={formData.meetingLink}
-                  onChange={(e) => setFormData({ ...formData, meetingLink: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, meetingLink: e.target.value })
+                  }
                   placeholder="https://zoom.us/j/123456789"
                   className="w-full"
                 />
@@ -670,7 +763,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                 <Input
                   id="location"
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, location: e.target.value })
+                  }
                   placeholder="123 Office Street, New York, NY"
                   className="w-full"
                 />
@@ -682,7 +777,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
               <Textarea
                 id="notes"
                 value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
                 placeholder="Any additional notes or instructions..."
                 rows={3}
                 className="resize-none"
@@ -717,7 +814,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                   id="edit-date"
                   type="date"
                   value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, date: e.target.value })
+                  }
                   min={new Date().toISOString().split("T")[0]}
                 />
               </div>
@@ -727,7 +826,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                   id="edit-time"
                   type="time"
                   value={formData.time}
-                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, time: e.target.value })
+                  }
                 />
               </div>
             </div>
@@ -738,7 +839,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                 <Input
                   id="edit-interviewer"
                   value={formData.interviewer}
-                  onChange={(e) => setFormData({ ...formData, interviewer: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, interviewer: e.target.value })
+                  }
                 />
               </div>
               <div>
@@ -748,7 +851,10 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                   type="number"
                   value={formData.duration}
                   onChange={(e) =>
-                    setFormData({ ...formData, duration: parseInt(e.target.value) })
+                    setFormData({
+                      ...formData,
+                      duration: parseInt(e.target.value),
+                    })
                   }
                   min={15}
                   step={15}
@@ -761,13 +867,18 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
               <Textarea
                 id="edit-notes"
                 value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button onClick={handleUpdateInterview}>Save Changes</Button>
@@ -786,11 +897,17 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Type</Label>
-                  <p className="font-medium">{interviewTypeConfig[selectedInterview.type].label}</p>
+                  <p className="font-medium">
+                    {interviewTypeConfig[selectedInterview.type].label}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Status</Label>
-                  <Badge className={`${statusConfig[selectedInterview.status].color} text-white`}>
+                  <Badge
+                    className={`${
+                      statusConfig[selectedInterview.status].color
+                    } text-white`}
+                  >
                     {statusConfig[selectedInterview.status].label}
                   </Badge>
                 </div>
@@ -802,12 +919,15 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                 <div>
                   <Label className="text-muted-foreground">Date & Time</Label>
                   <p className="font-medium">
-                    {formatDate(selectedInterview.date)} at {selectedInterview.time}
+                    {formatDate(selectedInterview.date)} at{" "}
+                    {selectedInterview.time}
                   </p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Duration</Label>
-                  <p className="font-medium">{selectedInterview.duration} minutes</p>
+                  <p className="font-medium">
+                    {selectedInterview.duration} minutes
+                  </p>
                 </div>
               </div>
 
@@ -815,7 +935,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
                 <Label className="text-muted-foreground">Interviewer</Label>
                 <p className="font-medium">{selectedInterview.interviewer}</p>
                 {selectedInterview.interviewerEmail && (
-                  <p className="text-sm text-muted-foreground">{selectedInterview.interviewerEmail}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedInterview.interviewerEmail}
+                  </p>
                 )}
               </div>
 
@@ -846,7 +968,9 @@ export function InterviewManagement({ candidate, job, clientName, onBack }: Inte
               {selectedInterview.feedback && (
                 <div>
                   <Label className="text-muted-foreground">Feedback</Label>
-                  <p className="mt-2 p-3 bg-muted rounded-lg">{selectedInterview.feedback}</p>
+                  <p className="mt-2 p-3 bg-muted rounded-lg">
+                    {selectedInterview.feedback}
+                  </p>
                 </div>
               )}
 

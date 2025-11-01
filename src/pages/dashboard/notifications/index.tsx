@@ -31,7 +31,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function NotificationsPage() {
   const { notifications, fetchNotifications, markAsRead, markAllAsRead, deleteNotification, createNotification, broadcastImportantNotice } = useNotifications();
-  const { teamMembers, fetchTeam } = useTeam();
+  const { fetchTeam } = useTeam();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -173,7 +173,7 @@ export default function NotificationsPage() {
       setImportantNotice({ type: "system", title: "", message: "", priority: "high", expiresAt: "" });
       toast.success("Important notice broadcast to all team members!");
       fetchNotifications();
-    } catch (error) {
+    } catch {
       toast.error("Failed to broadcast important notice");
     }
   };

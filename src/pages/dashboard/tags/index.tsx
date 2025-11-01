@@ -1,13 +1,26 @@
-import { useEffect, useState } from "react";
-import { Plus, Search, Tag as TagIcon, Edit2, Trash2, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AddTagModal } from "@/components/modals/add-tag-modal";
 import { EditTagModal } from "@/components/modals/edit-tag-modal";
-import type { Tag, CreateTagRequest, UpdateTagRequest } from "@/types/tag";
-import { useTags, useAppSelector } from "@/store/hooks/index";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAppSelector, useTags } from "@/store/hooks/index";
 import { selectTags } from "@/store/selectors";
+import type { CreateTagRequest, Tag, UpdateTagRequest } from "@/types/tag";
+import {
+  AlertCircle,
+  Edit2,
+  Plus,
+  Search,
+  Tag as TagIcon,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function TagsPage() {
@@ -35,6 +48,7 @@ export default function TagsPage() {
   };
 
   const handleDeleteTag = (tagId: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tag = tags.find((t: any) => t.id === tagId);
 
     if (tag?.isSystem) {
@@ -52,6 +66,7 @@ export default function TagsPage() {
   };
 
   // Filter and sort tags
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const filteredTags = (tags as any[])
     .filter((tag) => {
       // Search filter
@@ -72,9 +87,13 @@ export default function TagsPage() {
         case "name":
           return a.name.localeCompare(b.name);
         case "newest":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         case "oldest":
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
         default:
           return 0;
       }
@@ -99,7 +118,10 @@ export default function TagsPage() {
                     Manage tags for jobs and candidates
                   </p>
                 </div>
-                <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto shrink-0">
+                <Button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="w-full sm:w-auto shrink-0"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Tag
                 </Button>
@@ -117,7 +139,7 @@ export default function TagsPage() {
                   />
                 </div>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="w-full sm:w-[160px] md:w-[180px] h-8 md:h-9 text-xs md:text-sm">
+                  <SelectTrigger className="w-full sm:w-40 md:w-[180px] h-8 md:h-9 text-xs md:text-sm">
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -127,7 +149,7 @@ export default function TagsPage() {
                   </SelectContent>
                 </Select>
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full sm:w-[160px] md:w-[180px] h-8 md:h-9 text-xs md:text-sm">
+                  <SelectTrigger className="w-full sm:w-40 md:w-[180px] h-8 md:h-9 text-xs md:text-sm">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -149,7 +171,9 @@ export default function TagsPage() {
                   <p className="text-xl md:text-2xl font-bold mb-0.5">
                     {tags.length}
                   </p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground">Total Tags</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">
+                    Total Tags
+                  </p>
                 </div>
                 <div className="rounded-lg border bg-card p-2 md:p-3 shadow-sm">
                   <div className="flex items-start justify-between mb-1 md:mb-2">
@@ -160,7 +184,9 @@ export default function TagsPage() {
                   <p className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-500 mb-0.5">
                     {systemTags.length}
                   </p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground">System Tags</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">
+                    System Tags
+                  </p>
                 </div>
                 <div className="rounded-lg border bg-card p-2 md:p-3 shadow-sm">
                   <div className="flex items-start justify-between mb-1 md:mb-2">
@@ -171,7 +197,9 @@ export default function TagsPage() {
                   <p className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-500 mb-0.5">
                     {customTags.length}
                   </p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground">Custom Tags</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">
+                    Custom Tags
+                  </p>
                 </div>
               </div>
             </div>
@@ -198,7 +226,10 @@ export default function TagsPage() {
                   </thead>
                   <tbody className="divide-y">
                     {filteredTags.map((tag) => (
-                      <tr key={tag.id} className="hover:bg-muted/30 transition-colors">
+                      <tr
+                        key={tag.id}
+                        className="hover:bg-muted/30 transition-colors"
+                      >
                         <td className="px-3 md:px-4 py-2 md:py-3">
                           <span
                             className="inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-xs md:text-sm font-medium"

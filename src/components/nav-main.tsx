@@ -67,7 +67,10 @@ export function NavMain({
                   tooltip={item.title}
                   isActive={isActive}
                 >
-                  <Link to={item.url} className="[&:hover]:!text-black dark:[&:hover]:!text-white [&:hover>svg]:!text-black dark:[&:hover>svg]:!text-white">
+                  <Link
+                    to={item.url}
+                    className="[&:hover]:text-black! dark:[&:hover]:text-white! [&:hover>svg]:text-black! dark:[&:hover>svg]:text-white!"
+                  >
                     {item.icon && <item.icon className="transition-colors" />}
                     <span>{item.title}</span>
                   </Link>

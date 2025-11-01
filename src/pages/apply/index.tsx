@@ -1,18 +1,28 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
-import { Upload, FileText, Loader2, CheckCircle2, ArrowLeft, X, Sparkles } from "lucide-react";
-import { toast } from "sonner";
 import type { Job } from "@/types/job";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  FileText,
+  Loader2,
+  Sparkles,
+  Upload,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 // Helper function to normalize job data from backend (handle _id to id conversion)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const normalizeJob = (job: any): Job => {
   return {
     ...job,
@@ -115,16 +125,27 @@ export default function PublicApplyPage() {
     const file = e.target.files?.[0];
     if (file) {
       // Check for video files first
-      const videoTypes = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm", "video/x-matroska"];
-      if (videoTypes.includes(file.type) || /\.(mp4|mov|avi|webm|mkv)$/i.test(file.name)) {
-        toast.error("Video files should be uploaded in the 'Video Introduction' section below, not here");
-        e.target.value = ''; // Clear the input
+      const videoTypes = [
+        "video/mp4",
+        "video/quicktime",
+        "video/x-msvideo",
+        "video/webm",
+        "video/x-matroska",
+      ];
+      if (
+        videoTypes.includes(file.type) ||
+        /\.(mp4|mov|avi|webm|mkv)$/i.test(file.name)
+      ) {
+        toast.error(
+          "Video files should be uploaded in the 'Video Introduction' section below, not here"
+        );
+        e.target.value = ""; // Clear the input
         return;
       }
 
       if (file.size > 5 * 1024 * 1024) {
         toast.error("File size must be less than 5MB");
-        e.target.value = ''; // Clear the input
+        e.target.value = ""; // Clear the input
         return;
       }
       const validTypes = [
@@ -134,7 +155,7 @@ export default function PublicApplyPage() {
       ];
       if (!validTypes.includes(file.type)) {
         toast.error("Please upload a PDF or Word document");
-        e.target.value = ''; // Clear the input
+        e.target.value = ""; // Clear the input
         return;
       }
       setSelectedFile(file);
@@ -153,9 +174,20 @@ export default function PublicApplyPage() {
     const file = e.dataTransfer.files?.[0];
     if (file) {
       // Check for video files first
-      const videoTypes = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm", "video/x-matroska"];
-      if (videoTypes.includes(file.type) || /\.(mp4|mov|avi|webm|mkv)$/i.test(file.name)) {
-        toast.error("Video files should be uploaded in the 'Video Introduction' section below, not here");
+      const videoTypes = [
+        "video/mp4",
+        "video/quicktime",
+        "video/x-msvideo",
+        "video/webm",
+        "video/x-matroska",
+      ];
+      if (
+        videoTypes.includes(file.type) ||
+        /\.(mp4|mov|avi|webm|mkv)$/i.test(file.name)
+      ) {
+        toast.error(
+          "Video files should be uploaded in the 'Video Introduction' section below, not here"
+        );
         return;
       }
 
@@ -193,7 +225,9 @@ export default function PublicApplyPage() {
         "video/x-matroska",
       ];
       if (!validTypes.includes(file.type)) {
-        toast.error("Please upload a valid video file (MP4, MOV, AVI, WEBM, MKV)");
+        toast.error(
+          "Please upload a valid video file (MP4, MOV, AVI, WEBM, MKV)"
+        );
         return;
       }
       setSelectedVideo(file);
@@ -213,26 +247,32 @@ export default function PublicApplyPage() {
 
     try {
       const formData = new FormData();
-      formData.append('video', selectedVideo);
+      formData.append("video", selectedVideo);
 
-      const response = await fetch(`${API_BASE_URL}/resumes/public/upload-video`, {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/resumes/public/upload-video`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Failed to upload video' }));
-        throw new Error(error.message || 'Failed to upload video');
+        const error = await response
+          .json()
+          .catch(() => ({ message: "Failed to upload video" }));
+        throw new Error(error.message || "Failed to upload video");
       }
 
       const result = await response.json();
       setVideoUrl(result.data.url);
-      
+
       toast.dismiss(loadingToast);
       toast.success("Video uploaded successfully!");
     } catch (error) {
       toast.dismiss(loadingToast);
-      const message = error instanceof Error ? error.message : "Failed to upload video";
+      const message =
+        error instanceof Error ? error.message : "Failed to upload video";
       toast.error(message);
     } finally {
       setIsUploadingVideo(false);
@@ -251,17 +291,19 @@ export default function PublicApplyPage() {
     try {
       // Create FormData for file upload
       const formData = new FormData();
-      formData.append('resume', selectedFile);
+      formData.append("resume", selectedFile);
 
       // Call PUBLIC API endpoint to parse resume
       const response = await fetch(`${API_BASE_URL}/resumes/public/parse`, {
-        method: 'POST',
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Failed to parse resume' }));
-        throw new Error(error.message || 'Failed to parse resume');
+        const error = await response
+          .json()
+          .catch(() => ({ message: "Failed to parse resume" }));
+        throw new Error(error.message || "Failed to parse resume");
       }
 
       const result = await response.json();
@@ -280,7 +322,10 @@ export default function PublicApplyPage() {
         currentCompany: data.experience?.[0]?.company || "",
         yearsOfExperience: data.experience?.length || 0,
         educationLevel: data.education?.[0]?.degree || "",
-        skills: data.skills?.map((s: string | { name: string }) => typeof s === 'string' ? s : s.name) || [],
+        skills:
+          data.skills?.map((s: string | { name: string }) =>
+            typeof s === "string" ? s : s.name
+          ) || [],
         summary: data.summary || "",
         extractedText: data.extractedText || "",
         experience: data.experience || [],
@@ -293,18 +338,25 @@ export default function PublicApplyPage() {
       setFormData(mappedData);
       setIsUploading(false);
       setIsParsing(false);
-      toast.success("Resume parsed successfully! Review and edit your information below.");
+      toast.success(
+        "Resume parsed successfully! Review and edit your information below."
+      );
     } catch (error) {
       setIsUploading(false);
       setIsParsing(false);
-      const message = error instanceof Error ? error.message : "Failed to parse resume. Please try again.";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to parse resume. Please try again.";
       toast.error(message);
     }
   };
 
   const handleSubmit = async () => {
     if (!formData.firstName || !formData.lastName || !formData.email) {
-      toast.error("Please fill in all required fields (First Name, Last Name, Email)");
+      toast.error(
+        "Please fill in all required fields (First Name, Last Name, Email)"
+      );
       return;
     }
 
@@ -320,18 +372,23 @@ export default function PublicApplyPage() {
 
       // Step 1: Upload resume to Cloudinary using PUBLIC endpoint
       toast.loading("Uploading resume...", { id: loadingToast });
-      
-      const uploadFormData = new FormData();
-      uploadFormData.append('resume', selectedFile);
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/resumes/public/upload`, {
-        method: 'POST',
-        body: uploadFormData,
-      });
+      const uploadFormData = new FormData();
+      uploadFormData.append("resume", selectedFile);
+
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/resumes/public/upload`,
+        {
+          method: "POST",
+          body: uploadFormData,
+        }
+      );
 
       if (!uploadResponse.ok) {
-        const error = await uploadResponse.json().catch(() => ({ message: 'Failed to upload resume' }));
-        throw new Error(error.message || 'Failed to upload resume');
+        const error = await uploadResponse
+          .json()
+          .catch(() => ({ message: "Failed to upload resume" }));
+        throw new Error(error.message || "Failed to upload resume");
       }
 
       const uploadResult = await uploadResponse.json();
@@ -341,42 +398,45 @@ export default function PublicApplyPage() {
       let finalVideoUrl = videoUrl;
       if (selectedVideo && !videoUrl) {
         toast.loading("Uploading video introduction...", { id: loadingToast });
-        
-        const videoFormData = new FormData();
-        videoFormData.append('video', selectedVideo);
 
-        const videoResponse = await fetch(`${API_BASE_URL}/resumes/public/upload-video`, {
-          method: 'POST',
-          body: videoFormData,
-        });
+        const videoFormData = new FormData();
+        videoFormData.append("video", selectedVideo);
+
+        const videoResponse = await fetch(
+          `${API_BASE_URL}/resumes/public/upload-video`,
+          {
+            method: "POST",
+            body: videoFormData,
+          }
+        );
 
         if (videoResponse.ok) {
           const videoResult = await videoResponse.json();
           finalVideoUrl = videoResult.data.url;
         } else {
           // Video upload failed but continue with application (it's optional)
-          console.error('Video upload failed, continuing without video');
+          console.error("Video upload failed, continuing without video");
         }
       }
 
       // Step 3: Create Application using PUBLIC endpoint
       toast.loading("Submitting application...", { id: loadingToast });
-      
+
       const applicationData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        phone: formData.phone || '',
+        phone: formData.phone || "",
         resumeUrl: resumeUrl,
         resumeOriginalName: selectedFile.name,
-        resumeRawText: parsedData?.extractedText || '',
+        resumeRawText: parsedData?.extractedText || "",
         videoIntroUrl: finalVideoUrl || undefined,
-        source: 'direct_apply',
-        status: 'pending',
+        source: "direct_apply",
+        status: "pending",
         jobId: jobId, // Job ID from URL
         parsedData: {
-          summary: formData.summary || '',
-          skills: formData.skills || '',
+          summary: formData.summary || "",
+          skills: formData.skills || "",
           experience: formData.experience || [],
           education: formData.education || [],
           certifications: formData.certifications || [],
@@ -384,32 +444,36 @@ export default function PublicApplyPage() {
         },
       };
 
-      const response = await fetch(`${API_BASE_URL}/applications/public/apply`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(applicationData),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/applications/public/apply`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(applicationData),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to submit application');
+        throw new Error(error.message || "Failed to submit application");
       }
 
       setIsUploading(false);
-      
+
       toast.dismiss(loadingToast);
       toast.success("Application submitted successfully!");
-      
+
       // Navigate to success page
       setTimeout(() => {
-        navigate(`/apply/success?job=${job?.title || 'position'}`);
+        navigate(`/apply/success?job=${job?.title || "position"}`);
       }, 1000);
     } catch (error) {
       setIsUploading(false);
       toast.dismiss(loadingToast);
-      const message = error instanceof Error ? error.message : "Failed to submit application";
+      const message =
+        error instanceof Error ? error.message : "Failed to submit application";
       toast.error(message);
     }
   };
@@ -475,7 +539,7 @@ export default function PublicApplyPage() {
               <ArrowLeft className="h-4 w-4" />
               Back to Job Details
             </Link>
-            
+
             <div className="text-center mb-8">
               <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
                 Apply for {job.title}
@@ -491,13 +555,14 @@ export default function PublicApplyPage() {
             {/* Left Column - Upload Section */}
             <div className="space-y-5">
               <div className="bg-background/80 backdrop-blur-sm border border-primary/20 rounded-xl shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
+                <div className="bg-linear-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
                   <h3 className="font-semibold text-lg flex items-center gap-2">
                     <Upload className="h-5 w-5 text-primary" />
                     Upload Resume
                   </h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Upload a PDF or Word document (max 5MB) to automatically extract your information
+                    Upload a PDF or Word document (max 5MB) to automatically
+                    extract your information
                   </p>
                 </div>
                 <div className="p-6">
@@ -506,7 +571,7 @@ export default function PublicApplyPage() {
                     onDrop={handleDrop}
                     className={`border-2 border-dashed rounded-xl p-10 transition-all duration-200 ${
                       selectedFile
-                        ? "border-primary bg-gradient-to-b from-primary/10 to-primary/5"
+                        ? "border-primary bg-linear-to-b from-primary/10 to-primary/5"
                         : "border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50"
                     }`}
                   >
@@ -516,12 +581,16 @@ export default function PublicApplyPage() {
                           <FileText className="h-24 w-24 text-primary mx-auto mb-4" />
                           <CheckCircle2 className="h-8 w-8 text-primary absolute -top-2 -right-2 bg-background rounded-full" />
                         </div>
-                        <p className="font-bold text-foreground text-lg mb-1">{selectedFile.name}</p>
+                        <p className="font-bold text-foreground text-lg mb-1">
+                          {selectedFile.name}
+                        </p>
                         <p className="text-sm text-muted-foreground mb-2">
                           {(selectedFile.size / 1024).toFixed(2)} KB
                         </p>
                         <Badge variant="secondary" className="mb-4">
-                          {selectedFile.type.includes("pdf") ? "PDF Document" : "Word Document"}
+                          {selectedFile.type.includes("pdf")
+                            ? "PDF Document"
+                            : "Word Document"}
                         </Badge>
                         <div className="flex gap-2 justify-center mt-4">
                           <Button
@@ -546,7 +615,12 @@ export default function PublicApplyPage() {
                         </p>
                         <div className="flex justify-center mb-6">
                           <Label htmlFor="resume-upload">
-                            <Button variant="default" size="lg" asChild className="cursor-pointer">
+                            <Button
+                              variant="outline"
+                              size="lg"
+                              asChild
+                              className="cursor-pointer"
+                            >
                               <span>
                                 <Upload className="h-4 w-4 mr-2" />
                                 Browse Files
@@ -562,7 +636,8 @@ export default function PublicApplyPage() {
                           onChange={handleFileSelect}
                         />
                         <p className="text-xs text-muted-foreground">
-                          Supported: <strong>PDF, DOC, DOCX</strong> • Max size: <strong>5MB</strong>
+                          Supported: <strong>PDF, DOC, DOCX</strong> • Max size:{" "}
+                          <strong>5MB</strong>
                         </p>
                       </div>
                     )}
@@ -595,13 +670,14 @@ export default function PublicApplyPage() {
               {/* Video Introduction Card (Optional) */}
               {parsedData && (
                 <div className="bg-background/80 backdrop-blur-sm border border-primary/20 rounded-xl shadow-lg overflow-hidden">
-                  <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
+                  <div className="bg-linear-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
                     <h3 className="font-semibold text-lg flex items-center gap-2">
                       <FileText className="h-5 w-5 text-primary" />
                       Video Introduction (Optional)
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Some employers prefer a video introduction. Upload a short video (max 100MB)
+                      Some employers prefer a video introduction. Upload a short
+                      video (max 100MB)
                     </p>
                   </div>
                   <div className="p-6">
@@ -614,7 +690,12 @@ export default function PublicApplyPage() {
                           </p>
                           <div className="flex justify-center mb-4">
                             <Label htmlFor="video-upload">
-                              <Button variant="outline" size="default" asChild className="cursor-pointer">
+                              <Button
+                                variant="outline"
+                                size="md"
+                                asChild
+                                className="cursor-pointer"
+                              >
                                 <span>
                                   <Upload className="h-4 w-4 mr-2" />
                                   Choose Video
@@ -630,7 +711,8 @@ export default function PublicApplyPage() {
                             onChange={handleVideoSelect}
                           />
                           <p className="text-xs text-muted-foreground">
-                            Supported: <strong>MP4, MOV, AVI, WEBM, MKV</strong> • Max size: <strong>100MB</strong>
+                            Supported: <strong>MP4, MOV, AVI, WEBM, MKV</strong>{" "}
+                            • Max size: <strong>100MB</strong>
                           </p>
                         </div>
                       </div>
@@ -639,7 +721,9 @@ export default function PublicApplyPage() {
                         <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border border-primary/20">
                           <div className="flex items-center gap-3">
                             <CheckCircle2 className="h-5 w-5 text-primary" />
-                            <span className="text-sm font-medium text-foreground">Video uploaded successfully</span>
+                            <span className="text-sm font-medium text-foreground">
+                              Video uploaded successfully
+                            </span>
                           </div>
                           <Button
                             variant="ghost"
@@ -656,7 +740,7 @@ export default function PublicApplyPage() {
                           src={videoUrl}
                           controls
                           className="w-full rounded-lg border"
-                          style={{ maxHeight: '300px' }}
+                          style={{ maxHeight: "300px" }}
                         >
                           Your browser does not support the video tag.
                         </video>
@@ -667,9 +751,17 @@ export default function PublicApplyPage() {
                           <div className="flex items-center gap-3">
                             <FileText className="h-5 w-5 text-primary" />
                             <div>
-                              <p className="text-sm font-medium text-foreground">{selectedVideo?.name}</p>
+                              <p className="text-sm font-medium text-foreground">
+                                {selectedVideo?.name}
+                              </p>
                               <p className="text-xs text-muted-foreground">
-                                {selectedVideo ? (selectedVideo.size / (1024 * 1024)).toFixed(2) : '0'} MB
+                                {selectedVideo
+                                  ? (
+                                      selectedVideo.size /
+                                      (1024 * 1024)
+                                    ).toFixed(2)
+                                  : "0"}{" "}
+                                MB
                               </p>
                             </div>
                           </div>
@@ -708,7 +800,7 @@ export default function PublicApplyPage() {
 
             {/* Right Column - Form Section */}
             <div className="bg-background/80 backdrop-blur-sm border border-primary/20 rounded-xl shadow-lg overflow-hidden min-w-0">
-              <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
+              <div className="bg-linear-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
                 <h3 className="font-semibold text-lg flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
                   Your Information
@@ -733,28 +825,40 @@ export default function PublicApplyPage() {
                       <div className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="firstName" className="text-sm font-medium">
+                            <Label
+                              htmlFor="firstName"
+                              className="text-sm font-medium"
+                            >
                               First Name <span className="text-red-500">*</span>
                             </Label>
                             <Input
                               id="firstName"
                               value={formData.firstName}
                               onChange={(e) =>
-                                setFormData({ ...formData, firstName: e.target.value })
+                                setFormData({
+                                  ...formData,
+                                  firstName: e.target.value,
+                                })
                               }
                               placeholder="First name"
                               className="mt-1.5"
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="lastName" className="text-sm font-medium">
+                            <Label
+                              htmlFor="lastName"
+                              className="text-sm font-medium"
+                            >
                               Last Name <span className="text-red-500">*</span>
                             </Label>
                             <Input
                               id="lastName"
                               value={formData.lastName}
                               onChange={(e) =>
-                                setFormData({ ...formData, lastName: e.target.value })
+                                setFormData({
+                                  ...formData,
+                                  lastName: e.target.value,
+                                })
                               }
                               placeholder="Last name"
                               className="mt-1.5"
@@ -764,7 +868,10 @@ export default function PublicApplyPage() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="email" className="text-sm font-medium">
+                            <Label
+                              htmlFor="email"
+                              className="text-sm font-medium"
+                            >
                               Email <span className="text-red-500">*</span>
                             </Label>
                             <Input
@@ -772,18 +879,31 @@ export default function PublicApplyPage() {
                               type="email"
                               value={formData.email}
                               onChange={(e) =>
-                                setFormData({ ...formData, email: e.target.value })
+                                setFormData({
+                                  ...formData,
+                                  email: e.target.value,
+                                })
                               }
                               placeholder="email@example.com"
                               className="mt-1.5"
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="phone" className="text-sm font-medium">Phone</Label>
+                            <Label
+                              htmlFor="phone"
+                              className="text-sm font-medium"
+                            >
+                              Phone
+                            </Label>
                             <Input
                               id="phone"
                               value={formData.phone}
-                              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  phone: e.target.value,
+                                })
+                              }
                               placeholder="+1 (555) 123-4567"
                               className="mt-1.5"
                             />
@@ -791,12 +911,20 @@ export default function PublicApplyPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="location" className="text-sm font-medium">Location</Label>
+                          <Label
+                            htmlFor="location"
+                            className="text-sm font-medium"
+                          >
+                            Location
+                          </Label>
                           <Input
                             id="location"
                             value={formData.location}
                             onChange={(e) =>
-                              setFormData({ ...formData, location: e.target.value })
+                              setFormData({
+                                ...formData,
+                                location: e.target.value,
+                              })
                             }
                             placeholder="City, State"
                             className="mt-1.5"
@@ -807,7 +935,9 @@ export default function PublicApplyPage() {
 
                     {/* Skills */}
                     <div className="space-y-4">
-                      <h4 className="text-sm font-bold text-foreground mb-4 pb-2 border-b">Skills</h4>
+                      <h4 className="text-sm font-bold text-foreground mb-4 pb-2 border-b">
+                        Skills
+                      </h4>
                       <div className="flex flex-wrap gap-2">
                         {formData.skills.map((skill, index) => (
                           <Badge
@@ -826,10 +956,10 @@ export default function PublicApplyPage() {
                           id="newSkill"
                           placeholder="Add a skill"
                           onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
+                            if (e.key === "Enter") {
                               const target = e.target as HTMLInputElement;
                               addSkill(target.value);
-                              target.value = '';
+                              target.value = "";
                             }
                           }}
                         />
@@ -844,24 +974,40 @@ export default function PublicApplyPage() {
                       <div className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="linkedin" className="text-sm font-medium">LinkedIn URL</Label>
+                            <Label
+                              htmlFor="linkedin"
+                              className="text-sm font-medium"
+                            >
+                              LinkedIn URL
+                            </Label>
                             <Input
                               id="linkedin"
                               value={formData.linkedinUrl}
                               onChange={(e) =>
-                                setFormData({ ...formData, linkedinUrl: e.target.value })
+                                setFormData({
+                                  ...formData,
+                                  linkedinUrl: e.target.value,
+                                })
                               }
                               placeholder="https://linkedin.com/in/username"
                               className="mt-1.5"
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="website" className="text-sm font-medium">Personal Website</Label>
+                            <Label
+                              htmlFor="website"
+                              className="text-sm font-medium"
+                            >
+                              Personal Website
+                            </Label>
                             <Input
                               id="website"
                               value={formData.website || ""}
                               onChange={(e) =>
-                                setFormData({ ...formData, website: e.target.value })
+                                setFormData({
+                                  ...formData,
+                                  website: e.target.value,
+                                })
                               }
                               placeholder="https://yourwebsite.com"
                               className="mt-1.5"
@@ -870,12 +1016,20 @@ export default function PublicApplyPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="summary" className="text-sm font-medium">Professional Summary</Label>
+                          <Label
+                            htmlFor="summary"
+                            className="text-sm font-medium"
+                          >
+                            Professional Summary
+                          </Label>
                           <Textarea
                             id="summary"
                             value={formData.summary}
                             onChange={(e) =>
-                              setFormData({ ...formData, summary: e.target.value })
+                              setFormData({
+                                ...formData,
+                                summary: e.target.value,
+                              })
                             }
                             placeholder="Brief professional summary"
                             rows={5}
@@ -890,7 +1044,9 @@ export default function PublicApplyPage() {
                     <div className="text-center text-muted-foreground">
                       <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
                       <p className="font-medium">No data parsed yet</p>
-                      <p className="text-sm mt-1">Upload a resume to see extracted information</p>
+                      <p className="text-sm mt-1">
+                        Upload a resume to see extracted information
+                      </p>
                     </div>
                   </div>
                 )}

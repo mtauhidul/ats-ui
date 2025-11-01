@@ -45,7 +45,10 @@ interface SearchResult {
 }
 
 // Enhanced fuzzy match scoring with multiple algorithms
-const fuzzyMatch = (text: string | undefined | null, query: string): { score: number; matched: boolean } => {
+const fuzzyMatch = (
+  text: string | undefined | null,
+  query: string
+): { score: number; matched: boolean } => {
   if (!text || typeof text !== "string") return { score: 0, matched: false };
 
   text = text.toLowerCase().trim();
@@ -53,10 +56,10 @@ const fuzzyMatch = (text: string | undefined | null, query: string): { score: nu
 
   // Exact match - highest score
   if (text === query) return { score: 100, matched: true };
-  
+
   // Starts with query - very high score
   if (text.startsWith(query)) return { score: 90, matched: true };
-  
+
   // Contains exact query - high score
   if (text.includes(query)) return { score: 70, matched: true };
 
@@ -86,7 +89,7 @@ const fuzzyMatch = (text: string | undefined | null, query: string): { score: nu
 
   // All characters matched
   if (queryIndex === query.length) {
-    score += 20 + (maxConsecutive * 5);
+    score += 20 + maxConsecutive * 5;
     return { score: Math.min(score, 50), matched: true };
   }
 
@@ -124,28 +127,57 @@ export default function SearchPage() {
   const { fetchApplications } = useApplications();
   const { fetchTeam } = useTeam();
 
-  const jobsData = useAppSelector((state) => (state.jobs as { jobs: Job[] }).jobs);
-  const candidatesData = useAppSelector((state) => (state.candidates as { candidates: Candidate[] }).candidates);
-  const clientsData = useAppSelector((state) => (state.clients as { clients: Client[] }).clients);
-  const applicationsData = useAppSelector((state) => (state.applications as { applications: Application[] }).applications);
-  const teamData = useAppSelector((state) => (state.team as { teamMembers: TeamMember[] }).teamMembers);
+  const jobsData = useAppSelector(
+    (state) => (state.jobs as { jobs: Job[] }).jobs
+  );
+  const candidatesData = useAppSelector(
+    (state) => (state.candidates as { candidates: Candidate[] }).candidates
+  );
+  const clientsData = useAppSelector(
+    (state) => (state.clients as { clients: Client[] }).clients
+  );
+  const applicationsData = useAppSelector(
+    (state) =>
+      (state.applications as { applications: Application[] }).applications
+  );
+  const teamData = useAppSelector(
+    (state) => (state.team as { teamMembers: TeamMember[] }).teamMembers
+  );
   const currentUser = teamData[0];
 
   // Debounced search query
   const debouncedQuery = useDebounce(searchQuery, 300);
 
+  // OPTIMIZED: Only load data when user actually searches (not on mount)
+  // This prevents loading ALL data from ALL collections unnecessarily
+  const [hasSearched, setHasSearched] = useState(false);
+
   useEffect(() => {
-    const loadData = async () => {
-      await Promise.all([
-        fetchJobs(),
-        fetchCandidates(),
-        fetchClients(),
-        fetchApplications(),
-        fetchTeam(),
-      ]);
-    };
-    loadData();
-  }, [fetchJobs, fetchCandidates, fetchClients, fetchApplications, fetchTeam]);
+    // Only fetch if user has started searching
+    if (searchQuery.length > 0) {
+      const loadData = async () => {
+        if (!hasSearched) {
+          await Promise.all([
+            fetchJobs(),
+            fetchCandidates(),
+            fetchClients(),
+            fetchApplications(),
+            fetchTeam(),
+          ]);
+          setHasSearched(true);
+        }
+      };
+      loadData();
+    }
+  }, [
+    searchQuery,
+    hasSearched,
+    fetchJobs,
+    fetchCandidates,
+    fetchClients,
+    fetchApplications,
+    fetchTeam,
+  ]);
 
   // Add to recent searches
   useEffect(() => {
@@ -220,7 +252,9 @@ export default function SearchPage() {
 
         // Search in location
         const locationStr = job.location
-          ? `${job.location.city || ""} ${job.location.state || ""} ${job.location.country || ""}`.trim()
+          ? `${job.location.city || ""} ${job.location.state || ""} ${
+              job.location.country || ""
+            }`.trim()
           : "";
         const locationMatch = fuzzyMatch(locationStr, query);
         if (locationMatch.matched) {
@@ -230,7 +264,10 @@ export default function SearchPage() {
 
         // Search in requirements
         if (job.requirements) {
-          const reqSkills = [...(job.requirements.skills?.required || []), ...(job.requirements.skills?.preferred || [])];
+          const reqSkills = [
+            ...(job.requirements.skills?.required || []),
+            ...(job.requirements.skills?.preferred || []),
+          ];
           for (const skill of reqSkills) {
             const skillMatch = fuzzyMatch(skill, query);
             if (skillMatch.matched) {
@@ -239,8 +276,11 @@ export default function SearchPage() {
               break;
             }
           }
-          
-          const educationMatch = fuzzyMatch(job.requirements.education || "", query);
+
+          const educationMatch = fuzzyMatch(
+            job.requirements.education || "",
+            query
+          );
           if (educationMatch.matched) {
             relevance += educationMatch.score * 0.4;
             matchedFields.push("education");
@@ -256,15 +296,18 @@ export default function SearchPage() {
 
         if (relevance > 10) {
           const client = clientsData.find((c: Client) => {
-            if (typeof job.clientId === 'string') {
+            if (typeof job.clientId === "string") {
               return c.id === job.clientId;
             }
             return c.id === job.clientId?.id || c.id === job.clientId?._id;
           });
-          
-          const companyName = client?.companyName || 
-                             (typeof job.clientId === 'object' ? job.clientId.companyName : "Unknown Client");
-          
+
+          const companyName =
+            client?.companyName ||
+            (typeof job.clientId === "object"
+              ? job.clientId.companyName
+              : "Unknown Client");
+
           results.push({
             id: job.id,
             type: "job",
@@ -330,7 +373,7 @@ export default function SearchPage() {
         // Search in skills
         if (candidate.skills && candidate.skills.length > 0) {
           for (const skill of candidate.skills) {
-            const skillName = typeof skill === 'string' ? skill : skill.name;
+            const skillName = typeof skill === "string" ? skill : skill.name;
             const skillMatch = fuzzyMatch(skillName, query);
             if (skillMatch.matched) {
               relevance += skillMatch.score * 1.0;
@@ -381,7 +424,10 @@ export default function SearchPage() {
             }`,
             description: candidate.email,
             avatar: candidate.avatar,
-            badges: candidate.skills?.slice(0, 3).map((s) => typeof s === 'string' ? s : s.name) || [],
+            badges:
+              candidate.skills
+                ?.slice(0, 3)
+                .map((s) => (typeof s === "string" ? s : s.name)) || [],
             link: `/dashboard/candidates/${candidate.id}`,
             relevance,
             matchedFields,
@@ -460,7 +506,7 @@ export default function SearchPage() {
         const matchedFields: string[] = [];
         let relevance = 0;
         const fullName = `${app.firstName} ${app.lastName}`;
-        
+
         const nameMatch = fuzzyMatch(fullName, query);
         if (nameMatch.matched) {
           relevance += nameMatch.score * 2.0;
@@ -516,7 +562,7 @@ export default function SearchPage() {
         const matchedFields: string[] = [];
         let relevance = 0;
         const fullName = `${member.firstName} ${member.lastName}`;
-        
+
         const nameMatch = fuzzyMatch(fullName, query);
         if (nameMatch.matched) {
           relevance += nameMatch.score * 2.0;
@@ -674,7 +720,9 @@ export default function SearchPage() {
                     <div className="flex items-center justify-between mb-2 md:mb-3">
                       <div className="flex items-center gap-1.5 md:gap-2">
                         <Clock className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
-                        <p className="text-xs md:text-sm font-medium">Recent Searches</p>
+                        <p className="text-xs md:text-sm font-medium">
+                          Recent Searches
+                        </p>
                       </div>
                       <Button
                         variant="ghost"
@@ -733,7 +781,9 @@ export default function SearchPage() {
                     <CardContent className="pt-4 md:pt-6 pb-3 md:pb-4">
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
-                          <p className="text-[10px] md:text-sm text-muted-foreground truncate">Jobs</p>
+                          <p className="text-[10px] md:text-sm text-muted-foreground truncate">
+                            Jobs
+                          </p>
                           <p className="text-xl md:text-2xl font-bold">
                             {resultCounts.job}
                           </p>
@@ -871,7 +921,8 @@ export default function SearchPage() {
                                 </p>
                                 {result.matchedFields.length > 0 && (
                                   <p className="text-[10px] md:text-xs text-muted-foreground mb-1.5 md:mb-2 italic line-clamp-1">
-                                    Matched in: {result.matchedFields.join(", ")}
+                                    Matched in:{" "}
+                                    {result.matchedFields.join(", ")}
                                   </p>
                                 )}
                                 <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
@@ -911,7 +962,9 @@ export default function SearchPage() {
                 <CardContent className="py-12 md:py-16">
                   <div className="text-center text-muted-foreground">
                     <Search className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-3 md:mb-4 opacity-50" />
-                    <p className="text-base md:text-lg font-medium mb-2">Start searching</p>
+                    <p className="text-base md:text-lg font-medium mb-2">
+                      Start searching
+                    </p>
                     <p className="text-xs md:text-sm max-w-md mx-auto px-4">
                       Type in the search box above to find jobs, candidates,
                       clients, applications, or team members

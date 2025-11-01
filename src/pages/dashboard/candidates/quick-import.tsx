@@ -1,14 +1,29 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, Loader2, CheckCircle2, ArrowLeft, X, Eye, Sparkles } from "lucide-react";
-import { toast } from "sonner";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Eye,
+  FileText,
+  Loader2,
+  Sparkles,
+  Upload,
+  X,
+} from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface Experience {
   company: string;
@@ -140,18 +155,23 @@ export default function QuickImportPage() {
     try {
       // Create FormData for file upload
       const formData = new FormData();
-      formData.append('resume', selectedFile); // Backend expects 'resume' field name
+      formData.append("resume", selectedFile); // Backend expects 'resume' field name
       // Don't send extractSkills, extractEducation, extractExperience - they default to true
 
       // Call backend API to parse resume
-      const response = await authenticatedFetch('http://localhost:5001/api/resumes/parse', {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await authenticatedFetch(
+        "http://localhost:5001/api/resumes/parse",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Failed to parse resume' }));
-        throw new Error(error.message || 'Failed to parse resume');
+        const error = await response
+          .json()
+          .catch(() => ({ message: "Failed to parse resume" }));
+        throw new Error(error.message || "Failed to parse resume");
       }
 
       const result = await response.json();
@@ -174,7 +194,9 @@ export default function QuickImportPage() {
         summary: data.summary || "",
         experience: Array.isArray(data.experience) ? data.experience : [],
         education: Array.isArray(data.education) ? data.education : [],
-        certifications: Array.isArray(data.certifications) ? data.certifications : [],
+        certifications: Array.isArray(data.certifications)
+          ? data.certifications
+          : [],
         languages: Array.isArray(data.languages) ? data.languages : [],
         resumeUrl: URL.createObjectURL(selectedFile),
         extractedText: data.extractedText || "", // Full raw text for validation
@@ -185,19 +207,26 @@ export default function QuickImportPage() {
       setParsedData(mappedData);
       setFormData(mappedData);
       setIsParsing(false);
-      toast.success("Resume parsed successfully! Review the extracted information below.");
+      toast.success(
+        "Resume parsed successfully! Review the extracted information below."
+      );
     } catch (error) {
       setIsUploading(false);
       setIsParsing(false);
-      console.error('Resume parsing error:', error);
-      const message = error instanceof Error ? error.message : "Failed to parse resume. Please try again.";
+      console.error("Resume parsing error:", error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to parse resume. Please try again.";
       toast.error(message);
     }
   };
 
   const handleSubmit = async () => {
     if (!formData.firstName || !formData.lastName || !formData.email) {
-      toast.error("Please fill in all required fields (First Name, Last Name, Email)");
+      toast.error(
+        "Please fill in all required fields (First Name, Last Name, Email)"
+      );
       return;
     }
 
@@ -214,18 +243,23 @@ export default function QuickImportPage() {
 
       // Step 1: Upload resume to Cloudinary
       toast.loading("Uploading resume...", { id: loadingToast });
-      
-      const uploadFormData = new FormData();
-      uploadFormData.append('resume', selectedFile);
 
-      const uploadResponse = await authenticatedFetch('http://localhost:5001/api/resumes/upload', {
-        method: 'POST',
-        body: uploadFormData,
-      });
+      const uploadFormData = new FormData();
+      uploadFormData.append("resume", selectedFile);
+
+      const uploadResponse = await authenticatedFetch(
+        "http://localhost:5001/api/resumes/upload",
+        {
+          method: "POST",
+          body: uploadFormData,
+        }
+      );
 
       if (!uploadResponse.ok) {
-        const error = await uploadResponse.json().catch(() => ({ message: 'Failed to upload resume' }));
-        throw new Error(error.message || 'Failed to upload resume');
+        const error = await uploadResponse
+          .json()
+          .catch(() => ({ message: "Failed to upload resume" }));
+        throw new Error(error.message || "Failed to upload resume");
       }
 
       const uploadResult = await uploadResponse.json();
@@ -233,19 +267,19 @@ export default function QuickImportPage() {
 
       // Step 2: Create Application (not Candidate yet - that happens on approval)
       toast.loading("Creating application...", { id: loadingToast });
-      
+
       const applicationData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        phone: formData.phone || '',
+        phone: formData.phone || "",
         resumeUrl: resumeUrl,
         resumeOriginalName: selectedFile.name,
-        resumeRawText: parsedData?.extractedText || '', // Full raw text for AI validation
-        source: 'manual',
-        status: 'pending',
+        resumeRawText: parsedData?.extractedText || "", // Full raw text for AI validation
+        source: "manual",
+        status: "pending",
         parsedData: {
-          summary: formData.summary || '',
+          summary: formData.summary || "",
           skills: formData.skills || [],
           experience: formData.experience || [],
           education: formData.education || [],
@@ -256,35 +290,42 @@ export default function QuickImportPage() {
         // They will be assigned when recruiter approves the application
       };
 
-      const response = await authenticatedFetch('http://localhost:5001/api/applications', {
-        method: 'POST',
-        body: JSON.stringify(applicationData),
-      });
+      const response = await authenticatedFetch(
+        "http://localhost:5001/api/applications",
+        {
+          method: "POST",
+          body: JSON.stringify(applicationData),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to create application');
+        throw new Error(error.message || "Failed to create application");
       }
 
       await response.json();
       setIsUploading(false);
-      
+
       // Dismiss loading and show success
       toast.dismiss(loadingToast);
-      toast.success("Application created successfully! It will be reviewed and moved to candidates upon approval.", {
-        duration: 3000,
-      });
-      
+      toast.success(
+        "Application created successfully! It will be reviewed and moved to candidates upon approval.",
+        {
+          duration: 3000,
+        }
+      );
+
       // Navigate to applications list
       setTimeout(() => {
         navigate("/dashboard/applications");
       }, 1500);
     } catch (error) {
       setIsUploading(false);
-      
+
       // Dismiss loading and show error
       toast.dismiss(loadingToast);
-      const message = error instanceof Error ? error.message : "Failed to create application";
+      const message =
+        error instanceof Error ? error.message : "Failed to create application";
       toast.error(message);
     }
   };
@@ -310,18 +351,21 @@ export default function QuickImportPage() {
             {/* Header */}
             <div className="mb-4 md:mb-8 hidden md:block">
               <div className="flex items-center gap-4 mb-6">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => navigate("/dashboard/candidates")}
                   className="hover:bg-primary/10"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div className="flex-1">
-                  <h2 className="text-2xl md:text-3xl font-bold text-foreground">Quick Import Candidate</h2>
+                  <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                    Quick Import Candidate
+                  </h2>
                   <p className="text-sm md:text-base text-muted-foreground mt-1">
-                    Upload a resume and our AI will automatically extract candidate information
+                    Upload a resume and our AI will automatically extract
+                    candidate information
                   </p>
                 </div>
               </div>
@@ -329,8 +373,8 @@ export default function QuickImportPage() {
 
             {/* Mobile Back Button */}
             <div className="mb-4 md:hidden">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={() => navigate("/dashboard/candidates")}
                 className="hover:bg-primary/10"
@@ -345,13 +389,14 @@ export default function QuickImportPage() {
               {/* Left Column - Upload Section */}
               <div className="space-y-5">
                 <Card className="border-primary/20">
-                  <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
+                  <CardHeader className="bg-linear-to-r from-primary/5 to-transparent">
                     <CardTitle className="flex items-center gap-2">
                       <Upload className="h-5 w-5 text-primary" />
                       Upload Resume
                     </CardTitle>
                     <CardDescription>
-                      Upload a PDF or Word document (max 5MB) to automatically extract candidate information
+                      Upload a PDF or Word document (max 5MB) to automatically
+                      extract candidate information
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="pt-6">
@@ -360,7 +405,7 @@ export default function QuickImportPage() {
                       onDrop={handleDrop}
                       className={`border-2 border-dashed rounded-xl p-10 transition-all duration-200 ${
                         selectedFile
-                          ? "border-primary bg-gradient-to-b from-primary/10 to-primary/5"
+                          ? "border-primary bg-linear-to-b from-primary/10 to-primary/5"
                           : "border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50"
                       }`}
                     >
@@ -370,12 +415,16 @@ export default function QuickImportPage() {
                             <FileText className="h-24 w-24 text-primary mx-auto mb-4" />
                             <CheckCircle2 className="h-8 w-8 text-primary absolute -top-2 -right-2 bg-background rounded-full" />
                           </div>
-                          <p className="font-bold text-foreground text-lg mb-1">{selectedFile.name}</p>
+                          <p className="font-bold text-foreground text-lg mb-1">
+                            {selectedFile.name}
+                          </p>
                           <p className="text-sm text-muted-foreground mb-2">
                             {(selectedFile.size / 1024).toFixed(2)} KB
                           </p>
                           <Badge variant="secondary" className="mb-4">
-                            {selectedFile.type.includes("pdf") ? "PDF Document" : "Word Document"}
+                            {selectedFile.type.includes("pdf")
+                              ? "PDF Document"
+                              : "Word Document"}
                           </Badge>
                           <div className="flex gap-2 justify-center mt-4">
                             <Button
@@ -400,7 +449,12 @@ export default function QuickImportPage() {
                           </p>
                           <div className="flex justify-center mb-6">
                             <Label htmlFor="resume-upload">
-                              <Button variant="default" size="lg" asChild className="cursor-pointer">
+                              <Button
+                                variant="primary"
+                                size="lg"
+                                asChild
+                                className="cursor-pointer"
+                              >
                                 <span>
                                   <Upload className="h-4 w-4 mr-2" />
                                   Browse Files
@@ -416,7 +470,8 @@ export default function QuickImportPage() {
                             onChange={handleFileSelect}
                           />
                           <p className="text-xs text-muted-foreground">
-                            Supported: <strong>PDF, DOC, DOCX</strong> • Max size: <strong>5MB</strong>
+                            Supported: <strong>PDF, DOC, DOCX</strong> • Max
+                            size: <strong>5MB</strong>
                           </p>
                         </div>
                       )}
@@ -448,7 +503,7 @@ export default function QuickImportPage() {
 
                 {parsedData && (
                   <>
-                    <Card className="border-accent/50 bg-gradient-to-br from-accent/10 to-accent/5">
+                    <Card className="border-accent/50 bg-linear-to-br from-accent/10 to-accent/5">
                       <CardContent className="pt-6">
                         <div className="flex items-start gap-3">
                           <div className="rounded-full bg-accent/20 p-2">
@@ -461,17 +516,25 @@ export default function QuickImportPage() {
                             <p className="text-sm text-accent-foreground/80 mb-4">
                               We've extracted{" "}
                               <strong>{formData.skills.length} skills</strong>,{" "}
-                              <strong>{formData.experience.length} work experiences</strong>, and{" "}
-                              <strong>{formData.education.length} education records</strong>{" "}
-                              using AI. Review and edit the details before importing.
+                              <strong>
+                                {formData.experience.length} work experiences
+                              </strong>
+                              , and{" "}
+                              <strong>
+                                {formData.education.length} education records
+                              </strong>{" "}
+                              using AI. Review and edit the details before
+                              importing.
                             </p>
                             {formData.resumeUrl && (
                               <div className="flex gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
+                                <Button
+                                  variant="outline"
+                                  size="sm"
                                   className="bg-background hover:bg-background/80"
-                                  onClick={() => window.open(formData.resumeUrl, '_blank')}
+                                  onClick={() =>
+                                    window.open(formData.resumeUrl, "_blank")
+                                  }
                                 >
                                   <Eye className="h-4 w-4 mr-2" />
                                   Preview Resume
@@ -485,35 +548,50 @@ export default function QuickImportPage() {
 
                     {/* AI Validation Results */}
                     {formData.aiValidation && (
-                      <Card className={`border-2 ${
-                        formData.aiValidation.isValid 
-                          ? 'border-green-500/50 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10' 
-                          : 'border-orange-500/50 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10'
-                      }`}>
+                      <Card
+                        className={`border-2 ${
+                          formData.aiValidation.isValid
+                            ? "border-green-500/50 bg-linear-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10"
+                            : "border-orange-500/50 bg-linear-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10"
+                        }`}
+                      >
                         <CardContent className="pt-6">
                           <div className="flex items-start gap-3">
-                            <div className={`rounded-full p-2 ${
-                              formData.aiValidation.isValid 
-                                ? 'bg-green-500/20' 
-                                : 'bg-orange-500/20'
-                            }`}>
-                              <Sparkles className={`h-6 w-6 ${
-                                formData.aiValidation.isValid 
-                                  ? 'text-green-600 dark:text-green-400' 
-                                  : 'text-orange-600 dark:text-orange-400'
-                              }`} />
+                            <div
+                              className={`rounded-full p-2 ${
+                                formData.aiValidation.isValid
+                                  ? "bg-green-500/20"
+                                  : "bg-orange-500/20"
+                              }`}
+                            >
+                              <Sparkles
+                                className={`h-6 w-6 ${
+                                  formData.aiValidation.isValid
+                                    ? "text-green-600 dark:text-green-400"
+                                    : "text-orange-600 dark:text-orange-400"
+                                }`}
+                              />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <p className="font-bold text-lg">AI Validation</p>
-                                <Badge 
-                                  variant={formData.aiValidation.isValid ? "default" : "secondary"}
-                                  className={formData.aiValidation.isValid 
-                                    ? "bg-green-500 hover:bg-green-600" 
-                                    : "bg-orange-500 hover:bg-orange-600"
+                                <p className="font-bold text-lg">
+                                  AI Validation
+                                </p>
+                                <Badge
+                                  variant={
+                                    formData.aiValidation.isValid
+                                      ? "success"
+                                      : "secondary"
+                                  }
+                                  className={
+                                    formData.aiValidation.isValid
+                                      ? "bg-green-500 hover:bg-green-600"
+                                      : "bg-orange-500 hover:bg-orange-600"
                                   }
                                 >
-                                  {formData.aiValidation.isValid ? "Valid" : "Needs Review"}
+                                  {formData.aiValidation.isValid
+                                    ? "Valid"
+                                    : "Needs Review"}
                                 </Badge>
                                 <Badge variant="outline" className="ml-2">
                                   Score: {formData.aiValidation.matchScore}/100
@@ -532,7 +610,7 @@ export default function QuickImportPage() {
 
                 {/* AI Info Card */}
                 {!parsedData && (
-                  <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                  <Card className="bg-linear-to-br from-primary/5 to-primary/10 border-primary/20">
                     <CardHeader>
                       <CardTitle className="text-sm flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-primary" />
@@ -542,19 +620,21 @@ export default function QuickImportPage() {
                     <CardContent>
                       <ul className="space-y-2 text-sm text-muted-foreground">
                         <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                          <span>Automatically extracts contact information</span>
+                          <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                          <span>
+                            Automatically extracts contact information
+                          </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                          <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                           <span>Identifies skills and technologies</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                          <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                           <span>Parses work experience and education</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                          <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                           <span>Generates professional summary</span>
                         </li>
                       </ul>
@@ -565,7 +645,7 @@ export default function QuickImportPage() {
 
               {/* Right Column - Form Section */}
               <Card className="border-primary/20 min-w-0">
-                <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
+                <CardHeader className="bg-linear-to-r from-primary/5 to-transparent">
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="h-5 w-5 text-primary" />
                     Candidate Information
@@ -590,28 +670,42 @@ export default function QuickImportPage() {
                         <div className="space-y-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="firstName" className="text-sm font-medium">
-                                First Name <span className="text-red-500">*</span>
+                              <Label
+                                htmlFor="firstName"
+                                className="text-sm font-medium"
+                              >
+                                First Name{" "}
+                                <span className="text-red-500">*</span>
                               </Label>
                               <Input
                                 id="firstName"
                                 value={formData.firstName}
                                 onChange={(e) =>
-                                  setFormData({ ...formData, firstName: e.target.value })
+                                  setFormData({
+                                    ...formData,
+                                    firstName: e.target.value,
+                                  })
                                 }
                                 placeholder="First name"
                                 className="mt-1.5"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="lastName" className="text-sm font-medium">
-                                Last Name <span className="text-red-500">*</span>
+                              <Label
+                                htmlFor="lastName"
+                                className="text-sm font-medium"
+                              >
+                                Last Name{" "}
+                                <span className="text-red-500">*</span>
                               </Label>
                               <Input
                                 id="lastName"
                                 value={formData.lastName}
                                 onChange={(e) =>
-                                  setFormData({ ...formData, lastName: e.target.value })
+                                  setFormData({
+                                    ...formData,
+                                    lastName: e.target.value,
+                                  })
                                 }
                                 placeholder="Last name"
                                 className="mt-1.5"
@@ -621,24 +715,42 @@ export default function QuickImportPage() {
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="email" className="text-sm font-medium">
+                              <Label
+                                htmlFor="email"
+                                className="text-sm font-medium"
+                              >
                                 Email <span className="text-red-500">*</span>
                               </Label>
                               <Input
                                 id="email"
                                 type="email"
                                 value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    email: e.target.value,
+                                  })
+                                }
                                 placeholder="email@example.com"
                                 className="mt-1.5"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="phone" className="text-sm font-medium">Phone</Label>
+                              <Label
+                                htmlFor="phone"
+                                className="text-sm font-medium"
+                              >
+                                Phone
+                              </Label>
                               <Input
                                 id="phone"
                                 value={formData.phone}
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    phone: e.target.value,
+                                  })
+                                }
                                 placeholder="+1 (555) 123-4567"
                                 className="mt-1.5"
                               />
@@ -646,12 +758,20 @@ export default function QuickImportPage() {
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="location" className="text-sm font-medium">Location</Label>
+                            <Label
+                              htmlFor="location"
+                              className="text-sm font-medium"
+                            >
+                              Location
+                            </Label>
                             <Input
                               id="location"
                               value={formData.location}
                               onChange={(e) =>
-                                setFormData({ ...formData, location: e.target.value })
+                                setFormData({
+                                  ...formData,
+                                  location: e.target.value,
+                                })
                               }
                               placeholder="City, State"
                               className="mt-1.5"
@@ -662,7 +782,9 @@ export default function QuickImportPage() {
 
                       {/* Skills */}
                       <div className="space-y-4">
-                        <h4 className="text-sm font-bold text-foreground mb-4 pb-2 border-b">Skills</h4>
+                        <h4 className="text-sm font-bold text-foreground mb-4 pb-2 border-b">
+                          Skills
+                        </h4>
                         <div className="flex flex-wrap gap-2 mb-3">
                           {formData.skills.map((skill, index) => (
                             <Badge
@@ -704,24 +826,40 @@ export default function QuickImportPage() {
                         <div className="space-y-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="linkedin" className="text-sm font-medium">LinkedIn URL</Label>
+                              <Label
+                                htmlFor="linkedin"
+                                className="text-sm font-medium"
+                              >
+                                LinkedIn URL
+                              </Label>
                               <Input
                                 id="linkedin"
                                 value={formData.linkedinUrl}
                                 onChange={(e) =>
-                                  setFormData({ ...formData, linkedinUrl: e.target.value })
+                                  setFormData({
+                                    ...formData,
+                                    linkedinUrl: e.target.value,
+                                  })
                                 }
                                 placeholder="https://linkedin.com/in/username"
                                 className="mt-1.5"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="website" className="text-sm font-medium">Personal Website</Label>
+                              <Label
+                                htmlFor="website"
+                                className="text-sm font-medium"
+                              >
+                                Personal Website
+                              </Label>
                               <Input
                                 id="website"
                                 value={formData.website || ""}
                                 onChange={(e) =>
-                                  setFormData({ ...formData, website: e.target.value })
+                                  setFormData({
+                                    ...formData,
+                                    website: e.target.value,
+                                  })
                                 }
                                 placeholder="https://yourwebsite.com"
                                 className="mt-1.5"
@@ -730,12 +868,20 @@ export default function QuickImportPage() {
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="summary" className="text-sm font-medium">Professional Summary</Label>
+                            <Label
+                              htmlFor="summary"
+                              className="text-sm font-medium"
+                            >
+                              Professional Summary
+                            </Label>
                             <Textarea
                               id="summary"
                               value={formData.summary}
                               onChange={(e) =>
-                                setFormData({ ...formData, summary: e.target.value })
+                                setFormData({
+                                  ...formData,
+                                  summary: e.target.value,
+                                })
                               }
                               placeholder="Brief professional summary"
                               rows={5}
@@ -746,25 +892,37 @@ export default function QuickImportPage() {
                       </div>
 
                       {/* Work Experience */}
-                      {formData.experience && formData.experience.length > 0 && (
-                        <div>
-                          <h4 className="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">
-                            Work Experience
-                          </h4>
-                          <div className="space-y-2 md:space-y-3">
-                            {formData.experience.map((exp, index) => (
-                              <div key={index} className="p-2.5 md:p-3 border rounded-lg bg-muted/20">
-                                <div className="font-semibold text-xs md:text-sm">{exp.title}</div>
-                                <div className="text-xs md:text-sm text-muted-foreground">{exp.company}</div>
-                                <div className="text-[10px] md:text-xs text-muted-foreground">{exp.duration}</div>
-                                {exp.description && (
-                                  <div className="text-[10px] md:text-xs mt-1.5 md:mt-2 text-muted-foreground">{exp.description}</div>
-                                )}
-                              </div>
-                            ))}
+                      {formData.experience &&
+                        formData.experience.length > 0 && (
+                          <div>
+                            <h4 className="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">
+                              Work Experience
+                            </h4>
+                            <div className="space-y-2 md:space-y-3">
+                              {formData.experience.map((exp, index) => (
+                                <div
+                                  key={index}
+                                  className="p-2.5 md:p-3 border rounded-lg bg-muted/20"
+                                >
+                                  <div className="font-semibold text-xs md:text-sm">
+                                    {exp.title}
+                                  </div>
+                                  <div className="text-xs md:text-sm text-muted-foreground">
+                                    {exp.company}
+                                  </div>
+                                  <div className="text-[10px] md:text-xs text-muted-foreground">
+                                    {exp.duration}
+                                  </div>
+                                  {exp.description && (
+                                    <div className="text-[10px] md:text-xs mt-1.5 md:mt-2 text-muted-foreground">
+                                      {exp.description}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Education */}
                       {formData.education && formData.education.length > 0 && (
@@ -774,14 +932,25 @@ export default function QuickImportPage() {
                           </h4>
                           <div className="space-y-2 md:space-y-3">
                             {formData.education.map((edu, index) => (
-                              <div key={index} className="p-2.5 md:p-3 border rounded-lg bg-muted/20">
-                                <div className="font-semibold text-xs md:text-sm">{edu.degree}</div>
-                                <div className="text-xs md:text-sm text-muted-foreground">{edu.institution}</div>
+                              <div
+                                key={index}
+                                className="p-2.5 md:p-3 border rounded-lg bg-muted/20"
+                              >
+                                <div className="font-semibold text-xs md:text-sm">
+                                  {edu.degree}
+                                </div>
+                                <div className="text-xs md:text-sm text-muted-foreground">
+                                  {edu.institution}
+                                </div>
                                 {edu.field && (
-                                  <div className="text-[10px] md:text-xs text-muted-foreground">Field: {edu.field}</div>
+                                  <div className="text-[10px] md:text-xs text-muted-foreground">
+                                    Field: {edu.field}
+                                  </div>
                                 )}
                                 {edu.year && (
-                                  <div className="text-[10px] md:text-xs text-muted-foreground">Year: {edu.year}</div>
+                                  <div className="text-[10px] md:text-xs text-muted-foreground">
+                                    Year: {edu.year}
+                                  </div>
                                 )}
                               </div>
                             ))}
@@ -790,24 +959,27 @@ export default function QuickImportPage() {
                       )}
 
                       {/* Certifications */}
-                      {formData.certifications && formData.certifications.length > 0 && (
-                        <div className="w-full overflow-hidden">
-                          <h4 className="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">
-                            Certifications
-                          </h4>
-                          <div className="flex flex-wrap gap-1.5 md:gap-2">
-                            {formData.certifications.map((cert, index) => (
-                              <Badge 
-                                key={index} 
-                                variant="outline" 
-                                className="text-xs md:text-sm max-w-full wrap-break-word"
-                              >
-                                <span className="line-clamp-2" title={cert}>{cert}</span>
-                              </Badge>
-                            ))}
+                      {formData.certifications &&
+                        formData.certifications.length > 0 && (
+                          <div className="w-full overflow-hidden">
+                            <h4 className="text-xs md:text-sm font-semibold text-foreground mb-2 md:mb-3">
+                              Certifications
+                            </h4>
+                            <div className="flex flex-wrap gap-1.5 md:gap-2">
+                              {formData.certifications.map((cert, index) => (
+                                <Badge
+                                  key={index}
+                                  variant="outline"
+                                  className="text-xs md:text-sm max-w-full wrap-break-word"
+                                >
+                                  <span className="line-clamp-2" title={cert}>
+                                    {cert}
+                                  </span>
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Languages */}
                       {formData.languages && formData.languages.length > 0 && (
@@ -817,25 +989,30 @@ export default function QuickImportPage() {
                           </h4>
                           <div className="flex flex-wrap gap-1.5 md:gap-2">
                             {formData.languages.map((lang, index) => (
-                              <Badge 
-                                key={index} 
-                                variant="outline" 
+                              <Badge
+                                key={index}
+                                variant="outline"
                                 className="text-xs md:text-sm max-w-full wrap-break-word"
                               >
-                                <span className="line-clamp-1" title={lang}>{lang}</span>
+                                <span className="line-clamp-1" title={lang}>
+                                  {lang}
+                                </span>
                               </Badge>
                             ))}
                           </div>
                         </div>
                       )}
                     </div>
-                ) : (
+                  ) : (
                     <div className="flex items-center justify-center h-96 border-2 border-dashed rounded-lg">
                       <div className="text-center text-muted-foreground">
                         <FileText className="h-20 w-20 mx-auto mb-4 opacity-50" />
-                        <p className="font-semibold text-lg mb-2">No Resume Uploaded</p>
+                        <p className="font-semibold text-lg mb-2">
+                          No Resume Uploaded
+                        </p>
                         <p className="text-sm">
-                          Upload a resume on the left to see extracted information here
+                          Upload a resume on the left to see extracted
+                          information here
                         </p>
                       </div>
                     </div>
@@ -847,7 +1024,10 @@ export default function QuickImportPage() {
             {/* Footer Actions */}
             {parsedData && (
               <div className="flex justify-end gap-3 mt-6 p-4 border-t bg-muted/30 rounded-lg">
-                <Button variant="outline" onClick={() => navigate("/dashboard/candidates")}>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/dashboard/candidates")}
+                >
                   Cancel
                 </Button>
                 <Button onClick={handleSubmit} size="lg">

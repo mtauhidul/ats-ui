@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { EmailTemplatesSettings } from "@/components/settings/email-templates-settings";
 import { EmailMonitoringSettings } from "@/components/settings/email-monitoring-settings";
-import { Settings, Mail, Activity } from "lucide-react";
+import { EmailTemplatesSettings } from "@/components/settings/email-templates-settings";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Activity, Mail, Settings } from "lucide-react";
+import { useState } from "react";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("email-templates");
@@ -19,7 +19,9 @@ export default function SettingsPage() {
                   <Settings className="h-4 w-4 md:h-6 md:w-6 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-lg md:text-2xl font-bold text-foreground">Settings</h2>
+                  <h2 className="text-lg md:text-2xl font-bold text-foreground">
+                    Settings
+                  </h2>
                   <p className="text-xs md:text-sm text-muted-foreground">
                     Manage your application settings and preferences
                   </p>
@@ -31,17 +33,17 @@ export default function SettingsPage() {
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-4 md:mb-6">
                 <TabsList className="h-9 md:h-11 p-0.5 md:p-1 bg-card border border-border w-full md:w-fit inline-flex">
-                  <TabsTrigger 
-                    value="email-templates" 
-                    className="flex-1 md:flex-initial px-3 md:px-6 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap"
+                  <TabsTrigger
+                    value="email-templates"
+                    className="flex-1 md:flex-initial px-3 md:px-6 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap"
                   >
                     <Mail className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                     <span className="hidden sm:inline">Email Templates</span>
                     <span className="sm:hidden">Templates</span>
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="email-monitoring" 
-                    className="flex-1 md:flex-initial px-3 md:px-6 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:!text-white data-[state=inactive]:text-muted-foreground whitespace-nowrap"
+                  <TabsTrigger
+                    value="email-monitoring"
+                    className="flex-1 md:flex-initial px-3 md:px-6 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap"
                   >
                     <Activity className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                     <span className="hidden sm:inline">Email Monitoring</span>

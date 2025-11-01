@@ -18,7 +18,7 @@ export function LogoCloud({ className, logos, ...props }: LogoCloudProps) {
     <div
       {...props}
       className={cn(
-        "overflow-hidden py-4 [mask-image:linear-gradient(to_right,transparent,black,transparent)]",
+        "overflow-hidden py-4 [linear-gradient(to_right,transparent,black,transparent)]",
         className
       )}
     >

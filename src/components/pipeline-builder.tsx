@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plus, GripVertical, X, Check, Palette } from "lucide-react";
-import type { PipelineStage } from "@/types/pipeline";
 import { cn } from "@/lib/utils";
+import type { PipelineStage } from "@/types/pipeline";
+import { Check, GripVertical, Palette, Plus, X } from "lucide-react";
+import { useState } from "react";
 
 interface PipelineBuilderProps {
   initialStages?: PipelineStage[];
@@ -27,14 +27,40 @@ const PRESET_COLORS = [
   "#94a3b8", // gray
 ];
 
-const PRESET_ICONS = ["📥", "🔍", "💬", "📝", "✓", "🎁", "🎉", "💻", "📞", "👥", "⭐", "🔧", "📊", "👔"];
+const PRESET_ICONS = [
+  "📥",
+  "🔍",
+  "💬",
+  "📝",
+  "✓",
+  "🎁",
+  "🎉",
+  "💻",
+  "📞",
+  "👥",
+  "⭐",
+  "🔧",
+  "📊",
+  "👔",
+];
 
-export function PipelineBuilder({ initialStages = [], onSave, onCancel }: PipelineBuilderProps) {
+export function PipelineBuilder({
+  initialStages = [],
+  onSave,
+  onCancel,
+}: PipelineBuilderProps) {
   const [stages, setStages] = useState<PipelineStage[]>(
     initialStages.length > 0
       ? initialStages
       : [
-          { id: Date.now().toString(), name: "", description: "", color: PRESET_COLORS[0], icon: "📥", order: 1 },
+          {
+            id: Date.now().toString(),
+            name: "",
+            description: "",
+            color: PRESET_COLORS[0],
+            icon: "📥",
+            order: 1,
+          },
         ]
   );
   const [draggedStageId, setDraggedStageId] = useState<string | null>(null);
@@ -98,7 +124,9 @@ export function PipelineBuilder({ initialStages = [], onSave, onCancel }: Pipeli
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold">Pipeline Stages</h3>
-            <p className="text-sm text-muted-foreground">Create and organize your hiring workflow stages</p>
+            <p className="text-sm text-muted-foreground">
+              Create and organize your hiring workflow stages
+            </p>
           </div>
           <Button onClick={addStage} size="sm">
             <Plus className="h-4 w-4 mr-2" />
@@ -124,7 +152,7 @@ export function PipelineBuilder({ initialStages = [], onSave, onCancel }: Pipeli
                   {/* Header */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
                       <Badge variant="secondary" className="text-xs">
                         {index + 1}
                       </Badge>
@@ -148,7 +176,9 @@ export function PipelineBuilder({ initialStages = [], onSave, onCancel }: Pipeli
                       id={`name-${stage.id}`}
                       placeholder="e.g., Initial Screening"
                       value={stage.name}
-                      onChange={(e) => updateStage(stage.id, { name: e.target.value })}
+                      onChange={(e) =>
+                        updateStage(stage.id, { name: e.target.value })
+                      }
                       className="h-8 text-sm"
                     />
                   </div>
@@ -162,7 +192,9 @@ export function PipelineBuilder({ initialStages = [], onSave, onCancel }: Pipeli
                       id={`desc-${stage.id}`}
                       placeholder="Optional description"
                       value={stage.description}
-                      onChange={(e) => updateStage(stage.id, { description: e.target.value })}
+                      onChange={(e) =>
+                        updateStage(stage.id, { description: e.target.value })
+                      }
                       className="h-8 text-sm"
                     />
                   </div>
@@ -177,7 +209,8 @@ export function PipelineBuilder({ initialStages = [], onSave, onCancel }: Pipeli
                           onClick={() => updateStage(stage.id, { icon })}
                           className={cn(
                             "w-8 h-8 rounded border flex items-center justify-center text-sm hover:bg-muted transition-colors",
-                            stage.icon === icon && "border-primary bg-primary/10"
+                            stage.icon === icon &&
+                              "border-primary bg-primary/10"
                           )}
                         >
                           {icon}
@@ -199,7 +232,9 @@ export function PipelineBuilder({ initialStages = [], onSave, onCancel }: Pipeli
                           onClick={() => updateStage(stage.id, { color })}
                           className={cn(
                             "w-6 h-6 rounded-full border-2 transition-all",
-                            stage.color === color ? "border-foreground scale-110" : "border-transparent"
+                            stage.color === color
+                              ? "border-foreground scale-110"
+                              : "border-transparent"
                           )}
                           style={{ backgroundColor: color }}
                         />

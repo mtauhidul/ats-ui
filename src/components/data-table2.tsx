@@ -606,7 +606,7 @@ export function DataTable({
       <div className="flex flex-col gap-4 px-4 lg:px-6">
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="rounded-lg border bg-gradient-to-br from-card to-muted/20 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-card to-muted/20 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-primary/10 p-1.5">
                 <IconUsers className="h-4 w-4 text-primary" />
@@ -618,7 +618,7 @@ export function DataTable({
             <p className="text-xl font-bold">{totalApplications}</p>
             <p className="text-xs text-muted-foreground">Applications</p>
           </div>
-          <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-green-500/10 p-1.5">
                 <IconUserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -637,7 +637,7 @@ export function DataTable({
               % of total
             </p>
           </div>
-          <div className="rounded-lg border bg-gradient-to-br from-red-50 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-red-50 to-red-100/20 dark:from-red-950/20 dark:to-red-900/10 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-red-500/10 p-1.5">
                 <IconUserX className="h-4 w-4 text-red-600 dark:text-red-400" />
@@ -656,7 +656,7 @@ export function DataTable({
               % of total
             </p>
           </div>
-          <div className="rounded-lg border bg-gradient-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
+          <div className="rounded-lg border bg-linear-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
             <div className="flex items-center justify-between mb-1.5">
               <div className="rounded-md bg-amber-500/10 p-1.5">
                 <IconClockHour4 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -1268,7 +1268,10 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
       onOpenChange={setIsDrawerOpen}
     >
       <DrawerTrigger asChild>
-        <Button variant="link" className="text-foreground w-fit px-0 text-left">
+        <Button
+          variant="ghost"
+          className="text-foreground w-fit px-0 text-left"
+        >
           {item.header}
         </Button>
       </DrawerTrigger>
@@ -1660,7 +1663,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                         </Button>
                         <Button
                           variant="ghost"
-                          size="icon-sm"
+                          size="icon"
                           onClick={() => {
                             if (item.resumeUrl) {
                               const link = document.createElement("a");
@@ -1846,7 +1849,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                               </div>
                             </div>
                             {selectedJobId === job.id && (
-                              <IconCircleCheckFilled className="h-5 w-5 text-primary flex-shrink-0" />
+                              <IconCircleCheckFilled className="h-5 w-5 text-primary shrink-0" />
                             )}
                           </div>
                         </button>

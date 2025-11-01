@@ -147,7 +147,7 @@ export default function TeamPage() {
 
             {/* Statistics Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-              <div className="rounded-lg border bg-gradient-to-br from-card to-muted/20 p-3 shadow-sm">
+              <div className="rounded-lg border bg-linear-to-br from-card to-muted/20 p-3 shadow-sm">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="rounded-md bg-primary/10 p-1.5">
                     <Users className="h-4 w-4 text-primary" />
@@ -158,7 +158,7 @@ export default function TeamPage() {
                 <p className="text-xs text-muted-foreground">Team Members</p>
               </div>
 
-              <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
+              <div className="rounded-lg border bg-linear-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="rounded-md bg-green-500/10 p-1.5">
                     <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -176,7 +176,7 @@ export default function TeamPage() {
                 </p>
               </div>
 
-              <div className="rounded-lg border bg-gradient-to-br from-purple-50 to-purple-100/20 dark:from-purple-950/20 dark:to-purple-900/10 p-3 shadow-sm">
+              <div className="rounded-lg border bg-linear-to-br from-purple-50 to-purple-100/20 dark:from-purple-950/20 dark:to-purple-900/10 p-3 shadow-sm">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="rounded-md bg-purple-500/10 p-1.5">
                     <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -193,7 +193,7 @@ export default function TeamPage() {
                 </p>
               </div>
 
-              <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100/20 dark:from-blue-950/20 dark:to-blue-900/10 p-3 shadow-sm">
+              <div className="rounded-lg border bg-linear-to-br from-blue-50 to-blue-100/20 dark:from-blue-950/20 dark:to-blue-900/10 p-3 shadow-sm">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="rounded-md bg-blue-500/10 p-1.5">
                     <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -208,7 +208,7 @@ export default function TeamPage() {
                 <p className="text-xs text-blue-600/70 dark:text-blue-400/70">Active</p>
               </div>
 
-              <div className="rounded-lg border bg-gradient-to-br from-gray-50 to-gray-100/20 dark:from-gray-950/20 dark:to-gray-900/10 p-3 shadow-sm">
+              <div className="rounded-lg border bg-linear-to-br from-gray-50 to-gray-100/20 dark:from-gray-950/20 dark:to-gray-900/10 p-3 shadow-sm">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="rounded-md bg-gray-500/10 p-1.5">
                     <Users className="h-4 w-4 text-gray-600 dark:text-gray-400" />
@@ -223,7 +223,7 @@ export default function TeamPage() {
                 <p className="text-xs text-gray-600/70 dark:text-gray-400/70">Offline</p>
               </div>
 
-              <div className="rounded-lg border bg-gradient-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
+              <div className="rounded-lg border bg-linear-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="rounded-md bg-amber-500/10 p-1.5">
                     <TrendingUp className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -238,7 +238,7 @@ export default function TeamPage() {
                 <p className="text-xs text-amber-600/70 dark:text-amber-400/70">Total</p>
               </div>
 
-              <div className="rounded-lg border bg-gradient-to-br from-emerald-50 to-emerald-100/20 dark:from-emerald-950/20 dark:to-emerald-900/10 p-3 shadow-sm">
+              <div className="rounded-lg border bg-linear-to-br from-emerald-50 to-emerald-100/20 dark:from-emerald-950/20 dark:to-emerald-900/10 p-3 shadow-sm">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="rounded-md bg-emerald-500/10 p-1.5">
                     <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />

@@ -136,35 +136,38 @@ export default function CandidateDetailsPage() {
     fetchClients();
   }, [candidateId, fetchCandidateById, fetchJobs, fetchClients, dispatch]);
 
-  // Refetch candidate data when window regains focus (for real-time sync)
-  React.useEffect(() => {
-    const handleFocus = () => {
-      if (candidateId) {
-        console.log(
-          "Window focused, refetching candidate data for real-time sync..."
-        );
-        fetchCandidateById(candidateId);
-        fetchJobs();
-      }
-    };
+  // DISABLED: Excessive refetching causes performance issues and API spam
+  // Only refetch on user action or manual page refresh
+  //
+  // // Refetch candidate data when window regains focus (for real-time sync)
+  // React.useEffect(() => {
+  //   const handleFocus = () => {
+  //     if (candidateId) {
+  //       console.log(
+  //         "Window focused, refetching candidate data for real-time sync..."
+  //       );
+  //       fetchCandidateById(candidateId);
+  //       fetchJobs();
+  //     }
+  //   };
 
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [candidateId, fetchCandidateById, fetchJobs]);
+  //   window.addEventListener("focus", handleFocus);
+  //   return () => window.removeEventListener("focus", handleFocus);
+  // }, [candidateId, fetchCandidateById, fetchJobs]);
 
-  // Poll for updates every 30 seconds when tab is visible
-  React.useEffect(() => {
-    if (!candidateId) return;
+  // // Poll for updates every 30 seconds when tab is visible
+  // React.useEffect(() => {
+  //   if (!candidateId) return;
 
-    const interval = setInterval(() => {
-      if (document.visibilityState === "visible") {
-        console.log("Polling for candidate updates...");
-        fetchCandidateById(candidateId);
-      }
-    }, 30000); // 30 seconds
+  //   const interval = setInterval(() => {
+  //     if (document.visibilityState === "visible") {
+  //       console.log("Polling for candidate updates...");
+  //       fetchCandidateById(candidateId);
+  //     }
+  //   }, 30000); // 30 seconds
 
-    return () => clearInterval(interval);
-  }, [candidateId, fetchCandidateById]);
+  //   return () => clearInterval(interval);
+  // }, [candidateId, fetchCandidateById]);
 
   // Log candidate data for debugging
   React.useEffect(() => {
@@ -742,7 +745,13 @@ export default function CandidateDetailsPage() {
                         <PopoverContent className="w-[300px] p-0" align="start">
                           <Command>
                             <CommandInput placeholder="Search tags..." />
-                            <CommandEmpty>No tags found.</CommandEmpty>
+                            {isLoadingTags ? (
+                              <div className="p-3 text-center text-sm text-muted-foreground">
+                                Loading tags...
+                              </div>
+                            ) : (
+                              <CommandEmpty>No tags found.</CommandEmpty>
+                            )}
                             <CommandGroup className="max-h-[200px] overflow-auto">
                               {allTags
                                 .filter((tag) => tag.isActive)
@@ -882,12 +891,17 @@ export default function CandidateDetailsPage() {
               </div>
 
               {/* Overview Tab */}
-              <TabsContent value="overview" className="mt-4 md:mt-6 space-y-4 md:space-y-6">
+              <TabsContent
+                value="overview"
+                className="mt-4 md:mt-6 space-y-4 md:space-y-6"
+              >
                 {/* Skills */}
                 {candidate.skills && candidate.skills.length > 0 && (
                   <Card>
                     <CardHeader className="p-3 md:p-4 lg:p-6">
-                      <CardTitle className="text-sm md:text-base">Skills</CardTitle>
+                      <CardTitle className="text-sm md:text-base">
+                        Skills
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
                       <div className="flex flex-wrap gap-1.5 md:gap-2">
@@ -975,7 +989,9 @@ export default function CandidateDetailsPage() {
                 {candidate.education && candidate.education.length > 0 && (
                   <Card>
                     <CardHeader className="p-3 md:p-4 lg:p-6">
-                      <CardTitle className="text-sm md:text-base">Education</CardTitle>
+                      <CardTitle className="text-sm md:text-base">
+                        Education
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
                       <div className="space-y-3 md:space-y-4">
@@ -1061,7 +1077,9 @@ export default function CandidateDetailsPage() {
                   {candidate.languages && candidate.languages.length > 0 && (
                     <Card>
                       <CardHeader className="p-3 md:p-4 lg:p-6">
-                        <CardTitle className="text-sm md:text-base">Languages</CardTitle>
+                        <CardTitle className="text-sm md:text-base">
+                          Languages
+                        </CardTitle>
                       </CardHeader>
                       <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
                         <div className="flex flex-wrap gap-1.5 md:gap-2">
@@ -1419,7 +1437,10 @@ export default function CandidateDetailsPage() {
               </TabsContent>
 
               {/* Current Candidacy Tab */}
-              <TabsContent value="candidacy" className="mt-4 md:mt-6 space-y-4 md:space-y-6">
+              <TabsContent
+                value="candidacy"
+                className="mt-4 md:mt-6 space-y-4 md:space-y-6"
+              >
                 {/* Current Application Card */}
                 <Card className="border-primary/20">
                   <CardHeader className="p-3 md:p-4 lg:p-6">
@@ -1585,7 +1606,10 @@ export default function CandidateDetailsPage() {
               </TabsContent>
 
               {/* Communications Tab */}
-              <TabsContent value="communications" className="mt-4 md:mt-6 space-y-4 md:space-y-6">
+              <TabsContent
+                value="communications"
+                className="mt-4 md:mt-6 space-y-4 md:space-y-6"
+              >
                 <Card>
                   <CardHeader className="p-3 md:p-4 lg:p-6">
                     <CardTitle className="text-sm md:text-base">
@@ -1746,7 +1770,7 @@ export default function CandidateDetailsPage() {
                             >
                               <div className="flex items-start justify-between gap-4 mb-3">
                                 <div className="flex items-start gap-3 flex-1 min-w-0">
-                                  <Avatar className="h-10 w-10 rounded-md border flex-shrink-0">
+                                  <Avatar className="h-10 w-10 rounded-md border shrink-0">
                                     <AvatarFallback className="rounded-md text-xs">
                                       {history.clientName
                                         .split(" ")
@@ -1955,8 +1979,10 @@ export default function CandidateDetailsPage() {
                                   </div>
                                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                                     <IconBriefcase className="h-3 w-3 shrink-0" />
-                                    <span className="truncate">{interview.clientId?.companyName ||
-                                      "Unknown Client"}</span>
+                                    <span className="truncate">
+                                      {interview.clientId?.companyName ||
+                                        "Unknown Client"}
+                                    </span>
                                   </p>
                                 </div>
                                 <Badge
@@ -2094,7 +2120,10 @@ export default function CandidateDetailsPage() {
               </TabsContent>
 
               {/* History Tab */}
-              <TabsContent value="history" className="mt-4 md:mt-6 space-y-4 md:space-y-6">
+              <TabsContent
+                value="history"
+                className="mt-4 md:mt-6 space-y-4 md:space-y-6"
+              >
                 {/* Career Timeline - Enhanced */}
                 <Card>
                   <CardHeader className="p-3 md:p-4 lg:p-6">
@@ -2226,7 +2255,10 @@ export default function CandidateDetailsPage() {
                           jobTitle: interview.jobId?.title,
                           jobId:
                             typeof interview.jobId === "object"
-                              ? interview.jobId._id || interview.jobId.id
+                              ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                (interview.jobId as any)._id ||
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                (interview.jobId as any).id
                               : interview.jobId,
                           clientName: interview.clientId?.companyName,
                           metadata: {
@@ -2278,7 +2310,10 @@ export default function CandidateDetailsPage() {
                             const isLast = index === timelineEvents.length - 1;
 
                             return (
-                              <div key={event.id} className="relative pl-10 md:pl-12">
+                              <div
+                                key={event.id}
+                                className="relative pl-10 md:pl-12"
+                              >
                                 {/* Timeline dot */}
                                 <div
                                   className={`absolute left-0 w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center border-2 ${
@@ -2325,7 +2360,7 @@ export default function CandidateDetailsPage() {
                                         <Badge
                                           variant={
                                             event.status === "success"
-                                              ? "default"
+                                              ? "primary"
                                               : "secondary"
                                           }
                                           className="text-xs"
@@ -2359,28 +2394,42 @@ export default function CandidateDetailsPage() {
                                     {event.clientName && (
                                       <span className="flex items-center gap-1">
                                         <IconBriefcase className="h-3 w-3 shrink-0" />
-                                        <span className="truncate">{event.clientName}</span>
+                                        <span className="truncate">
+                                          {event.clientName}
+                                        </span>
                                       </span>
                                     )}
                                     <span className="flex items-center gap-1">
                                       <IconCalendar className="h-3 w-3 shrink-0" />
-                                      <span className="hidden sm:inline">{event.date.toLocaleDateString("en-US", {
-                                        month: "short",
-                                        day: "numeric",
-                                        year: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })}</span>
-                                      <span className="sm:hidden">{event.date.toLocaleDateString("en-US", {
-                                        month: "short",
-                                        day: "numeric",
-                                        year: "2-digit",
-                                      })}</span>
+                                      <span className="hidden sm:inline">
+                                        {event.date.toLocaleDateString(
+                                          "en-US",
+                                          {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          }
+                                        )}
+                                      </span>
+                                      <span className="sm:hidden">
+                                        {event.date.toLocaleDateString(
+                                          "en-US",
+                                          {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "2-digit",
+                                          }
+                                        )}
+                                      </span>
                                     </span>
                                     {event.metadata?.stage && (
                                       <span className="flex items-center gap-1">
                                         <IconClockHour4 className="h-3 w-3 shrink-0" />
-                                        <span className="truncate">{event.metadata.stage}</span>
+                                        <span className="truncate">
+                                          {event.metadata.stage}
+                                        </span>
                                       </span>
                                     )}
                                     {event.metadata?.rating && (
@@ -2400,8 +2449,12 @@ export default function CandidateDetailsPage() {
                                         }
                                         className="text-primary hover:underline flex items-center gap-1 shrink-0"
                                       >
-                                        <span className="hidden sm:inline">View Job →</span>
-                                        <span className="sm:hidden">View →</span>
+                                        <span className="hidden sm:inline">
+                                          View Job →
+                                        </span>
+                                        <span className="sm:hidden">
+                                          View →
+                                        </span>
                                       </button>
                                     )}
                                   </div>
