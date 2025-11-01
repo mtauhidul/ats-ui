@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { API_BASE_URL } from "@/config/api";
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
 import {
@@ -110,8 +111,6 @@ export function JobCandidateDetails({
     const fetchInterviews = async () => {
       setIsLoadingInterviews(true);
       try {
-        const API_BASE_URL =
-          import.meta.env.VITE_API_URL || "http://localhost:5001";
         const token = await window.Clerk?.session?.getToken();
 
         if (!token) {

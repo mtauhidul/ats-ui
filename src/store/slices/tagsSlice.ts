@@ -7,7 +7,7 @@ import {
 import { toast } from "sonner";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+import { API_BASE_URL } from "@/config/api";
 
 // Helper function to normalize tag data from backend
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

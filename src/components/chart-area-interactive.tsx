@@ -29,11 +29,9 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import { API_BASE_URL } from "@/config/api";
 
 export const description = "An interactive area chart for application tracking";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
 
 interface ChartDataPoint {
   date: string;

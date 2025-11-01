@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import { API_BASE_URL } from "@/config/api";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -160,7 +161,7 @@ export default function QuickImportPage() {
 
       // Call backend API to parse resume
       const response = await authenticatedFetch(
-        "http://localhost:5001/api/resumes/parse",
+        `${API_BASE_URL}/resumes/parse`,
         {
           method: "POST",
           body: formData,
@@ -248,7 +249,7 @@ export default function QuickImportPage() {
       uploadFormData.append("resume", selectedFile);
 
       const uploadResponse = await authenticatedFetch(
-        "http://localhost:5001/api/resumes/upload",
+        `${API_BASE_URL}/resumes/upload`,
         {
           method: "POST",
           body: uploadFormData,
@@ -291,7 +292,7 @@ export default function QuickImportPage() {
       };
 
       const response = await authenticatedFetch(
-        "http://localhost:5001/api/applications",
+        `${API_BASE_URL}/applications`,
         {
           method: "POST",
           body: JSON.stringify(applicationData),

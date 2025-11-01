@@ -3,7 +3,11 @@
  * Handles all authentication-related API calls
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+import type { User } from '@/types/user';
+import { API_BASE_URL } from '@/config/api';
+
+const TOKEN_KEY = 'auth_token';
+const USER_KEY = 'auth_user';
 
 export interface LoginCredentials {
   email: string;

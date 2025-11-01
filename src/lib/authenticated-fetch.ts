@@ -3,6 +3,7 @@
  * Automatically attaches JWT token to requests and handles token refresh
  */
 
+import { API_BASE_URL } from "@/config/api";
 import {
   clearTokens,
   getAccessToken,
@@ -10,9 +11,6 @@ import {
   setAccessToken,
   setRefreshToken,
 } from "./auth-utils";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface AuthenticatedFetchOptions extends RequestInit {
   skipAuth?: boolean;

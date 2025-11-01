@@ -55,9 +55,7 @@ import {
 } from "@tabler/icons-react";
 import * as React from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
+import { API_BASE_URL } from "@/config/api";
 
 // Tag interface
 interface Tag {

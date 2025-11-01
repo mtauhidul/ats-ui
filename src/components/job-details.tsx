@@ -79,8 +79,7 @@ const statusColors = {
   cancelled: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
 } as const;
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+import { API_BASE_URL } from "@/config/api";
 
 export function JobDetails({
   job,

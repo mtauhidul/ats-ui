@@ -18,9 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+import { API_BASE_URL } from "@/config/api";
 
 // Helper function to normalize job data from backend (handle _id to id conversion)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -5,7 +5,7 @@ import {
 } from "@reduxjs/toolkit";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+import { API_BASE_URL } from "@/config/api";
 
 export type MessageStatus = 'sending' | 'sent' | 'failed' | 'seen';
 

@@ -1,11 +1,9 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { getAccessToken, getRefreshToken, setAccessToken, setRefreshToken, clearTokens } from "@/lib/auth-utils";
+import { API_BASE_URL } from "@/config/api";
 
-// Define the base URL for the API
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
-
-// Custom base query with JWT auth token
+// Custom base query with token refresh logic
 const baseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
   prepareHeaders: (headers) => {

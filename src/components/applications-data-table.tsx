@@ -48,6 +48,7 @@ import {
 import * as React from "react";
 import { toast } from "sonner";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import { API_BASE_URL } from "@/config/api";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -624,7 +625,7 @@ export function ApplicationsDataTable({ data }: ApplicationsDataTableProps) {
         const selectedRows = table.getFilteredSelectedRowModel().rows;
         const selectedIds = selectedRows.map(row => row.original.id);
         
-        const response = await authenticatedFetch('http://localhost:5001/api/applications/bulk/delete', {
+        const response = await authenticatedFetch(`${API_BASE_URL}/applications/bulk/delete`, {
           method: 'POST',
           body: JSON.stringify({ applicationIds: selectedIds }),
         });
@@ -645,7 +646,7 @@ export function ApplicationsDataTable({ data }: ApplicationsDataTableProps) {
         toast.success(result.message || `Successfully deleted ${selectedIds.length} application(s)`);
       } else {
         // Single delete
-        const response = await authenticatedFetch(`http://localhost:5001/api/applications/${applicationToDelete.id}`, {
+        const response = await authenticatedFetch(`${API_BASE_URL}/applications/${applicationToDelete.id}`, {
           method: 'DELETE',
         });
 

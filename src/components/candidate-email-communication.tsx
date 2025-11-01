@@ -57,9 +57,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/config/api";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
 // System email for sending (matches backend RESEND_FROM_EMAIL)
 const SYSTEM_FROM_EMAIL = "noreply@notequik.com";
 

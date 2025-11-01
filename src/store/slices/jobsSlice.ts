@@ -7,7 +7,7 @@ import {
 import { toast } from "sonner";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+import { API_BASE_URL } from "@/config/api";
 
 // Helper function to normalize job data from backend
 const normalizeJob = (job: Job | Record<string, unknown>): Job => {

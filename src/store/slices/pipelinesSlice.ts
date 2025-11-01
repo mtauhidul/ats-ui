@@ -3,7 +3,7 @@ import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/tool
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import { toast } from "sonner";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+import { API_BASE_URL } from "@/config/api";
 
 // Cache configuration - Pipelines rarely change
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes

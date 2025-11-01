@@ -110,6 +110,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import { API_BASE_URL } from "@/config/api";
 import { toast } from "sonner";
 import type { schema } from "./data-table-schema";
 
@@ -440,7 +441,7 @@ export function DataTable({
 
     try {
       const response = await authenticatedFetch(
-        "http://localhost:5001/api/applications/bulk/status",
+        `${API_BASE_URL}/applications/bulk/status`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -495,7 +496,7 @@ export function DataTable({
 
     try {
       const response = await authenticatedFetch(
-        "http://localhost:5001/api/applications/bulk/delete",
+        `${API_BASE_URL}/applications/bulk/delete`,
         {
           method: "POST",
           body: JSON.stringify({ applicationIds: selectedIds }),
@@ -552,7 +553,7 @@ export function DataTable({
 
     try {
       const response = await authenticatedFetch(
-        `http://localhost:5001/api/applications/${currentApprovingId}/approve`,
+        `${API_BASE_URL}/applications/${currentApprovingId}/approve`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -590,7 +591,7 @@ export function DataTable({
 
     try {
       const response = await authenticatedFetch(
-        `http://localhost:5001/api/applications/${id}`,
+        `${API_BASE_URL}/applications/${id}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -1348,7 +1349,7 @@ function TableCellViewer({
     try {
       if (approvalAction === "approve") {
         const response = await authenticatedFetch(
-          `http://localhost:5001/api/applications/${item.id}/approve`,
+          `${API_BASE_URL}/applications/${item.id}/approve`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1365,7 +1366,7 @@ function TableCellViewer({
         }
       } else if (approvalAction === "reject") {
         const response = await authenticatedFetch(
-          `http://localhost:5001/api/applications/${item.id}`,
+          `${API_BASE_URL}/applications/${item.id}`,
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
