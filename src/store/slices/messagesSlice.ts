@@ -258,7 +258,7 @@ const messagesSlice = createSlice({
       )
       .addCase(
         sendMessage.rejected,
-        (state, action) => {
+        () => {
           // Mark the optimistic message as failed
           // This will be handled by the component dispatching updateMessageStatus with 'failed'
         }
@@ -305,53 +305,6 @@ const messagesSlice = createSlice({
       );
   },
 });
-
-// Helper function to build conversations from messages
-function buildConversations(messages: Message[], currentUserId?: string): Conversation[] {
-  const conversationMap = new Map<string, Conversation>();
-
-  messages.forEach((msg) => {
-    if (!conversationMap.has(msg.conversationId)) {
-      // Determine who the OTHER person is (not the current user)
-      const isCurrentUserSender = currentUserId && msg.senderId === currentUserId;
-      const participantId = isCurrentUserSender ? msg.recipientId : msg.senderId;
-      const participantName = isCurrentUserSender ? msg.recipientName : msg.senderName;
-      const participantAvatar = isCurrentUserSender ? msg.recipientAvatar : msg.senderAvatar;
-      const participantRole = isCurrentUserSender ? msg.recipientRole : msg.senderRole;
-
-      conversationMap.set(msg.conversationId, {
-        id: msg.conversationId,
-        participantId,
-        participantName,
-        participantAvatar,
-        participantRole,
-        lastMessage: msg.message,
-        lastMessageTime: msg.sentAt,
-        unreadCount: 0,
-        messages: [],
-      });
-    }
-
-    const conversation = conversationMap.get(msg.conversationId)!;
-    conversation.messages.push(msg);
-
-    if (new Date(msg.sentAt) > new Date(conversation.lastMessageTime)) {
-      conversation.lastMessage = msg.message;
-      conversation.lastMessageTime = msg.sentAt;
-    }
-
-    // Only count unread messages that were sent BY the current user (not read by other person)
-    if (!msg.read && currentUserId && msg.senderId === currentUserId) {
-      conversation.unreadCount++;
-    }
-  });
-
-  return Array.from(conversationMap.values()).sort(
-    (a, b) =>
-      new Date(b.lastMessageTime).getTime() -
-      new Date(a.lastMessageTime).getTime()
-  );
-}
 
 export const {
   setCurrentConversation,

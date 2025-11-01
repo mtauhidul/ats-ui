@@ -14,7 +14,7 @@ export default function InterviewPage() {
   
   const candidate = useAppSelector(state => selectCandidateById(candidateId || '')(state));
   const job = useAppSelector(state => selectJobById(jobId || '')(state));
-  const client = useAppSelector(state => selectClientById(job?.clientId || '')(state));
+  const client = useAppSelector(state => selectClientById(typeof job?.clientId === 'string' ? job.clientId : job?.clientId?.id || job?.clientId?._id || '')(state));
   const clientName = client?.companyName || "Client";
 
   useEffect(() => {

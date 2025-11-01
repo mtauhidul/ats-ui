@@ -52,7 +52,7 @@ export default function Ai03() {
           type="file"
           multiple
           className="sr-only"
-          onChange={(e) => {}}
+          onChange={() => {}}
         />
 
         <div className="px-3 pt-3 pb-2 grow">

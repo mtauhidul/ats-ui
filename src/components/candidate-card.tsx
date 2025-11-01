@@ -162,7 +162,7 @@ export function CandidateCard({ candidate, onClick }: CandidateCardProps) {
                   <Badge
                     variant={
                       recommendation === "excellent_fit"
-                        ? "default"
+                        ? "primary"
                         : recommendation === "good_fit"
                         ? "secondary"
                         : "outline"
