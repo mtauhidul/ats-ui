@@ -3,11 +3,7 @@
  * Handles all authentication-related API calls
  */
 
-import type { User } from '@/types/user';
 import { API_BASE_URL } from '@/config/api';
-
-const TOKEN_KEY = 'auth_token';
-const USER_KEY = 'auth_user';
 
 export interface LoginCredentials {
   email: string;
