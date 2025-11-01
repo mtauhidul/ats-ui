@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Loader } from "@/components/ui/loader";
 import {
   Select,
   SelectContent,
@@ -112,6 +114,8 @@ export function CandidateEmailCommunication({
   const [searchQuery, setSearchQuery] = useState("");
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [isInboxOpen, setIsInboxOpen] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [emailToDelete, setEmailToDelete] = useState<EmailThread | null>(null);
 
   // Compose email state
   const [composeData, setComposeData] = useState({
@@ -293,17 +297,16 @@ export function CandidateEmailCommunication({
   };
 
   const handleDeleteEmail = async (email: EmailThread) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this email? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
+    setEmailToDelete(email);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteEmail = async () => {
+    if (!emailToDelete) return;
 
     try {
       const response = await authenticatedFetch(
-        `${API_BASE_URL}/emails/${email.id}`,
+        `${API_BASE_URL}/emails/${emailToDelete.id}`,
         {
           method: "DELETE",
         }
@@ -314,10 +317,10 @@ export function CandidateEmailCommunication({
       }
 
       // Remove email from list
-      setEmails(emails.filter((e) => e.id !== email.id));
+      setEmails(emails.filter((e) => e.id !== emailToDelete.id));
 
       // Clear selection if this email was selected
-      if (selectedEmail?.id === email.id) {
+      if (selectedEmail?.id === emailToDelete.id) {
         setSelectedEmail(null);
       }
 
@@ -355,6 +358,7 @@ export function CandidateEmailCommunication({
   };
 
   return (
+    <>
     <div className="space-y-3 md:space-y-4 p-2 md:p-3 lg:p-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start gap-2 md:gap-3">
@@ -474,10 +478,7 @@ export function CandidateEmailCommunication({
                   <div className="max-h-[400px] md:max-h-[500px] lg:max-h-[600px] overflow-y-auto border-t">
                     {isLoading ? (
                       <div className="px-6 py-12 text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
-                        <p className="text-sm text-muted-foreground">
-                          Loading emails...
-                        </p>
+                        <Loader size="md" text="Loading emails..." />
                       </div>
                     ) : displayEmails.length > 0 ? (
                       displayEmails.map((email, index) => (
@@ -617,8 +618,8 @@ export function CandidateEmailCommunication({
                     >
                       {isSending ? (
                         <>
-                          <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white mr-1.5 md:mr-2"></div>
-                          <span className="hidden sm:inline">Sending...</span>
+                          <Loader size="sm" />
+                          <span className="hidden sm:inline ml-1.5 md:ml-2">Sending...</span>
                         </>
                       ) : (
                         <>
@@ -975,6 +976,19 @@ export function CandidateEmailCommunication({
         </div>
       </div>
     </div>
+
+    {/* Dialog */}
+    <ConfirmationDialog
+      open={deleteDialogOpen}
+      onOpenChange={setDeleteDialogOpen}
+      title="Delete Email"
+      description="Are you sure you want to delete this email? This action cannot be undone."
+      confirmText="Delete"
+      cancelText="Cancel"
+      onConfirm={confirmDeleteEmail}
+      variant="destructive"
+    />
+    </>
   );
 }
 

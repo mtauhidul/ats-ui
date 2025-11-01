@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader } from "@/components/ui/loader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { Candidate } from "@/types/candidate";
@@ -840,10 +841,7 @@ export function JobCandidateDetails({
             <CardContent>
               {isLoadingInterviews ? (
                 <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Loading timeline...
-                  </p>
+                  <Loader size="sm" text="Loading timeline..." />
                 </div>
               ) : (
                 <div className="relative space-y-6 pl-8">

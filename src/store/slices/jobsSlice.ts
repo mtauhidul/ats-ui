@@ -106,6 +106,8 @@ export interface JobsState {
   currentJob: Job | null;
   isLoading: boolean;
   error: string | null;
+  lastFetched: number | null; // Timestamp when data was last fetched
+  cacheValid: boolean; // Whether cache is still valid
 }
 
 const initialState: JobsState = {
@@ -113,10 +115,22 @@ const initialState: JobsState = {
   currentJob: null,
   isLoading: false,
   error: null,
+  lastFetched: null,
+  cacheValid: false,
+};
+
+// Cache configuration - jobs change less frequently than candidates
+const CACHE_DURATION = 60 * 1000; // 60 seconds (1 minute)
+
+// Helper to check if cache is still valid
+const isCacheValid = (lastFetched: number | null): boolean => {
+  if (!lastFetched) return false;
+  return Date.now() - lastFetched < CACHE_DURATION;
 };
 
 // Async thunks
 export const fetchJobs = createAsyncThunk("jobs/fetchAll", async () => {
+  console.log('📡 Fetching fresh jobs from API');
   const response = await authenticatedFetch(`${API_BASE_URL}/jobs`);
   if (!response.ok) throw new Error("Failed to fetch jobs");
   const result = await response.json();
@@ -124,6 +138,25 @@ export const fetchJobs = createAsyncThunk("jobs/fetchAll", async () => {
   // Normalize jobs to ensure clientId is always a string
   return Array.isArray(jobs) ? jobs.map(normalizeJob) : [];
 });
+
+// Smart fetch - only fetches if cache is stale
+export const fetchJobsIfNeeded = createAsyncThunk(
+  "jobs/fetchIfNeeded",
+  async (_, { getState, dispatch }) => {
+    const state = getState() as { jobs: JobsState };
+    const { lastFetched, cacheValid, jobs } = state.jobs;
+    
+    // If cache is valid and we have data, skip fetch
+    if (cacheValid && isCacheValid(lastFetched) && jobs.length > 0) {
+      console.log('✅ Using cached jobs (age: ' + Math.round((Date.now() - (lastFetched || 0)) / 1000) + 's)');
+      return null;
+    }
+    
+    // Cache is stale or invalid, fetch fresh data
+    console.log('🔄 Cache stale or invalid, fetching jobs...');
+    return dispatch(fetchJobs()).then((result) => result.payload);
+  }
+);
 
 export const fetchJobById = createAsyncThunk(
   "jobs/fetchById",
@@ -271,6 +304,12 @@ const jobsSlice = createSlice({
     setCurrentJob: (state, action: PayloadAction<Job | null>) => {
       state.currentJob = action.payload;
     },
+    // Invalidate cache - force refetch on next access
+    invalidateJobsCache: (state) => {
+      state.cacheValid = false;
+      state.lastFetched = null;
+      console.log('🔄 Jobs cache invalidated');
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -281,10 +320,33 @@ const jobsSlice = createSlice({
       .addCase(fetchJobs.fulfilled, (state, action) => {
         state.isLoading = false;
         state.jobs = action.payload;
+        state.lastFetched = Date.now(); // Update cache timestamp
+        state.cacheValid = true; // Mark cache as valid
       })
       .addCase(fetchJobs.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to fetch jobs";
+        state.cacheValid = false; // Invalidate on error
+      })
+      .addCase(fetchJobsIfNeeded.pending, (state) => {
+        // Only show loading if we're actually fetching (not using cache)
+        if (!state.cacheValid || !isCacheValid(state.lastFetched)) {
+          state.isLoading = true;
+        }
+      })
+      .addCase(fetchJobsIfNeeded.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Only update if we got fresh data (not null from cache)
+        if (action.payload && Array.isArray(action.payload)) {
+          state.jobs = action.payload;
+          state.lastFetched = Date.now();
+          state.cacheValid = true;
+        }
+      })
+      .addCase(fetchJobsIfNeeded.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to fetch jobs";
+        state.cacheValid = false;
       })
       .addCase(fetchJobById.fulfilled, (state, action) => {
         state.currentJob = action.payload;
@@ -295,9 +357,11 @@ const jobsSlice = createSlice({
         } else {
           state.jobs.push(action.payload);
         }
+        state.lastFetched = Date.now(); // Keep cache fresh
       })
       .addCase(createJob.fulfilled, (state, action) => {
         state.jobs.unshift(action.payload);
+        state.lastFetched = Date.now(); // Keep cache fresh
       })
       .addCase(updateJob.fulfilled, (state, action) => {
         const index = state.jobs.findIndex((j) => j.id === action.payload.id);
@@ -307,15 +371,17 @@ const jobsSlice = createSlice({
         if (state.currentJob?.id === action.payload.id) {
           state.currentJob = action.payload;
         }
+        state.lastFetched = Date.now(); // Keep cache fresh
       })
       .addCase(deleteJob.fulfilled, (state, action) => {
         state.jobs = state.jobs.filter((j) => j.id !== action.payload);
         if (state.currentJob?.id === action.payload) {
           state.currentJob = null;
         }
+        state.lastFetched = Date.now(); // Keep cache fresh
       });
   },
 });
 
-export const { setCurrentJob } = jobsSlice.actions;
+export const { setCurrentJob, invalidateJobsCache } = jobsSlice.actions;
 export default jobsSlice.reducer;

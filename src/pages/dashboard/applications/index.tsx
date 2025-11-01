@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { DataTable } from "@/components/data-table";
+import { Loader } from "@/components/ui/loader";
 import { useApplications, useJobs, useClients, useAppSelector } from "@/store/hooks/index";
 import { selectApplications, selectJobs, selectClients } from "@/store/selectors";
 import type { Application } from "@/types/application";
@@ -7,19 +8,20 @@ import type { Job } from "@/types/job";
 import type { Client } from "@/types/client";
 
 export default function ApplicationsPage() {
-  const { fetchApplications, isLoading: applicationsLoading } = useApplications();
-  const { fetchJobs, isLoading: jobsLoading } = useJobs();
-  const { fetchClients, isLoading: clientsLoading } = useClients();
+  const { fetchApplicationsIfNeeded, isLoading: applicationsLoading } = useApplications(); // Use smart fetch
+  const { fetchJobsIfNeeded, isLoading: jobsLoading } = useJobs(); // Use smart fetch
+  const { fetchClientsIfNeeded, isLoading: clientsLoading } = useClients(); // Use smart fetch
   
   const applications = useAppSelector(selectApplications);
   const jobs = useAppSelector(selectJobs);
   const clients = useAppSelector(selectClients);
 
   useEffect(() => {
-    fetchApplications();
-    fetchJobs();
-    fetchClients();
-  }, [fetchApplications, fetchJobs, fetchClients]);
+    fetchApplicationsIfNeeded(); // Smart fetch - only if cache is stale
+    fetchJobsIfNeeded(); // Smart fetch - only if cache is stale
+    fetchClientsIfNeeded(); // Smart fetch - only if cache is stale
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only fetch on mount, cache handles the rest
 
   // Log applications data
   console.log('Applications data:', applications);
@@ -267,7 +269,11 @@ export default function ApplicationsPage() {
 
   const isLoading = applicationsLoading || jobsLoading || clientsLoading;
 
-  if (isLoading) return <div className="flex items-center justify-center h-screen">Loading applications...</div>;
+  if (isLoading) return (
+    <div className="flex items-center justify-center h-screen">
+      <Loader size="lg" text="Loading applications..." />
+    </div>
+  );
 
   return (
     <div className="flex flex-1 flex-col">

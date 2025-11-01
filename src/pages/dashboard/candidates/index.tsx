@@ -1,4 +1,5 @@
 import { CandidatesDataTable } from "@/components/candidates-data-table";
+import { Loader } from "@/components/ui/loader";
 import {
   useAppSelector,
   useCandidates,
@@ -21,32 +22,35 @@ const teamMembersPool = [
 
 export default function CandidatesPage() {
   const {
-    fetchCandidates,
+    fetchCandidatesIfNeeded, // Use smart fetch instead of always fetching
     deleteCandidate,
+    invalidateCache, // Add cache invalidation
     isLoading: candidatesLoading,
   } = useCandidates();
-  const { fetchJobs, isLoading: jobsLoading } = useJobs();
-  const { fetchClients, isLoading: clientsLoading } = useClients();
+  const { fetchJobsIfNeeded, isLoading: jobsLoading } = useJobs(); // Smart fetch
+  const { fetchClientsIfNeeded, isLoading: clientsLoading } = useClients(); // Smart fetch
 
   const candidates = useAppSelector(selectCandidates);
   const jobs = useAppSelector(selectJobs);
   const clients = useAppSelector(selectClients);
 
   useEffect(() => {
-    fetchCandidates();
-    fetchJobs();
-    fetchClients();
-  }, [fetchCandidates, fetchJobs, fetchClients]);
+    fetchCandidatesIfNeeded(); // Smart fetch - only if cache is stale
+    fetchJobsIfNeeded(); // Smart fetch - only if cache is stale
+    fetchClientsIfNeeded(); // Smart fetch - only if cache is stale
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only fetch on mount, cache handles the rest
 
   // Listen for refetch events from AssignedSelector
   useEffect(() => {
     const handleRefetch = () => {
-      fetchCandidates();
+      fetchCandidatesIfNeeded(); // Smart fetch on event
     };
 
     window.addEventListener("refetchCandidates", handleRefetch);
     return () => window.removeEventListener("refetchCandidates", handleRefetch);
-  }, [fetchCandidates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // fetchCandidatesIfNeeded is stable, no need in deps
 
   // DISABLED: Excessive refetching causes performance issues and API spam
   // Only refetch on user action (delete, update) or manual page refresh
@@ -77,8 +81,9 @@ export default function CandidatesPage() {
   const handleDeleteCandidate = async (candidateId: string) => {
     try {
       await deleteCandidate(candidateId);
-      // Refresh candidates list after deletion
-      fetchCandidates();
+      // Invalidate cache and refetch after deletion
+      invalidateCache();
+      fetchCandidatesIfNeeded();
     } catch (error) {
       console.error("Failed to delete candidate:", error);
     }
@@ -221,7 +226,7 @@ export default function CandidatesPage() {
   if (isLoading)
     return (
       <div className="flex items-center justify-center h-screen">
-        Loading candidates...
+        <Loader size="lg" text="Loading candidates..." />
       </div>
     );
 

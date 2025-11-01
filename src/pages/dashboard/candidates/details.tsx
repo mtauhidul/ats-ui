@@ -10,6 +10,7 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
+import { Loader } from "@/components/ui/loader";
 import {
   Popover,
   PopoverContent,
@@ -314,12 +315,7 @@ export default function CandidateDetailsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="text-lg font-semibold mb-2">
-            Loading candidate details...
-          </div>
-          <div className="text-sm text-muted-foreground">Please wait</div>
-        </div>
+        <Loader size="lg" text="Loading candidate details..." />
       </div>
     );
   }
@@ -1927,10 +1923,7 @@ export default function CandidateDetailsPage() {
                   <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
                     {isLoadingInterviews ? (
                       <div className="text-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                        <p className="text-sm text-muted-foreground mt-3">
-                          Loading interviews...
-                        </p>
+                        <Loader size="md" text="Loading interviews..." />
                       </div>
                     ) : interviews.length === 0 ? (
                       <div className="text-center py-12">
@@ -2277,10 +2270,7 @@ export default function CandidateDetailsPage() {
                       if (isLoadingInterviews) {
                         return (
                           <div className="text-center py-8">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-                            <p className="text-sm text-muted-foreground mt-2">
-                              Loading timeline...
-                            </p>
+                            <Loader size="sm" text="Loading timeline..." />
                           </div>
                         );
                       }

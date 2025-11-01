@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { ClientDetails } from "@/components/client-details";
+import { Loader } from "@/components/ui/loader";
 import type { Client } from "@/types/client";
 import type { CreateJobRequest } from "@/types/job";
 import { useClients, useJobs, useCandidates, useAppSelector } from "@/store/hooks/index";
@@ -93,7 +94,7 @@ export default function ClientDetailPage() {
   if (!client) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Loading client...</p>
+        <Loader size="md" text="Loading client..." />
       </div>
     );
   }

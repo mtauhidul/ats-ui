@@ -2,14 +2,16 @@
 import { useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import { 
-  fetchClients, 
+  fetchClients,
+  fetchClientsIfNeeded,
   fetchClientById, 
   createClient, 
   updateClient, 
   deleteClient,
   setCurrentClient,
   setFilters as setClientFilters,
-  clearFilters as clearClientFilters
+  clearFilters as clearClientFilters,
+  invalidateClientsCache
 } from "../slices/clientsSlice";
 import type { ClientsState } from "../slices/clientsSlice";
 
@@ -20,6 +22,7 @@ export const useClients = () => {
   );
 
   const fetchClientsCallback = useCallback(() => dispatch(fetchClients()), [dispatch]);
+  const fetchClientsIfNeededCallback = useCallback(() => dispatch(fetchClientsIfNeeded()), [dispatch]);
   const fetchClientByIdCallback = useCallback((id: string) => dispatch(fetchClientById(id)), [dispatch]);
   const createClientCallback = useCallback((data: Parameters<typeof createClient>[0]) => 
     dispatch(createClient(data)), [dispatch]);
@@ -31,6 +34,7 @@ export const useClients = () => {
   const setFiltersCallback = useCallback((filters: Parameters<typeof setClientFilters>[0]) => 
     dispatch(setClientFilters(filters)), [dispatch]);
   const clearFiltersCallback = useCallback(() => dispatch(clearClientFilters()), [dispatch]);
+  const invalidateCacheCallback = useCallback(() => dispatch(invalidateClientsCache()), [dispatch]);
 
   return {
     clients,
@@ -39,6 +43,7 @@ export const useClients = () => {
     error,
     filters,
     fetchClients: fetchClientsCallback,
+    fetchClientsIfNeeded: fetchClientsIfNeededCallback, // New: smart fetch with caching
     fetchClientById: fetchClientByIdCallback,
     createClient: createClientCallback,
     updateClient: updateClientCallback,
@@ -46,5 +51,6 @@ export const useClients = () => {
     setCurrentClient: setCurrentClientCallback,
     setFilters: setFiltersCallback,
     clearFilters: clearFiltersCallback,
+    invalidateCache: invalidateCacheCallback, // New: manual cache invalidation
   };
 };

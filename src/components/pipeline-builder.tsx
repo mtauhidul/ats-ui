@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { PipelineStage } from "@/types/pipeline";
 import { Check, GripVertical, Palette, Plus, X } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface PipelineBuilderProps {
   initialStages?: PipelineStage[];
@@ -112,7 +113,7 @@ export function PipelineBuilder({
   const handleSave = () => {
     const validStages = stages.filter((s) => s.name.trim() !== "");
     if (validStages.length === 0) {
-      alert("Please add at least one stage with a name");
+      toast.error("Please add at least one stage with a name");
       return;
     }
     onSave(validStages);

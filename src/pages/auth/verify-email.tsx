@@ -8,6 +8,7 @@ import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Loader } from "@/components/ui/loader";
 import { setPassword, verifyEmail } from "@/services/auth.service";
 import { ArrowLeft, CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -110,8 +111,7 @@ export default function VerifyEmailPage() {
         {/* Verifying State */}
         {isVerifying && (
           <div className="flex flex-col items-center space-y-4 py-8">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="text-muted-foreground">Please wait...</p>
+            <Loader size="lg" text="Please wait..." />
           </div>
         )}
 

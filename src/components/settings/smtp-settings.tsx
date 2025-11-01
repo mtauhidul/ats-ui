@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Loader } from "@/components/ui/loader";
 import { Switch } from "@/components/ui/switch";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import {
@@ -205,7 +206,7 @@ export function SmtpSettings() {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <Loader size="md" />
         </CardContent>
       </Card>
     );
@@ -418,8 +419,8 @@ export function SmtpSettings() {
             <Button onClick={handleSave} disabled={saving}>
               {saving ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  <Loader size="sm" />
+                  <span className="ml-2">Saving...</span>
                 </>
               ) : (
                 "Save Settings"

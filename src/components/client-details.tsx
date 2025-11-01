@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { Candidate } from "@/types/candidate";
@@ -109,6 +110,8 @@ export function ClientDetails({
   const [isAddNoteOpen, setIsAddNoteOpen] = useState(false);
   const [isEditClientOpen, setIsEditClientOpen] = useState(false);
   const [isAddJobOpen, setIsAddJobOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteConfirmMessage, setDeleteConfirmMessage] = useState("");
   // const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
   //   null
   // );
@@ -258,10 +261,13 @@ export function ClientDetails({
       } in the system. Are you sure you want to delete this client? This action cannot be undone.`;
     }
 
-    if (confirm(confirmMessage)) {
-      onDelete(client.id);
-      onBack();
-    }
+    setDeleteConfirmMessage(confirmMessage);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteClient = () => {
+    onDelete(client.id);
+    onBack();
   };
 
   const getCommunicationIcon = (type: string) => {
@@ -989,6 +995,17 @@ export function ClientDetails({
         onSubmit={handleAddJob}
         prefilledClientId={client.id}
         hideClientSelector={true}
+      />
+
+      <ConfirmationDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Delete Client"
+        description={deleteConfirmMessage}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDeleteClient}
+        variant="destructive"
       />
     </div>
   );

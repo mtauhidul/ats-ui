@@ -1,6 +1,7 @@
 import { AddTagModal } from "@/components/modals/add-tag-modal";
 import { EditTagModal } from "@/components/modals/edit-tag-modal";
 import { Button } from "@/components/ui/button";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -36,6 +37,8 @@ export default function TagsPage() {
   const [sortBy, setSortBy] = useState<string>("name");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [tagToDelete, setTagToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const handleAddTag = (data: CreateTagRequest) => {
     createTag(data);
@@ -56,13 +59,14 @@ export default function TagsPage() {
       return;
     }
 
-    const confirmed = confirm(
-      `Are you sure you want to delete the tag "${tag?.name}"? This action cannot be undone.`
-    );
+    setTagToDelete({ id: tagId, name: tag.name });
+    setDeleteDialogOpen(true);
+  };
 
-    if (!confirmed) return;
-
-    deleteTag(tagId);
+  const confirmDelete = () => {
+    if (tagToDelete) {
+      deleteTag(tagToDelete.id);
+    }
   };
 
   // Filter and sort tags
@@ -311,6 +315,17 @@ export default function TagsPage() {
         tag={editingTag}
         onClose={() => setEditingTag(null)}
         onSubmit={handleUpdateTag}
+      />
+
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Tag"
+        description={`Are you sure you want to delete the tag "${tagToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        variant="destructive"
       />
     </div>
   );

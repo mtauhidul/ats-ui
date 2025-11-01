@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Loader } from "@/components/ui/loader";
 import { Textarea } from "@/components/ui/textarea";
 import type { Job } from "@/types/job";
 import {
@@ -497,9 +498,8 @@ export default function PublicApplyPage() {
         <div className="absolute inset-0 [--cell-border-color:hsl(var(--primary)/0.3)] [--cell-fill-color:hsl(var(--primary)/0.15)] [--cell-shadow-color:hsl(var(--primary)/0.4)]">
           <BackgroundRippleEffect rows={10} cols={30} cellSize={48} />
         </div>
-        <div className="relative z-10 text-center">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading job details...</p>
+        <div className="relative z-10">
+          <Loader size="lg" text="Loading job details..." />
         </div>
       </div>
     );

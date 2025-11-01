@@ -14,6 +14,8 @@ export interface ApplicationsState {
   currentApplication: Application | null;
   isLoading: boolean;
   error: string | null;
+  lastFetched: number | null; // Timestamp when data was last fetched
+  cacheValid: boolean; // Whether cache is still valid
 }
 
 const initialState: ApplicationsState = {
@@ -21,16 +23,47 @@ const initialState: ApplicationsState = {
   currentApplication: null,
   isLoading: false,
   error: null,
+  lastFetched: null,
+  cacheValid: false,
+};
+
+// Cache configuration - applications change frequently like candidates
+const CACHE_DURATION = 30 * 1000; // 30 seconds
+
+// Helper to check if cache is still valid
+const isCacheValid = (lastFetched: number | null): boolean => {
+  if (!lastFetched) return false;
+  return Date.now() - lastFetched < CACHE_DURATION;
 };
 
 // Async thunks
 export const fetchApplications = createAsyncThunk(
   "applications/fetchAll",
   async () => {
+    console.log('📡 Fetching fresh applications from API');
     const response = await authenticatedFetch(`${API_BASE_URL}/applications`);
     if (!response.ok) throw new Error("Failed to fetch applications");
     const result = await response.json();
     return result.data?.applications || result.data || result;
+  }
+);
+
+// Smart fetch - only fetches if cache is stale
+export const fetchApplicationsIfNeeded = createAsyncThunk(
+  "applications/fetchIfNeeded",
+  async (_, { getState, dispatch }) => {
+    const state = getState() as { applications: ApplicationsState };
+    const { lastFetched, cacheValid, applications } = state.applications;
+    
+    // If cache is valid and we have data, skip fetch
+    if (cacheValid && isCacheValid(lastFetched) && applications.length > 0) {
+      console.log('✅ Using cached applications (age: ' + Math.round((Date.now() - (lastFetched || 0)) / 1000) + 's)');
+      return null;
+    }
+    
+    // Cache is stale or invalid, fetch fresh data
+    console.log('🔄 Cache stale or invalid, fetching applications...');
+    return dispatch(fetchApplications()).then((result) => result.payload);
   }
 );
 
@@ -95,6 +128,12 @@ const applicationsSlice = createSlice({
     ) => {
       state.currentApplication = action.payload;
     },
+    // Invalidate cache - force refetch on next access
+    invalidateApplicationsCache: (state) => {
+      state.cacheValid = false;
+      state.lastFetched = null;
+      console.log('🔄 Applications cache invalidated');
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -105,16 +144,40 @@ const applicationsSlice = createSlice({
       .addCase(fetchApplications.fulfilled, (state, action) => {
         state.isLoading = false;
         state.applications = action.payload;
+        state.lastFetched = Date.now(); // Update cache timestamp
+        state.cacheValid = true; // Mark cache as valid
       })
       .addCase(fetchApplications.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to fetch applications";
+        state.cacheValid = false; // Invalidate on error
+      })
+      .addCase(fetchApplicationsIfNeeded.pending, (state) => {
+        // Only show loading if we're actually fetching (not using cache)
+        if (!state.cacheValid || !isCacheValid(state.lastFetched)) {
+          state.isLoading = true;
+        }
+      })
+      .addCase(fetchApplicationsIfNeeded.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Only update if we got fresh data (not null from cache)
+        if (action.payload && Array.isArray(action.payload)) {
+          state.applications = action.payload;
+          state.lastFetched = Date.now();
+          state.cacheValid = true;
+        }
+      })
+      .addCase(fetchApplicationsIfNeeded.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to fetch applications";
+        state.cacheValid = false;
       })
       .addCase(fetchApplicationById.fulfilled, (state, action) => {
         state.currentApplication = action.payload;
       })
       .addCase(createApplication.fulfilled, (state, action) => {
         state.applications.unshift(action.payload);
+        state.lastFetched = Date.now(); // Keep cache fresh
       })
       .addCase(updateApplication.fulfilled, (state, action) => {
         const index = state.applications.findIndex(
@@ -126,6 +189,7 @@ const applicationsSlice = createSlice({
         if (state.currentApplication?.id === action.payload.id) {
           state.currentApplication = action.payload;
         }
+        state.lastFetched = Date.now(); // Keep cache fresh
       })
       .addCase(deleteApplication.fulfilled, (state, action) => {
         state.applications = state.applications.filter(
@@ -134,9 +198,10 @@ const applicationsSlice = createSlice({
         if (state.currentApplication?.id === action.payload) {
           state.currentApplication = null;
         }
+        state.lastFetched = Date.now(); // Keep cache fresh
       });
   },
 });
 
-export const { setCurrentApplication } = applicationsSlice.actions;
+export const { setCurrentApplication, invalidateApplicationsCache } = applicationsSlice.actions;
 export default applicationsSlice.reducer;

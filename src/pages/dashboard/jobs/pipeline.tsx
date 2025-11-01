@@ -2,6 +2,7 @@ import { JobKanbanBoard } from "@/components/job-kanban-board";
 import { PipelineBuilder } from "@/components/pipeline-builder";
 import { PipelineEmptyState } from "@/components/pipeline-empty-state";
 import { Button } from "@/components/ui/button";
+import { Loader } from "@/components/ui/loader";
 import {
   useAppSelector,
   useCandidates,
@@ -171,9 +172,7 @@ export default function JobPipelinePage() {
   if (jobsLoading && !job) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-muted-foreground">Loading job details...</p>
-        </div>
+        <Loader size="lg" text="Loading job details..." />
       </div>
     );
   }
@@ -182,9 +181,7 @@ export default function JobPipelinePage() {
   if (job?.pipelineId && (isFetchingPipeline || !currentPipeline)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-muted-foreground">Loading pipeline...</p>
-        </div>
+        <Loader size="lg" text="Loading pipeline..." />
       </div>
     );
   }

@@ -56,6 +56,7 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import * as React from "react";
+import { toast } from "sonner";
 
 import { z } from "zod";
 
@@ -63,6 +64,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { InputDialog } from "@/components/ui/input-dialog";
 import {
   Drawer,
   DrawerClose,
@@ -400,6 +403,11 @@ export function DataTable({
     pageSize: 10,
   });
   const [globalFilter, setGlobalFilter] = React.useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [applicationToDelete, setApplicationToDelete] = React.useState<UniqueIdentifier | null>(null);
+  const [assignReviewerDialogOpen, setAssignReviewerDialogOpen] = React.useState(false);
+  const [bulkAssignReviewerDialogOpen, setBulkAssignReviewerDialogOpen] = React.useState(false);
+  const [applicationIdForReviewer, setApplicationIdForReviewer] = React.useState<UniqueIdentifier | null>(null);
   const sortableId = React.useId();
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -440,16 +448,27 @@ export function DataTable({
     const selectedIds = table
       .getFilteredSelectedRowModel()
       .rows.map((r) => String(r.original.id));
-    // In real app, this would open a modal to select reviewer
-    const reviewer = prompt("Enter reviewer name:");
-    if (reviewer) {
-      setData((prevData) =>
-        prevData.map((item) =>
-          selectedIds.includes(String(item.id)) ? { ...item, reviewer } : item
-        )
-      );
-      table.resetRowSelection();
+    
+    if (selectedIds.length === 0) {
+      toast.error("No applications selected");
+      return;
     }
+    
+    setBulkAssignReviewerDialogOpen(true);
+  };
+
+  const confirmBulkAssignReviewer = (reviewer: string) => {
+    const selectedIds = table
+      .getFilteredSelectedRowModel()
+      .rows.map((r) => String(r.original.id));
+    
+    setData((prevData) =>
+      prevData.map((item) =>
+        selectedIds.includes(String(item.id)) ? { ...item, reviewer } : item
+      )
+    );
+    table.resetRowSelection();
+    toast.success(`Assigned ${reviewer} to ${selectedIds.length} application(s)`);
   };
 
   const handleBulkExport = () => {
@@ -458,7 +477,7 @@ export function DataTable({
       .rows.map((r) => r.original);
     console.log("Exporting data:", selectedData);
     // In real app, this would trigger file download
-    alert(`Exporting ${selectedData.length} applications`);
+    toast.success(`Exporting ${selectedData.length} applications`);
   };
 
   // Individual action handlers
@@ -479,13 +498,18 @@ export function DataTable({
   };
 
   const handleAssignReviewer = (id: UniqueIdentifier) => {
-    const reviewer = prompt("Enter reviewer name:");
-    if (reviewer) {
+    setApplicationIdForReviewer(id);
+    setAssignReviewerDialogOpen(true);
+  };
+
+  const confirmAssignReviewer = (reviewer: string) => {
+    if (applicationIdForReviewer) {
       setData((prevData) =>
         prevData.map((item) =>
-          String(item.id) === String(id) ? { ...item, reviewer } : item
+          String(item.id) === String(applicationIdForReviewer) ? { ...item, reviewer } : item
         )
       );
+      toast.success(`Assigned ${reviewer} to application`);
     }
   };
 
@@ -497,15 +521,21 @@ export function DataTable({
       link.download = application.resumeFilename;
       link.click();
     } else {
-      alert("No resume file available");
+      toast.error("No resume file available");
     }
   };
 
   const handleDelete = (id: UniqueIdentifier) => {
-    if (confirm("Are you sure you want to delete this application?")) {
+    setApplicationToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (applicationToDelete) {
       setData((prevData) =>
-        prevData.filter((item) => String(item.id) !== String(id))
+        prevData.filter((item) => String(item.id) !== String(applicationToDelete))
       );
+      toast.success("Application deleted successfully");
     }
   };
 
@@ -599,6 +629,7 @@ export function DataTable({
   ).length;
 
   return (
+    <>
     <Tabs
       defaultValue="outline"
       className="w-full flex-col justify-start gap-6"
@@ -1166,6 +1197,43 @@ export function DataTable({
         <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
       </TabsContent>
     </Tabs>
+
+    {/* Dialogs */}
+    <ConfirmationDialog
+      open={deleteDialogOpen}
+      onOpenChange={setDeleteDialogOpen}
+      title="Delete Application"
+      description="Are you sure you want to delete this application? This action cannot be undone."
+      confirmText="Delete"
+      cancelText="Cancel"
+      onConfirm={confirmDelete}
+      variant="destructive"
+    />
+
+    <InputDialog
+      open={assignReviewerDialogOpen}
+      onOpenChange={setAssignReviewerDialogOpen}
+      title="Assign Reviewer"
+      description="Enter the name of the reviewer to assign to this application."
+      label="Reviewer Name"
+      placeholder="Enter reviewer name"
+      onConfirm={confirmAssignReviewer}
+      confirmText="Assign"
+      cancelText="Cancel"
+    />
+
+    <InputDialog
+      open={bulkAssignReviewerDialogOpen}
+      onOpenChange={setBulkAssignReviewerDialogOpen}
+      title="Assign Reviewer"
+      description="Enter the name of the reviewer to assign to selected applications."
+      label="Reviewer Name"
+      placeholder="Enter reviewer name"
+      onConfirm={confirmBulkAssignReviewer}
+      confirmText="Assign"
+      cancelText="Cancel"
+    />
+    </>
   );
 }
 
@@ -1873,7 +1941,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 <Button
                   onClick={() => {
                     if (!selectedJobId) {
-                      alert("Please select a job before approving");
+                      toast.error("Please select a job before approving");
                       return;
                     }
                     const selectedJob = jobs.find(
@@ -1884,7 +1952,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     );
                     setShowJobAssignDialog(false);
                     // In real app, this would update the backend
-                    alert(
+                    toast.success(
                       `Application approved and assigned to:\n${selectedJob?.title} (${selectedJobId})`
                     );
                   }}

@@ -1522,7 +1522,7 @@ function TableCellViewer({
       <DrawerTrigger asChild>
         <Button
           variant="ghost"
-          className="w-fit max-w-full px-0 text-left group hover:no-underline"
+          className="w-fit max-w-full px-0 text-left group hover:bg-transparent hover:no-underline"
         >
           <span className="flex items-center gap-1.5 text-foreground group-hover:text-primary transition-colors max-w-full">
             <span className="group-hover:underline underline-offset-4 truncate">

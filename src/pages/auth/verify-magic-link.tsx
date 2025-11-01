@@ -6,9 +6,10 @@
 import { LogoIcon } from "@/components/icons/logo-icon";
 import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
 import { Button } from "@/components/ui/button";
+import { Loader } from "@/components/ui/loader";
 import * as authUtils from "@/lib/auth-utils";
 import { verifyMagicLink } from "@/services/auth.service";
-import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -88,10 +89,7 @@ export default function VerifyMagicLinkPage() {
         {/* Verifying State */}
         {isVerifying && (
           <div className="flex flex-col items-center space-y-4 py-8">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="text-muted-foreground">
-              Verifying your magic link...
-            </p>
+            <Loader size="lg" text="Verifying your magic link..." />
           </div>
         )}
 

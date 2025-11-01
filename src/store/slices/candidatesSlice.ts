@@ -40,6 +40,8 @@ export interface CandidatesState {
   currentCandidate: Candidate | null;
   isLoading: boolean;
   error: string | null;
+  lastFetched: number | null; // Timestamp when data was last fetched
+  cacheValid: boolean; // Whether cache is still valid
 }
 
 const initialState: CandidatesState = {
@@ -47,12 +49,24 @@ const initialState: CandidatesState = {
   currentCandidate: null,
   isLoading: false,
   error: null,
+  lastFetched: null,
+  cacheValid: false,
+};
+
+// Cache configuration
+const CACHE_DURATION = 30 * 1000; // 30 seconds - candidates change frequently
+
+// Helper to check if cache is still valid
+const isCacheValid = (lastFetched: number | null): boolean => {
+  if (!lastFetched) return false;
+  return Date.now() - lastFetched < CACHE_DURATION;
 };
 
 // Async thunks
 export const fetchCandidates = createAsyncThunk(
   "candidates/fetchAll",
   async () => {
+    console.log('📡 Fetching fresh candidates from API');
     const response = await authenticatedFetch(`${API_BASE_URL}/candidates`);
     if (!response.ok) throw new Error("Failed to fetch candidates");
     const result = await response.json();
@@ -62,6 +76,25 @@ export const fetchCandidates = createAsyncThunk(
     const normalized = normalizeCandidates(candidates);
     console.log('📥 Normalized candidates, sample assignedTo:', normalized.slice(0, 3).map((c: Candidate) => ({ id: c.id, assignedTo: c.assignedTo })));
     return normalized;
+  }
+);
+
+// Smart fetch - only fetches if cache is stale
+export const fetchCandidatesIfNeeded = createAsyncThunk(
+  "candidates/fetchIfNeeded",
+  async (_, { getState, dispatch }) => {
+    const state = getState() as { candidates: CandidatesState };
+    const { lastFetched, cacheValid, candidates } = state.candidates;
+    
+    // If cache is valid and we have data, skip fetch
+    if (cacheValid && isCacheValid(lastFetched) && candidates.length > 0) {
+      console.log('✅ Using cached candidates (age: ' + Math.round((Date.now() - (lastFetched || 0)) / 1000) + 's)');
+      return null;
+    }
+    
+    // Cache is stale or invalid, fetch fresh data
+    console.log('🔄 Cache stale or invalid, fetching candidates...');
+    return dispatch(fetchCandidates()).then((result) => result.payload);
   }
 );
 
@@ -122,6 +155,12 @@ const candidatesSlice = createSlice({
     setCurrentCandidate: (state, action: PayloadAction<Candidate | null>) => {
       state.currentCandidate = action.payload;
     },
+    // Invalidate cache - force refetch on next access
+    invalidateCandidatesCache: (state) => {
+      state.cacheValid = false;
+      state.lastFetched = null;
+      console.log('🔄 Candidates cache invalidated');
+    },
     // Optimistic update for candidate stage change
     updateCandidateStageOptimistic: (state, action: PayloadAction<{ candidateId: string; newStageId: string; newStageData?: { id: string; name: string; color: string; order: number } }>) => {
       const { candidateId, newStageId, newStageData } = action.payload;
@@ -149,16 +188,41 @@ const candidatesSlice = createSlice({
       .addCase(fetchCandidates.fulfilled, (state, action) => {
         state.isLoading = false;
         state.candidates = action.payload;
+        state.lastFetched = Date.now(); // Update cache timestamp
+        state.cacheValid = true; // Mark cache as valid
       })
       .addCase(fetchCandidates.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to fetch candidates";
+        state.cacheValid = false; // Invalidate on error
+      })
+      .addCase(fetchCandidatesIfNeeded.pending, (state) => {
+        // Only show loading if we're actually fetching (not using cache)
+        if (!state.cacheValid || !isCacheValid(state.lastFetched)) {
+          state.isLoading = true;
+        }
+      })
+      .addCase(fetchCandidatesIfNeeded.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Only update if we got fresh data (not null from cache)
+        if (action.payload && Array.isArray(action.payload)) {
+          state.candidates = action.payload;
+          state.lastFetched = Date.now();
+          state.cacheValid = true;
+        }
+      })
+      .addCase(fetchCandidatesIfNeeded.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to fetch candidates";
+        state.cacheValid = false;
       })
       .addCase(fetchCandidateById.fulfilled, (state, action) => {
         state.currentCandidate = action.payload;
       })
       .addCase(createCandidate.fulfilled, (state, action) => {
         state.candidates.unshift(action.payload);
+        // Keep cache valid since we just added locally
+        state.lastFetched = Date.now();
       })
       .addCase(updateCandidate.fulfilled, (state, action) => {
         const index = state.candidates.findIndex(
@@ -170,6 +234,8 @@ const candidatesSlice = createSlice({
         if (state.currentCandidate?.id === action.payload.id) {
           state.currentCandidate = action.payload;
         }
+        // Keep cache valid since we just updated locally
+        state.lastFetched = Date.now();
       })
       .addCase(deleteCandidate.fulfilled, (state, action) => {
         state.candidates = state.candidates.filter(
@@ -178,9 +244,11 @@ const candidatesSlice = createSlice({
         if (state.currentCandidate?.id === action.payload) {
           state.currentCandidate = null;
         }
+        // Keep cache valid since we just deleted locally
+        state.lastFetched = Date.now();
       });
   },
 });
 
-export const { setCurrentCandidate, updateCandidateStageOptimistic } = candidatesSlice.actions;
+export const { setCurrentCandidate, invalidateCandidatesCache, updateCandidateStageOptimistic } = candidatesSlice.actions;
 export default candidatesSlice.reducer;

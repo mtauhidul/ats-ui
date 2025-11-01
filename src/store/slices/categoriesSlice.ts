@@ -20,11 +20,21 @@ const normalizeCategory = (category: Record<string, any>): Category => {
   return category as Category;
 };
 
+// Cache configuration - Categories rarely change
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+const isCacheValid = (lastFetched: number | null): boolean => {
+  if (!lastFetched) return false;
+  return Date.now() - lastFetched < CACHE_DURATION;
+};
+
 export interface CategoriesState {
   categories: Category[];
   currentCategory: Category | null;
   isLoading: boolean;
   error: string | null;
+  lastFetched: number | null;
+  cacheValid: boolean;
 }
 
 const initialState: CategoriesState = {
@@ -32,6 +42,8 @@ const initialState: CategoriesState = {
   currentCategory: null,
   isLoading: false,
   error: null,
+  lastFetched: null,
+  cacheValid: false,
 };
 
 export const fetchCategories = createAsyncThunk(
@@ -45,6 +57,25 @@ export const fetchCategories = createAsyncThunk(
     return Array.isArray(categories) 
       ? categories.map(normalizeCategory)
       : categories;
+  }
+);
+
+// Smart fetch - only fetch if cache is stale
+export const fetchCategoriesIfNeeded = createAsyncThunk(
+  "categories/fetchIfNeeded",
+  async (_, { getState, dispatch }) => {
+    const state = getState() as { categories: CategoriesState };
+    const { lastFetched, cacheValid, categories } = state.categories;
+    
+    if (cacheValid && isCacheValid(lastFetched) && categories.length > 0) {
+      const age = lastFetched ? Math.floor((Date.now() - lastFetched) / 1000) : 0;
+      console.log(`✅ Using cached categories (age: ${age}s)`);
+      return null;
+    }
+    
+    console.log('🔄 Categories cache stale or empty, fetching fresh data...');
+    const result = await dispatch(fetchCategories());
+    return result.payload;
   }
 );
 
@@ -106,6 +137,10 @@ const categoriesSlice = createSlice({
     setCurrentCategory: (state, action: PayloadAction<Category | null>) => {
       state.currentCategory = action.payload;
     },
+    invalidateCategoriesCache: (state) => {
+      state.cacheValid = false;
+      state.lastFetched = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -115,16 +150,36 @@ const categoriesSlice = createSlice({
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.isLoading = false;
         state.categories = action.payload;
+        state.lastFetched = Date.now();
+        state.cacheValid = true;
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to fetch categories";
+        state.cacheValid = false;
+      })
+      .addCase(fetchCategoriesIfNeeded.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchCategoriesIfNeeded.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (action.payload) {
+          state.categories = action.payload;
+          state.lastFetched = Date.now();
+          state.cacheValid = true;
+        }
+      })
+      .addCase(fetchCategoriesIfNeeded.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to fetch categories";
+        state.cacheValid = false;
       })
       .addCase(fetchCategoryById.fulfilled, (state, action) => {
         state.currentCategory = action.payload;
       })
       .addCase(createCategory.fulfilled, (state, action) => {
         state.categories.push(action.payload);
+        state.lastFetched = Date.now();
       })
       .addCase(updateCategory.fulfilled, (state, action) => {
         const index = state.categories.findIndex(
@@ -133,14 +188,16 @@ const categoriesSlice = createSlice({
         if (index !== -1) {
           state.categories[index] = action.payload;
         }
+        state.lastFetched = Date.now();
       })
       .addCase(deleteCategory.fulfilled, (state, action) => {
         state.categories = state.categories.filter(
           (c) => c.id !== action.payload
         );
+        state.lastFetched = Date.now();
       });
   },
 });
 
-export const { setCurrentCategory } = categoriesSlice.actions;
+export const { setCurrentCategory, invalidateCategoriesCache } = categoriesSlice.actions;
 export default categoriesSlice.reducer;

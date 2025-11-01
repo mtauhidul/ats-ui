@@ -1,12 +1,14 @@
 import { useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import { 
-  fetchPipelines, 
+  fetchPipelines,
+  fetchPipelinesIfNeeded, 
   fetchPipelineById, 
   createPipeline, 
   updatePipeline, 
   deletePipeline,
-  setCurrentPipeline 
+  setCurrentPipeline,
+  invalidatePipelinesCache
 } from "../slices/pipelinesSlice";
 import type { PipelinesState } from "../slices/pipelinesSlice";
 import type { Pipeline, PipelineStage } from "@/types";
@@ -18,6 +20,7 @@ export const usePipelines = () => {
   );
 
   const fetchPipelinesCallback = useCallback(() => dispatch(fetchPipelines()), [dispatch]);
+  const fetchPipelinesIfNeededCallback = useCallback(() => dispatch(fetchPipelinesIfNeeded()), [dispatch]);
   
   const fetchPipelineByIdCallback = useCallback(
     (id: string) => dispatch(fetchPipelineById(id)), 
@@ -53,6 +56,8 @@ export const usePipelines = () => {
     (pipeline: Pipeline | null) => dispatch(setCurrentPipeline(pipeline)), 
     [dispatch]
   );
+  
+  const invalidateCacheCallback = useCallback(() => dispatch(invalidatePipelinesCache()), [dispatch]);
 
   return {
     pipelines,
@@ -60,10 +65,12 @@ export const usePipelines = () => {
     isLoading,
     error,
     fetchPipelines: fetchPipelinesCallback,
+    fetchPipelinesIfNeeded: fetchPipelinesIfNeededCallback,
     fetchPipelineById: fetchPipelineByIdCallback,
     createPipeline: createPipelineCallback,
     updatePipeline: updatePipelineCallback,
     deletePipeline: deletePipelineCallback,
     setCurrentPipeline: setCurrentPipelineCallback,
+    invalidateCache: invalidateCacheCallback,
   };
 };

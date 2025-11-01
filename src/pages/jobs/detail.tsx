@@ -1,6 +1,7 @@
 import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Loader } from "@/components/ui/loader";
 import type { Job } from "@/types/job";
 import {
   ArrowLeft,
@@ -96,9 +97,8 @@ export default function JobDetailPage() {
         <div className="absolute inset-0 [--cell-border-color:hsl(var(--primary)/0.3)] [--cell-fill-color:hsl(var(--primary)/0.15)] [--cell-shadow-color:hsl(var(--primary)/0.4)]">
           <BackgroundRippleEffect rows={10} cols={30} cellSize={48} />
         </div>
-        <div className="relative z-10 text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-          <p className="text-muted-foreground">Loading job details...</p>
+        <div className="relative z-10">
+          <Loader size="lg" text="Loading job details..." />
         </div>
       </div>
     );

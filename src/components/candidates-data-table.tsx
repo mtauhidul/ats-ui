@@ -6,14 +6,12 @@ import {
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
-  IconCircleCheckFilled,
   IconClockHour4,
   IconCopy,
   IconDotsVertical,
   IconDownload,
   IconFilter,
   IconLayoutColumns,
-  IconLoader,
   IconSearch,
   IconUserCheck,
   IconUsers,
@@ -44,6 +42,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { InputDialog } from "@/components/ui/input-dialog";
 
 import {
   DropdownMenu,
@@ -80,9 +80,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
       className="group flex flex-col transition-all duration-200 cursor-pointer relative py-1 px-2 -mx-2 rounded-md hover:bg-primary/5 min-w-0"
     >
       <span className="font-medium text-foreground group-hover:text-primary transition-all duration-200 flex items-center gap-1.5 min-w-0 max-w-full">
-        <span className="truncate">
-          {item.header}
-        </span>
+        <span className="truncate">{item.header}</span>
         <IconChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transform -translate-x-1 group-hover:translate-x-0 transition-all duration-200 shrink-0" />
       </span>
       <span className="text-xs text-muted-foreground group-hover:text-primary/70 transition-colors duration-200 truncate max-w-full">
@@ -366,61 +364,6 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     maxSize: 200,
   },
   {
-    accessorKey: "status",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0"
-        >
-          Status
-          {column.getIsSorted() === "asc" ? (
-            <IconChevronDown className="ml-1 h-3 w-3 rotate-180" />
-          ) : column.getIsSorted() === "desc" ? (
-            <IconChevronDown className="ml-1 h-3 w-3" />
-          ) : null}
-        </Button>
-      );
-    },
-    cell: ({ row }) => (
-      <div className="min-w-[110px] max-w-[110px]">
-        <Badge
-          variant="outline"
-          className="text-muted-foreground px-2.5 py-1 flex items-center gap-1 w-fit whitespace-nowrap text-xs"
-        >
-          {row.original.status === "Hired" ? (
-            <>
-              <IconCircleCheckFilled className="size-3 fill-green-500 dark:fill-green-400" />
-              Hired
-            </>
-          ) : row.original.status === "Rejected" ? (
-            <>
-              <span className="size-3 text-red-500">✕</span>
-              Rejected
-            </>
-          ) : (
-            <>
-              <IconLoader className="size-3" />
-              In Process
-            </>
-          )}
-        </Badge>
-      </div>
-    ),
-    filterFn: (row, id, value) => {
-      // Support both single value and array of values
-      if (Array.isArray(value)) {
-        return value.includes(row.getValue(id));
-      }
-      return row.getValue(id) === value;
-    },
-    enableHiding: true,
-    size: 110,
-    minSize: 110,
-    maxSize: 110,
-  },
-  {
     accessorKey: "target",
     header: ({ column }) => (
       <Button
@@ -513,7 +456,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       const clientLogo = row.original.clientLogo;
 
       return (
-        <div className="min-w-[150px] max-w-[150px] flex items-center gap-1 overflow-hidden">
+        <div className="min-w-[220px] max-w-[220px] flex items-center gap-2 overflow-hidden">
           {clientLogo && (
             <Avatar className="size-6 rounded shrink-0">
               <AvatarImage src={clientLogo} alt={clientName} />
@@ -527,7 +470,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       );
     },
     enableHiding: true,
-    size: 150,
+    size: 220,
     minSize: 150,
     maxSize: 150,
   },
@@ -682,6 +625,13 @@ export function CandidatesDataTable({
     pageSize: 10,
   });
   const [globalFilter, setGlobalFilter] = React.useState("");
+  
+  // Dialog states
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [candidateToDelete, setCandidateToDelete] = React.useState<{ id: string | number; candidateId?: string } | null>(null);
+  const [assignTeamDialogOpen, setAssignTeamDialogOpen] = React.useState(false);
+  const [bulkAssignTeamDialogOpen, setBulkAssignTeamDialogOpen] = React.useState(false);
+  const [candidateIdForAssign, setCandidateIdForAssign] = React.useState<string | number | null>(null);
 
   // Sync local data state with prop changes (important for when candidates are loaded/updated)
   React.useEffect(() => {
@@ -714,20 +664,21 @@ export function CandidatesDataTable({
   };
 
   const handleBulkAssignTeam = () => {
+    setBulkAssignTeamDialogOpen(true);
+  };
+
+  const handleBulkAssignTeamConfirm = (teamMember: string) => {
     const selectedIds = table
       .getFilteredSelectedRowModel()
       .rows.map((r) => r.original.id);
-    const teamMember = prompt("Enter team member name:");
-    if (teamMember) {
-      setData((prevData) =>
-        prevData.map((item) =>
-          selectedIds.includes(item.id)
-            ? { ...item, reviewer: teamMember }
-            : item
-        )
-      );
-      table.resetRowSelection();
-    }
+    setData((prevData) =>
+      prevData.map((item) =>
+        selectedIds.includes(item.id)
+          ? { ...item, reviewer: teamMember }
+          : item
+      )
+    );
+    table.resetRowSelection();
   };
 
   const handleBulkExport = () => {
@@ -735,7 +686,7 @@ export function CandidatesDataTable({
       .getFilteredSelectedRowModel()
       .rows.map((r) => r.original);
     console.log("Exporting data:", selectedData);
-    alert(`Exporting ${selectedData.length} candidates`);
+    toast.success(`Exporting ${selectedData.length} candidates`);
   };
 
   // Individual action handlers
@@ -756,11 +707,15 @@ export function CandidatesDataTable({
   };
 
   const handleAssignTeam = (id: string | number) => {
-    const teamMember = prompt("Enter team member name:");
-    if (teamMember) {
+    setCandidateIdForAssign(id);
+    setAssignTeamDialogOpen(true);
+  };
+
+  const handleAssignTeamConfirm = (teamMember: string) => {
+    if (candidateIdForAssign) {
       setData((prevData) =>
         prevData.map((item) =>
-          item.id === id ? { ...item, reviewer: teamMember } : item
+          item.id === candidateIdForAssign ? { ...item, reviewer: teamMember } : item
         )
       );
     }
@@ -774,19 +729,23 @@ export function CandidatesDataTable({
       link.download = candidate.resumeFilename;
       link.click();
     } else {
-      alert("No resume file available");
+      toast.error("No resume file available");
     }
   };
 
   const handleDelete = (id: string | number) => {
-    if (confirm("Are you sure you want to delete this candidate?")) {
-      // Find the actual candidate ID from the data
-      const candidate = data.find((item) => item.id === id);
-      if (candidate && candidate.candidateId && onDeleteCandidate) {
-        onDeleteCandidate(candidate.candidateId);
+    const candidate = data.find((item) => item.id === id);
+    setCandidateToDelete({ id, candidateId: candidate?.candidateId });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (candidateToDelete) {
+      if (candidateToDelete.candidateId && onDeleteCandidate) {
+        onDeleteCandidate(candidateToDelete.candidateId);
       } else {
         // Fallback to local state update if no callback provided
-        setData((prevData) => prevData.filter((item) => item.id !== id));
+        setData((prevData) => prevData.filter((item) => item.id !== candidateToDelete.id));
       }
     }
   };
@@ -878,6 +837,7 @@ export function CandidatesDataTable({
   ).length;
 
   return (
+    <>
     <Tabs
       defaultValue="outline"
       className="w-full flex-col justify-start gap-6"
@@ -1032,80 +992,8 @@ export function CandidatesDataTable({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <div className="px-2 py-1.5 text-xs font-semibold">
-                  Filter by Status
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem
-                  checked={!columnFilters.find((f) => f.id === "status")}
-                  onCheckedChange={() => {
-                    setColumnFilters((prev) =>
-                      prev.filter((f) => f.id !== "status")
-                    );
-                  }}
-                >
-                  All Statuses
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={
-                    columnFilters.find((f) => f.id === "status")?.value ===
-                    "Hired"
-                  }
-                  onCheckedChange={(checked) => {
-                    setColumnFilters((prev) =>
-                      checked
-                        ? [
-                            ...prev.filter((f) => f.id !== "status"),
-                            { id: "status", value: "Hired" },
-                          ]
-                        : prev.filter((f) => f.id !== "status")
-                    );
-                  }}
-                >
-                  <IconUserCheck className="h-3 w-3 mr-2 text-green-600" />
-                  Hired
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={
-                    columnFilters.find((f) => f.id === "status")?.value ===
-                    "In Process"
-                  }
-                  onCheckedChange={(checked) => {
-                    setColumnFilters((prev) =>
-                      checked
-                        ? [
-                            ...prev.filter((f) => f.id !== "status"),
-                            { id: "status", value: "In Process" },
-                          ]
-                        : prev.filter((f) => f.id !== "status")
-                    );
-                  }}
-                >
-                  <IconClockHour4 className="h-3 w-3 mr-2 text-amber-600" />
-                  In Process
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={
-                    columnFilters.find((f) => f.id === "status")?.value ===
-                    "Rejected"
-                  }
-                  onCheckedChange={(checked) => {
-                    setColumnFilters((prev) =>
-                      checked
-                        ? [
-                            ...prev.filter((f) => f.id !== "status"),
-                            { id: "status", value: "Rejected" },
-                          ]
-                        : prev.filter((f) => f.id !== "status")
-                    );
-                  }}
-                >
-                  <IconUserX className="h-3 w-3 mr-2 text-red-600" />
-                  Rejected
-                </DropdownMenuCheckboxItem>
                 {columnFilters.length > 0 && (
                   <>
-                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => setColumnFilters([])}
                       className="text-destructive"
@@ -1204,14 +1092,6 @@ export function CandidatesDataTable({
                   }
                 >
                   Job ID
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={table.getColumn("status")?.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    table.getColumn("status")?.toggleVisibility(!!value)
-                  }
-                >
-                  Status
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
                   checked={table.getColumn("target")?.getIsVisible()}
@@ -1378,5 +1258,42 @@ export function CandidatesDataTable({
         </div>
       </TabsContent>
     </Tabs>
+
+    {/* Dialogs */}
+    <ConfirmationDialog
+      open={deleteDialogOpen}
+      onOpenChange={setDeleteDialogOpen}
+      title="Delete Candidate"
+      description="Are you sure you want to delete this candidate? This action cannot be undone."
+      confirmText="Delete"
+      cancelText="Cancel"
+      onConfirm={confirmDelete}
+      variant="destructive"
+    />
+
+    <InputDialog
+      open={assignTeamDialogOpen}
+      onOpenChange={setAssignTeamDialogOpen}
+      title="Assign Team Member"
+      description="Enter the name of the team member to assign to this candidate."
+      label="Team Member Name"
+      placeholder="Enter team member name"
+      onConfirm={handleAssignTeamConfirm}
+      confirmText="Assign"
+      cancelText="Cancel"
+    />
+
+    <InputDialog
+      open={bulkAssignTeamDialogOpen}
+      onOpenChange={setBulkAssignTeamDialogOpen}
+      title="Assign Team Member"
+      description="Enter the name of the team member to assign to selected candidates."
+      label="Team Member Name"
+      placeholder="Enter team member name"
+      onConfirm={handleBulkAssignTeamConfirm}
+      confirmText="Assign"
+      cancelText="Cancel"
+    />
+    </>
   );
 }

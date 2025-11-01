@@ -1,6 +1,7 @@
 import { AddCategoryModal } from "@/components/modals/add-category-modal";
 import { EditCategoryModal } from "@/components/modals/edit-category-modal";
 import { Button } from "@/components/ui/button";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -31,13 +32,14 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function CategoriesPage() {
-  const { fetchCategories, createCategory, updateCategory, deleteCategory } =
-    useCategories();
+  const { fetchCategoriesIfNeeded, createCategory, updateCategory, deleteCategory } =
+    useCategories(); // Use smart fetch
   const categories = useAppSelector(selectCategories);
 
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    fetchCategoriesIfNeeded(); // Smart fetch - only if cache is stale
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only fetch on mount
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -48,6 +50,8 @@ export default function CategoriesPage() {
   );
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const handleAddCategory = (data: CreateCategoryRequest) => {
     createCategory(data);
@@ -76,13 +80,14 @@ export default function CategoriesPage() {
       return;
     }
 
-    const confirmed = confirm(
-      `Are you sure you want to delete the category "${category?.name}"? This action cannot be undone.`
-    );
+    setCategoryToDelete({ id: categoryId, name: category.name });
+    setDeleteDialogOpen(true);
+  };
 
-    if (!confirmed) return;
-
-    deleteCategory(categoryId);
+  const confirmDelete = () => {
+    if (categoryToDelete) {
+      deleteCategory(categoryToDelete.id);
+    }
   };
 
   const toggleExpanded = (categoryId: string) => {
@@ -517,6 +522,17 @@ export default function CategoriesPage() {
         categories={categories}
         onClose={() => setEditingCategory(null)}
         onSubmit={handleUpdateCategory}
+      />
+
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Category"
+        description={`Are you sure you want to delete the category "${categoryToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        variant="destructive"
       />
     </div>
   );

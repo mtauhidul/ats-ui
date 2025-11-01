@@ -14,6 +14,8 @@ export interface ClientsState {
   currentClient: Client | null;
   isLoading: boolean;
   error: string | null;
+  lastFetched: number | null; // Timestamp when data was last fetched
+  cacheValid: boolean; // Whether cache is still valid
   filters: {
     search: string;
     status: string;
@@ -27,6 +29,8 @@ const initialState: ClientsState = {
   currentClient: null,
   isLoading: false,
   error: null,
+  lastFetched: null,
+  cacheValid: false,
   filters: {
     search: "",
     status: "all",
@@ -35,13 +39,42 @@ const initialState: ClientsState = {
   },
 };
 
+// Cache configuration - clients rarely change, so longer cache
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Helper to check if cache is still valid
+const isCacheValid = (lastFetched: number | null): boolean => {
+  if (!lastFetched) return false;
+  return Date.now() - lastFetched < CACHE_DURATION;
+};
+
 // Async thunks
 export const fetchClients = createAsyncThunk("clients/fetchAll", async () => {
+  console.log('📡 Fetching fresh clients from API');
   const response = await authenticatedFetch(`${API_BASE_URL}/clients`);
   if (!response.ok) throw new Error("Failed to fetch clients");
   const result = await response.json();
   return result.data?.clients || result.data || result;
 });
+
+// Smart fetch - only fetches if cache is stale
+export const fetchClientsIfNeeded = createAsyncThunk(
+  "clients/fetchIfNeeded",
+  async (_, { getState, dispatch }) => {
+    const state = getState() as { clients: ClientsState };
+    const { lastFetched, cacheValid, clients } = state.clients;
+    
+    // If cache is valid and we have data, skip fetch
+    if (cacheValid && isCacheValid(lastFetched) && clients.length > 0) {
+      console.log('✅ Using cached clients (age: ' + Math.round((Date.now() - (lastFetched || 0)) / 1000) + 's)');
+      return null;
+    }
+    
+    // Cache is stale or invalid, fetch fresh data
+    console.log('🔄 Cache stale or invalid, fetching clients...');
+    return dispatch(fetchClients()).then((result) => result.payload);
+  }
+);
 
 export const fetchClientById = createAsyncThunk(
   "clients/fetchById",
@@ -136,6 +169,12 @@ const clientsSlice = createSlice({
     clearFilters: (state) => {
       state.filters = initialState.filters;
     },
+    // Invalidate cache - force refetch on next access
+    invalidateClientsCache: (state) => {
+      state.cacheValid = false;
+      state.lastFetched = null;
+      console.log('🔄 Clients cache invalidated');
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -147,10 +186,34 @@ const clientsSlice = createSlice({
       .addCase(fetchClients.fulfilled, (state, action) => {
         state.isLoading = false;
         state.clients = action.payload;
+        state.lastFetched = Date.now(); // Update cache timestamp
+        state.cacheValid = true; // Mark cache as valid
       })
       .addCase(fetchClients.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to fetch clients";
+        state.cacheValid = false; // Invalidate on error
+      })
+      // Fetch clients if needed (smart fetch)
+      .addCase(fetchClientsIfNeeded.pending, (state) => {
+        // Only show loading if we're actually fetching (not using cache)
+        if (!state.cacheValid || !isCacheValid(state.lastFetched)) {
+          state.isLoading = true;
+        }
+      })
+      .addCase(fetchClientsIfNeeded.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Only update if we got fresh data (not null from cache)
+        if (action.payload && Array.isArray(action.payload)) {
+          state.clients = action.payload;
+          state.lastFetched = Date.now();
+          state.cacheValid = true;
+        }
+      })
+      .addCase(fetchClientsIfNeeded.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to fetch clients";
+        state.cacheValid = false;
       })
       // Fetch client by ID
       .addCase(fetchClientById.pending, (state) => {
@@ -168,6 +231,7 @@ const clientsSlice = createSlice({
       // Create client
       .addCase(createClient.fulfilled, (state, action) => {
         state.clients.unshift(action.payload);
+        state.lastFetched = Date.now(); // Keep cache fresh
       })
       // Update client
       .addCase(updateClient.fulfilled, (state, action) => {
@@ -180,6 +244,7 @@ const clientsSlice = createSlice({
         if (state.currentClient?.id === action.payload.id) {
           state.currentClient = action.payload;
         }
+        state.lastFetched = Date.now(); // Keep cache fresh
       })
       // Delete client
       .addCase(deleteClient.pending, (state) => {
@@ -192,6 +257,7 @@ const clientsSlice = createSlice({
         if (state.currentClient?.id === action.payload) {
           state.currentClient = null;
         }
+        state.lastFetched = Date.now(); // Keep cache fresh
       })
       .addCase(deleteClient.rejected, (state, action) => {
         state.isLoading = false;
@@ -200,6 +266,6 @@ const clientsSlice = createSlice({
   },
 });
 
-export const { setCurrentClient, setFilters, clearFilters } =
+export const { setCurrentClient, setFilters, clearFilters, invalidateClientsCache } =
   clientsSlice.actions;
 export default clientsSlice.reducer;

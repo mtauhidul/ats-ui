@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import {
   Dialog,
   DialogContent,
@@ -185,6 +186,8 @@ export function InterviewManagement({
     strengths: "",
     weaknesses: "",
   });
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [interviewToCancel, setInterviewToCancel] = useState<string | null>(null);
 
   // OPTIMIZED: Only fetch team if not already loaded
   useEffect(() => {
@@ -377,13 +380,16 @@ export function InterviewManagement({
   };
 
   const handleCancelInterview = async (interviewId: string) => {
-    if (!confirm("Are you sure you want to cancel this interview?")) {
-      return;
-    }
+    setInterviewToCancel(interviewId);
+    setCancelDialogOpen(true);
+  };
+
+  const confirmCancelInterview = async () => {
+    if (!interviewToCancel) return;
 
     try {
       const response = await authenticatedFetch(
-        `${API_BASE_URL}/interviews/${interviewId}/cancel`,
+        `${API_BASE_URL}/interviews/${interviewToCancel}/cancel`,
         {
           method: "POST",
           body: JSON.stringify({ reason: "Cancelled by user" }),
@@ -509,6 +515,7 @@ export function InterviewManagement({
   };
 
   return (
+    <>
     <div className="flex flex-1 flex-col">
       {/* Header */}
       <div className="border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -1407,6 +1414,19 @@ export function InterviewManagement({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Cancel Interview Dialog */}
+      <ConfirmationDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        title="Cancel Interview"
+        description="Are you sure you want to cancel this interview? This action will notify all participants."
+        confirmText="Cancel Interview"
+        cancelText="Keep Interview"
+        onConfirm={confirmCancelInterview}
+        variant="destructive"
+      />
     </div>
+    </>
   );
 }

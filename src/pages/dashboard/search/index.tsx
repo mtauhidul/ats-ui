@@ -121,10 +121,10 @@ export default function SearchPage() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const { fetchJobs } = useJobs();
-  const { fetchCandidates } = useCandidates();
-  const { fetchClients } = useClients();
-  const { fetchApplications } = useApplications();
+  const { fetchJobsIfNeeded } = useJobs(); // Smart fetch
+  const { fetchCandidatesIfNeeded } = useCandidates(); // Smart fetch
+  const { fetchClientsIfNeeded } = useClients(); // Smart fetch
+  const { fetchApplicationsIfNeeded } = useApplications(); // Smart fetch
   const { fetchTeam } = useTeam();
 
   const jobsData = useAppSelector(
@@ -153,15 +153,15 @@ export default function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
-    // Only fetch if user has started searching
+    // Only fetch if user has started searching - use smart fetch to avoid duplicates
     if (searchQuery.length > 0) {
       const loadData = async () => {
         if (!hasSearched) {
           await Promise.all([
-            fetchJobs(),
-            fetchCandidates(),
-            fetchClients(),
-            fetchApplications(),
+            fetchJobsIfNeeded(), // Smart - checks cache
+            fetchCandidatesIfNeeded(), // Smart - checks cache
+            fetchClientsIfNeeded(), // Smart - checks cache
+            fetchApplicationsIfNeeded(), // Smart - checks cache
             fetchTeam(),
           ]);
           setHasSearched(true);
@@ -169,15 +169,8 @@ export default function SearchPage() {
       };
       loadData();
     }
-  }, [
-    searchQuery,
-    hasSearched,
-    fetchJobs,
-    fetchCandidates,
-    fetchClients,
-    fetchApplications,
-    fetchTeam,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, hasSearched]); // Removed callbacks from deps to prevent re-renders
 
   // Add to recent searches
   useEffect(() => {

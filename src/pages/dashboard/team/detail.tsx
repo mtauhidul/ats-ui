@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader } from "@/components/ui/loader";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import { useCandidates } from "@/store/hooks/useCandidates";
 import { useJobs } from "@/store/hooks/useJobs";
@@ -67,8 +68,8 @@ export default function TeamMemberDetailPage() {
   const { memberId } = useParams();
   const navigate = useNavigate();
   const { currentMember, isLoading, fetchTeamMemberById } = useTeam();
-  const { jobs, fetchJobs } = useJobs();
-  const { candidates, fetchCandidates } = useCandidates();
+  const { jobs, fetchJobsIfNeeded } = useJobs(); // Smart fetch
+  const { candidates, fetchCandidatesIfNeeded } = useCandidates(); // Smart fetch
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoadingActivities, setIsLoadingActivities] = useState(true);
 
@@ -94,15 +95,10 @@ export default function TeamMemberDetailPage() {
       fetchTeamMemberById(memberId);
       fetchActivities(memberId);
     }
-    fetchJobs();
-    fetchCandidates();
-  }, [
-    memberId,
-    fetchTeamMemberById,
-    fetchActivities,
-    fetchJobs,
-    fetchCandidates,
-  ]);
+    fetchJobsIfNeeded(); // Smart fetch - checks cache
+    fetchCandidatesIfNeeded(); // Smart fetch - checks cache
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memberId]); // Only memberId in deps - callbacks are stable
 
   // Stable callback for handling refetch events
   const handleRefetch = useCallback(() => {
@@ -114,8 +110,9 @@ export default function TeamMemberDetailPage() {
       fetchActivities(memberId);
     }
     console.log("🔔 Team detail page: Fetching all candidates...");
-    fetchCandidates();
-  }, [memberId, fetchTeamMemberById, fetchActivities, fetchCandidates]);
+    fetchCandidatesIfNeeded(); // Smart fetch
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memberId]); // Simplified deps
 
   // Listen for refetchCandidates event (triggered when candidate is assigned)
   useEffect(() => {
@@ -181,11 +178,10 @@ export default function TeamMemberDetailPage() {
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <h2 className="text-2xl font-bold">Loading...</h2>
+                <div className="flex-1">
+                  <Loader size="md" text="Fetching team member details..." />
+                </div>
               </div>
-              <p className="text-muted-foreground">
-                Fetching team member details...
-              </p>
             </div>
           </div>
         </div>
@@ -629,11 +625,8 @@ export default function TeamMemberDetailPage() {
               </CardHeader>
               <CardContent>
                 {isLoadingActivities ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Loading activities...
-                    </p>
+                  <div className="py-8">
+                    <Loader size="md" text="Loading activities..." />
                   </div>
                 ) : activities.length > 0 ? (
                   <div className="space-y-4">

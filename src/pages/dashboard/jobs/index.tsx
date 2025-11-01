@@ -39,8 +39,8 @@ export default function DashboardJobsPage() {
   const [sortBy, setSortBy] = useState<string>("newest");
 
   // Redux hooks
-  const { fetchJobs, createJob } = useJobs();
-  const { clients, fetchClients } = useClients();
+  const { fetchJobsIfNeeded, createJob } = useJobs(); // Use smart fetch
+  const { clients, fetchClientsIfNeeded } = useClients(); // Use smart fetch
 
   // Select filtered and sorted jobs
   const filteredJobs = useAppSelector((state) =>
@@ -56,9 +56,10 @@ export default function DashboardJobsPage() {
 
   // Fetch data on mount
   useEffect(() => {
-    fetchJobs();
-    fetchClients();
-  }, [fetchJobs, fetchClients]);
+    fetchJobsIfNeeded(); // Smart fetch - only if cache is stale
+    fetchClientsIfNeeded(); // Smart fetch - only if cache is stale
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only fetch on mount
 
   // Get client name helper
   const getClientName = (
