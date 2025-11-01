@@ -1,14 +1,17 @@
-import { useNavigate, useParams } from "react-router-dom";
-import { useEffect } from "react";
 import { CandidateEmailCommunication } from "@/components/candidate-email-communication";
+import { Button } from "@/components/ui/button";
 import { useCandidates } from "@/store/hooks/useCandidates";
 import { useJobs } from "@/store/hooks/useJobs";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 export default function JobCandidateCommunicationPage() {
   const navigate = useNavigate();
-  const { jobId, candidateId } = useParams<{ jobId: string; candidateId: string }>();
+  const { jobId, candidateId } = useParams<{
+    jobId: string;
+    candidateId: string;
+  }>();
   const { currentCandidate, fetchCandidateById } = useCandidates();
   const { currentJob, fetchJobById } = useJobs();
 

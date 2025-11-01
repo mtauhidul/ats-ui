@@ -1,5 +1,5 @@
-import { NewMessageModal } from "@/components/modals/new-message-modal";
 import MessageInputAi from "@/components/message-input-ai";
+import { NewMessageModal } from "@/components/modals/new-message-modal";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,12 +25,12 @@ import {
   Check,
   CheckCheck,
   Clock,
+  Menu,
   MessageSquare,
   MoreVertical,
   Plus,
   RotateCcw,
   Search,
-  Menu,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -212,12 +212,8 @@ export default function MessagesPage() {
 
     // Use the provided message or the messageText state
     const textToSend = (message || messageText).trim();
-    
-    if (
-      !textToSend ||
-      !currentConversation ||
-      textToSend.length > 1000
-    ) {
+
+    if (!textToSend || !currentConversation || textToSend.length > 1000) {
       return;
     }
 
@@ -419,26 +415,31 @@ export default function MessagesPage() {
                 >
                   <Menu className="h-4 w-4 mr-2" />
                   Conversations
-                  {conversations.filter(c => c.unreadCount > 0).length > 0 && (
+                  {conversations.filter((c) => c.unreadCount > 0).length >
+                    0 && (
                     <span className="ml-2 h-5 min-w-5 px-1.5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
-                      {conversations.filter(c => c.unreadCount > 0).length}
+                      {conversations.filter((c) => c.unreadCount > 0).length}
                     </span>
                   )}
                 </Button>
               )}
 
               {/* Conversations Sidebar */}
-              <div className={`flex flex-col border rounded-lg bg-card overflow-hidden w-full lg:w-[380px] transition-all duration-300 ${
-                isSidebarOpen 
-                  ? 'h-full absolute inset-0 z-20 lg:relative' 
-                  : currentConversation 
-                    ? 'hidden lg:flex lg:h-full' 
-                    : 'h-full lg:h-full'
-              }`}>
+              <div
+                className={`flex flex-col border rounded-lg bg-card overflow-hidden w-full lg:w-[380px] transition-all duration-300 ${
+                  isSidebarOpen
+                    ? "h-full absolute inset-0 z-20 lg:relative"
+                    : currentConversation
+                    ? "hidden lg:flex lg:h-full"
+                    : "h-full lg:h-full"
+                }`}
+              >
                 {/* Sidebar Header */}
                 <div className="p-3 md:p-4 border-b bg-card space-y-3 shrink-0">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-base md:text-lg font-semibold">Conversations</h3>
+                    <h3 className="text-base md:text-lg font-semibold">
+                      Conversations
+                    </h3>
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
@@ -682,9 +683,13 @@ export default function MessagesPage() {
                                                       : "rounded-tl-2xl"
                                                   }`}
                                                 >
-                                                  <p className={`text-xs md:text-sm leading-relaxed whitespace-pre-wrap wrap-break-word ${
-                                                    isCurrentUser ? "text-white" : ""
-                                                  }`}>
+                                                  <p
+                                                    className={`text-xs md:text-sm leading-relaxed whitespace-pre-wrap wrap-break-word ${
+                                                      isCurrentUser
+                                                        ? "text-white"
+                                                        : ""
+                                                    }`}
+                                                  >
                                                     {msg.message}
                                                   </p>
                                                 </div>

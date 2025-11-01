@@ -1,10 +1,21 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Category, UpdateCategoryRequest } from "@/types/category";
+import { useEffect, useState } from "react";
 
 interface EditCategoryModalProps {
   open: boolean;
@@ -27,7 +38,13 @@ const COLOR_OPTIONS = [
   { value: "#a855f7", label: "Violet" },
 ];
 
-export function EditCategoryModal({ open, category, categories, onClose, onSubmit }: EditCategoryModalProps) {
+export function EditCategoryModal({
+  open,
+  category,
+  categories,
+  onClose,
+  onSubmit,
+}: EditCategoryModalProps) {
   const [formData, setFormData] = useState<UpdateCategoryRequest>({
     name: "",
     description: "",
@@ -40,7 +57,9 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Get only parent categories (no parentId), excluding current category
-  const parentCategories = categories.filter(c => !c.parentId && c.id !== category?.id);
+  const parentCategories = categories.filter(
+    (c) => !c.parentId && c.id !== category?.id
+  );
 
   useEffect(() => {
     if (category) {
@@ -57,17 +76,19 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.name?.trim()) {
       newErrors.name = "Category name is required";
     }
 
     // Prevent setting parent to a child category
     if (formData.parentId && category) {
-      const childCategories = categories.filter(c => c.parentId === category.id);
-      if (childCategories.some(c => c.id === formData.parentId)) {
+      const childCategories = categories.filter(
+        (c) => c.parentId === category.id
+      );
+      if (childCategories.some((c) => c.id === formData.parentId)) {
         newErrors.parentId = "Cannot set a child category as parent";
       }
     }
@@ -97,16 +118,21 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
   if (!category) return null;
 
   // Check if category has children
-  const hasChildren = categories.some(c => c.parentId === category.id);
+  const hasChildren = categories.some((c) => c.parentId === category.id);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto p-4 md:p-6">
         <DialogHeader>
-          <DialogTitle className="text-lg md:text-xl">Edit Category</DialogTitle>
+          <DialogTitle className="text-lg md:text-xl">
+            Edit Category
+          </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4 pt-3 md:pt-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-3 md:space-y-4 pt-3 md:pt-4"
+        >
           {/* Has Children Notice */}
           {hasChildren && (
             <div className="rounded bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 p-2">
@@ -129,7 +155,9 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
                 if (errors.name) setErrors({ ...errors, name: "" });
               }}
               placeholder="e.g., Technology, Marketing, Sales"
-              className={`h-8 md:h-9 text-xs md:text-sm ${errors.name ? "border-red-500" : ""}`}
+              className={`h-8 md:h-9 text-xs md:text-sm ${
+                errors.name ? "border-red-500" : ""
+              }`}
             />
             {errors.name && (
               <p className="text-xs md:text-sm text-red-500">{errors.name}</p>
@@ -138,7 +166,9 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
 
           {/* Description */}
           <div className="space-y-1.5 md:space-y-2">
-            <Label htmlFor="description" className="text-xs md:text-sm">Description (Optional)</Label>
+            <Label htmlFor="description" className="text-xs md:text-sm">
+              Description (Optional)
+            </Label>
             <Input
               id="description"
               value={formData.description}
@@ -152,16 +182,25 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
 
           {/* Parent Category */}
           <div className="space-y-1.5 md:space-y-2">
-            <Label htmlFor="parentId" className="text-xs md:text-sm">Parent Category (Optional)</Label>
+            <Label htmlFor="parentId" className="text-xs md:text-sm">
+              Parent Category (Optional)
+            </Label>
             <Select
               value={formData.parentId || "none"}
               onValueChange={(value) => {
-                setFormData({ ...formData, parentId: value === "none" ? undefined : value });
+                setFormData({
+                  ...formData,
+                  parentId: value === "none" ? undefined : value,
+                });
                 if (errors.parentId) setErrors({ ...errors, parentId: "" });
               }}
               disabled={hasChildren}
             >
-              <SelectTrigger className={`h-8 md:h-9 text-xs md:text-sm ${errors.parentId ? "border-red-500" : ""}`}>
+              <SelectTrigger
+                className={`h-8 md:h-9 text-xs md:text-sm ${
+                  errors.parentId ? "border-red-500" : ""
+                }`}
+              >
                 <SelectValue placeholder="Select parent category" />
               </SelectTrigger>
               <SelectContent>
@@ -179,13 +218,17 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
               </p>
             )}
             {errors.parentId && (
-              <p className="text-xs md:text-sm text-red-500">{errors.parentId}</p>
+              <p className="text-xs md:text-sm text-red-500">
+                {errors.parentId}
+              </p>
             )}
           </div>
 
           {/* Active Status */}
           <div className="space-y-1.5 md:space-y-2">
-            <Label htmlFor="isActive" className="text-xs md:text-sm">Status</Label>
+            <Label htmlFor="isActive" className="text-xs md:text-sm">
+              Status
+            </Label>
             <Select
               value={formData.isActive ? "active" : "inactive"}
               onValueChange={(value) =>
@@ -204,13 +247,18 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
 
           {/* Sort Order */}
           <div className="space-y-1.5 md:space-y-2">
-            <Label htmlFor="sortOrder" className="text-xs md:text-sm">Sort Order</Label>
+            <Label htmlFor="sortOrder" className="text-xs md:text-sm">
+              Sort Order
+            </Label>
             <Input
               id="sortOrder"
               type="number"
               value={formData.sortOrder}
               onChange={(e) =>
-                setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })
+                setFormData({
+                  ...formData,
+                  sortOrder: parseInt(e.target.value) || 0,
+                })
               }
               placeholder="0"
               min="0"
@@ -229,7 +277,9 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
                 <button
                   key={color.value}
                   type="button"
-                  onClick={() => setFormData({ ...formData, color: color.value })}
+                  onClick={() =>
+                    setFormData({ ...formData, color: color.value })
+                  }
                   className={`relative h-7 md:h-8 rounded border-2 transition-all ${
                     formData.color === color.value
                       ? "border-foreground scale-105"
@@ -279,14 +329,21 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
                 </span>
                 {formData.parentId && (
                   <span className="text-[10px] md:text-xs text-muted-foreground">
-                    (Subcategory of {parentCategories.find(c => c.id === formData.parentId)?.name})
+                    (Subcategory of{" "}
+                    {
+                      parentCategories.find((c) => c.id === formData.parentId)
+                        ?.name
+                    }
+                    )
                   </span>
                 )}
-                <span className={`text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded ${
-                  formData.isActive 
-                    ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400"
-                    : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
-                }`}>
+                <span
+                  className={`text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded ${
+                    formData.isActive
+                      ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400"
+                      : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                  }`}
+                >
                   {formData.isActive ? "Active" : "Inactive"}
                 </span>
               </div>
@@ -295,10 +352,17 @@ export function EditCategoryModal({ open, category, categories, onClose, onSubmi
 
           {/* Actions */}
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 md:pt-4">
-            <Button type="button" variant="outline" onClick={handleClose} className="w-full sm:w-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button type="submit" className="w-full sm:w-auto">Save Changes</Button>
+            <Button type="submit" className="w-full sm:w-auto">
+              Save Changes
+            </Button>
           </div>
         </form>
       </DialogContent>

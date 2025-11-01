@@ -3,27 +3,27 @@
  * Verifies email and allows user to set password
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { LogoIcon } from '@/components/icons/logo-icon';
-import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect';
-import { Loader2, CheckCircle2, XCircle, ArrowLeft } from 'lucide-react';
-import { verifyEmail, setPassword } from '@/services/auth.service';
-import { toast } from 'sonner';
+import { LogoIcon } from "@/components/icons/logo-icon";
+import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
+import { Button } from "@/components/ui/button";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { setPassword, verifyEmail } from "@/services/auth.service";
+import { ArrowLeft, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function VerifyEmailPage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const hasVerified = useRef(false);
-  
+
   const [isVerifying, setIsVerifying] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
-  const [error, setError] = useState('');
-  const [password, setPasswordValue] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState("");
+  const [password, setPasswordValue] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSettingPassword, setIsSettingPassword] = useState(false);
 
   useEffect(() => {
@@ -32,16 +32,17 @@ export default function VerifyEmailPage() {
       hasVerified.current = true;
       handleVerification();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const handleVerification = async () => {
     try {
       await verifyEmail(token!);
       setIsVerified(true);
-      toast.success('Email verified successfully!');
+      toast.success("Email verified successfully!");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Verification failed';
+      const errorMessage =
+        err instanceof Error ? err.message : "Verification failed";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -51,14 +52,14 @@ export default function VerifyEmailPage() {
 
   const handleSetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error("Passwords do not match");
       return;
     }
 
     if (password.length < 8) {
-      toast.error('Password must be at least 8 characters');
+      toast.error("Password must be at least 8 characters");
       return;
     }
 
@@ -66,10 +67,11 @@ export default function VerifyEmailPage() {
 
     try {
       await setPassword({ token: token!, password });
-      toast.success('Password set successfully! You can now log in.');
-      navigate('/login');
+      toast.success("Password set successfully! You can now log in.");
+      navigate("/login");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to set password';
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to set password";
       toast.error(errorMessage);
     } finally {
       setIsSettingPassword(false);
@@ -86,14 +88,21 @@ export default function VerifyEmailPage() {
       <div className="relative z-10 w-full max-w-md space-y-8">
         {/* Logo and Header */}
         <div className="flex flex-col items-center space-y-4">
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <Link
+            to="/"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
             <LogoIcon size={32} color="#71abbf" />
             <span className="text-xl font-semibold">YTFCS ATS</span>
           </Link>
           <div className="text-center space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight">Email Verification</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Email Verification
+            </h1>
             {isVerifying && (
-              <p className="text-sm text-muted-foreground">Verifying your email...</p>
+              <p className="text-sm text-muted-foreground">
+                Verifying your email...
+              </p>
             )}
           </div>
         </div>
@@ -113,12 +122,12 @@ export default function VerifyEmailPage() {
               <XCircle className="h-12 w-12 text-destructive" />
             </div>
             <div className="text-center space-y-2">
-              <p className="font-medium text-destructive">Verification Failed</p>
+              <p className="font-medium text-destructive">
+                Verification Failed
+              </p>
               <p className="text-sm text-muted-foreground">{error}</p>
             </div>
-            <Button onClick={() => navigate('/login')}>
-              Go to Login
-            </Button>
+            <Button onClick={() => navigate("/login")}>Go to Login</Button>
           </div>
         )}
 
@@ -166,9 +175,9 @@ export default function VerifyEmailPage() {
                 </Field>
               </FieldGroup>
 
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={isSettingPassword || !password || !confirmPassword}
               >
                 {isSettingPassword ? (
@@ -177,7 +186,7 @@ export default function VerifyEmailPage() {
                     Setting Password...
                   </>
                 ) : (
-                  'Set Password & Login'
+                  "Set Password & Login"
                 )}
               </Button>
 
@@ -192,21 +201,22 @@ export default function VerifyEmailPage() {
                 </div>
               </div>
 
-              <Button 
+              <Button
                 type="button"
                 variant="outline"
-                className="w-full" 
-                onClick={() => navigate('/magic-link')}
+                className="w-full"
+                onClick={() => navigate("/magic-link")}
               >
                 Use Passwordless Login (Magic Link)
               </Button>
 
               <p className="text-xs text-center text-muted-foreground">
-                With magic link, you'll receive a login link via email each time you want to sign in.
+                With magic link, you'll receive a login link via email each time
+                you want to sign in.
               </p>
-              
-              <Link 
-                to="/" 
+
+              <Link
+                to="/"
                 className="block text-center text-sm text-muted-foreground hover:text-foreground transition-colors pt-2"
               >
                 <span className="inline-flex items-center gap-1">

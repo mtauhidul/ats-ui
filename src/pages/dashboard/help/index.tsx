@@ -417,7 +417,9 @@ export default function HelpPage() {
                 <CardHeader className="p-3 md:p-6">
                   <div className="flex items-center gap-1.5 md:gap-2">
                     <Clock className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-                    <CardTitle className="text-sm md:text-lg">Recent Searches</CardTitle>
+                    <CardTitle className="text-sm md:text-lg">
+                      Recent Searches
+                    </CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="p-3 md:p-6 pt-0">
@@ -470,8 +472,12 @@ export default function HelpPage() {
                   }`}
                 >
                   {category !== "all" && getCategoryIcon(category)}
-                  <span className="hidden sm:inline">{category === "all" ? "All" : category}</span>
-                  <span className="sm:hidden">{category === "all" ? "All" : category.split(" ")[0]}</span>
+                  <span className="hidden sm:inline">
+                    {category === "all" ? "All" : category}
+                  </span>
+                  <span className="sm:hidden">
+                    {category === "all" ? "All" : category.split(" ")[0]}
+                  </span>
                   <Badge
                     variant={
                       selectedCategory === category ? "secondary" : "outline"
@@ -488,7 +494,9 @@ export default function HelpPage() {
               <CardHeader className="p-3 md:p-6">
                 <div className="flex items-start md:items-center justify-between gap-2 flex-col md:flex-row">
                   <div>
-                    <CardTitle className="text-base md:text-lg">Frequently Asked Questions</CardTitle>
+                    <CardTitle className="text-base md:text-lg">
+                      Frequently Asked Questions
+                    </CardTitle>
                     <CardDescription className="text-xs md:text-sm">
                       {filteredFAQs.length} question
                       {filteredFAQs.length !== 1 ? "s" : ""} found
@@ -518,7 +526,9 @@ export default function HelpPage() {
                 {filteredFAQs.length === 0 ? (
                   <div className="py-8 md:py-12 text-center text-muted-foreground">
                     <HelpCircle className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-2 md:mb-3 opacity-50" />
-                    <p className="text-xs md:text-sm px-4">No FAQs found matching your search</p>
+                    <p className="text-xs md:text-sm px-4">
+                      No FAQs found matching your search
+                    </p>
                   </div>
                 ) : (
                   filteredFAQs.map((faq, index) => (
@@ -535,7 +545,10 @@ export default function HelpPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
                               {getCategoryIcon(faq.category)}
-                              <Badge variant="secondary" className="text-[10px] md:text-xs">
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] md:text-xs"
+                              >
                                 {faq.category}
                               </Badge>
                             </div>
@@ -583,7 +596,9 @@ export default function HelpPage() {
                           </Button>
                         </div>
                       </div>
-                      {index < filteredFAQs.length - 1 && <Separator className="my-1.5 md:my-2" />}
+                      {index < filteredFAQs.length - 1 && (
+                        <Separator className="my-1.5 md:my-2" />
+                      )}
                     </div>
                   ))
                 )}

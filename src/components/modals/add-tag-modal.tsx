@@ -1,9 +1,14 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CreateTagRequest } from "@/types/tag";
+import { useState } from "react";
 
 interface AddTagModalProps {
   open: boolean;
@@ -35,9 +40,9 @@ export function AddTagModal({ open, onClose, onSubmit }: AddTagModalProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = "Tag name is required";
     }
@@ -68,7 +73,10 @@ export function AddTagModal({ open, onClose, onSubmit }: AddTagModalProps) {
           <DialogTitle className="text-lg md:text-xl">Add New Tag</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4 pt-3 md:pt-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-3 md:space-y-4 pt-3 md:pt-4"
+        >
           {/* Tag Name */}
           <div className="space-y-1.5 md:space-y-2">
             <Label htmlFor="name" className="text-xs md:text-sm">
@@ -82,7 +90,9 @@ export function AddTagModal({ open, onClose, onSubmit }: AddTagModalProps) {
                 if (errors.name) setErrors({ ...errors, name: "" });
               }}
               placeholder="e.g., Remote, Urgent, Senior Level"
-              className={`h-8 md:h-9 text-xs md:text-sm ${errors.name ? "border-red-500" : ""}`}
+              className={`h-8 md:h-9 text-xs md:text-sm ${
+                errors.name ? "border-red-500" : ""
+              }`}
             />
             {errors.name && (
               <p className="text-xs md:text-sm text-red-500">{errors.name}</p>
@@ -91,7 +101,9 @@ export function AddTagModal({ open, onClose, onSubmit }: AddTagModalProps) {
 
           {/* Description */}
           <div className="space-y-1.5 md:space-y-2">
-            <Label htmlFor="description" className="text-xs md:text-sm">Description (Optional)</Label>
+            <Label htmlFor="description" className="text-xs md:text-sm">
+              Description (Optional)
+            </Label>
             <Input
               id="description"
               value={formData.description}
@@ -111,7 +123,9 @@ export function AddTagModal({ open, onClose, onSubmit }: AddTagModalProps) {
                 <button
                   key={color.value}
                   type="button"
-                  onClick={() => setFormData({ ...formData, color: color.value })}
+                  onClick={() =>
+                    setFormData({ ...formData, color: color.value })
+                  }
                   className={`relative h-7 md:h-8 rounded border-2 transition-all ${
                     formData.color === color.value
                       ? "border-foreground scale-105"
@@ -166,10 +180,17 @@ export function AddTagModal({ open, onClose, onSubmit }: AddTagModalProps) {
 
           {/* Actions */}
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 md:pt-4">
-            <Button type="button" variant="outline" onClick={handleClose} className="w-full sm:w-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button type="submit" className="w-full sm:w-auto">Add Tag</Button>
+            <Button type="submit" className="w-full sm:w-auto">
+              Add Tag
+            </Button>
           </div>
         </form>
       </DialogContent>

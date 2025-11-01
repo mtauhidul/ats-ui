@@ -118,29 +118,52 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Filter navigation items based on user permissions
   const filterNavItems = React.useMemo(() => {
-    if (!user) return { navMain: [], utilities: [], navSecondary: allNavItems.navSecondary };
+    if (!user)
+      return {
+        navMain: [],
+        utilities: [],
+        navSecondary: allNavItems.navSecondary,
+      };
 
     // Admins can see everything
     if (isAdmin(user)) {
       return {
-        navMain: allNavItems.navMain.map(item => ({ title: item.title, url: item.url, icon: item.icon })),
-        utilities: allNavItems.utilities.map(item => ({ name: item.name, url: item.url, icon: item.icon })),
-        navSecondary: allNavItems.navSecondary.map(item => ({ title: item.title, url: item.url, icon: item.icon })),
+        navMain: allNavItems.navMain.map((item) => ({
+          title: item.title,
+          url: item.url,
+          icon: item.icon,
+        })),
+        utilities: allNavItems.utilities.map((item) => ({
+          name: item.name,
+          url: item.url,
+          icon: item.icon,
+        })),
+        navSecondary: allNavItems.navSecondary.map((item) => ({
+          title: item.title,
+          url: item.url,
+          icon: item.icon,
+        })),
       };
     }
 
     // Filter based on permissions
     const filteredNavMain = allNavItems.navMain
-      .filter(item => !item.permission || hasPermission(user, item.permission))
-      .map(item => ({ title: item.title, url: item.url, icon: item.icon }));
+      .filter(
+        (item) => !item.permission || hasPermission(user, item.permission)
+      )
+      .map((item) => ({ title: item.title, url: item.url, icon: item.icon }));
 
     const filteredUtilities = allNavItems.utilities
-      .filter(item => !item.permission || hasPermission(user, item.permission))
-      .map(item => ({ name: item.name, url: item.url, icon: item.icon }));
+      .filter(
+        (item) => !item.permission || hasPermission(user, item.permission)
+      )
+      .map((item) => ({ name: item.name, url: item.url, icon: item.icon }));
 
     const filteredNavSecondary = allNavItems.navSecondary
-      .filter(item => !item.permission || hasPermission(user, item.permission))
-      .map(item => ({ title: item.title, url: item.url, icon: item.icon }));
+      .filter(
+        (item) => !item.permission || hasPermission(user, item.permission)
+      )
+      .map((item) => ({ title: item.title, url: item.url, icon: item.icon }));
 
     return {
       navMain: filteredNavMain,
@@ -154,8 +177,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <Link 
-              to="/dashboard" 
+            <Link
+              to="/dashboard"
               className="flex items-center gap-2 p-2 cursor-pointer"
             >
               <div style={{ width: "24px", height: "24px", flexShrink: 0 }}>
@@ -168,7 +191,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={filterNavItems.navMain} />
-        {filterNavItems.utilities.length > 0 && <NavUtilities items={filterNavItems.utilities} />}
+        {filterNavItems.utilities.length > 0 && (
+          <NavUtilities items={filterNavItems.utilities} />
+        )}
         <NavSecondary items={filterNavItems.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

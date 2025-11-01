@@ -1,28 +1,29 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { Job } from "@/types/job";
 import {
   ArrowLeft,
-  MapPin,
-  Briefcase,
-  DollarSign,
-  Clock,
-  TrendingUp,
-  CheckCircle2,
-  Calendar,
-  Users,
   Award,
-  Heart,
+  Briefcase,
   Building2,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  DollarSign,
   Globe,
-  Laptop,
+  Heart,
   Home,
+  Laptop,
+  MapPin,
+  TrendingUp,
+  Users,
 } from "lucide-react";
-import type { Job } from "@/types/job";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 // Extend Job type to match API response
 type JobWithExtras = Job & {
@@ -62,20 +63,27 @@ export default function JobDetailPage() {
     fetchJob();
   }, [jobId]);
 
-  const formatSalary = (salary?: { min: number; max: number; currency: string; period?: string }) => {
+  const formatSalary = (salary?: {
+    min: number;
+    max: number;
+    currency: string;
+    period?: string;
+  }) => {
     if (!salary) return "Competitive";
     const format = (num: number) => new Intl.NumberFormat("en-US").format(num);
     const period = salary.period || "year";
-    return `${salary.currency} ${format(salary.min)} - ${format(salary.max)} / ${period}`;
+    return `${salary.currency} ${format(salary.min)} - ${format(
+      salary.max
+    )} / ${period}`;
   };
 
   const getWorkModeIcon = (mode: string) => {
     switch (mode?.toLowerCase()) {
-      case 'remote':
+      case "remote":
         return <Laptop className="h-5 w-5" />;
-      case 'onsite':
+      case "onsite":
         return <Building2 className="h-5 w-5" />;
-      case 'hybrid':
+      case "hybrid":
         return <Home className="h-5 w-5" />;
       default:
         return <Briefcase className="h-5 w-5" />;
@@ -122,7 +130,7 @@ export default function JobDetailPage() {
       <div className="relative z-10 container mx-auto px-6 py-12 md:px-8 lg:px-12">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
-          <Link 
+          <Link
             to="/jobs"
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
           >
@@ -151,21 +159,29 @@ export default function JobDetailPage() {
                 {(job.location?.city || job.location?.country) && (
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-sm font-medium backdrop-blur-sm">
                     <MapPin className="h-4 w-4 text-primary" />
-                    <span>{[job.location?.city, job.location?.country].filter(Boolean).join(", ")}</span>
+                    <span>
+                      {[job.location?.city, job.location?.country]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </span>
                   </div>
                 )}
 
                 {(job.type || job.jobType) && (
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 rounded-full text-sm font-medium backdrop-blur-sm">
                     <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <span className="capitalize">{(job.type || job.jobType).replace(/_/g, " ")}</span>
+                    <span className="capitalize">
+                      {(job.type || job.jobType).replace(/_/g, " ")}
+                    </span>
                   </div>
                 )}
 
                 {(job.workMode || job.locationType) && (
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 rounded-full text-sm font-medium backdrop-blur-sm">
-                    {getWorkModeIcon(job.workMode || job.locationType || '')}
-                    <span className="capitalize">{(job.workMode || job.locationType)}</span>
+                    {getWorkModeIcon(job.workMode || job.locationType || "")}
+                    <span className="capitalize">
+                      {job.workMode || job.locationType}
+                    </span>
                   </div>
                 )}
 
@@ -187,10 +203,14 @@ export default function JobDetailPage() {
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 rounded-full text-sm font-medium backdrop-blur-sm">
                     <Calendar className="h-4 w-4 text-red-600 dark:text-red-400" />
                     <span>
-                      Deadline: {new Date(job.applicationDeadline).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric'
-                      })}
+                      Deadline:{" "}
+                      {new Date(job.applicationDeadline).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
                     </span>
                   </div>
                 )}
@@ -220,7 +240,10 @@ export default function JobDetailPage() {
                 </h2>
                 <ul className="space-y-3 pl-8">
                   {job.responsibilities.map((responsibility, index) => (
-                    <li key={index} className="flex gap-3 items-start text-base text-muted-foreground">
+                    <li
+                      key={index}
+                      className="flex gap-3 items-start text-base text-muted-foreground"
+                    >
                       <span className="text-primary mt-1">•</span>
                       <span className="flex-1">{responsibility}</span>
                     </li>
@@ -230,12 +253,16 @@ export default function JobDetailPage() {
             )}
 
             {/* Requirements */}
-            {(job.requirements?.experience || 
+            {(job.requirements?.experience ||
               job.requirements?.education ||
-              (job.requirements?.skills?.required && job.requirements.skills.required.length > 0) ||
-              (job.requirements?.skills?.preferred && job.requirements.skills.preferred.length > 0) ||
-              (job.requirements?.languages && job.requirements.languages.length > 0) ||
-              (job.requirements?.certifications && job.requirements.certifications.length > 0)) && (
+              (job.requirements?.skills?.required &&
+                job.requirements.skills.required.length > 0) ||
+              (job.requirements?.skills?.preferred &&
+                job.requirements.skills.preferred.length > 0) ||
+              (job.requirements?.languages &&
+                job.requirements.languages.length > 0) ||
+              (job.requirements?.certifications &&
+                job.requirements.certifications.length > 0)) && (
               <div className="mb-10">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
                   <Award className="h-6 w-6 text-primary" />
@@ -248,7 +275,9 @@ export default function JobDetailPage() {
                         <TrendingUp className="h-4 w-4 text-primary" />
                         Experience
                       </h3>
-                      <p className="text-muted-foreground pl-6">{job.requirements.experience}</p>
+                      <p className="text-muted-foreground pl-6">
+                        {job.requirements.experience}
+                      </p>
                     </div>
                   )}
 
@@ -258,100 +287,133 @@ export default function JobDetailPage() {
                         <Award className="h-4 w-4 text-primary" />
                         Education
                       </h3>
-                      <p className="text-muted-foreground pl-6">{job.requirements.education}</p>
+                      <p className="text-muted-foreground pl-6">
+                        {job.requirements.education}
+                      </p>
                     </div>
                   )}
 
-                  {job.requirements?.skills?.required && job.requirements.skills.required.length > 0 && (
-                    <div>
-                      <h3 className="text-base font-semibold text-foreground mb-3">Must-Have Skills</h3>
-                      <div className="flex flex-wrap gap-2 pl-6">
-                        {job.requirements.skills.required.map((skill) => (
-                          <Badge key={skill} className="bg-primary/90 hover:bg-primary">
-                            {skill}
-                          </Badge>
-                        ))}
+                  {job.requirements?.skills?.required &&
+                    job.requirements.skills.required.length > 0 && (
+                      <div>
+                        <h3 className="text-base font-semibold text-foreground mb-3">
+                          Must-Have Skills
+                        </h3>
+                        <div className="flex flex-wrap gap-2 pl-6">
+                          {job.requirements.skills.required.map((skill) => (
+                            <Badge
+                              key={skill}
+                              className="bg-primary/90 hover:bg-primary"
+                            >
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {job.requirements?.skills?.preferred && job.requirements.skills.preferred.length > 0 && (
-                    <div>
-                      <h3 className="text-base font-semibold text-foreground mb-3">Nice to Have</h3>
-                      <div className="flex flex-wrap gap-2 pl-6">
-                        {job.requirements.skills.preferred.map((skill) => (
-                          <Badge key={skill} variant="outline">
-                            {skill}
-                          </Badge>
-                        ))}
+                  {job.requirements?.skills?.preferred &&
+                    job.requirements.skills.preferred.length > 0 && (
+                      <div>
+                        <h3 className="text-base font-semibold text-foreground mb-3">
+                          Nice to Have
+                        </h3>
+                        <div className="flex flex-wrap gap-2 pl-6">
+                          {job.requirements.skills.preferred.map((skill) => (
+                            <Badge key={skill} variant="outline">
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {job.requirements?.languages && job.requirements.languages.length > 0 && (
-                    <div>
-                      <h3 className="text-base font-semibold text-foreground mb-3">Languages</h3>
-                      <div className="flex flex-wrap gap-2 pl-6">
-                        {job.requirements.languages.map((language) => (
-                          <Badge key={language} variant="secondary">
-                            {language}
-                          </Badge>
-                        ))}
+                  {job.requirements?.languages &&
+                    job.requirements.languages.length > 0 && (
+                      <div>
+                        <h3 className="text-base font-semibold text-foreground mb-3">
+                          Languages
+                        </h3>
+                        <div className="flex flex-wrap gap-2 pl-6">
+                          {job.requirements.languages.map((language) => (
+                            <Badge key={language} variant="secondary">
+                              {language}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {job.requirements?.certifications && job.requirements.certifications.length > 0 && (
-                    <div>
-                      <h3 className="text-base font-semibold text-foreground mb-3">Certifications</h3>
-                      <ul className="space-y-2 pl-6">
-                        {job.requirements.certifications.map((cert) => (
-                          <li key={cert} className="flex items-start gap-2 text-muted-foreground">
-                            <Award className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                            <span>{cert}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  {job.requirements?.certifications &&
+                    job.requirements.certifications.length > 0 && (
+                      <div>
+                        <h3 className="text-base font-semibold text-foreground mb-3">
+                          Certifications
+                        </h3>
+                        <ul className="space-y-2 pl-6">
+                          {job.requirements.certifications.map((cert) => (
+                            <li
+                              key={cert}
+                              className="flex items-start gap-2 text-muted-foreground"
+                            >
+                              <Award className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                              <span>{cert}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                 </div>
               </div>
             )}
 
             {/* Skills from Job Array */}
-            {job.skills && job.skills.length > 0 && !(job.requirements?.skills?.required && job.requirements.skills.required.length > 0) && (
-              <div className="mb-10">
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <Award className="h-6 w-6 text-primary" />
-                  Required Skills
-                </h2>
-                <div className="flex flex-wrap gap-2 pl-8">
-                  {job.skills.map((skill) => (
-                    <Badge key={skill} className="px-3 py-1.5 bg-primary/90 hover:bg-primary">
-                      {skill}
-                    </Badge>
-                  ))}
+            {job.skills &&
+              job.skills.length > 0 &&
+              !(
+                job.requirements?.skills?.required &&
+                job.requirements.skills.required.length > 0
+              ) && (
+                <div className="mb-10">
+                  <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
+                    <Award className="h-6 w-6 text-primary" />
+                    Required Skills
+                  </h2>
+                  <div className="flex flex-wrap gap-2 pl-8">
+                    {job.skills.map((skill) => (
+                      <Badge
+                        key={skill}
+                        className="px-3 py-1.5 bg-primary/90 hover:bg-primary"
+                      >
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Benefits */}
-            {job.benefits && Array.isArray(job.benefits) && job.benefits.length > 0 && (
-              <div className="mb-10">
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <Heart className="h-6 w-6 text-primary" />
-                  What We Offer
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-8">
-                  {job.benefits.map((benefit, index) => (
-                    <div key={index} className="flex items-start gap-3 text-muted-foreground">
-                      <Heart className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                      <span className="text-sm font-medium">{benefit}</span>
-                    </div>
-                  ))}
+            {job.benefits &&
+              Array.isArray(job.benefits) &&
+              job.benefits.length > 0 && (
+                <div className="mb-10">
+                  <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
+                    <Heart className="h-6 w-6 text-primary" />
+                    What We Offer
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-8">
+                    {job.benefits.map((benefit, index) => (
+                      <div
+                        key={index}
+                        className="flex items-start gap-3 text-muted-foreground"
+                      >
+                        <Heart className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <span className="text-sm font-medium">{benefit}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Footer - Apply Again */}
             <div className="pt-8 border-t border-border/30 mt-10">
@@ -362,11 +424,15 @@ export default function JobDetailPage() {
                   </p>
                   {job.applicationDeadline && (
                     <p className="text-xs text-destructive mt-1">
-                      Application closes on {new Date(job.applicationDeadline).toLocaleDateString('en-US', { 
-                        month: 'long', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      })}
+                      Application closes on{" "}
+                      {new Date(job.applicationDeadline).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        }
+                      )}
                     </p>
                   )}
                 </div>

@@ -1,14 +1,5 @@
-import { useEffect, useState } from "react";
-import {
-  Plus,
-  Search,
-  Folder,
-  FolderTree,
-  Edit2,
-  Trash2,
-  ChevronRight,
-  ChevronDown,
-} from "lucide-react";
+import { AddCategoryModal } from "@/components/modals/add-category-modal";
+import { EditCategoryModal } from "@/components/modals/edit-category-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,20 +9,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AddCategoryModal } from "@/components/modals/add-category-modal";
-import { EditCategoryModal } from "@/components/modals/edit-category-modal";
+import { useAppSelector, useCategories } from "@/store/hooks/index";
+import { selectCategories } from "@/store/selectors";
 import type {
   Category,
+  CategoryTree,
   CreateCategoryRequest,
   UpdateCategoryRequest,
-  CategoryTree,
 } from "@/types/category";
-import { useCategories, useAppSelector } from "@/store/hooks/index";
-import { selectCategories } from "@/store/selectors";
+import {
+  ChevronDown,
+  ChevronRight,
+  Edit2,
+  Folder,
+  FolderTree,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function CategoriesPage() {
-  const { fetchCategories, createCategory, updateCategory, deleteCategory } = useCategories();
+  const { fetchCategories, createCategory, updateCategory, deleteCategory } =
+    useCategories();
   const categories = useAppSelector(selectCategories);
 
   useEffect(() => {
@@ -46,9 +47,7 @@ export default function CategoriesPage() {
     new Set()
   );
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(
-    null
-  );
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   const handleAddCategory = (data: CreateCategoryRequest) => {
     createCategory(data);
@@ -61,10 +60,14 @@ export default function CategoriesPage() {
   };
 
   const handleDeleteCategory = (categoryId: string) => {
-    const category = categories.find((c: { id: string }) => c.id === categoryId);
+    const category = categories.find(
+      (c: { id: string }) => c.id === categoryId
+    );
 
     // Check if category has children
-    const hasChildren = categories.some((c: { parentId?: string }) => c.parentId === categoryId);
+    const hasChildren = categories.some(
+      (c: { parentId?: string }) => c.parentId === categoryId
+    );
     if (hasChildren) {
       toast.error(
         `Cannot delete "${category?.name}". Please delete all subcategories first.`,
@@ -101,7 +104,9 @@ export default function CategoriesPage() {
   ): CategoryTree[] => {
     // Prevent infinite recursion by limiting depth
     if (level > 10) {
-      console.warn('Maximum category nesting depth (10) exceeded. Possible circular reference.');
+      console.warn(
+        "Maximum category nesting depth (10) exceeded. Possible circular reference."
+      );
       return [];
     }
 
@@ -112,23 +117,31 @@ export default function CategoriesPage() {
           console.error(`Category missing ID:`, item);
           return false;
         }
-        
+
         // Handle both null and undefined as "no parent"
         const itemParent = item.parentId ?? null;
         const targetParent = parentId ?? null;
-        
+
         // Skip if this item was already processed in the current path (circular reference)
         if (visitedIds.has(item.id)) {
-          console.warn(`Circular reference detected for category: ${item.name} (ID: ${item.id || 'undefined'})`);
+          console.warn(
+            `Circular reference detected for category: ${item.name} (ID: ${
+              item.id || "undefined"
+            })`
+          );
           return false;
         }
-        
+
         // Don't allow a category to be its own parent
         if (item.id === item.parentId) {
-          console.warn(`Category cannot be its own parent: ${item.name} (ID: ${item.id || 'undefined'})`);
+          console.warn(
+            `Category cannot be its own parent: ${item.name} (ID: ${
+              item.id || "undefined"
+            })`
+          );
           return false;
         }
-        
+
         return itemParent === targetParent;
       })
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
@@ -136,7 +149,7 @@ export default function CategoriesPage() {
         // Create a new visited set for this branch
         const newVisitedIds = new Set(visitedIds);
         newVisitedIds.add(item.id);
-        
+
         return {
           ...item,
           level,
@@ -295,7 +308,10 @@ export default function CategoriesPage() {
                     Organize jobs and candidates with hierarchical categories
                   </p>
                 </div>
-                <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto shrink-0">
+                <Button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="w-full sm:w-auto shrink-0"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Category
                 </Button>
@@ -322,7 +338,10 @@ export default function CategoriesPage() {
                     <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={viewMode} onValueChange={(value: "tree" | "grid") => setViewMode(value)}>
+                <Select
+                  value={viewMode}
+                  onValueChange={(value: "tree" | "grid") => setViewMode(value)}
+                >
                   <SelectTrigger className="w-full sm:w-40 md:w-45 h-8 md:h-9 text-xs md:text-sm">
                     <SelectValue placeholder="View" />
                   </SelectTrigger>
@@ -356,7 +375,9 @@ export default function CategoriesPage() {
                   <p className="text-xl md:text-2xl font-bold mb-0.5">
                     {categories.length}
                   </p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground">Total Categories</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">
+                    Total Categories
+                  </p>
                 </div>
                 <div className="rounded-lg border bg-card p-2 md:p-3 shadow-sm">
                   <div className="flex items-start justify-between mb-1 md:mb-2">
@@ -367,7 +388,9 @@ export default function CategoriesPage() {
                   <p className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-500 mb-0.5">
                     {activeCategories.length}
                   </p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground">Active</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">
+                    Active
+                  </p>
                 </div>
                 <div className="rounded-lg border bg-card p-2 md:p-3 shadow-sm">
                   <div className="flex items-start justify-between mb-1 md:mb-2">
@@ -378,7 +401,9 @@ export default function CategoriesPage() {
                   <p className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-500 mb-0.5">
                     {parentCategories.length}
                   </p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground">Parent Categories</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">
+                    Parent Categories
+                  </p>
                 </div>
               </div>
             </div>

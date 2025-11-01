@@ -1,7 +1,7 @@
+import { FeatureCard } from "@/components/feature-card";
+import { LogoCloud } from "@/components/logo-cloud";
 import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
 import { Button } from "@/components/ui/button";
-import { LogoCloud } from "@/components/logo-cloud";
-import { FeatureCard } from "@/components/feature-card";
 import {
   ArrowRight,
   Brain,
@@ -106,7 +106,7 @@ export default function HomePage() {
               Built with industry-leading providers and cloud services
             </p>
           </div>
-          
+
           <LogoCloud logos={logos} />
         </div>
       </div>

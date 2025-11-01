@@ -3,24 +3,24 @@
  * Automatically verifies magic link and logs user in
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { LogoIcon } from '@/components/icons/logo-icon';
-import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect';
-import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { verifyMagicLink } from '@/services/auth.service';
-import { toast } from 'sonner';
-import * as authUtils from '@/lib/auth-utils';
+import { LogoIcon } from "@/components/icons/logo-icon";
+import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
+import { Button } from "@/components/ui/button";
+import * as authUtils from "@/lib/auth-utils";
+import { verifyMagicLink } from "@/services/auth.service";
+import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function VerifyMagicLinkPage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const hasVerified = useRef(false);
-  
+
   const [isVerifying, setIsVerifying] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     // Prevent double verification in StrictMode or on re-renders
@@ -28,13 +28,13 @@ export default function VerifyMagicLinkPage() {
       hasVerified.current = true;
       handleVerification();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const handleVerification = async () => {
     try {
       const response = await verifyMagicLink(token!);
-      
+
       // Save tokens to localStorage
       if (response.data.accessToken) {
         authUtils.setAccessToken(response.data.accessToken);
@@ -44,15 +44,16 @@ export default function VerifyMagicLinkPage() {
       }
 
       setIsSuccess(true);
-      toast.success('Logged in successfully!');
-      
+      toast.success("Logged in successfully!");
+
       // Redirect to dashboard - the ProtectedRoute will handle auth check
       // and AuthContext will load user from the saved token
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        window.location.href = "/dashboard";
       }, 1000);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Invalid or expired magic link';
+      const errorMessage =
+        err instanceof Error ? err.message : "Invalid or expired magic link";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -70,12 +71,17 @@ export default function VerifyMagicLinkPage() {
       <div className="relative z-10 w-full max-w-md space-y-8">
         {/* Logo and Header */}
         <div className="flex flex-col items-center space-y-4">
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <Link
+            to="/"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
             <LogoIcon size={32} color="#71abbf" />
             <span className="text-xl font-semibold">YTFCS ATS</span>
           </Link>
           <div className="text-center space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight">Magic Link Verification</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Magic Link Verification
+            </h1>
           </div>
         </div>
 
@@ -83,7 +89,9 @@ export default function VerifyMagicLinkPage() {
         {isVerifying && (
           <div className="flex flex-col items-center space-y-4 py-8">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="text-muted-foreground">Verifying your magic link...</p>
+            <p className="text-muted-foreground">
+              Verifying your magic link...
+            </p>
           </div>
         )}
 
@@ -94,10 +102,12 @@ export default function VerifyMagicLinkPage() {
               <XCircle className="h-12 w-12 text-destructive" />
             </div>
             <div className="text-center space-y-2">
-              <p className="font-medium text-destructive">Verification Failed</p>
+              <p className="font-medium text-destructive">
+                Verification Failed
+              </p>
               <p className="text-sm text-muted-foreground">{error}</p>
             </div>
-            <Button onClick={() => navigate('/magic-link')}>
+            <Button onClick={() => navigate("/magic-link")}>
               Request New Magic Link
             </Button>
           </div>

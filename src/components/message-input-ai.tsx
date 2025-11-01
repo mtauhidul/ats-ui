@@ -9,12 +9,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  IconPaperclip,
-  IconPlus,
-  IconSend,
-} from "@tabler/icons-react";
-import { useRef, useState, useEffect } from "react";
+import { IconPaperclip, IconPlus, IconSend } from "@tabler/icons-react";
+import { useEffect, useRef, useState } from "react";
 
 interface MessageInputAiProps {
   onSendMessage: (message: string) => void;

@@ -1,9 +1,14 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Tag as TagType, UpdateTagRequest } from "@/types/tag";
+import { useEffect, useState } from "react";
 
 interface EditTagModalProps {
   open: boolean;
@@ -25,7 +30,12 @@ const COLOR_OPTIONS = [
   { value: "#a855f7", label: "Violet" },
 ];
 
-export function EditTagModal({ open, tag, onClose, onSubmit }: EditTagModalProps) {
+export function EditTagModal({
+  open,
+  tag,
+  onClose,
+  onSubmit,
+}: EditTagModalProps) {
   const [formData, setFormData] = useState<UpdateTagRequest>({
     name: "",
     description: "",
@@ -46,9 +56,9 @@ export function EditTagModal({ open, tag, onClose, onSubmit }: EditTagModalProps
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.name?.trim()) {
       newErrors.name = "Tag name is required";
     }
@@ -81,7 +91,10 @@ export function EditTagModal({ open, tag, onClose, onSubmit }: EditTagModalProps
           <DialogTitle className="text-lg md:text-xl">Edit Tag</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4 pt-3 md:pt-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-3 md:space-y-4 pt-3 md:pt-4"
+        >
           {/* System Tag Notice */}
           {tag.isSystem && (
             <div className="rounded bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 p-2">
@@ -104,7 +117,9 @@ export function EditTagModal({ open, tag, onClose, onSubmit }: EditTagModalProps
                 if (errors.name) setErrors({ ...errors, name: "" });
               }}
               placeholder="e.g., Remote, Urgent, Senior Level"
-              className={`h-8 md:h-9 text-xs md:text-sm ${errors.name ? "border-red-500" : ""}`}
+              className={`h-8 md:h-9 text-xs md:text-sm ${
+                errors.name ? "border-red-500" : ""
+              }`}
               disabled={tag.isSystem}
             />
             {errors.name && (
@@ -114,7 +129,9 @@ export function EditTagModal({ open, tag, onClose, onSubmit }: EditTagModalProps
 
           {/* Description */}
           <div className="space-y-1.5 md:space-y-2">
-            <Label htmlFor="description" className="text-xs md:text-sm">Description (Optional)</Label>
+            <Label htmlFor="description" className="text-xs md:text-sm">
+              Description (Optional)
+            </Label>
             <Input
               id="description"
               value={formData.description}
@@ -134,7 +151,9 @@ export function EditTagModal({ open, tag, onClose, onSubmit }: EditTagModalProps
                 <button
                   key={color.value}
                   type="button"
-                  onClick={() => setFormData({ ...formData, color: color.value })}
+                  onClick={() =>
+                    setFormData({ ...formData, color: color.value })
+                  }
                   className={`relative h-7 md:h-8 rounded border-2 transition-all ${
                     formData.color === color.value
                       ? "border-foreground scale-105"
@@ -189,10 +208,17 @@ export function EditTagModal({ open, tag, onClose, onSubmit }: EditTagModalProps
 
           {/* Actions */}
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 md:pt-4">
-            <Button type="button" variant="outline" onClick={handleClose} className="w-full sm:w-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button type="submit" className="w-full sm:w-auto">Save Changes</Button>
+            <Button type="submit" className="w-full sm:w-auto">
+              Save Changes
+            </Button>
           </div>
         </form>
       </DialogContent>

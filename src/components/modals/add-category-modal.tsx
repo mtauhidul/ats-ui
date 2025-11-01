@@ -1,10 +1,21 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { CreateCategoryRequest, Category } from "@/types/category";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Category, CreateCategoryRequest } from "@/types/category";
+import { useState } from "react";
 
 interface AddCategoryModalProps {
   open: boolean;
@@ -26,7 +37,12 @@ const COLOR_OPTIONS = [
   { value: "#a855f7", label: "Violet" },
 ];
 
-export function AddCategoryModal({ open, categories, onClose, onSubmit }: AddCategoryModalProps) {
+export function AddCategoryModal({
+  open,
+  categories,
+  onClose,
+  onSubmit,
+}: AddCategoryModalProps) {
   const [formData, setFormData] = useState<CreateCategoryRequest>({
     name: "",
     description: "",
@@ -38,13 +54,13 @@ export function AddCategoryModal({ open, categories, onClose, onSubmit }: AddCat
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Get only parent categories (no parentId)
-  const parentCategories = categories.filter(c => !c.parentId);
+  const parentCategories = categories.filter((c) => !c.parentId);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = "Category name is required";
     }
@@ -74,10 +90,15 @@ export function AddCategoryModal({ open, categories, onClose, onSubmit }: AddCat
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto p-4 md:p-6">
         <DialogHeader>
-          <DialogTitle className="text-lg md:text-xl">Add New Category</DialogTitle>
+          <DialogTitle className="text-lg md:text-xl">
+            Add New Category
+          </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4 pt-3 md:pt-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-3 md:space-y-4 pt-3 md:pt-4"
+        >
           {/* Category Name */}
           <div className="space-y-1.5 md:space-y-2">
             <Label htmlFor="name" className="text-xs md:text-sm">
@@ -91,7 +112,9 @@ export function AddCategoryModal({ open, categories, onClose, onSubmit }: AddCat
                 if (errors.name) setErrors({ ...errors, name: "" });
               }}
               placeholder="e.g., Technology, Marketing, Sales"
-              className={`h-8 md:h-9 text-xs md:text-sm ${errors.name ? "border-red-500" : ""}`}
+              className={`h-8 md:h-9 text-xs md:text-sm ${
+                errors.name ? "border-red-500" : ""
+              }`}
             />
             {errors.name && (
               <p className="text-xs md:text-sm text-red-500">{errors.name}</p>
@@ -100,7 +123,9 @@ export function AddCategoryModal({ open, categories, onClose, onSubmit }: AddCat
 
           {/* Description */}
           <div className="space-y-1.5 md:space-y-2">
-            <Label htmlFor="description" className="text-xs md:text-sm">Description (Optional)</Label>
+            <Label htmlFor="description" className="text-xs md:text-sm">
+              Description (Optional)
+            </Label>
             <Input
               id="description"
               value={formData.description}
@@ -114,11 +139,16 @@ export function AddCategoryModal({ open, categories, onClose, onSubmit }: AddCat
 
           {/* Parent Category */}
           <div className="space-y-1.5 md:space-y-2">
-            <Label htmlFor="parentId" className="text-xs md:text-sm">Parent Category (Optional)</Label>
+            <Label htmlFor="parentId" className="text-xs md:text-sm">
+              Parent Category (Optional)
+            </Label>
             <Select
               value={formData.parentId || "none"}
               onValueChange={(value) =>
-                setFormData({ ...formData, parentId: value === "none" ? undefined : value })
+                setFormData({
+                  ...formData,
+                  parentId: value === "none" ? undefined : value,
+                })
               }
             >
               <SelectTrigger className="h-8 md:h-9 text-xs md:text-sm">
@@ -140,13 +170,18 @@ export function AddCategoryModal({ open, categories, onClose, onSubmit }: AddCat
 
           {/* Sort Order */}
           <div className="space-y-1.5 md:space-y-2">
-            <Label htmlFor="sortOrder" className="text-xs md:text-sm">Sort Order</Label>
+            <Label htmlFor="sortOrder" className="text-xs md:text-sm">
+              Sort Order
+            </Label>
             <Input
               id="sortOrder"
               type="number"
               value={formData.sortOrder}
               onChange={(e) =>
-                setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })
+                setFormData({
+                  ...formData,
+                  sortOrder: parseInt(e.target.value) || 0,
+                })
               }
               placeholder="0"
               min="0"
@@ -165,7 +200,9 @@ export function AddCategoryModal({ open, categories, onClose, onSubmit }: AddCat
                 <button
                   key={color.value}
                   type="button"
-                  onClick={() => setFormData({ ...formData, color: color.value })}
+                  onClick={() =>
+                    setFormData({ ...formData, color: color.value })
+                  }
                   className={`relative h-7 md:h-8 rounded border-2 transition-all ${
                     formData.color === color.value
                       ? "border-foreground scale-105"
@@ -215,7 +252,12 @@ export function AddCategoryModal({ open, categories, onClose, onSubmit }: AddCat
                 </span>
                 {formData.parentId && (
                   <span className="text-[10px] md:text-xs text-muted-foreground">
-                    (Subcategory of {parentCategories.find(c => c.id === formData.parentId)?.name})
+                    (Subcategory of{" "}
+                    {
+                      parentCategories.find((c) => c.id === formData.parentId)
+                        ?.name
+                    }
+                    )
                   </span>
                 )}
               </div>
@@ -224,10 +266,17 @@ export function AddCategoryModal({ open, categories, onClose, onSubmit }: AddCat
 
           {/* Actions */}
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 md:pt-4">
-            <Button type="button" variant="outline" onClick={handleClose} className="w-full sm:w-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button type="submit" className="w-full sm:w-auto">Add Category</Button>
+            <Button type="submit" className="w-full sm:w-auto">
+              Add Category
+            </Button>
           </div>
         </form>
       </DialogContent>

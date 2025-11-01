@@ -1,41 +1,41 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Shield, ArrowLeft } from 'lucide-react';
-import { authService } from '@/services/auth.service';
-import { useAuth } from '@/hooks/useAuth';
-import { setAccessToken, setRefreshToken } from '@/lib/auth-utils';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
+import { Button } from "@/components/ui/button";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
+import { setAccessToken, setRefreshToken } from "@/lib/auth-utils";
+import { authService } from "@/services/auth.service";
+import { ArrowLeft, Loader2, Shield } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function RegisterAdminPage() {
   const navigate = useNavigate();
   const { login: authLogin } = useAuth();
   const [formData, setFormData] = useState({
-    email: '',
-    firstName: '',
-    lastName: '',
-    password: '',
-    confirmPassword: '',
+    email: "",
+    firstName: "",
+    lastName: "",
+    password: "",
+    confirmPassword: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
     // Validate password length
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError("Password must be at least 8 characters");
       return;
     }
 
@@ -59,17 +59,24 @@ export default function RegisterAdminPage() {
       await authLogin({ email: formData.email, password: formData.password });
 
       // Redirect to dashboard
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      setError(error.response?.data?.message || error.message || 'Failed to create admin user');
+      const error = err as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to create admin user"
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
@@ -89,7 +96,9 @@ export default function RegisterAdminPage() {
             <Shield className="h-8 w-8 text-primary" />
           </div>
           <div className="text-center space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight">Create First Admin</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Create First Admin
+            </h1>
             <p className="text-sm text-muted-foreground">
               Set up your administrator account to get started
             </p>
@@ -175,11 +184,7 @@ export default function RegisterAdminPage() {
             </Field>
           </FieldGroup>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
+          <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create Admin Account
           </Button>
@@ -189,10 +194,10 @@ export default function RegisterAdminPage() {
             <br />
             Only works if no users exist in the system.
           </p>
-          
+
           <div className="text-center text-sm pt-2">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="inline-flex items-center justify-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-3.5 w-3.5" />

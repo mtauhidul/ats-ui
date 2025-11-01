@@ -1,36 +1,56 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Bell,
-  Check,
-  CheckCheck,
-  Briefcase,
-  UserPlus,
-  Calendar,
-  FileText,
-  Users,
-  AlertCircle,
-  Trash2,
-  Settings,
-  Shield,
-  Plus,
-  Megaphone
-} from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/store/hooks/useNotifications";
 import { useTeam } from "@/store/hooks/useTeam";
-import { toast } from "sonner";
 import type { NotificationType } from "@/store/slices/notificationsSlice";
-import { useAuth } from "@/hooks/useAuth";
+import {
+  AlertCircle,
+  Bell,
+  Briefcase,
+  Calendar,
+  Check,
+  CheckCheck,
+  FileText,
+  Megaphone,
+  Plus,
+  Settings,
+  Shield,
+  Trash2,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function NotificationsPage() {
-  const { notifications, fetchNotifications, markAsRead, markAllAsRead, deleteNotification, createNotification, broadcastImportantNotice } = useNotifications();
+  const {
+    notifications,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    createNotification,
+    broadcastImportantNotice,
+  } = useNotifications();
   const { fetchTeam } = useTeam();
   const { user } = useAuth();
 
@@ -42,7 +62,9 @@ export default function NotificationsPage() {
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
 
   const [activeTab, setActiveTab] = useState<string>("all");
-  const [filterType, setFilterType] = useState<"all" | "unread" | "read">("all");
+  const [filterType, setFilterType] = useState<"all" | "unread" | "read">(
+    "all"
+  );
 
   const [newNotification, setNewNotification] = useState({
     type: "system" as NotificationType,
@@ -54,11 +76,11 @@ export default function NotificationsPage() {
     type: "system" as NotificationType,
     title: "",
     message: "",
-    priority: "high" as 'low' | 'medium' | 'high' | 'urgent',
+    priority: "high" as "low" | "medium" | "high" | "urgent",
     expiresAt: "",
   });
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
@@ -117,10 +139,12 @@ export default function NotificationsPage() {
 
     if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800)
+      return `${Math.floor(diffInSeconds / 86400)}d ago`;
+
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
   const handleMarkAsRead = (id: string) => {
@@ -170,7 +194,13 @@ export default function NotificationsPage() {
         priority: importantNotice.priority,
         expiresAt: importantNotice.expiresAt || undefined,
       });
-      setImportantNotice({ type: "system", title: "", message: "", priority: "high", expiresAt: "" });
+      setImportantNotice({
+        type: "system",
+        title: "",
+        message: "",
+        priority: "high",
+        expiresAt: "",
+      });
       toast.success("Important notice broadcast to all team members!");
       fetchNotifications();
     } catch {
@@ -179,7 +209,7 @@ export default function NotificationsPage() {
   };
 
   // Filter out expired important notices
-  const activeNotifications = notifications.filter(n => {
+  const activeNotifications = notifications.filter((n) => {
     // If it's an important notice with expiration date
     if (n.isImportant && n.expiresAt) {
       const expirationDate = new Date(n.expiresAt);
@@ -191,7 +221,7 @@ export default function NotificationsPage() {
     return true;
   });
 
-  const filteredNotifications = activeNotifications.filter(n => {
+  const filteredNotifications = activeNotifications.filter((n) => {
     if (filterType === "unread") return !n.read;
     if (filterType === "read") return n.read;
     return true;
@@ -209,16 +239,30 @@ export default function NotificationsPage() {
     return acc;
   }, {} as Record<NotificationType, number>);
 
-  const importantCount = activeNotifications.filter(n => n.isImportant).length;
+  const importantCount = activeNotifications.filter(
+    (n) => n.isImportant
+  ).length;
 
-  const getPriorityBadge = (priority?: 'low' | 'medium' | 'high' | 'urgent') => {
+  const getPriorityBadge = (
+    priority?: "low" | "medium" | "high" | "urgent"
+  ) => {
     switch (priority) {
-      case 'urgent':
-        return <Badge className="bg-destructive text-white text-xs">Urgent</Badge>;
-      case 'high':
-        return <Badge className="bg-orange-600 text-white text-xs">High Priority</Badge>;
-      case 'medium':
-        return <Badge className="bg-amber-600 text-white text-xs">Medium Priority</Badge>;
+      case "urgent":
+        return (
+          <Badge className="bg-destructive text-white text-xs">Urgent</Badge>
+        );
+      case "high":
+        return (
+          <Badge className="bg-orange-600 text-white text-xs">
+            High Priority
+          </Badge>
+        );
+      case "medium":
+        return (
+          <Badge className="bg-amber-600 text-white text-xs">
+            Medium Priority
+          </Badge>
+        );
       default:
         return null;
     }
@@ -236,14 +280,21 @@ export default function NotificationsPage() {
                     <Bell className="h-4 w-4 md:h-6 md:w-6 text-blue-600" />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-lg md:text-2xl font-bold text-foreground">Notifications</h2>
+                    <h2 className="text-lg md:text-2xl font-bold text-foreground">
+                      Notifications
+                    </h2>
                     <p className="text-xs md:text-sm text-muted-foreground">
                       Stay updated with your latest activities
                     </p>
                   </div>
                 </div>
                 {unreadCount > 0 && (
-                  <Button onClick={handleMarkAllAsRead} variant="outline" size="sm" className="h-8 md:h-9 text-xs md:text-sm w-full sm:w-auto">
+                  <Button
+                    onClick={handleMarkAllAsRead}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 md:h-9 text-xs md:text-sm w-full sm:w-auto"
+                  >
                     <CheckCheck className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                     Mark all as read
                   </Button>
@@ -256,8 +307,12 @@ export default function NotificationsPage() {
                 <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
-                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">Total</p>
-                      <p className="text-lg md:text-2xl font-bold">{notifications.length}</p>
+                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">
+                        Total
+                      </p>
+                      <p className="text-lg md:text-2xl font-bold">
+                        {notifications.length}
+                      </p>
                     </div>
                     <Bell className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground shrink-0" />
                   </div>
@@ -267,11 +322,17 @@ export default function NotificationsPage() {
                 <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
-                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">Unread</p>
-                      <p className="text-lg md:text-2xl font-bold text-blue-600">{unreadCount}</p>
+                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">
+                        Unread
+                      </p>
+                      <p className="text-lg md:text-2xl font-bold text-blue-600">
+                        {unreadCount}
+                      </p>
                     </div>
                     <div className="h-6 w-6 md:h-8 md:w-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                      <span className="text-blue-600 font-bold text-xs md:text-sm">{unreadCount}</span>
+                      <span className="text-blue-600 font-bold text-xs md:text-sm">
+                        {unreadCount}
+                      </span>
                     </div>
                   </div>
                 </CardContent>
@@ -280,8 +341,12 @@ export default function NotificationsPage() {
                 <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
-                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">Important</p>
-                      <p className="text-lg md:text-2xl font-bold text-primary">{importantCount}</p>
+                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">
+                        Important
+                      </p>
+                      <p className="text-lg md:text-2xl font-bold text-primary">
+                        {importantCount}
+                      </p>
                     </div>
                     <div className="h-6 w-6 md:h-8 md:w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       <Shield className="h-4 w-4 md:h-5 md:w-5 text-primary" />
@@ -293,8 +358,12 @@ export default function NotificationsPage() {
                 <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
-                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">Applications</p>
-                      <p className="text-lg md:text-2xl font-bold">{notificationsByType.application || 0}</p>
+                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">
+                        Applications
+                      </p>
+                      <p className="text-lg md:text-2xl font-bold">
+                        {notificationsByType.application || 0}
+                      </p>
                     </div>
                     <FileText className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground shrink-0" />
                   </div>
@@ -304,8 +373,12 @@ export default function NotificationsPage() {
                 <CardContent className="pt-4 md:pt-6 p-3 md:p-6">
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
-                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">Interviews</p>
-                      <p className="text-lg md:text-2xl font-bold">{notificationsByType.interview || 0}</p>
+                      <p className="text-[10px] md:text-sm text-muted-foreground truncate">
+                        Interviews
+                      </p>
+                      <p className="text-lg md:text-2xl font-bold">
+                        {notificationsByType.interview || 0}
+                      </p>
                     </div>
                     <Calendar className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground shrink-0" />
                   </div>
@@ -322,8 +395,12 @@ export default function NotificationsPage() {
                     onClick={() => setFilterType("all")}
                   >
                     <Bell className="h-4 w-4 md:mr-2" />
-                    <span className="hidden md:inline">All ({notifications.length})</span>
-                    <span className="md:hidden ml-1">({notifications.length})</span>
+                    <span className="hidden md:inline">
+                      All ({notifications.length})
+                    </span>
+                    <span className="md:hidden ml-1">
+                      ({notifications.length})
+                    </span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="unread"
@@ -331,7 +408,9 @@ export default function NotificationsPage() {
                     onClick={() => setFilterType("unread")}
                   >
                     <AlertCircle className="h-4 w-4 md:mr-2" />
-                    <span className="hidden md:inline">Unread ({unreadCount})</span>
+                    <span className="hidden md:inline">
+                      Unread ({unreadCount})
+                    </span>
                     <span className="md:hidden ml-1">({unreadCount})</span>
                   </TabsTrigger>
                   <TabsTrigger
@@ -340,8 +419,12 @@ export default function NotificationsPage() {
                     onClick={() => setFilterType("read")}
                   >
                     <CheckCheck className="h-4 w-4 md:mr-2" />
-                    <span className="hidden md:inline">Read ({notifications.length - unreadCount})</span>
-                    <span className="md:hidden ml-1">({notifications.length - unreadCount})</span>
+                    <span className="hidden md:inline">
+                      Read ({notifications.length - unreadCount})
+                    </span>
+                    <span className="md:hidden ml-1">
+                      ({notifications.length - unreadCount})
+                    </span>
                   </TabsTrigger>
                   {isAdmin && (
                     <TabsTrigger
@@ -361,7 +444,9 @@ export default function NotificationsPage() {
                     <CardContent className="py-8 md:py-12">
                       <div className="text-center">
                         <Bell className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-2 md:mb-3" />
-                        <p className="text-sm md:text-base text-muted-foreground">No notifications</p>
+                        <p className="text-sm md:text-base text-muted-foreground">
+                          No notifications
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
@@ -373,8 +458,8 @@ export default function NotificationsPage() {
                         notification.isImportant
                           ? "border-l-4 border-l-primary bg-primary/5 shadow-lg"
                           : !notification.read
-                            ? "border-l-4 border-l-blue-600 bg-blue-50/30"
-                            : ""
+                          ? "border-l-4 border-l-blue-600 bg-blue-50/30"
+                          : ""
                       }`}
                     >
                       <CardContent className="p-3 md:p-4">
@@ -399,22 +484,40 @@ export default function NotificationsPage() {
                                     IMPORTANT
                                   </Badge>
                                 )}
-                                <h4 className={`font-semibold text-sm md:text-base ${notification.isImportant ? 'text-primary' : 'text-foreground'} wrap-break-word`}>
+                                <h4
+                                  className={`font-semibold text-sm md:text-base ${
+                                    notification.isImportant
+                                      ? "text-primary"
+                                      : "text-foreground"
+                                  } wrap-break-word`}
+                                >
                                   {notification.title}
                                 </h4>
-                                {!notification.read && !notification.isImportant && (
-                                  <Badge className="bg-blue-600 text-white text-[10px] md:text-xs shrink-0">New</Badge>
-                                )}
-                                {notification.priority && getPriorityBadge(notification.priority)}
+                                {!notification.read &&
+                                  !notification.isImportant && (
+                                    <Badge className="bg-blue-600 text-white text-[10px] md:text-xs shrink-0">
+                                      New
+                                    </Badge>
+                                  )}
+                                {notification.priority &&
+                                  getPriorityBadge(notification.priority)}
                               </div>
                               <Badge
                                 variant="outline"
-                                className={`text-[10px] md:text-xs whitespace-nowrap shrink-0 ${getTypeBadgeColor(notification.type)}`}
+                                className={`text-[10px] md:text-xs whitespace-nowrap shrink-0 ${getTypeBadgeColor(
+                                  notification.type
+                                )}`}
                               >
-                                {notification.type.replace(/_/g, ' ')}
+                                {notification.type.replace(/_/g, " ")}
                               </Badge>
                             </div>
-                            <p className={`text-xs md:text-sm mb-2 ${notification.isImportant ? 'text-foreground font-medium' : 'text-muted-foreground'} wrap-break-word`}>
+                            <p
+                              className={`text-xs md:text-sm mb-2 ${
+                                notification.isImportant
+                                  ? "text-foreground font-medium"
+                                  : "text-muted-foreground"
+                              } wrap-break-word`}
+                            >
                               {notification.message}
                             </p>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -427,17 +530,23 @@ export default function NotificationsPage() {
                                     size="sm"
                                     variant="ghost"
                                     className="h-7 md:h-8 text-xs md:text-sm px-2 md:px-3"
-                                    onClick={() => handleMarkAsRead(notification.id)}
+                                    onClick={() =>
+                                      handleMarkAsRead(notification.id)
+                                    }
                                   >
                                     <Check className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
-                                    <span className="hidden md:inline">Mark as read</span>
+                                    <span className="hidden md:inline">
+                                      Mark as read
+                                    </span>
                                   </Button>
                                 )}
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   className="h-7 md:h-8 px-2 md:px-3"
-                                  onClick={() => handleDeleteNotification(notification.id)}
+                                  onClick={() =>
+                                    handleDeleteNotification(notification.id)
+                                  }
                                 >
                                   <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
                                 </Button>
@@ -457,7 +566,9 @@ export default function NotificationsPage() {
                     <CardContent className="py-8 md:py-12">
                       <div className="text-center">
                         <Bell className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-2 md:mb-3" />
-                        <p className="text-sm md:text-base text-muted-foreground">No unread notifications</p>
+                        <p className="text-sm md:text-base text-muted-foreground">
+                          No unread notifications
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
@@ -469,8 +580,8 @@ export default function NotificationsPage() {
                         notification.isImportant
                           ? "border-l-4 border-l-primary bg-primary/5 shadow-lg"
                           : !notification.read
-                            ? "border-l-4 border-l-blue-600 bg-blue-50/30"
-                            : ""
+                          ? "border-l-4 border-l-blue-600 bg-blue-50/30"
+                          : ""
                       }`}
                     >
                       <CardContent className="p-3 md:p-4">
@@ -495,22 +606,40 @@ export default function NotificationsPage() {
                                     IMPORTANT
                                   </Badge>
                                 )}
-                                <h4 className={`font-semibold text-sm md:text-base ${notification.isImportant ? 'text-primary' : 'text-foreground'} wrap-break-word`}>
+                                <h4
+                                  className={`font-semibold text-sm md:text-base ${
+                                    notification.isImportant
+                                      ? "text-primary"
+                                      : "text-foreground"
+                                  } wrap-break-word`}
+                                >
                                   {notification.title}
                                 </h4>
-                                {!notification.read && !notification.isImportant && (
-                                  <Badge className="bg-blue-600 text-white text-[10px] md:text-xs shrink-0">New</Badge>
-                                )}
-                                {notification.priority && getPriorityBadge(notification.priority)}
+                                {!notification.read &&
+                                  !notification.isImportant && (
+                                    <Badge className="bg-blue-600 text-white text-[10px] md:text-xs shrink-0">
+                                      New
+                                    </Badge>
+                                  )}
+                                {notification.priority &&
+                                  getPriorityBadge(notification.priority)}
                               </div>
                               <Badge
                                 variant="outline"
-                                className={`text-[10px] md:text-xs whitespace-nowrap shrink-0 ${getTypeBadgeColor(notification.type)}`}
+                                className={`text-[10px] md:text-xs whitespace-nowrap shrink-0 ${getTypeBadgeColor(
+                                  notification.type
+                                )}`}
                               >
-                                {notification.type.replace(/_/g, ' ')}
+                                {notification.type.replace(/_/g, " ")}
                               </Badge>
                             </div>
-                            <p className={`text-xs md:text-sm mb-2 ${notification.isImportant ? 'text-foreground font-medium' : 'text-muted-foreground'} wrap-break-word`}>
+                            <p
+                              className={`text-xs md:text-sm mb-2 ${
+                                notification.isImportant
+                                  ? "text-foreground font-medium"
+                                  : "text-muted-foreground"
+                              } wrap-break-word`}
+                            >
                               {notification.message}
                             </p>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -523,17 +652,23 @@ export default function NotificationsPage() {
                                     size="sm"
                                     variant="ghost"
                                     className="h-7 md:h-8 text-xs md:text-sm px-2 md:px-3"
-                                    onClick={() => handleMarkAsRead(notification.id)}
+                                    onClick={() =>
+                                      handleMarkAsRead(notification.id)
+                                    }
                                   >
                                     <Check className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
-                                    <span className="hidden md:inline">Mark as read</span>
+                                    <span className="hidden md:inline">
+                                      Mark as read
+                                    </span>
                                   </Button>
                                 )}
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   className="h-7 md:h-8 px-2 md:px-3"
-                                  onClick={() => handleDeleteNotification(notification.id)}
+                                  onClick={() =>
+                                    handleDeleteNotification(notification.id)
+                                  }
                                 >
                                   <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
                                 </Button>
@@ -553,7 +688,9 @@ export default function NotificationsPage() {
                     <CardContent className="py-8 md:py-12">
                       <div className="text-center">
                         <Bell className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-2 md:mb-3" />
-                        <p className="text-sm md:text-base text-muted-foreground">No read notifications</p>
+                        <p className="text-sm md:text-base text-muted-foreground">
+                          No read notifications
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
@@ -565,8 +702,8 @@ export default function NotificationsPage() {
                         notification.isImportant
                           ? "border-l-4 border-l-primary bg-primary/5 shadow-lg"
                           : !notification.read
-                            ? "border-l-4 border-l-blue-600 bg-blue-50/30"
-                            : ""
+                          ? "border-l-4 border-l-blue-600 bg-blue-50/30"
+                          : ""
                       }`}
                     >
                       <CardContent className="p-3 md:p-4">
@@ -591,22 +728,40 @@ export default function NotificationsPage() {
                                     IMPORTANT
                                   </Badge>
                                 )}
-                                <h4 className={`font-semibold text-sm md:text-base ${notification.isImportant ? 'text-primary' : 'text-foreground'} wrap-break-word`}>
+                                <h4
+                                  className={`font-semibold text-sm md:text-base ${
+                                    notification.isImportant
+                                      ? "text-primary"
+                                      : "text-foreground"
+                                  } wrap-break-word`}
+                                >
                                   {notification.title}
                                 </h4>
-                                {!notification.read && !notification.isImportant && (
-                                  <Badge className="bg-blue-600 text-white text-[10px] md:text-xs shrink-0">New</Badge>
-                                )}
-                                {notification.priority && getPriorityBadge(notification.priority)}
+                                {!notification.read &&
+                                  !notification.isImportant && (
+                                    <Badge className="bg-blue-600 text-white text-[10px] md:text-xs shrink-0">
+                                      New
+                                    </Badge>
+                                  )}
+                                {notification.priority &&
+                                  getPriorityBadge(notification.priority)}
                               </div>
                               <Badge
                                 variant="outline"
-                                className={`text-[10px] md:text-xs whitespace-nowrap shrink-0 ${getTypeBadgeColor(notification.type)}`}
+                                className={`text-[10px] md:text-xs whitespace-nowrap shrink-0 ${getTypeBadgeColor(
+                                  notification.type
+                                )}`}
                               >
-                                {notification.type.replace(/_/g, ' ')}
+                                {notification.type.replace(/_/g, " ")}
                               </Badge>
                             </div>
-                            <p className={`text-xs md:text-sm mb-2 ${notification.isImportant ? 'text-foreground font-medium' : 'text-muted-foreground'} wrap-break-word`}>
+                            <p
+                              className={`text-xs md:text-sm mb-2 ${
+                                notification.isImportant
+                                  ? "text-foreground font-medium"
+                                  : "text-muted-foreground"
+                              } wrap-break-word`}
+                            >
                               {notification.message}
                             </p>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -619,17 +774,23 @@ export default function NotificationsPage() {
                                     size="sm"
                                     variant="ghost"
                                     className="h-7 md:h-8 text-xs md:text-sm px-2 md:px-3"
-                                    onClick={() => handleMarkAsRead(notification.id)}
+                                    onClick={() =>
+                                      handleMarkAsRead(notification.id)
+                                    }
                                   >
                                     <Check className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
-                                    <span className="hidden md:inline">Mark as read</span>
+                                    <span className="hidden md:inline">
+                                      Mark as read
+                                    </span>
                                   </Button>
                                 )}
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   className="h-7 md:h-8 px-2 md:px-3"
-                                  onClick={() => handleDeleteNotification(notification.id)}
+                                  onClick={() =>
+                                    handleDeleteNotification(notification.id)
+                                  }
                                 >
                                   <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
                                 </Button>
@@ -653,39 +814,71 @@ export default function NotificationsPage() {
                         Broadcast Important Notice
                       </CardTitle>
                       <CardDescription className="text-xs md:text-sm">
-                        Send a high-priority important notice to all team members. This will be highlighted prominently in their notifications.
+                        Send a high-priority important notice to all team
+                        members. This will be highlighted prominently in their
+                        notifications.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3 md:space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="important-type" className="text-xs md:text-sm">Notice Type</Label>
+                          <Label
+                            htmlFor="important-type"
+                            className="text-xs md:text-sm"
+                          >
+                            Notice Type
+                          </Label>
                           <Select
                             value={importantNotice.type}
                             onValueChange={(value) =>
-                              setImportantNotice({ ...importantNotice, type: value as NotificationType })
+                              setImportantNotice({
+                                ...importantNotice,
+                                type: value as NotificationType,
+                              })
                             }
                           >
-                            <SelectTrigger id="important-type" className="h-9 md:h-10 text-xs md:text-sm">
+                            <SelectTrigger
+                              id="important-type"
+                              className="h-9 md:h-10 text-xs md:text-sm"
+                            >
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="system">System Announcement</SelectItem>
-                              <SelectItem value="reminder">Important Reminder</SelectItem>
+                              <SelectItem value="system">
+                                System Announcement
+                              </SelectItem>
+                              <SelectItem value="reminder">
+                                Important Reminder
+                              </SelectItem>
                               <SelectItem value="team">Team Notice</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="important-priority" className="text-xs md:text-sm">Priority Level</Label>
+                          <Label
+                            htmlFor="important-priority"
+                            className="text-xs md:text-sm"
+                          >
+                            Priority Level
+                          </Label>
                           <Select
                             value={importantNotice.priority}
                             onValueChange={(value) =>
-                              setImportantNotice({ ...importantNotice, priority: value as 'low' | 'medium' | 'high' | 'urgent' })
+                              setImportantNotice({
+                                ...importantNotice,
+                                priority: value as
+                                  | "low"
+                                  | "medium"
+                                  | "high"
+                                  | "urgent",
+                              })
                             }
                           >
-                            <SelectTrigger id="important-priority" className="h-9 md:h-10 text-xs md:text-sm">
+                            <SelectTrigger
+                              id="important-priority"
+                              className="h-9 md:h-10 text-xs md:text-sm"
+                            >
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -698,20 +891,33 @@ export default function NotificationsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="important-title" className="text-xs md:text-sm">Title *</Label>
+                        <Label
+                          htmlFor="important-title"
+                          className="text-xs md:text-sm"
+                        >
+                          Title *
+                        </Label>
                         <Input
                           id="important-title"
                           className="h-9 md:h-10 text-xs md:text-sm"
                           placeholder="e.g., System Maintenance Scheduled"
                           value={importantNotice.title}
                           onChange={(e) =>
-                            setImportantNotice({ ...importantNotice, title: e.target.value })
+                            setImportantNotice({
+                              ...importantNotice,
+                              title: e.target.value,
+                            })
                           }
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="important-message" className="text-xs md:text-sm">Message *</Label>
+                        <Label
+                          htmlFor="important-message"
+                          className="text-xs md:text-sm"
+                        >
+                          Message *
+                        </Label>
                         <Textarea
                           id="important-message"
                           className="text-xs md:text-sm"
@@ -719,24 +925,36 @@ export default function NotificationsPage() {
                           rows={4}
                           value={importantNotice.message}
                           onChange={(e) =>
-                            setImportantNotice({ ...importantNotice, message: e.target.value })
+                            setImportantNotice({
+                              ...importantNotice,
+                              message: e.target.value,
+                            })
                           }
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="important-expires" className="text-xs md:text-sm">Expiration Date (Optional)</Label>
+                        <Label
+                          htmlFor="important-expires"
+                          className="text-xs md:text-sm"
+                        >
+                          Expiration Date (Optional)
+                        </Label>
                         <Input
                           id="important-expires"
                           type="datetime-local"
                           className="h-9 md:h-10 text-xs md:text-sm"
                           value={importantNotice.expiresAt}
                           onChange={(e) =>
-                            setImportantNotice({ ...importantNotice, expiresAt: e.target.value })
+                            setImportantNotice({
+                              ...importantNotice,
+                              expiresAt: e.target.value,
+                            })
                           }
                         />
                         <p className="text-[10px] md:text-xs text-muted-foreground">
-                          If set, the notice will be automatically hidden after this date
+                          If set, the notice will be automatically hidden after
+                          this date
                         </p>
                       </div>
 
@@ -748,14 +966,19 @@ export default function NotificationsPage() {
                               Important Notice - High Visibility
                             </p>
                             <p className="text-xs md:text-sm text-amber-800 dark:text-amber-300 mt-1">
-                              This will be sent to ALL active team members and displayed prominently at the top of their notifications with a special badge.
+                              This will be sent to ALL active team members and
+                              displayed prominently at the top of their
+                              notifications with a special badge.
                             </p>
                           </div>
                         </div>
                       </div>
 
                       <div className="flex justify-end">
-                        <Button onClick={handleBroadcastImportantNotice} className="h-9 md:h-10 text-xs md:text-sm w-full sm:w-auto">
+                        <Button
+                          onClick={handleBroadcastImportantNotice}
+                          className="h-9 md:h-10 text-xs md:text-sm w-full sm:w-auto"
+                        >
                           <Megaphone className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                           Broadcast Important Notice
                         </Button>
@@ -771,19 +994,31 @@ export default function NotificationsPage() {
                         Create Regular Notification
                       </CardTitle>
                       <CardDescription className="text-xs md:text-sm">
-                        Send a standard notification to all users. Use this for general announcements or updates.
+                        Send a standard notification to all users. Use this for
+                        general announcements or updates.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3 md:space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="notif-type" className="text-xs md:text-sm">Notification Type</Label>
+                        <Label
+                          htmlFor="notif-type"
+                          className="text-xs md:text-sm"
+                        >
+                          Notification Type
+                        </Label>
                         <Select
                           value={newNotification.type}
                           onValueChange={(value) =>
-                            setNewNotification({ ...newNotification, type: value as NotificationType })
+                            setNewNotification({
+                              ...newNotification,
+                              type: value as NotificationType,
+                            })
                           }
                         >
-                          <SelectTrigger id="notif-type" className="h-9 md:h-10 text-xs md:text-sm">
+                          <SelectTrigger
+                            id="notif-type"
+                            className="h-9 md:h-10 text-xs md:text-sm"
+                          >
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -791,9 +1026,13 @@ export default function NotificationsPage() {
                             <SelectItem value="reminder">Reminder</SelectItem>
                             <SelectItem value="team">Team</SelectItem>
                             <SelectItem value="job">Job</SelectItem>
-                            <SelectItem value="application">Application</SelectItem>
+                            <SelectItem value="application">
+                              Application
+                            </SelectItem>
                             <SelectItem value="interview">Interview</SelectItem>
-                            <SelectItem value="status_change">Status Change</SelectItem>
+                            <SelectItem value="status_change">
+                              Status Change
+                            </SelectItem>
                             <SelectItem value="offer">Offer</SelectItem>
                             <SelectItem value="client">Client</SelectItem>
                           </SelectContent>
@@ -801,20 +1040,33 @@ export default function NotificationsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="notif-title" className="text-xs md:text-sm">Title</Label>
+                        <Label
+                          htmlFor="notif-title"
+                          className="text-xs md:text-sm"
+                        >
+                          Title
+                        </Label>
                         <Input
                           id="notif-title"
                           className="h-9 md:h-10 text-xs md:text-sm"
                           placeholder="Enter notification title"
                           value={newNotification.title}
                           onChange={(e) =>
-                            setNewNotification({ ...newNotification, title: e.target.value })
+                            setNewNotification({
+                              ...newNotification,
+                              title: e.target.value,
+                            })
                           }
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="notif-message" className="text-xs md:text-sm">Message</Label>
+                        <Label
+                          htmlFor="notif-message"
+                          className="text-xs md:text-sm"
+                        >
+                          Message
+                        </Label>
                         <Textarea
                           id="notif-message"
                           className="text-xs md:text-sm"
@@ -822,7 +1074,10 @@ export default function NotificationsPage() {
                           rows={4}
                           value={newNotification.message}
                           onChange={(e) =>
-                            setNewNotification({ ...newNotification, message: e.target.value })
+                            setNewNotification({
+                              ...newNotification,
+                              message: e.target.value,
+                            })
                           }
                         />
                       </div>
@@ -835,14 +1090,19 @@ export default function NotificationsPage() {
                               Broadcasting to All Users
                             </p>
                             <p className="text-xs md:text-sm text-amber-700 dark:text-amber-300 mt-1">
-                              This notification will be sent to all users in the system. Make sure your message is clear and relevant.
+                              This notification will be sent to all users in the
+                              system. Make sure your message is clear and
+                              relevant.
                             </p>
                           </div>
                         </div>
                       </div>
 
                       <div className="flex justify-end">
-                        <Button onClick={handleCreateNotification} className="h-9 md:h-10 text-xs md:text-sm w-full sm:w-auto">
+                        <Button
+                          onClick={handleCreateNotification}
+                          className="h-9 md:h-10 text-xs md:text-sm w-full sm:w-auto"
+                        >
                           <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
                           Create & Send Notification
                         </Button>

@@ -178,7 +178,9 @@ function EmailConnectionDialog({
         <div className="space-y-3">
           {/* Provider Selection */}
           <div className="space-y-1.5 md:space-y-2">
-            <Label className="text-xs md:text-sm font-medium">Email Provider</Label>
+            <Label className="text-xs md:text-sm font-medium">
+              Email Provider
+            </Label>
             <RadioGroup
               value={provider}
               onValueChange={(value: string) =>
@@ -322,7 +324,10 @@ function EmailConnectionDialog({
                     </span>
                     <span className="font-medium">{connectionProgress}%</span>
                   </div>
-                  <Progress value={connectionProgress} className="h-1.5 md:h-2" />
+                  <Progress
+                    value={connectionProgress}
+                    className="h-1.5 md:h-2"
+                  />
                 </div>
               )}
 
