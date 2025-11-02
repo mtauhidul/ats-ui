@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
+import { API_BASE_URL } from "@/config/api";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import { useCandidates } from "@/store/hooks/useCandidates";
 import { useJobs } from "@/store/hooks/useJobs";
@@ -23,7 +24,6 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { API_BASE_URL } from "@/config/api";
 
 interface Activity {
   _id: string;
@@ -344,9 +344,33 @@ export default function TeamMemberDetailPage() {
                         <Calendar className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
                         <span>
                           Joined{" "}
-                          {new Date(
-                            currentMember.createdAt
-                          ).toLocaleDateString()}
+                          {currentMember.createdAt
+                            ? (() => {
+                                const d = new Date(currentMember.createdAt);
+                                if (isNaN(d.getTime())) return "Unknown";
+                                const day = String(d.getDate()).padStart(
+                                  2,
+                                  "0"
+                                );
+                                const months = [
+                                  "Jan",
+                                  "Feb",
+                                  "Mar",
+                                  "Apr",
+                                  "May",
+                                  "Jun",
+                                  "Jul",
+                                  "Aug",
+                                  "Sep",
+                                  "Oct",
+                                  "Nov",
+                                  "Dec",
+                                ];
+                                return `${day} ${
+                                  months[d.getMonth()]
+                                }, ${d.getFullYear()}`;
+                              })()
+                            : "Unknown"}
                         </span>
                       </div>
                     </div>

@@ -13,19 +13,9 @@ import { API_BASE_URL } from "@/config/api";
 const normalizeJob = (job: Job | Record<string, unknown>): Job => {
   const jobAny = job as Record<string, unknown>;
   
-  // If clientId is populated (object), extract the ID
-  const clientIdValue = jobAny.clientId;
-  let clientId: string;
-  
-  if (typeof clientIdValue === 'object' && clientIdValue !== null) {
-    // Backend might return populated client as {id: "...", companyName: "...", logo: "..."}
-    // or {_id: "...", companyName: "...", logo: "..."}
-    const clientObj = clientIdValue as Record<string, unknown>;
-    clientId = (clientObj.id || clientObj._id) as string;
-  } else {
-    // Already a string ID
-    clientId = clientIdValue as string;
-  }
+  // Keep clientId as-is (could be string or populated object)
+  // The job selection modal expects populated objects with {id, _id, companyName}
+  const clientId = jobAny.clientId;
   
   // If pipelineId is populated (object), extract the ID
   const pipelineIdValue = jobAny.pipelineId;
@@ -319,7 +309,13 @@ const jobsSlice = createSlice({
       })
       .addCase(fetchJobs.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.jobs = action.payload;
+        // Ensure payload is an array
+        const jobs = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload && typeof action.payload === 'object'
+          ? Object.values(action.payload)
+          : [];
+        state.jobs = jobs;
         state.lastFetched = Date.now(); // Update cache timestamp
         state.cacheValid = true; // Mark cache as valid
       })

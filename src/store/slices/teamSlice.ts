@@ -133,7 +133,13 @@ const teamSlice = createSlice({
       })
       .addCase(fetchTeamMembers.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.teamMembers = action.payload;
+        // Ensure payload is an array
+        const teamMembers = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload && typeof action.payload === 'object'
+          ? Object.values(action.payload)
+          : [];
+        state.teamMembers = teamMembers;
       })
       .addCase(fetchTeamMembers.rejected, (state, action) => {
         state.isLoading = false;

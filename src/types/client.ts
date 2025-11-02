@@ -50,7 +50,7 @@ export type CommunicationNoteType =
 
 // Contact Person
 export interface ContactPerson {
-  id: string;
+  id?: string;
   name: string;
   email: string;
   phone?: string;
@@ -60,7 +60,7 @@ export interface ContactPerson {
 
 // Communication Note
 export interface CommunicationNote {
-  id: string;
+  id?: string;
   clientId: string;
   type: CommunicationNoteType;
   subject: string;
@@ -87,7 +87,7 @@ export interface ClientStatistics {
 
 // Activity History Item
 export interface ClientActivityHistory {
-  id: string;
+  id?: string;
   clientId: string;
   action: string;
   description: string;

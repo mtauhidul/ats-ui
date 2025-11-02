@@ -231,7 +231,15 @@ export default function CandidateDetailsPage() {
       }
 
       const result = await response.json();
-      const tags = result.data || [];
+      let tags = result.data || [];
+      
+      // Handle Firestore serialization - convert object to array if needed
+      if (!Array.isArray(tags) && typeof tags === 'object') {
+        tags = Object.values(tags);
+      }
+      
+      console.log('Tags fetched:', tags);
+      
       // Ensure id field exists for compatibility
       const tagsWithId = tags.map((tag: Tag) => ({
         ...tag,
@@ -393,6 +401,41 @@ export default function CandidateDetailsPage() {
   console.log("All Clients:", clients);
   console.log("========================");
 
+  // Helper function to safely convert date values (Firestore Timestamps, Date objects, or strings)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const toSafeDate = (dateValue: any): string => {
+    if (!dateValue) return "N/A";
+    
+    try {
+      // Handle Firestore Timestamp objects
+      if (dateValue && typeof dateValue === 'object' && 'seconds' in dateValue) {
+        const date = new Date(dateValue.seconds * 1000);
+        return date.toLocaleDateString();
+      }
+      
+      // Handle string dates
+      if (typeof dateValue === 'string') {
+        const date = new Date(dateValue);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleDateString();
+        }
+      }
+      
+      // Handle Date objects
+      if (dateValue instanceof Date) {
+        if (!isNaN(dateValue.getTime())) {
+          return dateValue.toLocaleDateString();
+        }
+      }
+      
+      // If we can't convert it, return N/A
+      return "N/A";
+    } catch (error) {
+      console.error("Error converting date:", error);
+      return "N/A";
+    }
+  };
+
   const candidate = {
     id: candidateData.id || "",
     firstName: candidateData.firstName,
@@ -465,8 +508,8 @@ export default function CandidateDetailsPage() {
       `https://api.dicebear.com/7.x/initials/svg?seed=${
         client?.companyName || "C"
       }`,
-    appliedDate: new Date(candidateData.createdAt).toLocaleDateString(),
-    lastStatusChange: new Date(candidateData.updatedAt).toLocaleDateString(),
+    appliedDate: toSafeDate(candidateData.createdAt),
+    lastStatusChange: toSafeDate(candidateData.updatedAt),
     rating: undefined as number | undefined, // Backend doesn't have rating in Candidate model
     reviewedBy: (() => {
       const assignedTo = (
@@ -536,9 +579,11 @@ export default function CandidateDetailsPage() {
     jobId: string;
     clientName: string;
     appliedDate: string;
+    appliedDateRaw: Date; // Keep raw date for timeline
     status: string;
     stage: string;
     lastUpdated: string;
+    lastUpdatedRaw: Date; // Keep raw date for timeline
   }> = candidateData.jobApplications
     ? candidateData.jobApplications.map((jobApp) => {
         // Find the job details
@@ -564,6 +609,24 @@ export default function CandidateDetailsPage() {
           clientName = clientDetails?.companyName || "Unknown Client";
         }
 
+        // Helper to convert any date value to Date object
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const toDateObject = (dateValue: any): Date => {
+          if (!dateValue) return new Date();
+          
+          // Handle Firestore Timestamp
+          if (dateValue && typeof dateValue === 'object' && 'seconds' in dateValue) {
+            return new Date(dateValue.seconds * 1000);
+          }
+          
+          // Handle string or Date
+          const date = new Date(dateValue);
+          return isNaN(date.getTime()) ? new Date() : date;
+        };
+
+        const appliedDateObj = toDateObject(jobApp.appliedAt);
+        const lastUpdatedObj = toDateObject(jobApp.lastStatusChange || jobApp.appliedAt);
+
         return {
           id:
             (jobApp as { _id?: string })._id ||
@@ -571,12 +634,12 @@ export default function CandidateDetailsPage() {
           jobTitle: jobDetails?.title || "Unknown Job",
           jobId: jobAppJobId?.toString() || "",
           clientName,
-          appliedDate: new Date(jobApp.appliedAt).toLocaleDateString(),
+          appliedDate: appliedDateObj.toLocaleDateString(),
+          appliedDateRaw: appliedDateObj,
           status: jobApp.status || "active",
           stage: jobApp.currentStage || "Not Started",
-          lastUpdated: new Date(
-            jobApp.lastStatusChange || jobApp.appliedAt
-          ).toLocaleDateString(),
+          lastUpdated: lastUpdatedObj.toLocaleDateString(),
+          lastUpdatedRaw: lastUpdatedObj,
         };
       })
     : [];
@@ -748,7 +811,7 @@ export default function CandidateDetailsPage() {
                             )}
                             <CommandGroup className="max-h-[200px] overflow-auto">
                               {allTags
-                                .filter((tag) => tag.isActive)
+                                .filter((tag) => tag.isActive !== false)
                                 .map((tag) => (
                                   <CommandItem
                                     key={tag._id}
@@ -2156,7 +2219,7 @@ export default function CandidateDetailsPage() {
                         // Application submitted
                         timelineEvents.push({
                           id: `applied-${history.id}`,
-                          date: new Date(history.appliedDate),
+                          date: history.appliedDateRaw,
                           type: "applied",
                           title: "Application Submitted",
                           description: `Applied for ${history.jobTitle}`,

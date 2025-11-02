@@ -90,6 +90,11 @@ export const createClient = createAsyncThunk(
   "clients/create",
   async (clientData: CreateClientRequest, { rejectWithValue }) => {
     try {
+      console.log('=== REDUX CREATE CLIENT ===');
+      console.log('Client data being sent:', clientData);
+      console.log('Contacts:', clientData.contacts);
+      console.log('==========================');
+      
       const response = await authenticatedFetch(`${API_BASE_URL}/clients`, {
         method: "POST",
         body: JSON.stringify(clientData),
@@ -103,6 +108,12 @@ export const createClient = createAsyncThunk(
       }
       
       const result = await response.json();
+      console.log('=== CREATE CLIENT RESPONSE ===');
+      console.log('Response:', result);
+      console.log('Data:', result.data || result);
+      console.log('Contacts in response:', (result.data || result).contacts);
+      console.log('==============================');
+      
       toast.success("Client created successfully");
       return result.data || result;
     } catch (error) {
@@ -123,6 +134,20 @@ export const updateClient = createAsyncThunk(
     if (!response.ok) throw new Error("Failed to update client");
     const result = await response.json();
     toast.success("Client updated successfully");
+    return result.data || result;
+  }
+);
+
+export const addCommunicationNote = createAsyncThunk(
+  "clients/addCommunicationNote",
+  async ({ id, note }: { id: string; note: { type: string; subject: string; content: string } }) => {
+    const response = await authenticatedFetch(`${API_BASE_URL}/clients/${id}/notes`, {
+      method: "POST",
+      body: JSON.stringify(note),
+    });
+    if (!response.ok) throw new Error("Failed to add communication note");
+    const result = await response.json();
+    toast.success("Communication note added successfully");
     return result.data || result;
   }
 );
@@ -235,6 +260,19 @@ const clientsSlice = createSlice({
       })
       // Update client
       .addCase(updateClient.fulfilled, (state, action) => {
+        const index = state.clients.findIndex(
+          (c) => c.id === action.payload.id
+        );
+        if (index !== -1) {
+          state.clients[index] = action.payload;
+        }
+        if (state.currentClient?.id === action.payload.id) {
+          state.currentClient = action.payload;
+        }
+        state.lastFetched = Date.now(); // Keep cache fresh
+      })
+      // Add communication note
+      .addCase(addCommunicationNote.fulfilled, (state, action) => {
         const index = state.clients.findIndex(
           (c) => c.id === action.payload.id
         );

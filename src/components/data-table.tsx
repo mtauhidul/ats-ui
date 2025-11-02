@@ -204,7 +204,7 @@ const createColumns = (
         <div className="w-28">
           <Badge
             variant="outline"
-            className="text-muted-foreground px-2 py-1 flex items-center gap-1 text-xs"
+            className="text-muted-foreground px-2 py-1.5 flex items-center gap-1 text-xs h-auto"
           >
             {isValid === true ? (
               <>
@@ -236,7 +236,7 @@ const createColumns = (
         <div className="w-32">
           <Badge
             variant="outline"
-            className="text-muted-foreground px-2 py-1 flex items-center gap-1"
+            className="text-muted-foreground px-2 py-1.5 flex items-center gap-1 h-auto"
           >
             {status === "approved" ? (
               <>
@@ -400,6 +400,7 @@ export function DataTable({
   >(null);
   const [currentApprovingName, setCurrentApprovingName] =
     React.useState<string>("");
+  const [currentJobId, setCurrentJobId] = React.useState<string | undefined>(undefined);
   const sortableId = React.useId();
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -542,6 +543,10 @@ export function DataTable({
 
     setCurrentApprovingId(id);
     setCurrentApprovingName(application.header || "this candidate");
+    
+    // Get the target job ID if application has one
+    const targetJobId = (application as any).targetJobId || (application as any).jobId;
+    setCurrentJobId(targetJobId);
 
     setShowJobSelectionModal(true);
   };
@@ -1278,10 +1283,11 @@ export function DataTable({
           setShowJobSelectionModal(false);
           setCurrentApprovingId(null);
           setCurrentApprovingName("");
+          setCurrentJobId(undefined);
         }}
         onConfirm={handleJobConfirmation}
         jobs={jobs}
-        currentJobId={undefined}
+        currentJobId={currentJobId}
         applicationName={currentApprovingName}
       />
     </>
@@ -1523,7 +1529,7 @@ function TableCellViewer({
       <DrawerTrigger asChild>
         <Button
           variant="ghost"
-          className="w-fit max-w-full px-0 text-left group hover:bg-transparent hover:no-underline"
+          className="w-fit max-w-full px-0 text-left group hover:bg-transparent hover:no-underline focus:bg-transparent active:bg-transparent data-[state=open]:bg-transparent"
         >
           <span className="flex items-center gap-1.5 text-foreground group-hover:text-primary transition-colors max-w-full">
             <span className="group-hover:underline underline-offset-4 truncate">
@@ -1544,7 +1550,7 @@ function TableCellViewer({
         <div className="flex flex-col gap-5 overflow-y-auto px-6 py-5">
           {/* Applicant Header Card */}
           <div className="flex items-start gap-4 rounded-lg border bg-muted/30 p-4">
-            <Avatar className="h-14 w-14 border-2 rounded-lg">
+            <Avatar className="h-14 w-14 rounded-lg">
               <AvatarFallback className="text-base font-semibold">
                 {(() => {
                   const nameParts = item.header.split(" ");
@@ -1619,12 +1625,7 @@ function TableCellViewer({
                   {typeof item.yearsOfExperience === "number" &&
                   item.yearsOfExperience > 0
                     ? `${item.yearsOfExperience} years`
-                    : item.parsedData?.experience &&
-                      item.parsedData.experience.length > 0
-                    ? `${item.parsedData.experience.length} position${
-                        item.parsedData.experience.length !== 1 ? "s" : ""
-                      }`
-                    : "Not Specified"}
+                    : "Not specified"}
                 </p>
               </div>
             </div>

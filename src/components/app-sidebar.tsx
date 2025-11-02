@@ -179,7 +179,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <Link
               to="/dashboard"
-              className="flex items-center gap-2 p-2 cursor-pointer"
+              className="flex items-center gap-2 p-2 cursor-pointer hover:bg-transparent"
             >
               <div style={{ width: "24px", height: "24px", flexShrink: 0 }}>
                 <LogoIcon size={24} color="#71abbf" />

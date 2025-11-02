@@ -51,6 +51,13 @@ export function JobCard({ job, onClick, clientName }: JobCardProps) {
   const activeCandidates = job.statistics?.activeCandidates || 0;
   const hiredCandidates = job.statistics?.hiredCandidates || 0;
 
+  // Convert categoryIds to array if it's an object (Firestore serialization issue)
+  const categoryIds = Array.isArray(job.categoryIds)
+    ? job.categoryIds
+    : job.categoryIds && typeof job.categoryIds === 'object'
+    ? Object.values(job.categoryIds)
+    : [];
+
   const handlePipelineClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigate(`/dashboard/jobs/pipeline/${job.id}`);
@@ -123,9 +130,9 @@ export function JobCard({ job, onClick, clientName }: JobCardProps) {
         </div>
 
         {/* Categories */}
-        {job.categoryIds && job.categoryIds.length > 0 && (
+        {categoryIds && categoryIds.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {job.categoryIds.slice(0, 3).map((categoryId: any) => {
+            {categoryIds.slice(0, 3).map((categoryId: any) => {
               const category =
                 typeof categoryId === "object" ? categoryId : null;
               if (!category) return null;
@@ -145,9 +152,9 @@ export function JobCard({ job, onClick, clientName }: JobCardProps) {
                 </Badge>
               );
             })}
-            {job.categoryIds.length > 3 && (
+            {categoryIds.length > 3 && (
               <Badge variant="secondary" className="px-2 py-0.5 text-xs">
-                +{job.categoryIds.length - 3}
+                +{categoryIds.length - 3}
               </Badge>
             )}
           </div>

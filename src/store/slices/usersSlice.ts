@@ -9,15 +9,54 @@ export interface UsersState {
   users: User[];
   isLoading: boolean;
   error: string | null;
+  lastFetched: number | null;
+  cacheValid: boolean;
 }
 
 const initialState: UsersState = {
   users: [],
   isLoading: false,
   error: null,
+  lastFetched: null,
+  cacheValid: false,
 };
 
+// Cache duration - 2 minutes for users (they don't change often)
+const CACHE_DURATION = 2 * 60 * 1000;
+
+const isCacheValid = (lastFetched: number | null): boolean => {
+  if (!lastFetched) return false;
+  return Date.now() - lastFetched < CACHE_DURATION;
+};
+
+// Smart fetch - only fetches if cache is stale
+export const fetchUsersIfNeeded = createAsyncThunk(
+  "users/fetchIfNeeded",
+  async (_, { getState }) => {
+    const state = getState() as { users: UsersState };
+    const { lastFetched, cacheValid, users } = state.users;
+
+    if (cacheValid && isCacheValid(lastFetched) && users.length > 0) {
+      console.log('✅ Using cached users');
+      return null; // Return null to skip fetch
+    }
+
+    console.log('📡 Fetching fresh users from API');
+    const response = await authenticatedFetch(`${API_BASE_URL}/users`);
+    if (!response.ok) throw new Error("Failed to fetch users");
+    const result = await response.json();
+    const usersData = result.data?.users || result.data || result;
+
+    return usersData.map((user: any) => ({
+      ...user,
+      id: user._id || user.id,
+      _id: undefined,
+    }));
+  }
+);
+
 export const fetchUsers = createAsyncThunk("users/fetchAll", async () => {
+  console.log('📡 Fetching fresh users from API');
   const response = await authenticatedFetch(`${API_BASE_URL}/users`);
   if (!response.ok) throw new Error("Failed to fetch users");
   const result = await response.json();
@@ -81,31 +120,70 @@ export const deleteUser = createAsyncThunk(
 const usersSlice = createSlice({
   name: "users",
   initialState,
-  reducers: {},
+  reducers: {
+    invalidateUsersCache: (state) => {
+      state.lastFetched = null;
+      state.cacheValid = false;
+    },
+  },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchUsersIfNeeded.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchUsersIfNeeded.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (action.payload) {
+          // Ensure payload is an array
+          const users = Array.isArray(action.payload)
+            ? action.payload
+            : action.payload && typeof action.payload === 'object'
+            ? Object.values(action.payload)
+            : [];
+          state.users = users;
+          state.lastFetched = Date.now();
+          state.cacheValid = true;
+        }
+      })
+      .addCase(fetchUsersIfNeeded.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message || "Failed to fetch users";
+        state.cacheValid = false;
+      })
       .addCase(fetchUsers.pending, (state) => {
         state.isLoading = true;
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.users = action.payload;
+        // Ensure payload is an array
+        const users = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload && typeof action.payload === 'object'
+          ? Object.values(action.payload)
+          : [];
+        state.users = users;
+        state.lastFetched = Date.now();
+        state.cacheValid = true;
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to fetch users";
+        state.cacheValid = false;
       })
       .addCase(updateUser.fulfilled, (state, action) => {
         const index = state.users.findIndex(u => u.id === action.payload.id);
         if (index !== -1) {
           state.users[index] = action.payload;
         }
+        state.lastFetched = Date.now();
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
         // Remove the deleted user from the state array
         state.users = state.users.filter(u => u.id !== action.payload.id);
+        state.lastFetched = Date.now();
       });
   },
 });
 
+export const { invalidateUsersCache } = usersSlice.actions;
 export default usersSlice.reducer;

@@ -11,7 +11,7 @@ export default function ClientDetailPage() {
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
 
-  const { fetchClients, fetchClientById, deleteClient, updateClient } = useClients();
+  const { fetchClients, fetchClientById, deleteClient, updateClient, addCommunicationNote } = useClients();
   const { fetchJobs, createJob } = useJobs();
   const { fetchCandidates } = useCandidates();
   
@@ -59,9 +59,21 @@ export default function ClientDetailPage() {
 
   const handleUpdate = async (clientId: string, updates: Partial<Client>) => {
     try {
+      console.log('=== HANDLE UPDATE ===');
+      console.log('Client ID:', clientId);
+      console.log('Updates to send:', updates);
+      console.log('Contacts in updates:', updates.contacts);
+      console.log('ActivityHistory in updates:', updates.activityHistory);
+      console.log('====================');
+      
       await updateClient(clientId, updates);
+      
+      console.log('Update successful, fetching updated client...');
+      
       // Refresh client data after updating
       await fetchClientById(clientId);
+      
+      console.log('Client refreshed');
     } catch (error) {
       console.error("Failed to update client:", error);
     }
@@ -74,6 +86,16 @@ export default function ClientDetailPage() {
     } catch (error) {
       // Error is already handled in the Redux thunk with toast notification
       console.error("Failed to delete client:", error);
+    }
+  };
+
+  const handleAddCommunicationNote = async (clientId: string, note: { type: string; subject: string; content: string }) => {
+    try {
+      await addCommunicationNote(clientId, note);
+      // Refresh client data after adding note
+      await fetchClientById(clientId);
+    } catch (error) {
+      console.error("Failed to add communication note:", error);
     }
   };
 
@@ -109,6 +131,7 @@ export default function ClientDetailPage() {
       onDelete={handleDelete}
       onAddJob={handleAddJob}
       onJobClick={handleJobClick}
+      onAddCommunicationNote={handleAddCommunicationNote}
     />
   );
 }

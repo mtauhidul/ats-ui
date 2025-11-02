@@ -69,7 +69,13 @@ const emailsSlice = createSlice({
       })
       .addCase(fetchEmails.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.emails = action.payload;
+        // Ensure payload is an array
+        const emails = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload && typeof action.payload === 'object'
+          ? Object.values(action.payload)
+          : [];
+        state.emails = emails;
       })
       .addCase(fetchEmails.rejected, (state, action) => {
         state.isLoading = false;
@@ -80,7 +86,13 @@ const emailsSlice = createSlice({
       })
       .addCase(fetchCandidateEmails.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.emails = action.payload;
+        // Ensure payload is an array
+        const emails = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload && typeof action.payload === 'object'
+          ? Object.values(action.payload)
+          : [];
+        state.emails = emails;
       })
       .addCase(fetchCandidateEmails.rejected, (state, action) => {
         state.isLoading = false;

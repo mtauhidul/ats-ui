@@ -6,7 +6,8 @@ import {
   fetchClientsIfNeeded,
   fetchClientById, 
   createClient, 
-  updateClient, 
+  updateClient,
+  addCommunicationNote,
   deleteClient,
   setCurrentClient,
   setFilters as setClientFilters,
@@ -28,6 +29,8 @@ export const useClients = () => {
     dispatch(createClient(data)), [dispatch]);
   const updateClientCallback = useCallback((id: string, data: Parameters<typeof updateClient>[0]["data"]) => 
     dispatch(updateClient({ id, data })), [dispatch]);
+  const addCommunicationNoteCallback = useCallback((id: string, note: Parameters<typeof addCommunicationNote>[0]["note"]) => 
+    dispatch(addCommunicationNote({ id, note })), [dispatch]);
   const deleteClientCallback = useCallback((id: string) => dispatch(deleteClient(id)), [dispatch]);
   const setCurrentClientCallback = useCallback((client: Parameters<typeof setCurrentClient>[0]) => 
     dispatch(setCurrentClient(client)), [dispatch]);
@@ -47,6 +50,7 @@ export const useClients = () => {
     fetchClientById: fetchClientByIdCallback,
     createClient: createClientCallback,
     updateClient: updateClientCallback,
+    addCommunicationNote: addCommunicationNoteCallback,
     deleteClient: deleteClientCallback,
     setCurrentClient: setCurrentClientCallback,
     setFilters: setFiltersCallback,

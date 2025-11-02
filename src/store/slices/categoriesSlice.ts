@@ -149,7 +149,13 @@ const categoriesSlice = createSlice({
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.categories = action.payload;
+        // Ensure payload is an array
+        const categories = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload && typeof action.payload === 'object'
+          ? Object.values(action.payload)
+          : [];
+        state.categories = categories;
         state.lastFetched = Date.now();
         state.cacheValid = true;
       })
@@ -164,7 +170,13 @@ const categoriesSlice = createSlice({
       .addCase(fetchCategoriesIfNeeded.fulfilled, (state, action) => {
         state.isLoading = false;
         if (action.payload) {
-          state.categories = action.payload;
+          // Ensure payload is an array
+          const categories = Array.isArray(action.payload)
+            ? action.payload
+            : action.payload && typeof action.payload === 'object'
+            ? Object.values(action.payload)
+            : [];
+          state.categories = categories;
           state.lastFetched = Date.now();
           state.cacheValid = true;
         }

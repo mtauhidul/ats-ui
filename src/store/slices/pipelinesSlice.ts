@@ -149,7 +149,13 @@ const pipelinesSlice = createSlice({
       })
       .addCase(fetchPipelines.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.pipelines = action.payload;
+        // Ensure payload is an array
+        const pipelines = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload && typeof action.payload === 'object'
+          ? Object.values(action.payload)
+          : [];
+        state.pipelines = pipelines;
         state.lastFetched = Date.now();
         state.cacheValid = true;
       })
@@ -164,7 +170,13 @@ const pipelinesSlice = createSlice({
       .addCase(fetchPipelinesIfNeeded.fulfilled, (state, action) => {
         state.isLoading = false;
         if (action.payload) {
-          state.pipelines = action.payload;
+          // Ensure payload is an array
+          const pipelines = Array.isArray(action.payload)
+            ? action.payload
+            : action.payload && typeof action.payload === 'object'
+            ? Object.values(action.payload)
+            : [];
+          state.pipelines = pipelines;
           state.lastFetched = Date.now();
           state.cacheValid = true;
         }

@@ -60,19 +60,27 @@ export function JobKanbanBoard({
   const [isEditStageDialogOpen, setIsEditStageDialogOpen] = useState(false);
   const [editingStage, setEditingStage] = useState<PipelineStage | null>(null);
 
+  // Ensure stages is always an array
+  const stages = useMemo(() => {
+    if (pipeline?.stages && Array.isArray(pipeline.stages)) {
+      return pipeline.stages;
+    }
+    return [];
+  }, [pipeline?.stages]);
+
   // Group candidates by stage with type conversion
   const columnData = useMemo(() => {
     console.log("=== KANBAN BOARD: Grouping Candidates ===");
     console.log("Total candidates received:", candidates.length);
     console.log(
       "Pipeline stages:",
-      pipeline.stages.map((s) => ({ id: s.id, name: s.name }))
+      stages.map((s) => ({ id: s.id, name: s.name }))
     );
 
     const grouped: Record<string, Candidate[]> = {};
 
     // Initialize all stages
-    pipeline.stages.forEach((stage) => {
+    stages.forEach((stage) => {
       grouped[stage.id] = [];
     });
 
@@ -104,7 +112,7 @@ export function JobKanbanBoard({
         console.log(`  -> Added to stage: ${currentStageId}`);
       } else {
         // If no stage assigned, put in first stage
-        const firstStage = pipeline.stages[0];
+        const firstStage = stages[0];
         if (firstStage) {
           grouped[firstStage.id].push(candidate);
           console.log(
@@ -116,7 +124,7 @@ export function JobKanbanBoard({
 
     console.log("\n=== Final grouped candidates by stage: ===");
     Object.entries(grouped).forEach(([stageId, stageCandidates]) => {
-      const stage = pipeline.stages.find((s) => s.id === stageId);
+      const stage = stages.find((s) => s.id === stageId);
       console.log(
         `${stage?.name} (${stageId}): ${stageCandidates.length} candidates`
       );
@@ -124,7 +132,7 @@ export function JobKanbanBoard({
     console.log("=========================================\n");
 
     return grouped;
-  }, [candidates, pipeline]);
+  }, [candidates, stages]);
 
   const getCandidatesForStage = useCallback(
     (stageId: string) => columnData[stageId] || [],
@@ -182,13 +190,13 @@ export function JobKanbanBoard({
           getItemValue={(item) => item.id}
         >
           <Kanban.Board className="grid auto-rows-fr h-full" style={{
-            gridTemplateColumns: `repeat(${pipeline.stages.length}, minmax(320px, 1fr))`,
+            gridTemplateColumns: `repeat(${stages.length}, minmax(320px, 1fr))`,
             gap: "12px"
           }}>
-            {[...pipeline.stages]
+            {[...stages]
               .sort((a, b) => a.order - b.order)
-              .map((stage) => (
-                <Kanban.Column key={stage.id} value={stage.id} className="h-full flex flex-col">
+              .map((stage, index) => (
+                <Kanban.Column key={stage.id || stage._id || `stage-${index}`} value={stage.id || stage._id} className="h-full flex flex-col">
                   {/* Column Header */}
                   <div className="px-3 py-2.5 border-b border-border shrink-0 bg-card/50 backdrop-blur-sm">
                     <div className="flex items-center justify-between gap-2">
@@ -250,10 +258,10 @@ export function JobKanbanBoard({
                           </div>
                         </div>
                       ) : (
-                        getCandidatesForStage(stage.id).map((candidate) => (
+                        getCandidatesForStage(stage.id).map((candidate, idx) => (
                           <Kanban.Item
-                            key={candidate.id}
-                            value={candidate.id}
+                            key={candidate.id || candidate._id || `candidate-${stage.id}-${idx}`}
+                            value={candidate.id || candidate._id}
                             asHandle
                             asChild
                           >

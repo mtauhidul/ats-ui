@@ -219,7 +219,7 @@ export default function ClientsPage() {
                   </div>
                   <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
                     {filteredClients.reduce(
-                      (acc: number, c: Client) => acc + c.statistics.totalJobs,
+                      (acc: number, c: Client) => acc + (c.statistics?.totalJobs || 0),
                       0
                     )}
                   </p>
@@ -238,7 +238,7 @@ export default function ClientsPage() {
                   </div>
                   <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
                     {filteredClients.reduce(
-                      (acc: number, c: Client) => acc + c.statistics.activeJobs,
+                      (acc: number, c: Client) => acc + (c.statistics?.activeJobs || 0),
                       0
                     )}
                   </p>

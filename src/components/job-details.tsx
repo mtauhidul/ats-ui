@@ -133,14 +133,27 @@ export function JobDetails({
       }
 
       const result = await response.json();
-      const categories = result.data || [];
+      const categoriesRaw = result.data || [];
+      
+      // Convert to array if it's an object (Firestore serialization issue)
+      const categoriesArray = Array.isArray(categoriesRaw)
+        ? categoriesRaw
+        : categoriesRaw && typeof categoriesRaw === 'object'
+        ? Object.values(categoriesRaw)
+        : [];
+      
       // Ensure id field exists - backend may return _id
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const categoriesWithId = categories.map((category: any) => ({
+      const categoriesWithId = categoriesArray.map((category: any) => ({
         ...category,
         id: category.id || category._id,
       }));
-      setAllCategories(categoriesWithId.filter((c: Category) => c.isActive));
+      
+      // Filter for active categories (include if isActive is undefined/missing)
+      const activeCategories = categoriesWithId.filter((c: Category) => c.isActive !== false);
+      console.log('All categories:', categoriesWithId);
+      console.log('Active categories:', activeCategories);
+      setAllCategories(activeCategories);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
       setAllCategories([]);
@@ -157,10 +170,25 @@ export function JobDetails({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (job && (job as any).categoryIds) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const categoryIds = (job as any).categoryIds.map((id: any) =>
+      const categoryIdsRaw = (job as any).categoryIds;
+      
+      // Convert to array if it's an object (Firestore serialization issue)
+      const categoryIdsArray = Array.isArray(categoryIdsRaw)
+        ? categoryIdsRaw
+        : categoryIdsRaw && typeof categoryIdsRaw === 'object'
+        ? Object.values(categoryIdsRaw)
+        : [];
+      
+      // Extract IDs from populated category objects or use string IDs directly
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const categoryIds = categoryIdsArray.map((id: any) =>
         typeof id === "object" ? id._id || id.id || "" : id
-      );
+      ).filter(Boolean);
+      
+      console.log('Job categoryIds loaded:', categoryIds);
       setSelectedCategories(categoryIds);
+    } else {
+      setSelectedCategories([]);
     }
   }, [job]);
 
@@ -704,7 +732,9 @@ export function JobDetails({
                 <div>
                   <h4 className="text-sm font-medium mb-2">Required Skills</h4>
                   <div className="flex flex-wrap gap-2">
-                    {job.requirements.skills.required.map((skill, index) => (
+                    {job.requirements.skills.required && 
+                     Array.isArray(job.requirements.skills.required) &&
+                     job.requirements.skills.required.map((skill, index) => (
                       <Badge
                         key={index}
                         variant="secondary"
@@ -715,7 +745,9 @@ export function JobDetails({
                     ))}
                   </div>
                 </div>
-                {job.requirements.skills.preferred.length > 0 && (
+                {job.requirements.skills.preferred && 
+                 Array.isArray(job.requirements.skills.preferred) &&
+                 job.requirements.skills.preferred.length > 0 && (
                   <>
                     <Separator />
                     <div>
@@ -814,7 +846,9 @@ export function JobDetails({
             </Card>
 
             {/* Responsibilities */}
-            {job.responsibilities && job.responsibilities.length > 0 && (
+            {job.responsibilities && 
+             Array.isArray(job.responsibilities) &&
+             job.responsibilities.length > 0 && (
               <Card className="md:col-span-2">
                 <CardHeader>
                   <CardTitle>Responsibilities</CardTitle>

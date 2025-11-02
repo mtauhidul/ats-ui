@@ -31,7 +31,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { registerUser } from "@/services/auth.service";
 import { useAppDispatch, useAppSelector, useTeam } from "@/store/hooks/index";
-import { deleteUser, fetchUsers, updateUser } from "@/store/slices/usersSlice";
+import { deleteUser, fetchUsers, fetchUsersIfNeeded, updateUser } from "@/store/slices/usersSlice";
 import type { TeamMember, TeamRole, User } from "@/types";
 import {
   Briefcase,
@@ -141,9 +141,10 @@ export default function TeamPage() {
   );
 
   useEffect(() => {
-    // Fetch all users to display in the team page
-    dispatch(fetchUsers());
-  }, [dispatch]);
+    // Use smart fetch - only fetches if cache is stale
+    dispatch(fetchUsersIfNeeded());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only on mount
 
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -153,6 +154,7 @@ export default function TeamPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [isAddingMember, setIsAddingMember] = useState(false);
 
   // Check if we need to open edit dialog from navigation state
   useEffect(() => {
@@ -197,6 +199,7 @@ export default function TeamPage() {
       return;
     }
 
+    setIsAddingMember(true);
     try {
       // Use the auth/register endpoint which automatically sends invitation email
       await registerUser(
@@ -224,6 +227,8 @@ export default function TeamPage() {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to add team member";
       toast.error(errorMessage);
+    } finally {
+      setIsAddingMember(false);
     }
   };
 
@@ -943,14 +948,23 @@ export default function TeamPage() {
                     variant="outline"
                     onClick={() => setIsAddDialogOpen(false)}
                     className="w-full sm:w-auto"
+                    disabled={isAddingMember}
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleAddMember}
                     className="w-full sm:w-auto"
+                    disabled={isAddingMember}
                   >
-                    Add Member
+                    {isAddingMember ? (
+                      <>
+                        <span className="mr-2">Adding...</span>
+                        <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      </>
+                    ) : (
+                      "Add Member"
+                    )}
                   </Button>
                 </DialogFooter>
               </DialogContent>

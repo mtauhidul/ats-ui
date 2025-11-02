@@ -91,6 +91,18 @@ export function EditJobModal({
       },
     };
 
+    // Ensure responsibilities is always an array
+    let responsibilities: string[] = [];
+    if (Array.isArray(jobData.responsibilities)) {
+      responsibilities = jobData.responsibilities;
+    } else if (jobData.responsibilities && typeof jobData.responsibilities === 'string') {
+      // If it's a string, split by newline or comma
+      responsibilities = (jobData.responsibilities as string)
+        .split(/[\n,]/)
+        .map((r: string) => r.trim())
+        .filter((r: string) => r.length > 0);
+    }
+
     return {
       title: jobData.title || "",
       description: jobData.description || "",
@@ -101,7 +113,7 @@ export function EditJobModal({
         (backendJob.locationType as WorkMode) || jobData.workMode || "hybrid",
       location: locationObj,
       requirements: requirementsObj,
-      responsibilities: jobData.responsibilities || [],
+      responsibilities: responsibilities,
       priority: jobData.priority,
       openings: jobData.openings || 1,
       salaryRange: jobData.salaryRange,
@@ -970,6 +982,7 @@ export function EditJobModal({
                     <Card className="border-dashed">
                       <CardContent className="p-4">
                         {!formData.responsibilities ||
+                        !Array.isArray(formData.responsibilities) ||
                         formData.responsibilities.length === 0 ? (
                           <div className="text-center py-8 text-muted-foreground">
                             <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />

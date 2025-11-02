@@ -106,7 +106,13 @@ const tagsSlice = createSlice({
       })
       .addCase(fetchTags.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.tags = action.payload;
+        // Ensure payload is an array
+        const tags = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload && typeof action.payload === 'object'
+          ? Object.values(action.payload)
+          : [];
+        state.tags = tags;
       })
       .addCase(fetchTags.rejected, (state, action) => {
         state.isLoading = false;

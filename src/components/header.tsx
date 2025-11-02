@@ -66,10 +66,7 @@ export function Header() {
       })}
     >
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
-        <Link
-          to="/"
-          className="flex items-center gap-2 rounded-md p-2 hover:bg-accent"
-        >
+        <Link to="/" className="flex items-center gap-2 rounded-md p-2">
           <LogoIcon className="h-7 w-7" />
           <span className="text-xl font-bold text-foreground tracking-tight">
             YTFCS ATS

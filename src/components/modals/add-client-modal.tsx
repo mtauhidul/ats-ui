@@ -66,6 +66,11 @@ export function AddClientModal({ open, onClose, onSubmit }: AddClientModalProps)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('=== ADD CLIENT FORM SUBMIT ===');
+    console.log('Form data:', formData);
+    console.log('Contacts:', formData.contacts);
+    console.log('First contact:', formData.contacts[0]);
+    console.log('==============================');
     onSubmit(formData);
     onClose();
   };
@@ -291,7 +296,7 @@ export function AddClientModal({ open, onClose, onSubmit }: AddClientModalProps)
                   value={formData.contacts[0].name}
                   onChange={(e) => setFormData({ 
                     ...formData, 
-                    contacts: [{ ...formData.contacts[0], name: e.target.value }] 
+                    contacts: [{ ...formData.contacts[0], name: e.target.value, isPrimary: true }] 
                   })}
                   required
                 />
@@ -304,7 +309,7 @@ export function AddClientModal({ open, onClose, onSubmit }: AddClientModalProps)
                   value={formData.contacts[0].position}
                   onChange={(e) => setFormData({ 
                     ...formData, 
-                    contacts: [{ ...formData.contacts[0], position: e.target.value }] 
+                    contacts: [{ ...formData.contacts[0], position: e.target.value, isPrimary: true }] 
                   })}
                   required
                 />
@@ -318,7 +323,7 @@ export function AddClientModal({ open, onClose, onSubmit }: AddClientModalProps)
                   value={formData.contacts[0].email}
                   onChange={(e) => setFormData({ 
                     ...formData, 
-                    contacts: [{ ...formData.contacts[0], email: e.target.value }] 
+                    contacts: [{ ...formData.contacts[0], email: e.target.value, isPrimary: true }] 
                   })}
                   required
                 />
@@ -331,7 +336,7 @@ export function AddClientModal({ open, onClose, onSubmit }: AddClientModalProps)
                   value={formData.contacts[0].phone}
                   onChange={(e) => setFormData({ 
                     ...formData, 
-                    contacts: [{ ...formData.contacts[0], phone: e.target.value }] 
+                    contacts: [{ ...formData.contacts[0], phone: e.target.value, isPrimary: true }] 
                   })}
                 />
               </div>

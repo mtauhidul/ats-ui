@@ -289,7 +289,6 @@ export async function updateProfile(data: {
   phone?: string;
   title?: string;
   department?: string;
-  avatar?: string;
 }, token: string): Promise<AuthResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/profile`, {
     method: 'PATCH',
@@ -304,6 +303,30 @@ export async function updateProfile(data: {
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error?.message || 'Failed to update profile');
+  }
+
+  return response.json();
+}
+
+/**
+ * Upload user avatar
+ */
+export async function uploadAvatar(userId: string, file: File, token: string): Promise<AuthResponse> {
+  const formData = new FormData();
+  formData.append('avatar', file);
+
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/avatar`, {
+    method: 'POST',
+    headers: { 
+      'Authorization': `Bearer ${token}`,
+    },
+    credentials: 'include',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Failed to upload avatar');
   }
 
   return response.json();
@@ -346,4 +369,5 @@ export const authService = {
   getCurrentUser,
   updateProfile,
   updatePassword,
+  uploadAvatar,
 };

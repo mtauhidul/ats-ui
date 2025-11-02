@@ -147,60 +147,42 @@ export default function AccountPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("File size must be less than 2MB");
+    // Validate file size (5MB to match backend)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
       return;
     }
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image file");
+      toast.error("Please upload an image file (JPG, PNG, GIF, WEBP)");
       return;
     }
 
     setIsPhotoUploading(true);
 
     try {
-      // Convert to base64
-      const reader = new FileReader();
-
-      reader.onloadend = async () => {
-        try {
-          const base64String = reader.result as string;
-
-          // Update profile with avatar
-          if (!accessToken) {
-            toast.error("Not authenticated");
-            setIsPhotoUploading(false);
-            return;
-          }
-
-          await authService.updateProfile(
-            { avatar: base64String },
-            accessToken
-          );
-
-          // Update local state only after successful save
-          setProfilePhoto(base64String);
-          toast.success("Profile photo updated!");
-        } catch (error) {
-          console.error("Photo upload error:", error);
-          toast.error("Failed to save profile photo");
-        } finally {
-          setIsPhotoUploading(false);
-        }
-      };
-
-      reader.onerror = () => {
-        toast.error("Failed to read image file");
+      // Upload avatar using dedicated endpoint
+      if (!accessToken || !user?.id) {
+        toast.error("Not authenticated");
         setIsPhotoUploading(false);
-      };
+        return;
+      }
 
-      reader.readAsDataURL(file);
+      const result = await authService.uploadAvatar(user.id, file, accessToken);
+      
+      // Update local state with the Cloudinary URL
+      if (result.data?.user) {
+        const updatedUser = result.data.user as typeof user & { avatar?: string };
+        if (updatedUser.avatar) {
+          setProfilePhoto(updatedUser.avatar);
+          toast.success("Profile photo updated!");
+        }
+      }
     } catch (error) {
       console.error("Photo upload error:", error);
-      toast.error("Failed to upload profile photo");
+      toast.error(error instanceof Error ? error.message : "Failed to save profile photo");
+    } finally {
       setIsPhotoUploading(false);
     }
   };

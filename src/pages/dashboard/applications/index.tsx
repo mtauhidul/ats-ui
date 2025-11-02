@@ -27,6 +27,13 @@ export default function ApplicationsPage() {
   console.log('Applications data:', applications);
   console.log('Jobs data:', jobs);
   console.log('Clients data:', clients);
+  
+  // Debug date values from first application
+  if (applications.length > 0) {
+    const firstApp = applications[0];
+    console.log('First app submittedAt:', firstApp.submittedAt, 'Type:', typeof firstApp.submittedAt);
+    console.log('First app createdAt:', firstApp.createdAt, 'Type:', typeof firstApp.createdAt);
+  }
 
   const transformedData = applications.map((app: Application) => {
     const job = jobs.find((j: Job) => j.id === app.targetJobId);
@@ -50,13 +57,17 @@ export default function ApplicationsPage() {
 
     // Calculate years of experience from experience array
     const calculateYearsOfExperience = () => {
-      if (!backendApp.parsedData?.experience || backendApp.parsedData.experience.length === 0) {
+      const experience = Array.isArray(backendApp.parsedData?.experience) ? backendApp.parsedData.experience : [];
+      console.log('Calculating experience for:', app.id, 'Experience array:', experience);
+      
+      if (experience.length === 0) {
+        console.log('No experience data found for:', app.id);
         return undefined;
       }
       
       let totalMonths = 0;
       
-      backendApp.parsedData.experience.forEach(exp => {
+      experience.forEach(exp => {
         const duration = exp.duration;
         
         // Try to extract years from text like "2 years", "3+ years"
@@ -116,6 +127,7 @@ export default function ApplicationsPage() {
       
       // Convert months to years (round to nearest integer)
       const years = Math.round(totalMonths / 12);
+      console.log('Calculated years of experience:', years, 'Total months:', totalMonths, 'for app:', app.id);
       return years > 0 ? years : undefined;
     };
 
@@ -189,12 +201,33 @@ export default function ApplicationsPage() {
       return text.trim() || undefined;
     };
 
+    // Helper to get valid date
+    const getApplicationDate = () => {
+      const dateValue = app.submittedAt || app.createdAt;
+      if (!dateValue) return null;
+      const date = new Date(dateValue);
+      return isNaN(date.getTime()) ? null : date;
+    };
+
+    const applicationDate = getApplicationDate();
+
+    // Format date as "02 Jan, 2025"
+    const formatDate = (date: Date | null): string => {
+      if (!date) return "N/A";
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = date.toLocaleString('en-US', { month: 'short' });
+      const year = date.getFullYear();
+      
+      return `${day} ${month}, ${year}`;
+    };
+
     return {
     id: app.id, // Use actual application ID from backend
     header: `${app.firstName} ${app.lastName}`, // Application name
     type: backendApp.isValidResume === true ? "valid" : backendApp.isValidResume === false ? "invalid" : "pending", // AI status (kept for compatibility)
     status: app.status || "pending", // Use raw status from backend: approved, rejected, or pending
-    target: new Date(app.submittedAt).getDate(), // Day number for sorting but we'll override display
+    target: applicationDate ? applicationDate.getDate() : 0, // Day number for sorting but we'll override display
     limit: app.id, // Show actual application ID
     reviewer: (() => {
       if (!app.reviewedBy) return "Not Reviewed";
@@ -207,7 +240,7 @@ export default function ApplicationsPage() {
     })(),
     source: app.source || "direct_application", // Application source (manual/email/direct apply)
     // Add original data for display
-    dateApplied: new Date(app.submittedAt).toLocaleDateString(),
+    dateApplied: formatDate(applicationDate),
     jobIdDisplay: app.id, // Show application ID instead of job ID
     clientName: client?.companyName || "Unknown Client",
     clientLogo: client?.logo || `https://api.dicebear.com/7.x/initials/svg?seed=${client?.companyName || 'C'}`,
@@ -225,7 +258,13 @@ export default function ApplicationsPage() {
     phone: app.phone,
     currentTitle: backendApp.parsedData?.experience?.[0]?.title || app.currentTitle,
     currentCompany: backendApp.parsedData?.experience?.[0]?.company || app.currentCompany,
-    yearsOfExperience: calculateYearsOfExperience() || app.yearsOfExperience,
+    yearsOfExperience: (() => {
+      const calculated = calculateYearsOfExperience();
+      const fallback = app.yearsOfExperience;
+      const final = calculated || fallback;
+      console.log('Years of experience - Calculated:', calculated, 'Fallback:', fallback, 'Final:', final, 'for app:', app.id);
+      return final;
+    })(),
     skills: backendApp.parsedData?.skills || app.skills || [],
     coverLetter: app.coverLetter,
     resumeText: buildResumeText(),
