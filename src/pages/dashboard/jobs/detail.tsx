@@ -60,8 +60,20 @@ export default function JobDetailPage() {
   };
 
   // Get client name
-  const client = clients.find(c => c.id === job?.clientId);
-  const clientName = client?.companyName || "Unknown Client";
+  const client = clients.find(c => {
+    // Handle both id and _id
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const clientId = c.id || (c as any)._id;
+    const jobClientId = typeof job?.clientId === 'string' ? job.clientId : job?.clientId?.id || job?.clientId?._id;
+    return clientId === jobClientId;
+  });
+  
+  let clientName = "Unknown Client";
+  if (client?.companyName) {
+    clientName = client.companyName;
+  } else if (typeof job?.clientId === 'object' && job.clientId.companyName) {
+    clientName = job.clientId.companyName;
+  }
 
   if (!job) {
     return (

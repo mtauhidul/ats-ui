@@ -340,7 +340,7 @@ export function JobDetails({
           <span className="text-xs">•</span>
           <Calendar className="h-4 w-4" />
           <span className="text-sm">
-            Posted {new Date(job.createdAt).toLocaleDateString()}
+            Posted {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A'}
           </span>
         </div>
 

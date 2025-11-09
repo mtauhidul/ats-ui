@@ -129,21 +129,11 @@ export default function CategoriesPage() {
 
         // Skip if this item was already processed in the current path (circular reference)
         if (visitedIds.has(item.id)) {
-          console.warn(
-            `Circular reference detected for category: ${item.name} (ID: ${
-              item.id || "undefined"
-            })`
-          );
           return false;
         }
 
         // Don't allow a category to be its own parent
         if (item.id === item.parentId) {
-          console.warn(
-            `Category cannot be its own parent: ${item.name} (ID: ${
-              item.id || "undefined"
-            })`
-          );
           return false;
         }
 

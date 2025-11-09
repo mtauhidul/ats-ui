@@ -65,12 +65,13 @@ export default function DashboardJobsPage() {
   const getClientName = (
     clientOrId?: string | { id?: string; _id?: string; companyName?: string }
   ): string => {
-    if (!clientOrId) return "Unknown Client";
+    if (!clientOrId) return "No Client";
 
     // If a string id was passed
     if (typeof clientOrId === "string") {
-      const client = clients.find((c) => c.id === clientOrId);
-      return client?.companyName || "Unknown Client";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const client = clients.find((c) => c.id === clientOrId || (c as any)._id === clientOrId);
+      return client?.companyName || clientOrId;
     }
 
     // If an object was passed, prefer its companyName if available,
@@ -79,12 +80,13 @@ export default function DashboardJobsPage() {
       if (clientOrId.companyName) return clientOrId.companyName;
       const id = clientOrId.id || clientOrId._id;
       if (id) {
-        const client = clients.find((c) => c.id === id);
-        return client?.companyName || "Unknown Client";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const client = clients.find((c) => c.id === id || (c as any)._id === id);
+        return client?.companyName || id;
       }
     }
 
-    return "Unknown Client";
+    return "No Client";
   };
 
   // Handle add job

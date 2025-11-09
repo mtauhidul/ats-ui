@@ -10,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Job } from "@/types/job";
 import {
   Award,
   Briefcase,
@@ -25,76 +24,44 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { API_BASE_URL } from "@/config/api";
-
-// Extended type to handle locationType field from API
-type JobWithLocationType = Job & { locationType?: string };
-
-// Helper function to normalize job data from backend (handle _id to id conversion)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const normalizeJob = (job: any): JobWithLocationType => {
-  return {
-    ...job,
-    id: job.id || job._id, // Handle both id and _id fields
-  };
-};
+import { useJobs } from "@/hooks/firestore";
 
 export default function JobsPage() {
-  const [jobs, setJobs] = useState<JobWithLocationType[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 🔥 REALTIME: Replace API fetch with Firestore hook
+  // This subscribes to Firestore and updates automatically!
+  const { data: allJobs, loading, error } = useJobs({ status: 'open' });
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [workModeFilter, setWorkModeFilter] = useState<string>("all");
 
-  useEffect(() => {
-    fetchJobs();
-  }, []);
+  // 🔥 REALTIME: Memoize filtered results for better performance
+  const filteredJobs = useMemo(() => {
+    return allJobs.filter((job) => {
+      const matchesSearch =
+        job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = typeFilter === "all" || job.type === typeFilter;
+      const matchesWorkMode =
+        workModeFilter === "all" || job.workMode === workModeFilter;
 
-  const fetchJobs = async () => {
-    try {
-      // Public endpoint - no authentication needed
-      const response = await fetch(`${API_BASE_URL}/jobs`);
+      return matchesSearch && matchesType && matchesWorkMode;
+    });
+  }, [allJobs, searchQuery, typeFilter, workModeFilter]);
 
-      if (!response.ok) {
-        console.error("Failed to fetch jobs:", response.status);
-        setLoading(false);
-        return;
-      }
-
-      const result = await response.json();
-      const jobsData = result.data?.jobs || result.data || result;
-
-      // Ensure jobsData is an array before filtering and normalizing
-      if (Array.isArray(jobsData)) {
-        const normalizedJobs = jobsData
-          .filter((job: Job) => job.status === "open")
-          .map(normalizeJob);
-        setJobs(normalizedJobs);
-      } else {
-        console.error("Jobs data is not an array:", jobsData);
-        setJobs([]);
-      }
-
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching jobs:", error);
-      setJobs([]);
-      setLoading(false);
-    }
-  };
-
-  const filteredJobs = jobs.filter((job) => {
-    const matchesSearch =
-      job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = typeFilter === "all" || job.type === typeFilter;
-    const matchesWorkMode =
-      workModeFilter === "all" || job.workMode === workModeFilter;
-
-    return matchesSearch && matchesType && matchesWorkMode;
-  });
+  // 🔥 REALTIME: Handle errors
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Failed to load jobs: {error.message}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
 
   const formatSalary = (salary?: {
     min: number;
@@ -301,20 +268,15 @@ export default function JobsPage() {
                     )}
 
                     {/* Work Mode */}
-                    {(job.workMode || job.locationType) && (
+                    {job.workMode && (
                       <div className="flex items-center gap-2">
                         <div className="rounded-lg bg-green-500/10 p-2 group-hover:bg-green-500/20 transition-colors">
-                          {getWorkModeIcon(
-                            job.workMode || job.locationType || ""
-                          )}
+                          {getWorkModeIcon(job.workMode || "")}
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs text-muted-foreground">Mode</p>
                           <p className="text-sm font-medium capitalize truncate">
-                            {(job.workMode || job.locationType)?.replace(
-                              /_/g,
-                              " "
-                            )}
+                            {job.workMode?.replace(/_/g, " ")}
                           </p>
                         </div>
                       </div>

@@ -70,6 +70,11 @@ export default function ApplicationsPage() {
       experience.forEach(exp => {
         const duration = exp.duration;
         
+        // Skip if duration is missing
+        if (!duration || typeof duration !== 'string') {
+          return;
+        }
+        
         // Try to extract years from text like "2 years", "3+ years"
         const yearMatch = duration.match(/(\d+)\+?\s*years?/i);
         if (yearMatch) {
@@ -169,7 +174,13 @@ export default function ApplicationsPage() {
       if (backendApp.parsedData.experience && backendApp.parsedData.experience.length > 0) {
         text += 'PROFESSIONAL EXPERIENCE\n\n';
         backendApp.parsedData.experience.forEach(exp => {
-          text += `${exp.title} | ${exp.company} | ${exp.duration}\n`;
+          if (!exp) return; // Skip null/undefined entries
+          
+          const title = exp.title || 'Position';
+          const company = exp.company || 'Company';
+          const duration = exp.duration || '';
+          
+          text += `${title} | ${company}${duration ? ' | ' + duration : ''}\n`;
           if (exp.description) {
             text += exp.description + '\n';
           }
@@ -181,9 +192,11 @@ export default function ApplicationsPage() {
       if (backendApp.parsedData.education && backendApp.parsedData.education.length > 0) {
         text += 'EDUCATION\n\n';
         backendApp.parsedData.education.forEach(edu => {
-          text += `${edu.degree}`;
+          if (!edu) return; // Skip null/undefined entries
+          
+          text += `${edu.degree || 'Degree'}`;
           if (edu.field) text += ` in ${edu.field}`;
-          text += ` | ${edu.institution}`;
+          text += ` | ${edu.institution || 'Institution'}`;
           if (edu.year) text += ` | ${edu.year}`;
           text += '\n';
         });

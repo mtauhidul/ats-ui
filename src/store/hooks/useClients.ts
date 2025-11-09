@@ -2,8 +2,6 @@
 import { useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import { 
-  fetchClients,
-  fetchClientsIfNeeded,
   fetchClientById, 
   createClient, 
   updateClient,
@@ -12,19 +10,27 @@ import {
   setCurrentClient,
   setFilters as setClientFilters,
   clearFilters as clearClientFilters,
-  invalidateClientsCache
 } from "../slices/clientsSlice";
 import type { ClientsState } from "../slices/clientsSlice";
+import { useClients as useFirestoreClients } from "@/hooks/firestore";
 
 export const useClients = () => {
   const dispatch = useAppDispatch();
-  const { clients, currentClient, isLoading, error, filters } = useAppSelector(
+  
+  // Get realtime data from Firestore
+  const { data: clients, loading: isLoading, error: firestoreError } = useFirestoreClients();
+  
+  // Keep filters and currentClient from Redux for backward compatibility
+  const { currentClient, filters } = useAppSelector(
     (state) => state.clients as ClientsState
   );
 
-  const fetchClientsCallback = useCallback(() => dispatch(fetchClients()), [dispatch]);
-  const fetchClientsIfNeededCallback = useCallback(() => dispatch(fetchClientsIfNeeded()), [dispatch]);
-  const fetchClientByIdCallback = useCallback((id: string) => dispatch(fetchClientById(id)), [dispatch]);
+  // Fetch functions are now no-ops since Firestore provides realtime data
+  const fetchClientsCallback = useCallback(() => Promise.resolve(), []);
+  const fetchClientsIfNeededCallback = useCallback(() => Promise.resolve(), []);
+  const fetchClientByIdCallback = useCallback((_id: string) => dispatch(fetchClientById(_id)), [dispatch]);
+  
+  // Write operations still go through Redux/API for validation
   const createClientCallback = useCallback((data: Parameters<typeof createClient>[0]) => 
     dispatch(createClient(data)), [dispatch]);
   const updateClientCallback = useCallback((id: string, data: Parameters<typeof updateClient>[0]["data"]) => 
@@ -37,16 +43,18 @@ export const useClients = () => {
   const setFiltersCallback = useCallback((filters: Parameters<typeof setClientFilters>[0]) => 
     dispatch(setClientFilters(filters)), [dispatch]);
   const clearFiltersCallback = useCallback(() => dispatch(clearClientFilters()), [dispatch]);
-  const invalidateCacheCallback = useCallback(() => dispatch(invalidateClientsCache()), [dispatch]);
+  
+  // Cache invalidation is automatic with Firestore realtime
+  const invalidateCacheCallback = useCallback(() => Promise.resolve(), []);
 
   return {
-    clients,
+    clients, // Now from Firestore with realtime updates!
     currentClient,
     isLoading,
-    error,
+    error: firestoreError,
     filters,
     fetchClients: fetchClientsCallback,
-    fetchClientsIfNeeded: fetchClientsIfNeededCallback, // New: smart fetch with caching
+    fetchClientsIfNeeded: fetchClientsIfNeededCallback,
     fetchClientById: fetchClientByIdCallback,
     createClient: createClientCallback,
     updateClient: updateClientCallback,
@@ -55,6 +63,6 @@ export const useClients = () => {
     setCurrentClient: setCurrentClientCallback,
     setFilters: setFiltersCallback,
     clearFilters: clearFiltersCallback,
-    invalidateCache: invalidateCacheCallback, // New: manual cache invalidation
+    invalidateCache: invalidateCacheCallback,
   };
 };

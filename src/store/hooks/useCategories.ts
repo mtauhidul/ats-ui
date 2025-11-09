@@ -1,39 +1,47 @@
 import { useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import {
-  fetchCategories,
-  fetchCategoriesIfNeeded,
   fetchCategoryById,
   createCategory,
   updateCategory,
   deleteCategory,
   setCurrentCategory,
-  invalidateCategoriesCache,
 } from "../slices/categoriesSlice";
 import type { Category } from "@/types";
+import { useCategories as useFirestoreCategories } from "@/hooks/firestore";
 
 export const useCategories = () => {
   const dispatch = useAppDispatch();
-  const { categories, currentCategory, isLoading, error } = useAppSelector(
+  
+  // Get realtime data from Firestore
+  const { data: categories, loading: isLoading, error: firestoreError } = useFirestoreCategories();
+  
+  // Keep currentCategory from Redux for backward compatibility
+  const { currentCategory } = useAppSelector(
     (state) => state.categories
   );
 
-  const fetchCategoriesCallback = useCallback(() => dispatch(fetchCategories()), [dispatch]);
-  const fetchCategoriesIfNeededCallback = useCallback(() => dispatch(fetchCategoriesIfNeeded()), [dispatch]);
-  const fetchCategoryByIdCallback = useCallback((id: string) => dispatch(fetchCategoryById(id)), [dispatch]);
+  // Fetch functions are now no-ops since Firestore provides realtime data
+  const fetchCategoriesCallback = useCallback(() => Promise.resolve(), []);
+  const fetchCategoriesIfNeededCallback = useCallback(() => Promise.resolve(), []);
+  const fetchCategoryByIdCallback = useCallback((_id: string) => dispatch(fetchCategoryById(_id)), [dispatch]);
+  
+  // Write operations still go through Redux/API for validation
   const createCategoryCallback = useCallback((data: Partial<Category>) => dispatch(createCategory(data)), [dispatch]);
   const updateCategoryCallback = useCallback((id: string, data: Partial<Category>) =>
       dispatch(updateCategory({ id, data })), [dispatch]);
   const deleteCategoryCallback = useCallback((id: string) => dispatch(deleteCategory(id)), [dispatch]);
   const setCurrentCategoryCallback = useCallback((category: Category | null) =>
       dispatch(setCurrentCategory(category)), [dispatch]);
-  const invalidateCacheCallback = useCallback(() => dispatch(invalidateCategoriesCache()), [dispatch]);
+  
+  // Cache invalidation is automatic with Firestore realtime
+  const invalidateCacheCallback = useCallback(() => Promise.resolve(), []);
 
   return {
-    categories,
+    categories, // Now from Firestore with realtime updates!
     currentCategory,
     isLoading,
-    error,
+    error: firestoreError,
     fetchCategories: fetchCategoriesCallback,
     fetchCategoriesIfNeeded: fetchCategoriesIfNeededCallback,
     fetchCategoryById: fetchCategoryByIdCallback,

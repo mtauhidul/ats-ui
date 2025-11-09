@@ -27,9 +27,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { API_BASE_URL } from "@/config/api";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
-import { API_BASE_URL } from "@/config/api";
 
 export const description = "An interactive area chart for application tracking";
 
@@ -62,7 +62,7 @@ const chartConfig = {
 
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile();
-  const [timeRange, setTimeRange] = React.useState("90d");
+  const [timeRange, setTimeRange] = React.useState("7d");
   const [chartData, setChartData] = React.useState<ChartDataPoint[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
