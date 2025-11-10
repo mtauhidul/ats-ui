@@ -19,8 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAppSelector, useClients, useUI } from "@/store/hooks/index";
-import { selectFilteredClients } from "@/store/selectors";
+import { useClients, useUI, useJobs, useCandidates } from "@/store/hooks/index";
 import type { Client, CreateClientRequest } from "@/types/client";
 import {
   Briefcase,
@@ -30,7 +29,7 @@ import {
   Search,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function ClientsPage() {
@@ -38,20 +37,104 @@ export default function ClientsPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
 
-  // Redux state and actions
-  const { filters, fetchClients, createClient, deleteClient, setFilters } =
+  // Get realtime data from Firestore via Redux hook
+  const { clients, filters, createClient, deleteClient, setFilters } =
     useClients();
-
+  const { jobs } = useJobs();
+  const { candidates } = useCandidates();
   const { modals, openModal, closeModal } = useUI();
 
-  // Use memoized selector for filtered clients
-  const filteredClients = useAppSelector(selectFilteredClients);
+  // Calculate client statistics from jobs and candidates data in real-time
+  const clientsWithStats = useMemo(() => {
+    console.log('📊 Recalculating client stats:', { 
+      clientsCount: clients.length, 
+      jobsCount: jobs.length,
+      candidatesCount: candidates.length 
+    });
+    
+    return clients.map(client => {
+      // Calculate job statistics from real-time jobs data
+      const clientJobs = jobs.filter(job => job.clientId === client.id);
+      const totalJobs = clientJobs.length;
+      const activeJobs = clientJobs.filter(job => job.status === 'open').length;
+      const closedJobs = clientJobs.filter(job => job.status === 'closed').length;
+      const draftJobs = clientJobs.filter(job => job.status === 'draft').length;
+      
+      // Get all job IDs for this client
+      const clientJobIds = clientJobs.map(job => job.id);
+      
+      // Calculate candidate statistics from real-time candidates data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientCandidates = candidates.filter((candidate: any) => {
+        const candidateJobIds = candidate.jobIds || [];
+        return candidateJobIds.some((jobId: string) => clientJobIds.includes(jobId));
+      });
+      
+      const totalCandidates = clientCandidates.length;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const activeCandidates = clientCandidates.filter((c: any) => 
+        c.status === 'active' || c.status === 'interviewing' || c.status === 'offered'
+      ).length;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rejectedCandidates = clientCandidates.filter((c: any) => 
+        c.status === 'rejected'
+      ).length;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const hiredCandidates = clientCandidates.filter((c: any) => 
+        c.status === 'hired'
+      ).length;
+      
+      const successRate = totalCandidates > 0 
+        ? Math.round((hiredCandidates / totalCandidates) * 100) 
+        : 0;
+      
+      console.log(`Client ${client.companyName}:`, {
+        totalJobs,
+        activeJobs,
+        totalCandidates,
+        activeCandidates,
+        hiredCandidates,
+        successRate
+      });
+      
+      return {
+        ...client,
+        statistics: {
+          totalJobs,
+          activeJobs,
+          closedJobs,
+          draftJobs,
+          totalCandidates,
+          activeCandidates,
+          rejectedCandidates,
+          hiredCandidates,
+          successRate,
+        }
+      };
+    });
+  }, [clients, jobs, candidates]);
 
-  // Fetch clients on mount
-  useEffect(() => {
-    fetchClients();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Filter clients locally based on filters state
+  const filteredClients = clientsWithStats.filter((client) => {
+    // Search filter
+    const matchesSearch = filters.search
+      ? client.companyName.toLowerCase().includes(filters.search.toLowerCase()) ||
+        client.email.toLowerCase().includes(filters.search.toLowerCase()) ||
+        client.industry?.toLowerCase().includes(filters.search.toLowerCase())
+      : true;
+
+    // Status filter
+    const matchesStatus =
+      filters.status === "all" || !filters.status ? true : client.status === filters.status;
+
+    // Industry filter
+    const matchesIndustry =
+      filters.industry === "all" || !filters.industry ? true : client.industry === filters.industry;
+
+    return matchesSearch && matchesStatus && matchesIndustry;
+  });
+
+  // No useEffect needed - Firestore provides realtime data automatically via Redux hooks!
 
   const handleAddClient = async (data: CreateClientRequest) => {
     await createClient(data);

@@ -2,23 +2,50 @@ import { useMemo } from 'react';
 import type { Application } from '@/types';
 import {
   useFirestoreCollection,
-  getCompanyCollectionPath,
   where,
-  orderBy,
   type UseFirestoreCollectionResult,
 } from './useFirestore';
 import type { DocumentData } from 'firebase/firestore';
 
 /**
  * Transform Firestore document to Application type
+ * Converts Firestore Timestamps to JavaScript Date objects
  */
 function transformApplicationDocument(doc: DocumentData): Application {
+  // Helper to convert Firestore Timestamp to Date
+  const toDate = (value: unknown): Date | undefined => {
+    if (!value) return undefined;
+    // Firestore Timestamp has toDate() method
+    if (typeof value === 'object' && value !== null && 'toDate' in value && typeof (value as { toDate: unknown }).toDate === 'function') {
+      return ((value as { toDate: () => Date }).toDate());
+    }
+    // Already a Date
+    if (value instanceof Date) {
+      return value;
+    }
+    // Try to parse as date
+    if (typeof value === 'string' || typeof value === 'number') {
+      const parsed = new Date(value);
+      return isNaN(parsed.getTime()) ? undefined : parsed;
+    }
+    return undefined;
+  };
+
   return {
     ...doc,
     id: doc.id,
     // Ensure required fields
     status: doc.status || 'pending',
-    appliedAt: doc.appliedAt || doc.createdAt,
+    // Convert date fields from Firestore Timestamps
+    submittedAt: toDate(doc.submittedAt),
+    appliedAt: toDate(doc.appliedAt),
+    createdAt: toDate(doc.createdAt),
+    updatedAt: toDate(doc.updatedAt),
+    reviewedAt: toDate(doc.reviewedAt),
+    approvedAt: toDate(doc.approvedAt),
+    rejectedAt: toDate(doc.rejectedAt),
+    availableStartDate: toDate(doc.availableStartDate),
+    lastUpdated: toDate(doc.lastUpdated),
     // Ensure arrays
     documents: Array.isArray(doc.documents) ? doc.documents : [],
   } as unknown as Application;
@@ -51,18 +78,32 @@ export function useApplications(options?: {
       constraints.push(where('candidateId', '==', candidateId));
     }
 
-    // Default ordering
-    constraints.push(orderBy('createdAt', 'desc'));
+    // Note: orderBy removed to avoid Firestore index requirement
+    // Applications will be sorted client-side if needed
 
     return constraints;
   }, [status, jobId, candidateId]);
 
-  return useFirestoreCollection<Application>({
-    collectionPath: getCompanyCollectionPath('applications'),
+  const result = useFirestoreCollection<Application>({
+    collectionPath: 'applications', // Root level collection
     queryConstraints,
     enabled,
     transform: transformApplicationDocument,
   });
+
+  // Debug logging for first application
+  if (result.data.length > 0) {
+    const firstApp = result.data[0];
+    console.log('🔥 useApplications - First application dates:', {
+      id: firstApp.id,
+      submittedAt: firstApp.submittedAt,
+      createdAt: firstApp.createdAt,
+      submittedAtType: typeof firstApp.submittedAt,
+      createdAtType: typeof firstApp.createdAt,
+    });
+  }
+
+  return result;
 }
 
 /**

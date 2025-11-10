@@ -220,8 +220,17 @@ function KanbanRoot<T>(props: KanbanRootProps<T>) {
   const lastOverIdRef = React.useRef<UniqueIdentifier | null>(null);
   const hasMovedRef = React.useRef(false);
   const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor),
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 5, // Reduced to 5px for more immediate response
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 100, // Reduced to 100ms for faster response on touch
+        tolerance: 8, // Increased tolerance to 8px for better touch experience
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter,
     }),
@@ -329,50 +338,14 @@ function KanbanRoot<T>(props: KanbanRootProps<T>) {
 
       if (!activeColumn || !overColumn) return;
 
-      if (activeColumn === overColumn) {
-        const items = value[activeColumn];
-        if (!items) return;
-
-        const activeIndex = items.findIndex(
-          (item) => getItemValue(item) === active.id,
-        );
-        const overIndex = items.findIndex(
-          (item) => getItemValue(item) === over.id,
-        );
-
-        if (activeIndex !== overIndex) {
-          const newColumns = { ...value };
-          newColumns[activeColumn] = arrayMove(items, activeIndex, overIndex);
-          onValueChange?.(newColumns);
-        }
-      } else {
-        const activeItems = value[activeColumn];
-        const overItems = value[overColumn];
-
-        if (!activeItems || !overItems) return;
-
-        const activeIndex = activeItems.findIndex(
-          (item) => getItemValue(item) === active.id,
-        );
-
-        if (activeIndex === -1) return;
-
-        const activeItem = activeItems[activeIndex];
-        if (!activeItem) return;
-
-        const updatedItems = {
-          ...value,
-          [activeColumn]: activeItems.filter(
-            (item) => getItemValue(item) !== active.id,
-          ),
-          [overColumn]: [...overItems, activeItem],
-        };
-
-        onValueChange?.(updatedItems);
+      // Just track that we're hovering over a different column
+      // Don't actually move items until drag ends
+      if (activeColumn !== overColumn) {
+        lastOverIdRef.current = over.id;
         hasMovedRef.current = true;
       }
     },
-    [value, getColumn, getItemValue, onValueChange, kanbanProps.onDragOver],
+    [getColumn, kanbanProps.onDragOver],
   );
 
   const onDragEnd = React.useCallback(
@@ -385,6 +358,8 @@ function KanbanRoot<T>(props: KanbanRootProps<T>) {
 
       if (!over) {
         setActiveId(null);
+        lastOverIdRef.current = null;
+        hasMovedRef.current = false;
         return;
       }
 
@@ -416,13 +391,18 @@ function KanbanRoot<T>(props: KanbanRootProps<T>) {
 
         if (!activeColumn || !overColumn) {
           setActiveId(null);
+          lastOverIdRef.current = null;
+          hasMovedRef.current = false;
           return;
         }
 
         if (activeColumn === overColumn) {
+          // Reordering within same column
           const items = value[activeColumn];
           if (!items) {
             setActiveId(null);
+            lastOverIdRef.current = null;
+            hasMovedRef.current = false;
             return;
           }
 
@@ -446,10 +426,53 @@ function KanbanRoot<T>(props: KanbanRootProps<T>) {
               onValueChange?.(newColumns);
             }
           }
+        } else {
+          // Moving between different columns - ONLY call onValueChange on drop
+          const activeItems = value[activeColumn];
+          const overItems = value[overColumn];
+
+          if (!activeItems || !overItems) {
+            setActiveId(null);
+            lastOverIdRef.current = null;
+            hasMovedRef.current = false;
+            return;
+          }
+
+          const activeIndex = activeItems.findIndex(
+            (item) => getItemValue(item) === active.id,
+          );
+
+          if (activeIndex === -1) {
+            setActiveId(null);
+            lastOverIdRef.current = null;
+            hasMovedRef.current = false;
+            return;
+          }
+
+          const activeItem = activeItems[activeIndex];
+          if (!activeItem) {
+            setActiveId(null);
+            lastOverIdRef.current = null;
+            hasMovedRef.current = false;
+            return;
+          }
+
+          // Create the updated state
+          const updatedItems = {
+            ...value,
+            [activeColumn]: activeItems.filter(
+              (item) => getItemValue(item) !== active.id,
+            ),
+            [overColumn]: [...overItems, activeItem],
+          };
+
+          // Only trigger the change on actual drop
+          onValueChange?.(updatedItems);
         }
       }
 
       setActiveId(null);
+      lastOverIdRef.current = null;
       hasMovedRef.current = false;
     },
     [
@@ -937,12 +960,22 @@ function KanbanItem(props: KanbanItemProps) {
   });
 
   const composedStyle = React.useMemo<React.CSSProperties>(() => {
+    // No scale effect during drag for cleaner UX
+    const dragTransform = CSS.Transform.toString(transform);
+    
     return {
-      transform: CSS.Transform.toString(transform),
-      transition,
+      transform: dragTransform,
+      transition: isDragging 
+        ? 'box-shadow 0.2s ease, opacity 0.2s ease' // Only animate shadow and opacity during drag
+        : transition,
       ...style,
+      ...(isDragging && {
+        boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)', // Strong shadow for clear elevation
+        cursor: 'grabbing !important',
+        zIndex: 9999, // Ensure dragged item is always on top
+      }),
     };
-  }, [transform, transition, style]);
+  }, [transform, transition, style, isDragging]);
 
   const itemContext = React.useMemo<KanbanItemContextValue>(
     () => ({
@@ -977,7 +1010,7 @@ function KanbanItem(props: KanbanItemProps) {
             "cursor-default": context.flatCursor,
             "data-dragging:cursor-grabbing": !context.flatCursor,
             "cursor-grab": !isDragging && asHandle && !context.flatCursor,
-            "opacity-50": isDragging,
+            "opacity-40": isDragging, // More transparent to show it's being moved
             "pointer-events-none opacity-50": disabled,
           },
           className,
@@ -1032,10 +1065,12 @@ function KanbanItemHandle(props: KanbanItemHandleProps) {
 const KanbanOverlayContext = React.createContext(false);
 
 const dropAnimation: DropAnimation = {
+  duration: 150, // Fast and snappy
+  easing: 'ease-out', // Simple ease-out for quick response
   sideEffects: defaultDropAnimationSideEffects({
     styles: {
       active: {
-        opacity: "0.4",
+        opacity: "0.7", // Keep visible during drop
       },
     },
   }),

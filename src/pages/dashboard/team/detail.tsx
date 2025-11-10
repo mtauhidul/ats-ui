@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
 import { API_BASE_URL } from "@/config/api";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import { useFirestoreDocument } from "@/hooks/firestore";
 import { useCandidates } from "@/store/hooks/useCandidates";
 import { useJobs } from "@/store/hooks/useJobs";
-import { useTeam } from "@/store/hooks/useTeam";
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
+import type { TeamMember } from "@/types/team";
 import {
   Activity,
   ArrowLeft,
@@ -65,9 +66,22 @@ const formatRoleName = (role: string) => {
 export default function TeamMemberDetailPage() {
   const { memberId } = useParams();
   const navigate = useNavigate();
-  const { currentMember, isLoading, fetchTeamMemberById } = useTeam();
-  const { jobs, fetchJobsIfNeeded } = useJobs(); // Smart fetch
-  const { candidates, fetchCandidatesIfNeeded } = useCandidates(); // Smart fetch
+  
+  // 🔥 REALTIME: Get team member from Firestore with real-time updates
+  const { data: currentMember, loading: isLoading, error: memberError } = useFirestoreDocument<TeamMember>({
+    documentPath: `users/${memberId}`,
+    enabled: !!memberId,
+  });
+  
+  console.log('👤 Team Member Detail - Firestore:', {
+    memberId,
+    member: currentMember,
+    loading: isLoading,
+    error: memberError
+  });
+  
+  const { jobs } = useJobs(); // Realtime data from Firestore
+  const { candidates } = useCandidates(); // Realtime data from Firestore
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoadingActivities, setIsLoadingActivities] = useState(true);
 
@@ -90,11 +104,11 @@ export default function TeamMemberDetailPage() {
 
   useEffect(() => {
     if (memberId) {
-      fetchTeamMemberById(memberId);
+      // No need to fetch team member - Firestore hook handles it automatically!
+      // Only fetch activities from backend (not yet migrated)
       fetchActivities(memberId);
     }
-    fetchJobsIfNeeded(); // Smart fetch - checks cache
-    fetchCandidatesIfNeeded(); // Smart fetch - checks cache
+    // No need to fetch jobs/candidates - Firestore provides realtime data automatically!
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memberId]); // Only memberId in deps - callbacks are stable
 
@@ -103,14 +117,14 @@ export default function TeamMemberDetailPage() {
     console.log("🔔 Team detail page: Received refetchCandidates event!");
     console.log("🔔 Team detail page: memberId:", memberId);
     if (memberId) {
-      console.log("🔔 Team detail page: Fetching team member data...");
-      fetchTeamMemberById(memberId);
+      // No need to fetch team member - Firestore hook updates automatically!
+      // Just refresh activities (not yet on Firestore)
+      console.log("🔔 Team detail page: Refreshing activities...");
       fetchActivities(memberId);
     }
-    console.log("🔔 Team detail page: Fetching all candidates...");
-    fetchCandidatesIfNeeded(); // Smart fetch
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memberId]); // Simplified deps
+    // Firestore will automatically update both team member and candidates in realtime!
+    console.log("🔔 Team detail page: Team member & candidates update automatically via Firestore");
+  }, [memberId, fetchActivities]);
 
   // Listen for refetchCandidates event (triggered when candidate is assigned)
   useEffect(() => {
@@ -177,7 +191,43 @@ export default function TeamMemberDetailPage() {
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div className="flex-1">
-                  <Loader size="md" text="Fetching team member details..." />
+                  <Loader size="md" text="Loading team member from Firestore..." />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if Firestore subscription failed
+  if (memberError) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <div className="@container/main flex flex-1 flex-col gap-2">
+          <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+            <div className="px-4 lg:px-6">
+              <div className="flex items-center gap-4 mb-6">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/dashboard/team")}
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div className="flex-1">
+                  <Card>
+                    <CardContent className="py-8 text-center">
+                      <Users className="h-12 w-12 mx-auto text-red-400 mb-4" />
+                      <h3 className="text-lg font-semibold mb-2 text-red-600">
+                        Error loading team member
+                      </h3>
+                      <p className="text-muted-foreground">
+                        {memberError.message || 'Failed to load team member from Firestore'}
+                      </p>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             </div>

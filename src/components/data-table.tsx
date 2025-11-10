@@ -59,6 +59,7 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 
 import { z } from "zod";
 
@@ -380,6 +381,7 @@ export function DataTable({
     clientId: string | { _id?: string; id?: string; companyName: string };
   }>;
 }) {
+  const navigate = useNavigate();
   const [data, setData] = React.useState(() => initialData);
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -398,6 +400,11 @@ export function DataTable({
   const [currentApprovingId, setCurrentApprovingId] = React.useState<
     number | string | null
   >(null);
+
+  // 🔥 REALTIME: Sync data when Firestore updates come through props
+  React.useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
   const [currentApprovingName, setCurrentApprovingName] =
     React.useState<string>("");
   const [currentJobId, setCurrentJobId] = React.useState<string | undefined>(undefined);
@@ -545,8 +552,14 @@ export function DataTable({
     setCurrentApprovingName(application.header || "this candidate");
     
     // Get the target job ID if application has one
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const targetJobId = (application as any).targetJobId || (application as any).jobId;
     setCurrentJobId(targetJobId);
+
+    // Show immediate feedback to user
+    toast.info("Please select a job to approve this candidate", {
+      description: "Choose the position this candidate will be assigned to",
+    });
 
     setShowJobSelectionModal(true);
   };
@@ -554,7 +567,9 @@ export function DataTable({
   const handleJobConfirmation = async (jobId: string, clientId: string) => {
     if (!currentApprovingId) return;
 
-    const loadingToast = toast.loading("Approving application...");
+    const loadingToast = toast.loading("Processing approval...", {
+      description: "Creating candidate profile and updating application status",
+    });
 
     try {
       const response = await authenticatedFetch(
@@ -574,17 +589,26 @@ export function DataTable({
       await response.json();
 
       toast.dismiss(loadingToast);
-      toast.success("Application approved and candidate created successfully");
+      toast.success("Application approved successfully!", {
+        description: "Redirecting to candidates page...",
+      });
 
-      // Reload the page to fetch updated data
-      window.location.reload();
+      // Close the modal
+      setShowJobSelectionModal(false);
+      
+      // Navigate to candidates page to see the newly approved candidate
+      setTimeout(() => {
+        navigate("/dashboard/candidates");
+      }, 800); // Small delay to let user see the success message
     } catch (error) {
       toast.dismiss(loadingToast);
       const message =
         error instanceof Error
           ? error.message
           : "Failed to approve application";
-      toast.error(message);
+      toast.error(message, {
+        description: "Please try again or contact support if the issue persists",
+      });
     } finally {
       setCurrentApprovingId(null);
       setCurrentApprovingName("");
@@ -592,7 +616,9 @@ export function DataTable({
   };
 
   const handleReject = async (id: number | string) => {
-    const loadingToast = toast.loading("Rejecting application...");
+    const loadingToast = toast.loading("Processing rejection...", {
+      description: "Updating application status",
+    });
 
     try {
       const response = await authenticatedFetch(
@@ -609,20 +635,19 @@ export function DataTable({
         throw new Error(error.message || "Failed to reject application");
       }
 
-      // Update local state
-      setData((prevData) =>
-        prevData.map((item) =>
-          item.id === id ? { ...item, status: "Rejected" } : item
-        )
-      );
-
       toast.dismiss(loadingToast);
-      toast.success("Application rejected successfully");
+      toast.success("Application rejected successfully", {
+        description: "Table will update automatically",
+      });
+      
+      // No need to update local state - Firestore real-time subscription will update the table automatically
     } catch (error) {
       toast.dismiss(loadingToast);
       const message =
         error instanceof Error ? error.message : "Failed to reject application";
-      toast.error(message);
+      toast.error(message, {
+        description: "Please try again or contact support if the issue persists",
+      });
     }
   };
 
@@ -703,13 +728,13 @@ export function DataTable({
     .rows.map((row) => row.original);
   const totalApplications = filteredData.length;
   const approvedCount = filteredData.filter(
-    (item) => item.status === "Approved"
+    (item) => item.status === "approved"
   ).length;
   const rejectedCount = filteredData.filter(
-    (item) => item.status === "Rejected"
+    (item) => item.status === "rejected"
   ).length;
   const inProcessCount = filteredData.filter(
-    (item) => item.status === "In Process"
+    (item) => item.status === "pending" || item.status === "reviewing" || item.status === "shortlisted"
   ).length;
 
   return (

@@ -1,33 +1,23 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import { JobDetails } from "@/components/job-details";
 import type { Candidate } from "@/types/candidate";
 import type { UpdateJobRequest } from "@/types/job";
-import { useJobs, useClients, useCandidates, useAppSelector } from "@/store/hooks/index";
-import { selectJobById, selectClients, selectCandidates } from "@/store/selectors";
+import { useJob } from "@/hooks/firestore";
+import { useJobs, useClients, useCandidates } from "@/store/hooks/index";
 
 export default function JobDetailPage() {
   const { jobId, clientId } = useParams<{ jobId: string; clientId?: string }>();
   const navigate = useNavigate();
   
-  // Redux hooks
-  const { fetchJobs, fetchJobById, updateJob } = useJobs();
-  const { fetchClients } = useClients();
-  const { fetchCandidates } = useCandidates();
+  // Get realtime data from Firestore
+  const { job, loading: jobLoading } = useJob(jobId);
+  const { clients } = useClients();
+  const { candidates } = useCandidates();
   
-  const job = useAppSelector(state => selectJobById(jobId || '')(state));
-  const clients = useAppSelector(selectClients);
-  const candidates = useAppSelector(selectCandidates);
+  // Get write operations from Redux hooks
+  const { updateJob } = useJobs();
 
-  useEffect(() => {
-    if (jobId) {
-      fetchJobById(jobId);
-    }
-    fetchJobs();
-    fetchClients();
-    fetchCandidates();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId]);
+  // No useEffect needed - all data comes from Firestore realtime subscriptions!
 
   const handleBack = () => {
     if (clientId) {
@@ -52,8 +42,7 @@ export default function JobDetailPage() {
   const handleEditJob = async (jobIdParam: string, data: UpdateJobRequest) => {
     try {
       await updateJob(jobIdParam, data);
-      // Refresh the job details after update
-      await fetchJobById(jobIdParam);
+      // Firestore will automatically update the job data in realtime
     } catch (error) {
       console.error("Failed to update job:", error);
     }
@@ -75,6 +64,16 @@ export default function JobDetailPage() {
     clientName = job.clientId.companyName;
   }
 
+  // Show loading state while fetching from Firestore
+  if (jobLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Loading job...</p>
+      </div>
+    );
+  }
+
+  // Check if job exists in Firestore
   if (!job) {
     return (
       <div className="flex items-center justify-center h-64">

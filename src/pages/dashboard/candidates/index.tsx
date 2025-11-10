@@ -1,13 +1,11 @@
 import { CandidatesDataTable } from "@/components/candidates-data-table";
 import { Loader } from "@/components/ui/loader";
 import {
-  useAppSelector,
   useCandidates,
   useClients,
   useJobs,
+  usePipelines,
 } from "@/store/hooks/index";
-import { selectCandidates, selectClients, selectJobs } from "@/store/selectors";
-import { useEffect } from "react";
 
 // Mock team members pool
 const teamMembersPool = [
@@ -21,36 +19,20 @@ const teamMembersPool = [
 ];
 
 export default function CandidatesPage() {
+  // 🔥 REALTIME: Get data directly from Firestore hooks - auto-updates in realtime!
   const {
-    fetchCandidatesIfNeeded, // Use smart fetch instead of always fetching
+    candidates,
     deleteCandidate,
-    invalidateCache, // Add cache invalidation
+    invalidateCache,
     isLoading: candidatesLoading,
   } = useCandidates();
-  const { fetchJobsIfNeeded, isLoading: jobsLoading } = useJobs(); // Smart fetch
-  const { fetchClientsIfNeeded, isLoading: clientsLoading } = useClients(); // Smart fetch
+  const { jobs, isLoading: jobsLoading } = useJobs();
+  const { clients, isLoading: clientsLoading } = useClients();
+  const { pipelines, isLoading: pipelinesLoading } = usePipelines();
 
-  const candidates = useAppSelector(selectCandidates);
-  const jobs = useAppSelector(selectJobs);
-  const clients = useAppSelector(selectClients);
-
-  useEffect(() => {
-    fetchCandidatesIfNeeded(); // Smart fetch - only if cache is stale
-    fetchJobsIfNeeded(); // Smart fetch - only if cache is stale
-    fetchClientsIfNeeded(); // Smart fetch - only if cache is stale
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty deps - only fetch on mount, cache handles the rest
-
-  // Listen for refetch events from AssignedSelector
-  useEffect(() => {
-    const handleRefetch = () => {
-      fetchCandidatesIfNeeded(); // Smart fetch on event
-    };
-
-    window.addEventListener("refetchCandidates", handleRefetch);
-    return () => window.removeEventListener("refetchCandidates", handleRefetch);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // fetchCandidatesIfNeeded is stable, no need in deps
+  // No useEffect needed - Firestore provides realtime data automatically via Redux hooks!
+  // Removed: fetchCandidatesIfNeeded, fetchJobsIfNeeded, fetchClientsIfNeeded calls
+  // Removed: refetchCandidates event listener (data updates automatically)
 
   // DISABLED: Excessive refetching causes performance issues and API spam
   // Only refetch on user action (delete, update) or manual page refresh
@@ -81,9 +63,8 @@ export default function CandidatesPage() {
   const handleDeleteCandidate = async (candidateId: string) => {
     try {
       await deleteCandidate(candidateId);
-      // Invalidate cache and refetch after deletion
+      // Firestore will automatically update the list after deletion
       invalidateCache();
-      fetchCandidatesIfNeeded();
     } catch (error) {
       console.error("Failed to delete candidate:", error);
     }
@@ -91,6 +72,16 @@ export default function CandidatesPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const transformedData = candidates.map((candidate: any, index) => {
+    // Debug: Log candidate resume data
+    if (index === 0) {
+      console.log('Candidate resume data:', {
+        resume: candidate.resume,
+        resumeUrl: candidate.resumeUrl,
+        documents: candidate.documents,
+        attachments: candidate.attachments,
+      });
+    }
+
     // Randomly assign 0-3 team members
     const teamMemberCount = Math.floor(Math.random() * 4);
     const shuffled = [...teamMembersPool].sort(() => 0.5 - Math.random());
@@ -159,10 +150,36 @@ export default function CandidatesPage() {
     const candidateId = candidate.id || candidate._id || "";
 
     // Get current stage from backend (can be string or object)
-    const currentStage =
-      typeof candidate.currentStage === "object" && candidate.currentStage?.name
-        ? candidate.currentStage.name
-        : candidate.currentStage || "Not Started";
+    // Check both currentPipelineStageId (new field) and currentStage (legacy field)
+    let currentStage = "Not Started";
+
+    // Get the stage ID from either field
+    const stageId =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (candidate as any).currentPipelineStageId || candidate.currentStage;
+
+    if (typeof stageId === "object" && stageId?.name) {
+      // Already populated with stage object
+      currentStage = stageId.name;
+    } else if (stageId && typeof stageId === "string") {
+      // It's a stage ID, look it up in pipelines
+      // Find the pipeline for this job
+      const jobPipeline = pipelines.find((p) => p.jobId === job?.id);
+
+      if (jobPipeline) {
+        // Find the stage in this pipeline
+        const stage = jobPipeline.stages?.find((s) => s.id === stageId);
+        if (stage) {
+          currentStage = stage.name;
+        } else {
+          // Stage ID not found in pipeline, show the ID
+          currentStage = stageId;
+        }
+      } else {
+        // No pipeline found, show the stage ID
+        currentStage = stageId;
+      }
+    }
 
     return {
       id: candidateId, // Use the normalized candidate ID (string)
@@ -195,10 +212,12 @@ export default function CandidatesPage() {
       yearsOfExperience: candidate.yearsOfExperience,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       skills: candidate.skills?.map((s: any) => s.name) || [],
-      coverLetter: undefined,
+      coverLetter: candidate.coverLetter?.url || undefined,
       resumeText: undefined,
-      resumeFilename: undefined,
-      resumeFileSize: undefined,
+      // Check multiple possible resume field locations (Cloudinary)
+      resumeFilename: candidate.resume?.name || candidate.resume?.originalName || candidate.resumeFileName || undefined,
+      resumeFileSize: candidate.resume?.size || candidate.resumeFileSize || undefined,
+      resumeUrl: candidate.resume?.url || candidate.resumeUrl || candidate.resume?.secure_url || undefined,
       // Personal details
       location: candidate.address
         ? `${candidate.address.city}, ${candidate.address.country}`
@@ -221,7 +240,8 @@ export default function CandidatesPage() {
     };
   });
 
-  const isLoading = candidatesLoading || jobsLoading || clientsLoading;
+  const isLoading =
+    candidatesLoading || jobsLoading || clientsLoading || pipelinesLoading;
 
   if (isLoading)
     return (

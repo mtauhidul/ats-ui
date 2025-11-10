@@ -30,8 +30,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { registerUser } from "@/services/auth.service";
-import { useAppDispatch, useAppSelector, useTeam } from "@/store/hooks/index";
-import { deleteUser, fetchUsers, fetchUsersIfNeeded, updateUser } from "@/store/slices/usersSlice";
+import { useTeamMembers } from "@/hooks/firestore";
+import { useAppDispatch, useTeam } from "@/store/hooks/index";
+import { deleteUser, updateUser } from "@/store/slices/usersSlice";
 import type { TeamMember, TeamRole, User } from "@/types";
 import {
   Briefcase,
@@ -99,52 +100,52 @@ export default function TeamPage() {
   const { user: currentUser, accessToken } = useAuth();
 
   const { updateTeamMember } = useTeam();
-  // Fetch all users instead of just team members to show admins too
-  const users = useAppSelector(
-    (state: { users: { users: BackendUser[] } }) => state.users.users || []
-  );
+  
+  // 🔥 REALTIME: Get all team members from Firestore with real-time updates
+  const { data: firestoreMembers, loading: isLoadingMembers, error: membersError } = useTeamMembers();
+  
+  console.log('👥 Team Page - Firestore Members:', {
+    members: firestoreMembers,
+    count: firestoreMembers?.length,
+    loading: isLoadingMembers,
+    error: membersError
+  });
 
-  // Convert users to display format (like team members but with all users including admins)
-  const members = users.map(
-    (user: BackendUser) =>
+  // Convert Firestore members to display format
+  const members: TeamMember[] = (firestoreMembers || []).map(
+    (member) =>
       ({
-        id: user._id || user.id, // Backend uses _id, frontend expects id
-        userId: user._id || user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        status: user.isActive ? "active" : "inactive", // Backend uses isActive boolean
-        avatar: user.avatar,
-        department: user.department,
-        title: user.title, // Backend User model uses 'title', not 'position'
-        permissions: user.permissions || {
+        id: member.id,
+        userId: member.userId || member.id,
+        firstName: member.firstName,
+        lastName: member.lastName,
+        email: member.email,
+        phone: member.phone,
+        role: member.role,
+        status: member.status || 'active',
+        avatar: member.avatar,
+        department: member.department,
+        title: member.title,
+        permissions: member.permissions || {
           // Fallback to role-based permissions if not set
-          canManageClients: user.role === "admin",
-          canManageJobs: user.role === "admin",
+          canManageClients: member.role === "admin",
+          canManageJobs: member.role === "admin",
           canReviewApplications: true,
           canManageCandidates:
-            user.role === "admin" || user.role === "recruiter",
+            member.role === "admin" || member.role === "recruiter",
           canSendEmails: true,
-          canManageTeam: user.role === "admin",
-          canAccessAnalytics: user.role === "admin",
+          canManageTeam: member.role === "admin",
+          canAccessAnalytics: member.role === "admin",
         },
-        statistics: {
+        statistics: member.statistics || {
           activeJobs: 0,
           placedCandidates: 0,
           pendingReviews: 0,
           emailsSent: 0,
         },
-        lastLoginAt: user.lastLoginAt,
+        lastLoginAt: member.lastLoginAt,
       } as TeamMember)
   );
-
-  useEffect(() => {
-    // Use smart fetch - only fetches if cache is stale
-    dispatch(fetchUsersIfNeeded());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty deps - only on mount
 
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -218,9 +219,8 @@ export default function TeamPage() {
 
       toast.success(`Invitation email sent to ${formData.email}`);
 
-      // Refresh the users list
-      dispatch(fetchUsers());
-
+      // No need to refresh - Firestore will update automatically in real-time
+      
       setIsAddDialogOpen(false);
       resetForm();
     } catch (error) {
@@ -543,6 +543,30 @@ export default function TeamPage() {
               </div>
             </div>
 
+            {/* Loading State */}
+            {isLoadingMembers ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="text-muted-foreground">Loading team members...</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : membersError ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Users className="h-12 w-12 mx-auto text-red-400 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2 text-red-600">
+                    Error loading team members
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    {membersError.message || 'Failed to load team members from Firestore'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
             {/* Team Members Grid */}
             <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {filteredMembers.map((member) => (
@@ -737,6 +761,8 @@ export default function TeamPage() {
                   </Button>
                 </CardContent>
               </Card>
+            )}
+            </>
             )}
 
             {/* Add Member Dialog */}

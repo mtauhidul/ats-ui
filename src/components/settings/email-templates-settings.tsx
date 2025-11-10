@@ -37,16 +37,15 @@ import {
 import {
   createEmailTemplate,
   deleteEmailTemplate as deleteEmailTemplateAPI,
-  getEmailTemplates,
   updateEmailTemplate,
 } from "@/services/emailTemplate.service";
+import { useEmailTemplates } from "@/store/hooks/index";
 import { Copy, Edit, Info, Mail, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 interface EmailTemplate {
-  id?: string;
-  _id?: string;
+  id: string;
   name: string;
   subject: string;
   body: string;
@@ -60,17 +59,14 @@ interface EmailTemplate {
   variables: string[];
   isDefault?: boolean;
   isActive?: boolean;
-  createdBy?: {
-    _id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
+  createdBy?: string;
+  createdByName?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }
 
 const availableVariables = [
+  "candidateName",
   "firstName",
   "lastName",
   "email",
@@ -81,9 +77,11 @@ const availableVariables = [
   "interviewDate",
   "interviewTime",
   "interviewLocation",
+  "interviewDuration",
   "startDate",
   "salary",
   "benefits",
+  "responseDeadline",
   "reviewDays",
   "retentionPeriod",
   "recruiterName",
@@ -100,8 +98,9 @@ const templateTypes = [
 ];
 
 export function EmailTemplatesSettings() {
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // 🔥 REALTIME: Get email templates from Firestore
+  const { templates, isLoading } = useEmailTemplates();
+  
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(
     null
@@ -120,24 +119,22 @@ export function EmailTemplatesSettings() {
   const [customVariable, setCustomVariable] = useState("");
   const [showAddVariable, setShowAddVariable] = useState(false);
 
-  // Fetch templates on mount
-  useEffect(() => {
-    loadTemplates();
-  }, []);
+  // Helper to convert Firestore Timestamp or any date value to Date object
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const toDateObject = (dateValue: any): Date => {
+    if (!dateValue) return new Date();
 
-  const loadTemplates = async () => {
-    try {
-      setIsLoading(true);
-      // Fetch all templates (both active and inactive)
-      const data = await getEmailTemplates({ isActive: undefined });
-      setTemplates(data);
-    } catch (error) {
-      console.error("Failed to load email templates:", error);
-      toast.error("Failed to load email templates");
-    } finally {
-      setIsLoading(false);
+    // Handle Firestore Timestamp
+    if (dateValue && typeof dateValue === "object" && "seconds" in dateValue) {
+      return new Date(dateValue.seconds * 1000);
     }
+
+    // Handle string or Date
+    const date = new Date(dateValue);
+    return isNaN(date.getTime()) ? new Date() : date;
   };
+
+  // No need to fetch templates - useEmailTemplates hook handles Firestore real-time subscription!
 
   const handleAdd = () => {
     setFormData({ name: "", subject: "", body: "", type: "general" });
@@ -163,7 +160,7 @@ export function EmailTemplatesSettings() {
         type: template.type,
       });
       toast.success("Template duplicated successfully");
-      await loadTemplates();
+      // No need to reload - Firestore real-time will update automatically!
     } catch (error) {
       console.error("Failed to duplicate template:", error);
       toast.error("Failed to duplicate template");
@@ -173,7 +170,7 @@ export function EmailTemplatesSettings() {
   const handleDelete = async () => {
     if (deleteTemplate) {
       try {
-        const templateId = deleteTemplate._id || deleteTemplate.id;
+        const templateId = deleteTemplate.id;
         if (!templateId) {
           toast.error("Invalid template ID");
           return;
@@ -181,7 +178,7 @@ export function EmailTemplatesSettings() {
 
         await deleteEmailTemplateAPI(templateId);
         toast.success("Template deleted successfully");
-        await loadTemplates();
+        // No need to reload - Firestore real-time will update automatically!
       } catch (error) {
         console.error("Failed to delete template:", error);
         toast.error("Failed to delete template");
@@ -200,7 +197,7 @@ export function EmailTemplatesSettings() {
     try {
       if (editingTemplate) {
         // Update existing template
-        const templateId = editingTemplate._id || editingTemplate.id;
+        const templateId = editingTemplate.id;
         if (!templateId) {
           toast.error("Invalid template ID");
           return;
@@ -214,8 +211,7 @@ export function EmailTemplatesSettings() {
         toast.success("Template created successfully");
       }
 
-      // Reload templates from server
-      await loadTemplates();
+      // No need to reload - Firestore real-time will update automatically!
 
       setIsAddOpen(false);
       setEditingTemplate(null);
@@ -331,7 +327,7 @@ export function EmailTemplatesSettings() {
         ) : (
           templates.map((template) => (
             <Card
-              key={template._id || template.id}
+              key={template.id}
               className="hover:shadow-md transition-shadow overflow-hidden"
             >
               <CardHeader className="p-3 md:p-6">
@@ -406,7 +402,7 @@ export function EmailTemplatesSettings() {
                     {template.createdAt && (
                       <span className="shrink-0">
                         Created:{" "}
-                        {new Date(template.createdAt).toLocaleDateString()}
+                        {toDateObject(template.createdAt).toLocaleDateString()}
                       </span>
                     )}
                     {template.createdAt && template.updatedAt && (
@@ -415,7 +411,7 @@ export function EmailTemplatesSettings() {
                     {template.updatedAt && (
                       <span className="shrink-0">
                         Updated:{" "}
-                        {new Date(template.updatedAt).toLocaleDateString()}
+                        {toDateObject(template.updatedAt).toLocaleDateString()}
                       </span>
                     )}
                   </div>

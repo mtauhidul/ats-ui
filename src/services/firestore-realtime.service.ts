@@ -3,11 +3,9 @@ import {
   collection, 
   onSnapshot, 
   query, 
-  where, 
   orderBy,
-  Unsubscribe,
-  DocumentData,
-  QueryConstraint
+  type Unsubscribe,
+  type QueryConstraint
 } from 'firebase/firestore';
 
 /**
@@ -60,6 +58,7 @@ export class FirestoreRealtimeService {
   /**
    * Subscribe to candidates
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   subscribeToCandidates(callback: (candidates: any[]) => void): () => void {
     return this.subscribeToCollection('candidates', callback, [
       orderBy('createdAt', 'desc')
@@ -69,6 +68,7 @@ export class FirestoreRealtimeService {
   /**
    * Subscribe to jobs
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   subscribeToJobs(callback: (jobs: any[]) => void): () => void {
     return this.subscribeToCollection('jobs', callback, [
       orderBy('createdAt', 'desc')
@@ -78,6 +78,7 @@ export class FirestoreRealtimeService {
   /**
    * Subscribe to applications
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   subscribeToApplications(callback: (applications: any[]) => void): () => void {
     return this.subscribeToCollection('applications', callback, [
       orderBy('createdAt', 'desc')
@@ -87,6 +88,7 @@ export class FirestoreRealtimeService {
   /**
    * Subscribe to clients
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   subscribeToClients(callback: (clients: any[]) => void): () => void {
     return this.subscribeToCollection('clients', callback, [
       orderBy('createdAt', 'desc')
@@ -96,6 +98,7 @@ export class FirestoreRealtimeService {
   /**
    * Subscribe to users/team members
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   subscribeToUsers(callback: (users: any[]) => void): () => void {
     return this.subscribeToCollection('users', callback, [
       orderBy('createdAt', 'desc')
@@ -105,6 +108,7 @@ export class FirestoreRealtimeService {
   /**
    * Subscribe to categories
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   subscribeToCategories(callback: (categories: any[]) => void): () => void {
     return this.subscribeToCollection('categories', callback);
   }
@@ -112,6 +116,7 @@ export class FirestoreRealtimeService {
   /**
    * Subscribe to tags
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   subscribeToTags(callback: (tags: any[]) => void): () => void {
     return this.subscribeToCollection('tags', callback);
   }
@@ -119,8 +124,39 @@ export class FirestoreRealtimeService {
   /**
    * Subscribe to pipelines
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   subscribeToPipelines(callback: (pipelines: any[]) => void): () => void {
     return this.subscribeToCollection('pipelines', callback);
+  }
+
+  /**
+   * Subscribe to messages
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  subscribeToMessages(callback: (messages: any[]) => void): () => void {
+    return this.subscribeToCollection('messages', callback, [
+      orderBy('sentAt', 'desc')
+    ]);
+  }
+
+  /**
+   * Subscribe to email templates
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  subscribeToEmailTemplates(callback: (templates: any[]) => void): () => void {
+    return this.subscribeToCollection('emailTemplates', callback, [
+      orderBy('createdAt', 'desc')
+    ]);
+  }
+
+  /**
+   * Subscribe to notifications for current user
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  subscribeToNotifications(callback: (notifications: any[]) => void): () => void {
+    return this.subscribeToCollection('notifications', callback, [
+      orderBy('createdAt', 'desc')
+    ]);
   }
 
   /**

@@ -27,9 +27,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { API_BASE_URL } from "@/config/api";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import { useApplications } from "@/hooks/firestore";
 
 export const description = "An interactive area chart for application tracking";
 
@@ -72,49 +71,49 @@ export function ChartAreaInteractive() {
     }
   }, [isMobile]);
 
+  const { data: applications = [] } = useApplications();
+
   React.useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        setIsLoading(true);
-        const days = timeRange === "90d" ? 90 : timeRange === "30d" ? 30 : 7;
-        const response = await authenticatedFetch(
-          `${API_BASE_URL}/applications/analytics/dashboard?days=${days}`
-        );
+    setIsLoading(true);
+    
+    const days = timeRange === "90d" ? 90 : timeRange === "30d" ? 30 : 7;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
 
-        if (response.ok) {
-          const result = await response.json();
-          console.log("[Dashboard Analytics] Raw data:", result.data);
-          // Ensure all fields have default values of 0
-          const normalizedData = (result.data || []).map(
-            (item: ChartDataPoint) => ({
-              ...item,
-              directSubmissions: item.directSubmissions || 0,
-              manualImports: item.manualImports || 0,
-              emailApplications: item.emailApplications || 0,
-              applications: item.applications || 0,
-            })
-          );
-          console.log("[Dashboard Analytics] Normalized data:", normalizedData);
-          setChartData(normalizedData);
-        } else {
-          console.error(
-            "[Dashboard Analytics] API error:",
-            response.status,
-            response.statusText
-          );
+    // Group applications by date and source
+    const dataByDate: Record<string, ChartDataPoint> = {};
+    
+    applications
+      .filter(app => {
+        const appDate = app.createdAt instanceof Date ? app.createdAt : new Date(app.createdAt);
+        return appDate >= cutoffDate;
+      })
+      .forEach(app => {
+        const appDate = app.createdAt instanceof Date ? app.createdAt : new Date(app.createdAt);
+        const date = appDate.toISOString().split('T')[0];
+        
+        if (!dataByDate[date]) {
+          dataByDate[date] = {
+            date,
+            directSubmissions: 0,
+            manualImports: 0,
+            emailApplications: 0,
+            applications: 0,
+          };
         }
-      } catch (error) {
-        console.error(
-          "[Dashboard Analytics] Failed to fetch analytics:",
-          error
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
+        
+        dataByDate[date].applications++;
+        
+        const source = app.source?.toLowerCase();
+        if (source?.includes('direct')) dataByDate[date].directSubmissions++;
+        else if (source?.includes('manual') || source?.includes('import')) dataByDate[date].manualImports++;
+        else if (source?.includes('email')) dataByDate[date].emailApplications++;
+      });
 
-    fetchAnalytics();
-  }, [timeRange]);
+    const sortedData = Object.values(dataByDate).sort((a, b) => a.date.localeCompare(b.date));
+    setChartData(sortedData);
+    setIsLoading(false);
+  }, [applications, timeRange]);
 
   // Calculate summary statistics
   const totalApplications = chartData.reduce(

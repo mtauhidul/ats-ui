@@ -16,22 +16,25 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { API_BASE_URL } from "@/config/api";
+import { useCandidate, useEmailsByCandidate, useTags } from "@/hooks/firestore";
+import { useInterviewsByCandidate } from "@/hooks/useInterviews";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import {
-  useAppDispatch,
-  useAppSelector,
-  useCandidates,
   useClients,
   useJobs,
+  usePipelines,
+  useTeam,
 } from "@/store/hooks/index";
-import {
-  selectCandidateById,
-  selectClients,
-  selectJobs,
-} from "@/store/selectors";
-import { fetchCandidateEmails } from "@/store/slices/emailsSlice";
-import type { Email } from "@/types/email";
+import { useCandidates } from "@/store/hooks/index";
 import {
   IconArrowDown,
   IconArrowLeft,
@@ -55,18 +58,7 @@ import {
 } from "@tabler/icons-react";
 import * as React from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { API_BASE_URL } from "@/config/api";
-
-// Tag interface
-interface Tag {
-  _id: string;
-  id?: string;
-  name: string;
-  description?: string;
-  color?: string;
-  type: "job" | "candidate" | "skill" | "general";
-  isActive: boolean;
-}
+import { toast } from "sonner";
 
 export default function CandidateDetailsPage() {
   const { candidateId } = useParams<{ candidateId: string }>();
@@ -74,11 +66,9 @@ export default function CandidateDetailsPage() {
   const [showResumePreview, setShowResumePreview] = React.useState(false);
   const [showVideoPreview, setShowVideoPreview] = React.useState(false);
   const [openTagPopover, setOpenTagPopover] = React.useState(false);
-  const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
-  const [allTags, setAllTags] = React.useState<Tag[]>([]);
-  const [isLoadingTags, setIsLoadingTags] = React.useState(false);
-  const [interviews, setInterviews] = React.useState<Interview[]>([]);
-  const [isLoadingInterviews, setIsLoadingInterviews] = React.useState(false);
+
+  // 🔥 REALTIME: Get ALL tags from Firestore (including inactive ones for display)
+  const { data: allTags, loading: isLoadingTags } = useTags();
 
   // Interview interface for history
   interface Interview {
@@ -112,28 +102,210 @@ export default function CandidateDetailsPage() {
     }>;
   }
 
-  // Fetch data from Redux store
-  const dispatch = useAppDispatch();
-  const { fetchCandidateById, isLoading: candidatesLoading } = useCandidates();
-  const { fetchJobs, isLoading: jobsLoading } = useJobs();
-  const { fetchClients, isLoading: clientsLoading } = useClients();
+  // Get realtime data from Firestore
+  const { candidate: candidateData, loading: candidatesLoading } =
+    useCandidate(candidateId);
+  const { jobs, isLoading: jobsLoading } = useJobs();
+  const { clients, isLoading: clientsLoading } = useClients();
+  const { pipelines, isLoading: pipelinesLoading } = usePipelines();
+  const { updateCandidate, candidates } = useCandidates();
+  
+  // Reassignment dialog state
+  const [reassignJobDialogOpen, setReassignJobDialogOpen] = React.useState(false);
+  const [selectedJobForReassign, setSelectedJobForReassign] = React.useState<string>("");
 
-  const candidateData = useAppSelector(selectCandidateById(candidateId || ""));
-  const jobs = useAppSelector(selectJobs);
-  const clients = useAppSelector(selectClients);
-  const emails = useAppSelector(
-    (state: { emails: { emails: Email[] } }) => state.emails.emails || []
-  );
+  // 🔥 REALTIME: Get interviews from Firestore for this candidate across all jobs
+  // Use candidateData.id if available, otherwise use candidateId from URL
+  const actualCandidateId = candidateData?.id || candidateId;
 
-  React.useEffect(() => {
-    if (candidateId) {
-      fetchCandidateById(candidateId);
-      // Fetch candidate emails
-      dispatch(fetchCandidateEmails(candidateId));
+  const {
+    data: firestoreInterviews,
+    loading: isLoadingInterviews,
+    error: interviewsError,
+  } = useInterviewsByCandidate(actualCandidateId);
+
+  console.log("🔍 Candidate ID Debug:", {
+    urlParam: candidateId,
+    candidateDataId: candidateData?.id,
+    actualId: actualCandidateId,
+    firestoreInterviews: firestoreInterviews,
+    firestoreInterviewsLength: firestoreInterviews?.length,
+    loading: isLoadingInterviews,
+    error: interviewsError,
+  });
+
+  if (interviewsError) {
+    console.error("❌ Error fetching interviews:", interviewsError);
+  }
+
+  // Transform Firestore interviews to match the interface
+  const interviews: Interview[] = React.useMemo(() => {
+    console.log("🔄 Transforming interviews:", {
+      firestoreInterviews,
+      firestoreCount: firestoreInterviews?.length,
+      jobsCount: jobs.length,
+      clientsCount: clients.length,
+    });
+
+    if (!firestoreInterviews || firestoreInterviews.length === 0) return [];
+
+    return firestoreInterviews.map((interview) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const interviewData = interview as any;
+
+      console.log("📝 Processing interview:", {
+        id: interview.id,
+        jobId: interview.jobId,
+        clientId: interview.clientId,
+        jobTitle: interview.jobTitle,
+        clientName: interview.clientName,
+      });
+
+      // Look up job and client from store if jobTitle/clientName not available
+      const job = jobs.find(
+        (j) => j.id === interview.jobId || j.id === interviewData.jobId
+      );
+      const client = clients.find(
+        (c) => c.id === interview.clientId || c.id === interviewData.clientId
+      );
+
+      console.log("🔎 Lookup results:", {
+        foundJob: job?.title,
+        foundClient: client?.companyName,
+      });
+
+      const jobTitle = interview.jobTitle || job?.title || "Unknown Position";
+      const clientName =
+        interview.clientName || client?.companyName || "Unknown Client";
+
+      return {
+        id: interview.id,
+        _id: interview.id,
+        scheduledAt:
+          interview.interviewDate instanceof Date
+            ? interview.interviewDate.toISOString()
+            : (interview.interviewDate as unknown as string) || "",
+        type: interview.interviewType || "video",
+        status: interview.status,
+        title: interviewData.title || `${interview.interviewType} Interview`,
+        duration: interview.duration || 60,
+        notes: interviewData.notes,
+        description: interviewData.description,
+        feedback: interviewData.feedback,
+        jobId: {
+          title: jobTitle,
+        },
+        clientId: {
+          companyName: clientName,
+        },
+        interviewerIds: interviewData.interviewerIds,
+      };
+    });
+  }, [firestoreInterviews, jobs, clients]);
+
+  console.log("📋 Candidate Details - Interviews:", {
+    candidateId,
+    count: interviews.length,
+    interviews,
+    loading: isLoadingInterviews,
+  });
+
+  // 🔥 REALTIME: Get team members for assignee name lookup
+  const { teamMembers } = useTeam();
+
+  // Handler for reassigning candidate to another job
+  const handleReassignJob = () => {
+    setSelectedJobForReassign("");
+    setReassignJobDialogOpen(true);
+  };
+
+  const handleReassignJobConfirm = async () => {
+    if (!candidateData?.id || !selectedJobForReassign) return;
+
+    try {
+      // Find the full candidate and job
+      const candidate = candidates.find((c) => c.id === candidateData.id);
+      const job = jobs.find((j) => j.id === selectedJobForReassign);
+      
+      if (!candidate || !job) {
+        toast.error("Candidate or job not found");
+        return;
+      }
+
+      // Check if candidate is already ACTIVELY assigned to this job
+      const existingJobApp = candidate.jobApplications?.find(app => app.jobId === selectedJobForReassign);
+      if (existingJobApp && existingJobApp.status === 'active') {
+        toast.error("Candidate is already actively assigned to this job");
+        return;
+      }
+
+      let updatedJobIds = candidate.jobIds || [];
+      let updatedJobApplications = candidate.jobApplications || [];
+
+      if (existingJobApp) {
+        // Candidate was previously assigned to this job (rejected/hired) - reactivate
+        updatedJobApplications = updatedJobApplications.map(app => 
+          app.jobId === selectedJobForReassign
+            ? {
+                ...app,
+                status: 'active' as const,
+                currentStage: 'new', // Reset to first stage
+                lastStatusChange: new Date(),
+              }
+            : app
+        );
+      } else {
+        // New assignment - add to arrays
+        const newJobApplication = {
+          jobId: selectedJobForReassign,
+          status: 'active' as const,
+          appliedAt: new Date(),
+          currentStage: 'new', // Default stage - backend will update to actual first stage
+          lastStatusChange: new Date(),
+          // Email tracking fields (required by CandidatePipeline interface)
+          emailIds: [],
+          emailsSent: 0,
+          emailsReceived: 0,
+        };
+        
+        updatedJobIds = [...updatedJobIds, selectedJobForReassign];
+        updatedJobApplications = [...updatedJobApplications, newJobApplication];
+      }
+
+      // Update candidate
+      await updateCandidate(candidateData.id, {
+        jobIds: updatedJobIds,
+        jobApplications: updatedJobApplications,
+        clientIds: [...new Set([...(candidate.clientIds || []), job.clientId as string])],
+        status: 'active', // Reactivate candidate if they were globally rejected
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
+
+      toast.success(`Candidate ${existingJobApp ? 'reactivated for' : 'assigned to'} ${job.title}`);
+      setReassignJobDialogOpen(false);
+      setSelectedJobForReassign("");
+    } catch (error) {
+      console.error("Error reassigning candidate:", error);
+      toast.error("Failed to reassign candidate");
     }
-    fetchJobs();
-    fetchClients();
-  }, [candidateId, fetchCandidateById, fetchJobs, fetchClients, dispatch]);
+  };
+
+  // 🔥 REALTIME: Get emails from Firestore for this candidate
+  const {
+    data: emails,
+    loading: isLoadingEmails,
+    error: emailsError,
+  } = useEmailsByCandidate(actualCandidateId);
+
+  console.log("📧 Email Debug:", {
+    candidateId,
+    candidateDataId: candidateData?.id,
+    actualCandidateId,
+    emails,
+    emailsLength: emails?.length,
+    loading: isLoadingEmails,
+    error: emailsError,
+  });
 
   // DISABLED: Excessive refetching causes performance issues and API spam
   // Only refetch on user action or manual page refresh
@@ -191,90 +363,60 @@ export default function CandidateDetailsPage() {
     }
   }, [candidateData]);
 
-  // Fetch interviews for this candidate
-  const fetchInterviews = React.useCallback(async () => {
-    if (!candidateId) return;
+  // DISABLED: Interviews not yet migrated to Firestore - no API call
+  // Interviews will show as empty until data is migrated to Firestore
+  // const fetchInterviews = React.useCallback(async () => {
+  //   if (!candidateId) return;
+  //   try {
+  //     setIsLoadingInterviews(true);
+  //     const response = await authenticatedFetch(
+  //       `${API_BASE_URL}/interviews?candidateId=${candidateId}`
+  //     );
+  //     if (!response.ok) throw new Error("Failed to fetch interviews");
+  //     const result = await response.json();
+  //     setInterviews(result.data?.interviews || []);
+  //   } catch (error) {
+  //     console.error("Failed to fetch interviews:", error);
+  //     setInterviews([]);
+  //   } finally {
+  //     setIsLoadingInterviews(false);
+  //   }
+  // }, [candidateId]);
 
-    try {
-      setIsLoadingInterviews(true);
-      const response = await authenticatedFetch(
-        `${API_BASE_URL}/interviews?candidateId=${candidateId}`
-      );
+  // React.useEffect(() => {
+  //   fetchInterviews();
+  // }, [fetchInterviews]);
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch interviews");
-      }
-
-      const result = await response.json();
-      setInterviews(result.data?.interviews || []);
-    } catch (error) {
-      console.error("Failed to fetch interviews:", error);
-      setInterviews([]);
-    } finally {
-      setIsLoadingInterviews(false);
+  // 🔥 REALTIME: Derive selected tags directly from candidate data (updates automatically with Firestore)
+  const selectedTags = React.useMemo(() => {
+    if (!candidateData) {
+      console.log("🏷️ No candidateData, returning empty tags");
+      return [];
     }
-  }, [candidateId]);
 
-  // Fetch interviews when candidate loads
-  React.useEffect(() => {
-    fetchInterviews();
-  }, [fetchInterviews]);
+    // Access tagIds directly from candidateData
+    const tagIds = candidateData.tagIds;
 
-  // Fetch all available tags
-  const fetchTags = React.useCallback(async () => {
-    try {
-      setIsLoadingTags(true);
-      const response = await authenticatedFetch(`${API_BASE_URL}/tags`);
+    console.log("🏷️ Candidate data:", candidateData);
+    console.log("🏷️ Candidate tagIds from Firestore:", tagIds);
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch tags");
-      }
-
-      const result = await response.json();
-      let tags = result.data || [];
-      
-      // Handle Firestore serialization - convert object to array if needed
-      if (!Array.isArray(tags) && typeof tags === 'object') {
-        tags = Object.values(tags);
-      }
-      
-      console.log('Tags fetched:', tags);
-      
-      // Ensure id field exists for compatibility
-      const tagsWithId = tags.map((tag: Tag) => ({
-        ...tag,
-        id: tag.id || tag._id,
-      }));
-      setAllTags(tagsWithId);
-    } catch (error) {
-      console.error("Failed to fetch tags:", error);
-      setAllTags([]);
-    } finally {
-      setIsLoadingTags(false);
+    if (!tagIds || !Array.isArray(tagIds)) {
+      console.log("🏷️ No tagIds or not an array");
+      return [];
     }
-  }, []);
 
-  // Fetch tags on mount
-  React.useEffect(() => {
-    fetchTags();
-  }, [fetchTags]);
-
-  // Load candidate's tags when candidate data is available
-  React.useEffect(() => {
-    if (
-      candidateData &&
-      (candidateData as unknown as { tagIds?: string[] }).tagIds
-    ) {
-      const tagIds = (
-        candidateData as unknown as {
-          tagIds: Array<string | { _id?: string; id?: string }>;
-        }
-      ).tagIds.map((id: string | { _id?: string; id?: string }) =>
+    // Handle both string IDs and object IDs for backward compatibility
+    const processedTags = tagIds
+      .map((id: string | { _id?: string; id?: string }) =>
         typeof id === "object" ? id._id || id.id || "" : id
-      );
-      setSelectedTags(tagIds);
-    }
-  }, [candidateData]);
+      )
+      .filter(Boolean);
+
+    console.log("🏷️ Processed tag IDs:", processedTags);
+    console.log("🏷️ All available tags count:", allTags.length);
+
+    return processedTags;
+  }, [candidateData, allTags.length]);
 
   // Update candidate tags on the backend
   const updateCandidateTags = React.useCallback(
@@ -297,13 +439,12 @@ export default function CandidateDetailsPage() {
           throw new Error("Failed to update tags");
         }
 
-        // Refetch candidate data to sync
-        fetchCandidateById(candidateId);
+        // Firestore will automatically update candidate data in realtime
       } catch (error) {
         console.error("Failed to update candidate tags:", error);
       }
     },
-    [candidateId, fetchCandidateById]
+    [candidateId]
   );
 
   const toggleTag = (tagId: string) => {
@@ -311,12 +452,13 @@ export default function CandidateDetailsPage() {
       ? selectedTags.filter((id) => id !== tagId)
       : [...selectedTags, tagId];
 
-    setSelectedTags(newTags);
+    // Update backend - Firestore will sync automatically and update selectedTags via candidateData
     updateCandidateTags(newTags);
   };
 
   // Loading state
-  const isLoading = candidatesLoading || jobsLoading || clientsLoading;
+  const isLoading =
+    candidatesLoading || jobsLoading || clientsLoading || pipelinesLoading;
 
   if (isLoading) {
     return (
@@ -405,29 +547,33 @@ export default function CandidateDetailsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const toSafeDate = (dateValue: any): string => {
     if (!dateValue) return "N/A";
-    
+
     try {
       // Handle Firestore Timestamp objects
-      if (dateValue && typeof dateValue === 'object' && 'seconds' in dateValue) {
+      if (
+        dateValue &&
+        typeof dateValue === "object" &&
+        "seconds" in dateValue
+      ) {
         const date = new Date(dateValue.seconds * 1000);
         return date.toLocaleDateString();
       }
-      
+
       // Handle string dates
-      if (typeof dateValue === 'string') {
+      if (typeof dateValue === "string") {
         const date = new Date(dateValue);
         if (!isNaN(date.getTime())) {
           return date.toLocaleDateString();
         }
       }
-      
+
       // Handle Date objects
       if (dateValue instanceof Date) {
         if (!isNaN(dateValue.getTime())) {
           return dateValue.toLocaleDateString();
         }
       }
-      
+
       // If we can't convert it, return N/A
       return "N/A";
     } catch (error) {
@@ -499,9 +645,40 @@ export default function CandidateDetailsPage() {
     })(),
     jobId: job?.id || "N/A",
     jobTitle: job?.title || "N/A",
-    currentStage:
-      (candidateData as { currentStage?: { name: string } }).currentStage
-        ?.name || "Not Assigned",
+    currentStage: (() => {
+      // Check both currentPipelineStageId (new field) and currentStage (legacy field)
+
+      const stageId =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (candidateData as any).currentPipelineStageId ||
+        candidateData.currentStage;
+
+      if (!stageId) return "Not Assigned";
+
+      // If it's already an object with name, return the name
+      if (typeof stageId === "object" && "name" in stageId) return stageId.name;
+
+      // If it's a string, it's a stage ID - look it up
+      if (typeof stageId === "string") {
+        // Find the pipeline for this job
+        const jobPipeline = pipelines.find((p) => p.jobId === job?.id);
+
+        if (jobPipeline) {
+          // Find the stage in this pipeline
+          const pipelineStage = jobPipeline.stages?.find(
+            (s) => s.id === stageId
+          );
+          if (pipelineStage) {
+            return pipelineStage.name;
+          }
+        }
+
+        // If we can't find the stage, return the ID as-is
+        return stageId;
+      }
+
+      return "Not Assigned";
+    })(),
     clientName: client?.companyName || "N/A",
     clientLogo:
       client?.logo ||
@@ -514,15 +691,46 @@ export default function CandidateDetailsPage() {
     reviewedBy: (() => {
       const assignedTo = (
         candidateData as {
-          assignedTo?: { firstName?: string; lastName?: string };
+          assignedTo?:
+            | string
+            | { firstName?: string; lastName?: string; email?: string };
         }
       ).assignedTo;
-      if (assignedTo && typeof assignedTo === "object") {
-        return (
-          `${assignedTo.firstName || ""} ${assignedTo.lastName || ""}`.trim() ||
-          "N/A"
-        );
+
+      console.log("👤 Candidate assignedTo from Firestore:", assignedTo);
+      console.log("👥 Available team members:", teamMembers.length);
+
+      if (!assignedTo) {
+        console.log("❌ No assignedTo - returning N/A");
+        return "N/A";
       }
+
+      if (typeof assignedTo === "object") {
+        // Populated user object from backend
+        const name =
+          `${assignedTo.firstName || ""} ${assignedTo.lastName || ""}`.trim() ||
+          assignedTo.email ||
+          "N/A";
+        console.log("✅ Found assigned user (object):", name);
+        return name;
+      } else if (typeof assignedTo === "string") {
+        // User ID - look up in team members (THIS IS THE ASSIGNED USER, NOT LOGGED-IN USER)
+        console.log("🔍 Looking up user ID:", assignedTo);
+        const member = teamMembers.find(
+          (m) => m.userId === assignedTo || m.id === assignedTo
+        );
+        if (member) {
+          const name =
+            `${member.firstName} ${member.lastName}`.trim() ||
+            member.email ||
+            "N/A";
+          console.log("✅ Found assigned team member:", name);
+          return name;
+        } else {
+          console.log("❌ Team member not found for ID:", assignedTo);
+        }
+      }
+
       return "N/A";
     })(),
     teamMembers: [] as string[],
@@ -613,19 +821,25 @@ export default function CandidateDetailsPage() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const toDateObject = (dateValue: any): Date => {
           if (!dateValue) return new Date();
-          
+
           // Handle Firestore Timestamp
-          if (dateValue && typeof dateValue === 'object' && 'seconds' in dateValue) {
+          if (
+            dateValue &&
+            typeof dateValue === "object" &&
+            "seconds" in dateValue
+          ) {
             return new Date(dateValue.seconds * 1000);
           }
-          
+
           // Handle string or Date
           const date = new Date(dateValue);
           return isNaN(date.getTime()) ? new Date() : date;
         };
 
         const appliedDateObj = toDateObject(jobApp.appliedAt);
-        const lastUpdatedObj = toDateObject(jobApp.lastStatusChange || jobApp.appliedAt);
+        const lastUpdatedObj = toDateObject(
+          jobApp.lastStatusChange || jobApp.appliedAt
+        );
 
         return {
           id:
@@ -691,6 +905,14 @@ export default function CandidateDetailsPage() {
                           <h1 className="text-xl md:text-2xl font-bold">
                             {candidate.fullName}
                           </h1>
+                          {candidateData?.status?.toLowerCase() === "rejected" && (
+                            <Badge 
+                              variant="destructive" 
+                              className="text-sm px-3 py-1 animate-pulse"
+                            >
+                              REJECTED
+                            </Badge>
+                          )}
                           {candidate.rating && candidate.rating > 0 && (
                             <div className="flex items-center gap-0.5">
                               {Array.from({ length: 5 }).map((_, i) => (
@@ -759,13 +981,11 @@ export default function CandidateDetailsPage() {
                         </span>
                       ) : (
                         selectedTags.map((tagId) => {
-                          const tag = allTags.find(
-                            (t) => t.id === tagId || t._id === tagId
-                          );
+                          const tag = allTags.find((t) => t.id === tagId);
                           if (!tag) return null;
                           return (
                             <Badge
-                              key={tag._id}
+                              key={tag.id}
                               variant="secondary"
                               style={{
                                 backgroundColor: `${tag.color || "#10B981"}15`,
@@ -776,7 +996,7 @@ export default function CandidateDetailsPage() {
                             >
                               {tag.name}
                               <button
-                                onClick={() => toggleTag(tag.id || tag._id)}
+                                onClick={() => toggleTag(tag.id!)}
                                 className="ml-1.5 hover:opacity-70"
                               >
                                 <IconX className="h-3 w-3" />
@@ -810,33 +1030,28 @@ export default function CandidateDetailsPage() {
                               <CommandEmpty>No tags found.</CommandEmpty>
                             )}
                             <CommandGroup className="max-h-[200px] overflow-auto">
-                              {allTags
-                                .filter((tag) => tag.isActive !== false)
-                                .map((tag) => (
-                                  <CommandItem
-                                    key={tag._id}
-                                    value={tag.name}
-                                    onSelect={() => {
-                                      toggleTag(tag.id || tag._id);
-                                    }}
-                                  >
-                                    <div className="flex items-center gap-2 flex-1">
-                                      <div
-                                        className="h-3 w-3 rounded-full"
-                                        style={{
-                                          backgroundColor:
-                                            tag.color || "#10B981",
-                                        }}
-                                      />
-                                      <span>{tag.name}</span>
-                                    </div>
-                                    {selectedTags.includes(
-                                      tag.id || tag._id
-                                    ) && (
-                                      <IconCircleCheckFilled className="h-4 w-4 text-primary" />
-                                    )}
-                                  </CommandItem>
-                                ))}
+                              {allTags.map((tag) => (
+                                <CommandItem
+                                  key={tag.id}
+                                  value={tag.name}
+                                  onSelect={() => {
+                                    toggleTag(tag.id!);
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2 flex-1">
+                                    <div
+                                      className="h-3 w-3 rounded-full"
+                                      style={{
+                                        backgroundColor: tag.color || "#10B981",
+                                      }}
+                                    />
+                                    <span>{tag.name}</span>
+                                  </div>
+                                  {selectedTags.includes(tag.id!) && (
+                                    <IconCircleCheckFilled className="h-4 w-4 text-primary" />
+                                  )}
+                                </CommandItem>
+                              ))}
                             </CommandGroup>
                           </Command>
                         </PopoverContent>
@@ -902,6 +1117,19 @@ export default function CandidateDetailsPage() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="px-3 md:px-4 lg:px-6 mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReassignJob}
+              className="gap-2"
+            >
+              <IconBriefcase className="h-4 w-4" />
+              Apply to Another Job
+            </Button>
           </div>
 
           {/* Tabs Section */}
@@ -1498,6 +1726,23 @@ export default function CandidateDetailsPage() {
                 value="candidacy"
                 className="mt-4 md:mt-6 space-y-4 md:space-y-6"
               >
+                {/* Rejection Warning Banner */}
+                {candidateData?.status?.toLowerCase() === "rejected" && (
+                  <div className="p-4 bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-800 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <IconX className="h-6 w-6 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-base font-semibold text-red-900 dark:text-red-100 mb-1">
+                          Candidate Rejected
+                        </p>
+                        <p className="text-sm text-red-700 dark:text-red-300">
+                          This candidate has been rejected and is no longer active in the hiring process. Stage changes and interview scheduling are disabled. The candidate remains visible for historical record and future reference.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Current Application Card */}
                 <Card className="border-primary/20">
                   <CardHeader className="p-3 md:p-4 lg:p-6">
@@ -1667,6 +1912,23 @@ export default function CandidateDetailsPage() {
                 value="communications"
                 className="mt-4 md:mt-6 space-y-4 md:space-y-6"
               >
+                {/* Info Notice for Rejected Candidates */}
+                {candidateData?.status?.toLowerCase() === "rejected" && (
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <IconMail className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                          Email Communication Still Available
+                        </p>
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          Although this candidate has been rejected, email communication remains available in case the hiring team reconsiders or needs to reach out for future opportunities.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <Card>
                   <CardHeader className="p-3 md:p-4 lg:p-6">
                     <CardTitle className="text-sm md:text-base">
@@ -1678,236 +1940,264 @@ export default function CandidateDetailsPage() {
                     </p>
                   </CardHeader>
                   <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
-                    {/* Summary Stats */}
-                    <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
-                      <div className="p-2.5 md:p-4 rounded-lg border bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 border-blue-200 dark:border-blue-800">
-                        <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
-                          <IconMail className="h-3 w-3 md:h-4 md:w-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                          <Label className="text-[10px] md:text-xs text-blue-700 dark:text-blue-400">
-                            Total Emails
-                          </Label>
-                        </div>
-                        <p className="text-lg md:text-2xl font-bold text-blue-800 dark:text-blue-300">
-                          {emails?.length || 0}
+                    {/* Loading State */}
+                    {isLoadingEmails ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader className="h-6 w-6" />
+                      </div>
+                    ) : emailsError ? (
+                      <div className="text-center py-8">
+                        <IconMail className="h-12 w-12 mx-auto mb-3 text-red-400" />
+                        <p className="text-sm text-red-600 dark:text-red-400 mb-1">
+                          Error loading emails
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {emailsError.message ||
+                            "Failed to load email communications"}
                         </p>
                       </div>
-                      <div className="p-2.5 md:p-4 rounded-lg border bg-linear-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 border-green-200 dark:border-green-800">
-                        <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
-                          <IconArrowUp className="h-3 w-3 md:h-4 md:w-4 text-green-600 dark:text-green-400 shrink-0" />
-                          <Label className="text-[10px] md:text-xs text-green-700 dark:text-green-400">
-                            Sent
-                          </Label>
-                        </div>
-                        <p className="text-lg md:text-2xl font-bold text-green-800 dark:text-green-300">
-                          {emails?.filter((e) => e.direction === "outbound")
-                            .length || 0}
-                        </p>
-                      </div>
-                      <div className="p-2.5 md:p-4 rounded-lg border bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 border-purple-200 dark:border-purple-800">
-                        <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
-                          <IconArrowDown className="h-3 w-3 md:h-4 md:w-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                          <Label className="text-[10px] md:text-xs text-purple-700 dark:text-purple-400">
-                            Received
-                          </Label>
-                        </div>
-                        <p className="text-lg md:text-2xl font-bold text-purple-800 dark:text-purple-300">
-                          {emails?.filter((e) => e.direction === "inbound")
-                            .length || 0}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Job-wise Communication Summary */}
-                    <div className="space-y-3 md:space-y-4">
-                      {/* Current Job */}
-                      <div className="p-3 md:p-4 rounded-lg border-2 border-primary/30 bg-linear-to-br from-primary/5 to-primary/10">
-                        <div className="flex items-start justify-between gap-3 md:gap-4 mb-3">
-                          <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
-                            <Avatar className="h-8 w-8 md:h-10 md:w-10 rounded-md border-2 border-primary/20 shrink-0">
-                              <AvatarImage src={candidate.clientLogo} />
-                              <AvatarFallback className="rounded-md text-xs">
-                                {candidate.clientName
-                                  .split(" ")
-                                  .map((n: string) => n[0])
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-xs md:text-sm mb-1 truncate">
-                                {candidate.jobTitle}
-                              </h4>
-                              <p className="text-xs md:text-sm text-muted-foreground truncate">
-                                {candidate.clientName}
-                              </p>
+                    ) : (
+                      <>
+                        {/* Summary Stats */}
+                        <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
+                          <div className="p-2.5 md:p-4 rounded-lg border bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 border-blue-200 dark:border-blue-800">
+                            <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
+                              <IconMail className="h-3 w-3 md:h-4 md:w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                              <Label className="text-[10px] md:text-xs text-blue-700 dark:text-blue-400">
+                                Total Emails
+                              </Label>
                             </div>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2 md:gap-3 text-xs">
-                          <div className="p-2 rounded-md bg-background/60 border">
-                            <Label className="text-xs text-muted-foreground">
-                              Job ID
-                            </Label>
-                            <p className="font-mono mt-0.5 truncate text-xs">
-                              {candidate.jobId}
-                            </p>
-                          </div>
-                          <div className="p-2 rounded-md bg-background/60 border">
-                            <Label className="text-xs text-muted-foreground">
-                              Total Emails
-                            </Label>
-                            <p className="font-semibold mt-0.5 text-xs">
+                            <p className="text-lg md:text-2xl font-bold text-blue-800 dark:text-blue-300">
                               {emails?.length || 0}
                             </p>
                           </div>
-                          <div className="p-2 rounded-md bg-background/60 border">
-                            <Label className="text-xs text-muted-foreground">
-                              Last Contact
-                            </Label>
-                            <p className="mt-0.5 truncate text-xs">
-                              {emails && emails.length > 0
-                                ? new Date(
-                                    emails[0].sentAt ||
-                                      emails[0].deliveredAt ||
-                                      emails[0].createdAt
-                                  ).toLocaleDateString()
-                                : "N/A"}
+                          <div className="p-2.5 md:p-4 rounded-lg border bg-linear-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 border-green-200 dark:border-green-800">
+                            <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
+                              <IconArrowUp className="h-3 w-3 md:h-4 md:w-4 text-green-600 dark:text-green-400 shrink-0" />
+                              <Label className="text-[10px] md:text-xs text-green-700 dark:text-green-400">
+                                Sent
+                              </Label>
+                            </div>
+                            <p className="text-lg md:text-2xl font-bold text-green-800 dark:text-green-300">
+                              {emails?.filter((e) => e.direction === "outbound")
+                                .length || 0}
+                            </p>
+                          </div>
+                          <div className="p-2.5 md:p-4 rounded-lg border bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 border-purple-200 dark:border-purple-800">
+                            <div className="flex items-center gap-1.5 md:gap-2 mb-1 md:mb-2">
+                              <IconArrowDown className="h-3 w-3 md:h-4 md:w-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                              <Label className="text-[10px] md:text-xs text-purple-700 dark:text-purple-400">
+                                Received
+                              </Label>
+                            </div>
+                            <p className="text-lg md:text-2xl font-bold text-purple-800 dark:text-purple-300">
+                              {emails?.filter((e) => e.direction === "inbound")
+                                .length || 0}
                             </p>
                           </div>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full mt-3 text-xs md:text-sm"
-                          onClick={() =>
-                            navigate(
-                              `/dashboard/jobs/${candidate.jobId}/candidates/${candidate.id}/communication`
-                            )
-                          }
-                        >
-                          <IconMail className="h-4 w-4 mr-2" />
-                          View Full Communication Details
-                        </Button>
-                      </div>
 
-                      {/* Previous Jobs */}
-                      {historyData
-                        .filter((history) => history.jobId !== candidate.jobId)
-                        .map((history) => {
-                          // Get email data from jobApplications
-                          const jobApp = candidateData.jobApplications?.find(
-                            (app) => {
-                              const appJobId =
-                                typeof app.jobId === "object" &&
-                                app.jobId !== null
-                                  ? (app.jobId as { _id?: string; id?: string })
-                                      ._id ||
-                                    (app.jobId as { _id?: string; id?: string })
-                                      .id
-                                  : app.jobId;
-                              return appJobId === history.jobId;
-                            }
-                          );
-
-                          const emailCount = jobApp
-                            ? (jobApp.emailsSent || 0) +
-                              (jobApp.emailsReceived || 0)
-                            : 0;
-                          const sentCount = jobApp?.emailsSent || 0;
-                          const receivedCount = jobApp?.emailsReceived || 0;
-                          const lastEmailDate = jobApp?.lastEmailDate
-                            ? new Date(
-                                jobApp.lastEmailDate
-                              ).toLocaleDateString()
-                            : "N/A";
-
-                          return (
-                            <div
-                              key={history.id}
-                              className="p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
-                            >
-                              <div className="flex items-start justify-between gap-4 mb-3">
-                                <div className="flex items-start gap-3 flex-1 min-w-0">
-                                  <Avatar className="h-10 w-10 rounded-md border shrink-0">
-                                    <AvatarFallback className="rounded-md text-xs">
-                                      {history.clientName
-                                        .split(" ")
-                                        .map((n: string) => n[0])
-                                        .join("")}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold text-sm mb-1">
-                                      {history.jobTitle}
-                                    </h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      {history.clientName}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-3 gap-3 text-xs">
-                                <div className="p-2 rounded-md bg-background/60 border">
-                                  <Label className="text-xs text-muted-foreground">
-                                    Job ID
-                                  </Label>
-                                  <p className="font-mono mt-0.5 truncate">
-                                    {history.jobId}
-                                  </p>
-                                </div>
-                                <div className="p-2 rounded-md bg-background/60 border">
-                                  <Label className="text-xs text-muted-foreground">
-                                    Total Emails
-                                  </Label>
-                                  <p className="font-semibold mt-0.5">
-                                    {emailCount}
-                                  </p>
-                                  {emailCount > 0 && (
-                                    <p className="text-muted-foreground mt-0.5 text-[10px]">
-                                      {sentCount} sent, {receivedCount} received
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="p-2 rounded-md bg-background/60 border">
-                                  <Label className="text-xs text-muted-foreground">
-                                    Last Contact
-                                  </Label>
-                                  <p className="mt-0.5 truncate">
-                                    {lastEmailDate}
+                        {/* Job-wise Communication Summary */}
+                        <div className="space-y-3 md:space-y-4">
+                          {/* Current Job */}
+                          <div className="p-3 md:p-4 rounded-lg border-2 border-primary/30 bg-linear-to-br from-primary/5 to-primary/10">
+                            <div className="flex items-start justify-between gap-3 md:gap-4 mb-3">
+                              <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
+                                <Avatar className="h-8 w-8 md:h-10 md:w-10 rounded-md border-2 border-primary/20 shrink-0">
+                                  <AvatarImage src={candidate.clientLogo} />
+                                  <AvatarFallback className="rounded-md text-xs">
+                                    {candidate.clientName
+                                      .split(" ")
+                                      .map((n: string) => n[0])
+                                      .join("")}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-xs md:text-sm mb-1 truncate">
+                                    {candidate.jobTitle}
+                                  </h4>
+                                  <p className="text-xs md:text-sm text-muted-foreground truncate">
+                                    {candidate.clientName}
                                   </p>
                                 </div>
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full mt-3"
-                                onClick={() =>
-                                  navigate(
-                                    `/dashboard/jobs/${history.jobId}/candidates/${candidate.id}/communication`
-                                  )
-                                }
-                              >
-                                <IconMail className="h-4 w-4 mr-2" />
-                                View Communication Details
-                              </Button>
                             </div>
-                          );
-                        })}
-                    </div>
+                            <div className="grid grid-cols-3 gap-2 md:gap-3 text-xs">
+                              <div className="p-2 rounded-md bg-background/60 border">
+                                <Label className="text-xs text-muted-foreground">
+                                  Job ID
+                                </Label>
+                                <p className="font-mono mt-0.5 truncate text-xs">
+                                  {candidate.jobId}
+                                </p>
+                              </div>
+                              <div className="p-2 rounded-md bg-background/60 border">
+                                <Label className="text-xs text-muted-foreground">
+                                  Total Emails
+                                </Label>
+                                <p className="font-semibold mt-0.5 text-xs">
+                                  {emails?.length || 0}
+                                </p>
+                              </div>
+                              <div className="p-2 rounded-md bg-background/60 border">
+                                <Label className="text-xs text-muted-foreground">
+                                  Last Contact
+                                </Label>
+                                <p className="mt-0.5 truncate text-xs">
+                                  {emails && emails.length > 0
+                                    ? new Date(
+                                        emails[0].sentAt || emails[0].createdAt
+                                      ).toLocaleDateString()
+                                    : "N/A"}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full mt-3 text-xs md:text-sm"
+                              onClick={() =>
+                                navigate(
+                                  `/dashboard/jobs/${candidate.jobId}/candidates/${candidate.id}/communication`
+                                )
+                              }
+                            >
+                              <IconMail className="h-4 w-4 mr-2" />
+                              View Full Communication Details
+                            </Button>
+                          </div>
 
-                    {/* Empty State */}
-                    {historyData.length === 0 &&
-                      (!emails || emails.length === 0) && (
-                        <div className="text-center py-12">
-                          <IconMail className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
-                          <p className="text-sm text-muted-foreground mb-1">
-                            No email communications yet
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Start communicating with this candidate to see the
-                            history here
-                          </p>
+                          {/* Previous Jobs */}
+                          {historyData
+                            .filter(
+                              (history) => history.jobId !== candidate.jobId
+                            )
+                            .map((history) => {
+                              // Get email data from jobApplications
+                              const jobApp =
+                                candidateData.jobApplications?.find((app) => {
+                                  const appJobId =
+                                    typeof app.jobId === "object" &&
+                                    app.jobId !== null
+                                      ? (
+                                          app.jobId as {
+                                            _id?: string;
+                                            id?: string;
+                                          }
+                                        )._id ||
+                                        (
+                                          app.jobId as {
+                                            _id?: string;
+                                            id?: string;
+                                          }
+                                        ).id
+                                      : app.jobId;
+                                  return appJobId === history.jobId;
+                                });
+
+                              const emailCount = jobApp
+                                ? (jobApp.emailsSent || 0) +
+                                  (jobApp.emailsReceived || 0)
+                                : 0;
+                              const sentCount = jobApp?.emailsSent || 0;
+                              const receivedCount = jobApp?.emailsReceived || 0;
+                              const lastEmailDate = jobApp?.lastEmailDate
+                                ? new Date(
+                                    jobApp.lastEmailDate
+                                  ).toLocaleDateString()
+                                : "N/A";
+
+                              return (
+                                <div
+                                  key={history.id}
+                                  className="p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
+                                >
+                                  <div className="flex items-start justify-between gap-4 mb-3">
+                                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                                      <Avatar className="h-10 w-10 rounded-md border shrink-0">
+                                        <AvatarFallback className="rounded-md text-xs">
+                                          {history.clientName
+                                            .split(" ")
+                                            .map((n: string) => n[0])
+                                            .join("")}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-sm mb-1">
+                                          {history.jobTitle}
+                                        </h4>
+                                        <p className="text-sm text-muted-foreground">
+                                          {history.clientName}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-3 gap-3 text-xs">
+                                    <div className="p-2 rounded-md bg-background/60 border">
+                                      <Label className="text-xs text-muted-foreground">
+                                        Job ID
+                                      </Label>
+                                      <p className="font-mono mt-0.5 truncate">
+                                        {history.jobId}
+                                      </p>
+                                    </div>
+                                    <div className="p-2 rounded-md bg-background/60 border">
+                                      <Label className="text-xs text-muted-foreground">
+                                        Total Emails
+                                      </Label>
+                                      <p className="font-semibold mt-0.5">
+                                        {emailCount}
+                                      </p>
+                                      {emailCount > 0 && (
+                                        <p className="text-muted-foreground mt-0.5 text-[10px]">
+                                          {sentCount} sent, {receivedCount}{" "}
+                                          received
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="p-2 rounded-md bg-background/60 border">
+                                      <Label className="text-xs text-muted-foreground">
+                                        Last Contact
+                                      </Label>
+                                      <p className="mt-0.5 truncate">
+                                        {lastEmailDate}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full mt-3"
+                                    onClick={() =>
+                                      navigate(
+                                        `/dashboard/jobs/${history.jobId}/candidates/${candidate.id}/communication`
+                                      )
+                                    }
+                                  >
+                                    <IconMail className="h-4 w-4 mr-2" />
+                                    View Communication Details
+                                  </Button>
+                                </div>
+                              );
+                            })}
                         </div>
-                      )}
+
+                        {/* Empty State */}
+                        {historyData.length === 0 &&
+                          (!emails || emails.length === 0) && (
+                            <div className="text-center py-12">
+                              <IconMail className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
+                              <p className="text-sm text-muted-foreground mb-1">
+                                No email communications yet
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Start communicating with this candidate to see
+                                the history here
+                              </p>
+                            </div>
+                          )}
+                      </>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -1980,6 +2270,21 @@ export default function CandidateDetailsPage() {
                       Read-only overview of all interviews this candidate has
                       had
                     </p>
+                    {candidateData?.status?.toLowerCase() === "rejected" && (
+                      <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-800 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <IconX className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-semibold text-red-900 dark:text-red-100">
+                              Candidate Rejected
+                            </p>
+                            <p className="text-xs text-red-700 dark:text-red-300 mt-1">
+                              This candidate has been rejected. Interview scheduling and stage changes are disabled. Only viewing past interviews and sending emails are allowed.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent className="p-3 md:p-4 lg:p-6 pt-0">
                     {isLoadingInterviews ? (
@@ -2522,6 +2827,89 @@ export default function CandidateDetailsPage() {
             </Tabs>
           </div>
         </div>
+
+        {/* Reassign to Job Dialog */}
+        {reassignJobDialogOpen && candidateData && (() => {
+      const candidate = candidates.find((c) => c.id === candidateData.id);
+      const availableJobs = jobs.filter((job) => {
+        // Filter logic:
+        // - Show if candidate never applied to this job
+        // - Show if candidate was rejected from this job (can be reactivated)
+        // - Hide if candidate is currently active in this job
+        // - Hide if candidate was hired for this job (hiring is final)
+        const jobApplication = candidate?.jobApplications?.find(app => app.jobId === job.id);
+        const isJobOpen = job.status === 'open';
+        
+        if (!isJobOpen) return false;
+        if (!jobApplication) return true; // Never applied - show it
+        
+        const status = jobApplication.status;
+        // Show if rejected (can reactivate), hide if active or hired
+        return status === 'rejected';
+      });
+
+      return (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold mb-4">Apply to Another Job</h2>
+            
+            {availableJobs.length === 0 ? (
+              <p className="text-sm text-muted-foreground mb-4">
+                No available jobs to assign this candidate to. The candidate may already be actively assigned to all open jobs.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Select a job to assign this candidate to:
+                </p>
+                <Select value={selectedJobForReassign} onValueChange={setSelectedJobForReassign}>
+                  <SelectTrigger className="w-full mb-4">
+                    <SelectValue placeholder="Select a job" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableJobs.map((job) => {
+                      // Get client name
+                      const clientName = typeof job.clientId === 'object' && job.clientId !== null
+                        ? job.clientId.companyName
+                        : clients.find((client) => client.id === job.clientId)?.companyName || 'Unknown Client';
+                      
+                      return (
+                        <SelectItem key={job.id} value={job.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{job.title}</span>
+                            <span className="text-xs text-muted-foreground">{clientName}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setReassignJobDialogOpen(false);
+                  setSelectedJobForReassign("");
+                }}
+              >
+                Cancel
+              </Button>
+              {availableJobs.length > 0 && (
+                <Button
+                  onClick={handleReassignJobConfirm}
+                  disabled={!selectedJobForReassign}
+                >
+                  Assign
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    })()}
       </div>
     </div>
   );

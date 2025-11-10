@@ -3,23 +3,14 @@ import { PipelineBuilder } from "@/components/pipeline-builder";
 import { PipelineEmptyState } from "@/components/pipeline-empty-state";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
-import {
-  useAppSelector,
-  useCandidates,
-  useJobs,
-  usePipelines,
-} from "@/store/hooks/index";
-import {
-  selectCandidates,
-  selectCurrentJob,
-  selectJobById,
-} from "@/store/selectors";
+import { useSidebar } from "@/components/ui/sidebar";
+import { usePipelineByJobId } from "@/hooks/usePipelinesFirestore";
+import { useCandidates, useJobs, usePipelines } from "@/store/hooks/index";
 import type { Candidate } from "@/types/candidate";
-import type { Job } from "@/types/job";
 import type { PipelineStage } from "@/types/pipeline";
 import { DEFAULT_PIPELINE_TEMPLATES } from "@/types/pipeline";
 import { ArrowLeft, Edit } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -28,31 +19,42 @@ export default function JobPipelinePage() {
   const { jobId } = useParams<{ jobId: string }>();
   const kanbanContainerRef = useRef<HTMLDivElement>(null);
 
-  // Redux hooks
+  // Get sidebar state for responsive layout
+  const { state: sidebarState, isMobile } = useSidebar();
+
+  // Calculate sidebar width based on reactive state
+  const sidebarWidth = useMemo(() => {
+    // On mobile, sidebar is overlay and doesn't affect content width
+    if (isMobile) {
+      return 2;
+    }
+    // Collapsed state: minimum width (3rem = 48px)
+    if (sidebarState === "collapsed") {
+      return 18;
+    }
+    // Expanded state: full width (16rem = 256px)
+    return 298;
+  }, [sidebarState, isMobile]);
+
+  // Get write operations from Redux hooks
+  const { updateJob, isLoading: jobsLoading } = useJobs();
+  const { updateCandidate, updateCandidateStageOptimistic } = useCandidates();
   const {
-    fetchJobById,
-    fetchJobs,
-    updateJob,
-    isLoading: jobsLoading,
-  } = useJobs();
-  const { fetchCandidates, updateCandidate, updateCandidateStageOptimistic } =
-    useCandidates();
-  const {
-    fetchPipelineById,
     createPipeline,
     updatePipeline,
     currentPipeline,
     setCurrentPipeline,
   } = usePipelines();
 
-  // Try to get job from jobs array first, fallback to currentJob
-  const jobFromArray = useAppSelector((state) =>
-    selectJobById(jobId || "")(state)
-  );
-  const currentJob = useAppSelector(selectCurrentJob);
-  const job = (jobFromArray || currentJob) as Job | undefined;
+  // Get realtime data from Firestore via Redux hooks (which use Firestore internally)
+  const { jobs } = useJobs();
+  const { candidates: allCandidates } = useCandidates();
 
-  const allCandidates = useAppSelector(selectCandidates);
+  const job = jobs.find((j) => j.id === jobId);
+
+  // Get pipeline from Firestore by jobId (realtime subscription)
+  const { pipeline: firestorePipeline, loading: pipelineLoading } =
+    usePipelineByJobId(jobId);
 
   // Filter candidates for this job
   // Backend populates jobIds with full Job objects, so we need to access the id property
@@ -82,91 +84,40 @@ export default function JobPipelinePage() {
 
   console.log(
     `Pipeline page: ${candidates.length} candidates for job ${jobId}`
-  ); // State
+  );
+
+  // State
   const [isBuilding, setIsBuilding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [hasFetchedJob, setHasFetchedJob] = useState(false);
-  const [isFetchingPipeline, setIsFetchingPipeline] = useState(false);
 
-  // Fetch job, candidates, and pipeline if job has pipelineId
+  // Sync Firestore pipeline to currentPipeline state
   useEffect(() => {
-    const loadData = async () => {
-      if (jobId && !hasFetchedJob) {
-        // Check if job already exists in state
-        const existingJob = jobFromArray || currentJob;
+    if (!job || !jobId) return;
 
-        if (!existingJob || existingJob.id !== jobId) {
-          // Only fetch if not already in state or different job
-          console.log("Fetching job:", jobId);
-          await fetchJobById(jobId);
-          setHasFetchedJob(true);
-        } else {
-          console.log("Job already in state, skipping fetch");
-          setHasFetchedJob(true);
-        }
-      }
-    };
+    console.log("🔥 Pipeline sync:", {
+      jobId,
+      firestorePipeline: firestorePipeline?.id,
+      currentPipeline: currentPipeline?.id,
+      pipelineLoading,
+    });
 
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId]);
-
-  // Fetch candidates and jobs list only once on mount
-  useEffect(() => {
-    fetchJobs();
-    fetchCandidates();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Clear pipeline when navigating to a different job
-  useEffect(() => {
-    // Clear the current pipeline when jobId changes
-    setCurrentPipeline(null);
-    setIsFetchingPipeline(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId]);
-
-  // Fetch pipeline when job is loaded and has pipelineId
-  useEffect(() => {
-    console.log("Job loaded:", job);
-
-    // Normalize pipelineId whether it's a string or a populated object
-    const rawPipelineId: unknown = job?.pipelineId;
-    let pipelineId: string | null = null;
-    if (rawPipelineId) {
-      if (typeof rawPipelineId === "string") {
-        pipelineId = rawPipelineId;
-      } else if (typeof rawPipelineId === "object") {
-        const obj = rawPipelineId as Record<string, unknown>;
-        const idCandidate =
-          obj["id"] ??
-          obj["_id"] ??
-          (typeof obj["toString"] === "function"
-            ? (obj["toString"] as () => string)()
-            : undefined);
-        pipelineId =
-          typeof idCandidate === "string"
-            ? idCandidate
-            : idCandidate
-            ? String(idCandidate)
-            : null;
-      }
+    // If we have a pipeline from Firestore, use it
+    if (firestorePipeline && firestorePipeline.id !== currentPipeline?.id) {
+      console.log(
+        "🔥 Setting currentPipeline from Firestore:",
+        firestorePipeline
+      );
+      setCurrentPipeline(firestorePipeline);
     }
-
-    console.log("Job pipelineId:", pipelineId);
-
-    if (pipelineId) {
-      console.log("Fetching pipeline with ID:", pipelineId);
-      setIsFetchingPipeline(true);
-      fetchPipelineById(pipelineId).finally(() => {
-        setIsFetchingPipeline(false);
-      });
-    } else {
-      console.log("No pipelineId found on job");
-      setIsFetchingPipeline(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [job]);
+    // If no pipeline exists in Firestore yet, user needs to create one (show empty state)
+  }, [
+    job,
+    jobId,
+    firestorePipeline,
+    currentPipeline?.id,
+    setCurrentPipeline,
+    pipelineLoading,
+  ]);
 
   // Show loading state while fetching job
   if (jobsLoading && !job) {
@@ -177,8 +128,8 @@ export default function JobPipelinePage() {
     );
   }
 
-  // Show loading state while fetching pipeline for a job that has pipelineId
-  if (job?.pipelineId && (isFetchingPipeline || !currentPipeline)) {
+  // Show loading state while loading pipeline from Firestore
+  if (job && pipelineLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader size="lg" text="Loading pipeline..." />
@@ -209,13 +160,14 @@ export default function JobPipelinePage() {
       DEFAULT_PIPELINE_TEMPLATES[
         templateKey as keyof typeof DEFAULT_PIPELINE_TEMPLATES
       ];
-    if (template && job) {
+    if (template && job && jobId) {
       try {
-        // Create pipeline in the backend
+        // Create pipeline in Firestore with jobId
         const result = await createPipeline({
           name: `${job.title} - ${template.name}`,
           description: template.description,
           type: "candidate",
+          jobId, // Link pipeline to this job
           stages: template.stages.map((stage) => ({
             name: stage.name,
             description: stage.description,
@@ -225,23 +177,18 @@ export default function JobPipelinePage() {
           })),
         });
 
-        console.log("Create pipeline result:", result);
+        console.log("✅ Pipeline created:", result);
 
         // Update job with the new pipeline ID
         if (result.payload && "id" in result.payload) {
           const pipelineId = result.payload.id;
-          console.log("Pipeline ID:", pipelineId);
-          console.log("Updating job:", job.id, "with pipelineId:", pipelineId);
+          console.log("✅ Updating job with pipelineId:", pipelineId);
 
-          const updateResult = await updateJob(job.id, { pipelineId });
-          console.log("Update job result:", updateResult);
+          await updateJob(job.id, { pipelineId });
 
-          // Refetch job to get updated data
-          const fetchResult = await fetchJobById(job.id);
-          console.log("Fetched job:", fetchResult);
-
-          // Fetch the newly created pipeline
-          await fetchPipelineById(pipelineId);
+          // Firestore realtime subscription will automatically update firestorePipeline
+          // which will then update currentPipeline via useEffect
+          toast.success("Pipeline created successfully!");
         } else {
           console.error("Failed to get pipeline ID from result:", result);
           toast.error("Failed to get pipeline ID");
@@ -254,7 +201,7 @@ export default function JobPipelinePage() {
   };
 
   const handleSavePipeline = async (stages: PipelineStage[]) => {
-    if (!job) return;
+    if (!job || !jobId) return;
 
     try {
       if (currentPipeline?.id) {
@@ -270,12 +217,14 @@ export default function JobPipelinePage() {
             isActive: true,
           })),
         });
+        toast.success("Pipeline updated successfully!");
       } else {
-        // Create new pipeline
+        // Create new custom pipeline
         const result = await createPipeline({
           name: `${job.title} Pipeline`,
           description: `Custom pipeline for ${job.title}`,
           type: "candidate",
+          jobId, // Link pipeline to this job
           stages: stages.map((stage) => ({
             name: stage.name,
             description: stage.description,
@@ -289,10 +238,8 @@ export default function JobPipelinePage() {
         if (result.payload && "id" in result.payload) {
           const pipelineId = result.payload.id;
           await updateJob(job.id, { pipelineId });
-          // Refetch job to get updated data
-          await fetchJobById(job.id);
-          // Fetch the newly created pipeline
-          await fetchPipelineById(pipelineId);
+          // Firestore realtime subscription will automatically update firestorePipeline
+          toast.success("Pipeline created successfully!");
         }
       }
 
@@ -314,6 +261,13 @@ export default function JobPipelinePage() {
     newStageId: string
   ) => {
     console.log("Status change:", { candidateId, newStageId });
+
+    // Check if candidate is rejected
+    const candidate = candidates.find((c) => c.id === candidateId);
+    if (candidate && candidate.status?.toLowerCase() === "rejected") {
+      toast.error("Cannot move rejected candidates between stages");
+      return;
+    }
 
     // Find the new stage details for optimistic update
     const newStage = currentPipeline?.stages.find((s) => s.id === newStageId);
@@ -338,19 +292,13 @@ export default function JobPipelinePage() {
         currentPipelineStageId: newStageId,
       });
 
-      // Refresh candidates to ensure consistency with backend
-      await fetchCandidates();
-
-      // Dispatch custom event to notify other components to refetch
-      window.dispatchEvent(new CustomEvent("refetchCandidates"));
-
+      // Firestore will automatically update candidates in realtime
       toast.success("Candidate moved to new stage!");
     } catch (error) {
       console.error("Failed to update candidate stage:", error);
       toast.error("Failed to move candidate");
 
-      // Revert optimistic update by refreshing from backend
-      await fetchCandidates();
+      // Firestore will automatically sync the correct state
     }
   };
 
@@ -376,6 +324,8 @@ export default function JobPipelinePage() {
       toast.error("Failed to update stage");
     }
   };
+
+  console.log("Sidebar width:", sidebarWidth, "| State:", sidebarState);
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -417,7 +367,10 @@ export default function JobPipelinePage() {
       </div>
 
       {/* Content - Scrollable */}
-      <div className="flex-1 overflow-hidden">
+      <div
+        className="flex-1 overflow-hidden"
+        style={{ width: `calc(100vw - ${sidebarWidth}px)` }}
+      >
         <div className="h-full overflow-hidden">
           {!currentPipeline && !isBuilding ? (
             <div className="px-6 py-6 overflow-auto h-full">

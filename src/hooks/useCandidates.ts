@@ -2,20 +2,51 @@ import { useMemo } from 'react';
 import type { Candidate } from '@/types';
 import {
   useFirestoreCollection,
-  getCompanyCollectionPath,
   where,
-  orderBy,
   type UseFirestoreCollectionResult,
 } from './useFirestore';
 import type { DocumentData } from 'firebase/firestore';
 
 /**
  * Transform Firestore document to Candidate type
+ * Converts Firestore Timestamps to JavaScript Date objects
  */
 function transformCandidateDocument(doc: DocumentData): Candidate {
+  // Helper to convert Firestore Timestamp to Date
+  const toDate = (value: unknown): Date | undefined => {
+    if (!value) return undefined;
+    // Firestore Timestamp has toDate() method
+    if (typeof value === 'object' && value !== null && 'toDate' in value && typeof (value as { toDate: unknown }).toDate === 'function') {
+      return ((value as { toDate: () => Date }).toDate());
+    }
+    // Already a Date
+    if (value instanceof Date) {
+      return value;
+    }
+    // Try to parse as date
+    if (typeof value === 'string' || typeof value === 'number') {
+      const parsed = new Date(value);
+      return isNaN(parsed.getTime()) ? undefined : parsed;
+    }
+    return undefined;
+  };
+
+  // Get current stage from first job application if not set at root level
+  const currentStage = doc.currentStage || 
+    (Array.isArray(doc.jobApplications) && doc.jobApplications.length > 0 
+      ? doc.jobApplications[0].currentStage 
+      : undefined);
+
   return {
     ...doc,
     id: doc.id,
+    // Convert date fields from Firestore Timestamps
+    createdAt: toDate(doc.createdAt),
+    updatedAt: toDate(doc.updatedAt),
+    hiredAt: toDate(doc.hiredAt),
+    rejectedAt: toDate(doc.rejectedAt),
+    // Set current stage from jobApplications if not at root
+    currentStage,
     // Ensure arrays
     jobIds: Array.isArray(doc.jobIds) ? doc.jobIds : [],
     applicationIds: Array.isArray(doc.applicationIds) ? doc.applicationIds : [],
@@ -48,14 +79,14 @@ export function useCandidates(options?: {
       constraints.push(where('jobIds', 'array-contains', jobId));
     }
 
-    // Default ordering
-    constraints.push(orderBy('createdAt', 'desc'));
+    // Note: orderBy removed to avoid Firestore index requirement
+    // Candidates will be sorted client-side if needed
 
     return constraints;
   }, [status, jobId]);
 
   return useFirestoreCollection<Candidate>({
-    collectionPath: getCompanyCollectionPath('candidates'),
+    collectionPath: 'candidates', // Root level collection
     queryConstraints,
     enabled,
     transform: transformCandidateDocument,

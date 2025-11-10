@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { API_BASE_URL } from "@/config/api";
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
+import { useInterviewsByCandidateAndJob } from "@/hooks/useInterviews";
 import {
   ArrowLeft,
   Award,
@@ -24,7 +24,7 @@ import {
   Star,
   Video,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface JobCandidateDetailsProps {
   candidate: Candidate;
@@ -37,16 +37,31 @@ interface JobCandidateDetailsProps {
 interface Interview {
   id: string;
   title: string;
-  status: "scheduled" | "completed" | "cancelled";
-  scheduledAt: string;
+  type: string;
+  round?: number;
+  status: "scheduled" | "completed" | "cancelled" | "confirmed" | "in-progress" | "no-show";
+  scheduledAt: string | Date;
+  duration: number;
+  description?: string;
+  notes?: string;
   feedback?: Array<{
     rating: number;
     recommendation?: string;
     comments?: string;
+    strengths?: string;
+    weaknesses?: string;
+    interviewerId?: {
+      firstName?: string;
+      lastName?: string;
+    };
   }>;
+  interviewDate?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const statusColors = {
+  active: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
   new: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
   screening:
     "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
@@ -62,6 +77,7 @@ const statusColors = {
   rejected: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
   withdrawn:
     "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20",
+  "on-hold": "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20",
 } as const;
 
 export function JobCandidateDetails({
@@ -72,10 +88,6 @@ export function JobCandidateDetails({
   onEmailClick,
 }: JobCandidateDetailsProps) {
   const [activeTab, setActiveTab] = useState("overview");
-
-  // Interview state for timeline
-  const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [isLoadingInterviews, setIsLoadingInterviews] = useState(false);
 
   const fullName = `${candidate.firstName} ${candidate.lastName}`;
   const initials =
@@ -104,45 +116,48 @@ export function JobCandidateDetails({
     return id === job.id;
   });
 
-  // Fetch interviews for this candidate and job (before early return)
-  useEffect(() => {
-    if (!isAssociatedWithJob) return; // Skip if not associated
+  // Fetch interviews from Firestore in realtime
+  const candidateId = candidateData.id || candidateData._id;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const jobId = job.id || (job as any)._id;
+  
+  const { 
+    data: firestoreInterviews, 
+    loading: isLoadingInterviews, 
+    error: interviewsError 
+  } = useInterviewsByCandidateAndJob(candidateId, jobId);
 
-    const fetchInterviews = async () => {
-      setIsLoadingInterviews(true);
-      try {
-        const token = await window.Clerk?.session?.getToken();
-
-        if (!token) {
-          console.error("No auth token available");
-          return;
-        }
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/interviews?candidateId=${
-            candidateData._id || candidateData.id
-          }&jobId=${job.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setInterviews(data.data || []);
-        }
-      } catch (error) {
-        console.error("Error fetching interviews:", error);
-      } finally {
-        setIsLoadingInterviews(false);
-      }
+  // Transform interviews to match component interface
+  const interviews: Interview[] = (firestoreInterviews || []).map((interview) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const interviewData = interview as any;
+    return {
+      id: interview.id,
+      title: interviewData.title || `${interview.interviewType} Interview`,
+      type: interview.interviewType || 'video',
+      round: interviewData.round,
+      status: interview.status as Interview['status'],
+      scheduledAt: interview.interviewDate instanceof Date 
+        ? interview.interviewDate.toISOString() 
+        : (interview.interviewDate as unknown as string) || '',
+      duration: interview.duration || 60,
+      description: interviewData.description,
+      notes: interviewData.notes,
+      feedback: interviewData.feedback as Interview['feedback'],
+      interviewDate: interview.interviewDate,
+      createdAt: interview.createdAt,
+      updatedAt: interview.updatedAt,
     };
+  });
 
-    fetchInterviews();
-  }, [candidateData._id, candidateData.id, job.id, isAssociatedWithJob]);
+  console.log('📋 Job Candidate Details - Interviews:', { 
+    candidateId, 
+    jobId, 
+    count: interviews.length,
+    interviews,
+    loading: isLoadingInterviews,
+    error: interviewsError
+  });
 
   if (!isAssociatedWithJob) {
     return (
@@ -804,23 +819,211 @@ export function JobCandidateDetails({
 
         <TabsContent value="interviews" className="space-y-4 mt-6">
           <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-8">
-                <div className="rounded-full bg-primary/10 p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <Calendar className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">
-                  Interview Management
-                </h3>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  View interview history and schedule new interviews with this
-                  candidate for {job.title}
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Calendar className="h-4 w-4" />
+                  Interview History for {job.title}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  All interviews scheduled for this candidate on this specific job
                 </p>
-                <Button onClick={() => onInterviewClick?.()}>
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Manage Interviews
-                </Button>
               </div>
+              <Button size="sm" onClick={() => onInterviewClick?.()}>
+                <Calendar className="h-4 w-4 mr-2" />
+                Manage
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {isLoadingInterviews ? (
+                <div className="text-center py-8">
+                  <Loader size="sm" text="Loading interviews..." />
+                </div>
+              ) : interviews.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="rounded-full bg-primary/10 p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <Calendar className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-base font-semibold mb-2">
+                    No Interviews Yet
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                    Schedule the first interview with this candidate for {job.title}
+                  </p>
+                  <Button onClick={() => onInterviewClick?.()}>
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Schedule Interview
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {interviews.map((interview) => {
+                    const feedback = interview.feedback && interview.feedback.length > 0 
+                      ? interview.feedback[0] 
+                      : null;
+                    const isCompleted = interview.status === "completed";
+                    const isCancelled = interview.status === "cancelled";
+                    
+                    return (
+                      <div
+                        key={interview.id}
+                        className={cn(
+                          "p-4 rounded-lg border-2 transition-all hover:shadow-md",
+                          isCompleted && feedback?.recommendation === "strong_yes" 
+                            ? "border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20"
+                            : isCompleted && feedback?.recommendation === "no"
+                            ? "border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20"
+                            : isCancelled
+                            ? "border-gray-200 bg-gray-50/50 dark:border-gray-800 dark:bg-gray-950/20"
+                            : "border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20"
+                        )}
+                      >
+                        {/* Interview Header */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-sm">
+                                {interview.title}
+                              </h4>
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-xs",
+                                  isCompleted && "bg-green-600 text-white border-green-600",
+                                  isCancelled && "bg-gray-500 text-white border-gray-500"
+                                )}
+                              >
+                                {interview.status}
+                              </Badge>
+                              {interview.round && (
+                                <Badge variant="outline" className="text-xs">
+                                  Round {interview.round}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {new Date(interview.scheduledAt).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Video className="h-3 w-3" />
+                                {interview.type}
+                              </span>
+                              <span>{interview.duration} min</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Interview Description */}
+                        {interview.description && (
+                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                            {interview.description}
+                          </p>
+                        )}
+
+                        {/* Feedback Section */}
+                        {feedback && isCompleted && (
+                          <div className="mt-3 pt-3 border-t space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-semibold">Interview Feedback</p>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={cn(
+                                        "h-3 w-3",
+                                        i < (feedback.rating || 0)
+                                          ? "fill-amber-500 text-amber-500"
+                                          : "text-gray-300"
+                                      )}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-xs font-medium">
+                                  {feedback.rating}/5
+                                </span>
+                              </div>
+                            </div>
+
+                            {feedback.recommendation && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">
+                                  Recommendation:
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "text-xs",
+                                    feedback.recommendation === "strong_yes" && "border-green-600 text-green-700 bg-green-50",
+                                    feedback.recommendation === "yes" && "border-blue-600 text-blue-700 bg-blue-50",
+                                    feedback.recommendation === "no" && "border-red-600 text-red-700 bg-red-50"
+                                  )}
+                                >
+                                  {feedback.recommendation.replace(/_/g, " ").toUpperCase()}
+                                </Badge>
+                              </div>
+                            )}
+
+                            {feedback.comments && (
+                              <div className="text-xs">
+                                <p className="text-muted-foreground font-medium mb-1">Comments:</p>
+                                <p className="text-foreground/80 line-clamp-3">
+                                  {feedback.comments}
+                                </p>
+                              </div>
+                            )}
+
+                            {(feedback.strengths || feedback.weaknesses) && (
+                              <div className="grid grid-cols-2 gap-2 pt-2">
+                                {feedback.strengths && (
+                                  <div className="text-xs">
+                                    <p className="text-green-700 dark:text-green-400 font-medium mb-1">
+                                      Strengths:
+                                    </p>
+                                    <p className="text-muted-foreground line-clamp-2">
+                                      {feedback.strengths}
+                                    </p>
+                                  </div>
+                                )}
+                                {feedback.weaknesses && (
+                                  <div className="text-xs">
+                                    <p className="text-amber-700 dark:text-amber-400 font-medium mb-1">
+                                      Areas to improve:
+                                    </p>
+                                    <p className="text-muted-foreground line-clamp-2">
+                                      {feedback.weaknesses}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Notes for non-completed interviews */}
+                        {!isCompleted && interview.notes && (
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">
+                              Notes:
+                            </p>
+                            <p className="text-xs text-foreground/80 line-clamp-2">
+                              {interview.notes}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -847,175 +1050,251 @@ export function JobCandidateDetails({
                   {/* Timeline Line */}
                   <div className="absolute left-[15px] top-3 bottom-3 w-0.5 bg-border"></div>
 
-                  {/* Applied Event */}
-                  <div className="relative">
-                    <div className="absolute -left-8 top-0.5 rounded-full bg-primary p-2 ring-4 ring-background">
-                      <Calendar className="h-3.5 w-3.5 text-primary-foreground" />
-                    </div>
-                    <div className="bg-muted/50 rounded-lg p-4 border">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-sm">
-                          Application Submitted
-                        </h4>
-                        <Badge variant="outline" className="text-xs">
-                          {daysSinceApplied} days ago
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(candidateData.createdAt).toLocaleDateString(
-                          "en-US",
-                          {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }
-                        )}
-                      </p>
-                    </div>
-                  </div>
+                  {/* Build complete timeline and sort by date (most recent first) */}
+                  {(() => {
+                    type TimelineEvent = {
+                      id: string;
+                      date: Date;
+                      type: 'application' | 'interview' | 'status' | 'ai-score';
+                      component: React.ReactNode;
+                    };
 
-                  {/* Interview Events */}
-                  {interviews.map((interview) => (
-                    <div key={interview.id} className="relative">
-                      <div
-                        className={`absolute -left-8 top-0.5 rounded-full p-2 ring-4 ring-background ${
-                          interview.status === "completed"
-                            ? "bg-green-500"
-                            : interview.status === "cancelled"
-                            ? "bg-red-500"
-                            : "bg-amber-500"
-                        }`}
-                      >
-                        {interview.status === "completed" ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-white" />
-                        ) : (
-                          <Video className="h-3.5 w-3.5 text-white" />
-                        )}
-                      </div>
-                      <div className="bg-muted/50 rounded-lg p-4 border">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-sm">
-                            {interview.status === "completed"
-                              ? "Interview Completed"
-                              : interview.status === "cancelled"
-                              ? "Interview Cancelled"
-                              : "Interview Scheduled"}
-                          </h4>
-                          <Badge
-                            variant={
-                              interview.status === "completed"
-                                ? "success"
-                                : interview.status === "cancelled"
-                                ? "destructive"
-                                : "secondary"
-                            }
-                            className="text-xs"
-                          >
-                            {interview.status}
-                          </Badge>
-                        </div>
-                        <p className="text-sm mb-2">{interview.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(interview.scheduledAt).toLocaleDateString(
-                            "en-US",
-                            {
-                              weekday: "long",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </p>
-                        {interview.feedback &&
-                          interview.feedback.length > 0 && (
-                            <div className="mt-3 pt-3 border-t">
-                              <p className="text-xs font-medium mb-1">
-                                Feedback:
-                              </p>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs">
-                                  Rating: {interview.feedback[0].rating}/5 ⭐
-                                </span>
-                                <Badge variant="outline" className="text-xs">
-                                  {interview.feedback[0].recommendation?.replace(
-                                    "_",
-                                    " "
-                                  )}
-                                </Badge>
-                              </div>
+                    const timelineEvents: TimelineEvent[] = [];
+
+                    // Add application event
+                    timelineEvents.push({
+                      id: 'application',
+                      date: new Date(candidateData.createdAt),
+                      type: 'application',
+                      component: (
+                        <div key="application" className="relative">
+                          <div className="absolute -left-8 top-0.5 rounded-full bg-primary p-2 ring-4 ring-background">
+                            <Calendar className="h-3.5 w-3.5 text-primary-foreground" />
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-4 border">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold text-sm">
+                                Application Submitted
+                              </h4>
+                              <Badge variant="outline" className="text-xs">
+                                {daysSinceApplied} days ago
+                              </Badge>
                             </div>
-                          )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* AI Score if available */}
-                  {candidateData.aiScore?.overallScore && (
-                    <div className="relative">
-                      <div className="absolute -left-8 top-0.5 rounded-full bg-amber-500 p-2 ring-4 ring-background">
-                        <Star className="h-3.5 w-3.5 text-white" />
-                      </div>
-                      <div className="bg-muted/50 rounded-lg p-4 border">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-semibold text-sm">
-                            AI Assessment
-                          </h4>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                            <span className="font-bold text-sm">
-                              {candidateData.aiScore.overallScore}%
-                            </span>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(candidateData.createdAt).toLocaleDateString(
+                                "en-US",
+                                {
+                                  weekday: "long",
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
+                            </p>
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {candidateData.aiScore.recommendation?.replace(
-                            /_/g,
-                            " "
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  )}
+                      )
+                    });
 
-                  {/* Last Status Change Event */}
-                  <div className="relative">
-                    <div className="absolute -left-8 top-0.5 rounded-full bg-muted p-2 ring-4 ring-background border-2 border-border">
-                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
-                    <div className="bg-muted/50 rounded-lg p-4 border">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-sm">
-                          Current Status
-                        </h4>
-                        <Badge
-                          className={cn(
-                            "text-xs border",
-                            statusColors[status as keyof typeof statusColors] ||
-                              "bg-gray-500/10 text-gray-700"
-                          )}
-                        >
-                          {status.replace(/_/g, " ")}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(
-                          candidateData.updatedAt || candidateData.createdAt
-                        ).toLocaleDateString("en-US", {
-                          weekday: "long",
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                    </div>
-                  </div>
+                    // Add AI Score event if available
+                    if (candidateData.aiScore?.overallScore) {
+                      // Use createdAt or a timestamp after application
+                      const aiScoreDate = candidateData.aiScore.createdAt 
+                        ? new Date(candidateData.aiScore.createdAt)
+                        : new Date(new Date(candidateData.createdAt).getTime() + 60000); // 1 min after application
+                      
+                      timelineEvents.push({
+                        id: 'ai-score',
+                        date: aiScoreDate,
+                        type: 'ai-score',
+                        component: (
+                          <div key="ai-score" className="relative">
+                            <div className="absolute -left-8 top-0.5 rounded-full bg-amber-500 p-2 ring-4 ring-background">
+                              <Star className="h-3.5 w-3.5 text-white" />
+                            </div>
+                            <div className="bg-muted/50 rounded-lg p-4 border">
+                              <div className="flex items-center justify-between mb-1">
+                                <h4 className="font-semibold text-sm">
+                                  AI Assessment Completed
+                                </h4>
+                                <div className="flex items-center gap-1">
+                                  <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                                  <span className="font-bold text-sm">
+                                    {candidateData.aiScore.overallScore}%
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {candidateData.aiScore.recommendation?.replace(/_/g, " ")}
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      });
+                    }
+
+                    // Add interview events
+                    interviews.forEach((interview) => {
+                      const feedback = interview.feedback && interview.feedback.length > 0 
+                        ? interview.feedback[0] 
+                        : null;
+                      const isCompleted = interview.status === "completed";
+                      const isCancelled = interview.status === "cancelled";
+                      
+                      const interviewComponent = (
+                        <div key={interview.id} className="relative">
+                          <div
+                            className={cn(
+                              "absolute -left-8 top-0.5 rounded-full p-2 ring-4 ring-background",
+                              isCompleted && feedback?.recommendation === "strong_yes" 
+                                ? "bg-green-600"
+                                : isCompleted && feedback?.recommendation === "no"
+                                ? "bg-red-600"
+                                : isCompleted
+                                ? "bg-green-500"
+                                : isCancelled
+                                ? "bg-gray-500"
+                                : "bg-blue-500"
+                            )}
+                          >
+                            {isCompleted ? (
+                              <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                            ) : isCancelled ? (
+                              <Clock className="h-3.5 w-3.5 text-white" />
+                            ) : (
+                              <Video className="h-3.5 w-3.5 text-white" />
+                            )}
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-3 border">
+                            <div className="flex items-center justify-between mb-1">
+                              <h4 className="font-semibold text-sm">
+                                {isCompleted 
+                                  ? "Interview Completed" 
+                                  : isCancelled 
+                                  ? "Interview Cancelled" 
+                                  : "Interview Scheduled"}
+                              </h4>
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-xs",
+                                  isCompleted && "bg-green-600 text-white border-green-600",
+                                  isCancelled && "bg-gray-500 text-white border-gray-500"
+                                )}
+                              >
+                                {interview.status}
+                              </Badge>
+                            </div>
+                            
+                            <p className="text-sm mb-1">{interview.title}</p>
+                            
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(interview.scheduledAt).toLocaleDateString(
+                                "en-US",
+                                {
+                                  weekday: "short",
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
+                              {interview.round && ` • Round ${interview.round}`}
+                            </p>
+
+                            {feedback && isCompleted && (
+                              <div className="mt-2 pt-2 border-t flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={cn(
+                                        "h-3 w-3",
+                                        i < (feedback.rating || 0)
+                                          ? "fill-amber-500 text-amber-500"
+                                          : "text-gray-300"
+                                      )}
+                                    />
+                                  ))}
+                                </div>
+                                {feedback.recommendation && (
+                                  <Badge
+                                    variant="outline"
+                                    className={cn(
+                                      "text-xs",
+                                      feedback.recommendation === "strong_yes" && "border-green-600 text-green-700 bg-green-50",
+                                      feedback.recommendation === "yes" && "border-blue-600 text-blue-700 bg-blue-50",
+                                      feedback.recommendation === "no" && "border-red-600 text-red-700 bg-red-50"
+                                    )}
+                                  >
+                                    {feedback.recommendation.replace(/_/g, " ").toUpperCase()}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+
+                      timelineEvents.push({
+                        id: interview.id,
+                        date: new Date(interview.scheduledAt),
+                        type: 'interview',
+                        component: interviewComponent
+                      });
+                    });
+
+                    // Add current status event
+                    timelineEvents.push({
+                      id: 'current-status',
+                      date: new Date(candidateData.updatedAt || candidateData.createdAt),
+                      type: 'status',
+                      component: (
+                        <div key="current-status" className="relative">
+                          <div className="absolute -left-8 top-0.5 rounded-full bg-muted p-2 ring-4 ring-background border-2 border-border">
+                            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                          </div>
+                          <div className="bg-muted/50 rounded-lg p-4 border">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold text-sm">
+                                Current Status
+                              </h4>
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-xs font-medium",
+                                  statusColors[status as keyof typeof statusColors] ||
+                                    "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
+                                )}
+                              >
+                                {status.replace(/_/g, " ").toUpperCase()}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Last updated: {new Date(
+                                candidateData.updatedAt || candidateData.createdAt
+                              ).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    });
+
+                    // Sort all events by date (most recent first)
+                    timelineEvents.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+                    // Render sorted timeline
+                    return timelineEvents.map(event => event.component);
+                  })()}
                 </div>
               )}
             </CardContent>

@@ -10,27 +10,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAppSelector, useTags } from "@/store/hooks/index";
-import { selectTags } from "@/store/selectors";
+import { useTags as useFirestoreTags } from "@/hooks/firestore";
+import { useTags } from "@/store/hooks/index";
 import type { CreateTagRequest, Tag, UpdateTagRequest } from "@/types/tag";
 import {
   AlertCircle,
   Edit2,
+  Loader2,
   Plus,
   Search,
   Tag as TagIcon,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export default function TagsPage() {
-  const { fetchTags, createTag, updateTag, deleteTag } = useTags();
-  const tags = useAppSelector(selectTags);
-
-  useEffect(() => {
-    fetchTags();
-  }, [fetchTags]);
+  const { createTag, updateTag, deleteTag } = useTags();
+  
+  // 🔥 REALTIME: Get tags from Firestore with realtime updates
+  const { data: tags, loading: isLoadingTags } = useFirestoreTags();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -54,7 +53,12 @@ export default function TagsPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tag = tags.find((t: any) => t.id === tagId);
 
-    if (tag?.isSystem) {
+    if (!tag) {
+      toast.error("Tag not found");
+      return;
+    }
+
+    if (tag.isSystem) {
       toast.error("System tags cannot be deleted");
       return;
     }
@@ -105,6 +109,18 @@ export default function TagsPage() {
 
   const systemTags = tags.filter((t: Tag) => t.isSystem);
   const customTags = tags.filter((t: Tag) => !t.isSystem);
+
+  // Loading state
+  if (isLoadingTags) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading tags...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col">

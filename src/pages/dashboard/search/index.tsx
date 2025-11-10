@@ -5,11 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { hasPermission } from "@/lib/rbac";
 import { useAppSelector } from "@/store/hooks";
-import { useApplications } from "@/store/hooks/useApplications";
-import { useCandidates } from "@/store/hooks/useCandidates";
-import { useClients } from "@/store/hooks/useClients";
-import { useJobs } from "@/store/hooks/useJobs";
-import { useTeam } from "@/store/hooks/useTeam";
 import type { Application } from "@/types/application";
 import type { Candidate } from "@/types/candidate";
 import type { Client } from "@/types/client";
@@ -121,12 +116,6 @@ export default function SearchPage() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const { fetchJobsIfNeeded } = useJobs(); // Smart fetch
-  const { fetchCandidatesIfNeeded } = useCandidates(); // Smart fetch
-  const { fetchClientsIfNeeded } = useClients(); // Smart fetch
-  const { fetchApplicationsIfNeeded } = useApplications(); // Smart fetch
-  const { fetchTeam } = useTeam();
-
   const jobsData = useAppSelector(
     (state) => (state.jobs as { jobs: Job[] }).jobs
   );
@@ -148,29 +137,7 @@ export default function SearchPage() {
   // Debounced search query
   const debouncedQuery = useDebounce(searchQuery, 300);
 
-  // OPTIMIZED: Only load data when user actually searches (not on mount)
-  // This prevents loading ALL data from ALL collections unnecessarily
-  const [hasSearched, setHasSearched] = useState(false);
-
-  useEffect(() => {
-    // Only fetch if user has started searching - use smart fetch to avoid duplicates
-    if (searchQuery.length > 0) {
-      const loadData = async () => {
-        if (!hasSearched) {
-          await Promise.all([
-            fetchJobsIfNeeded(), // Smart - checks cache
-            fetchCandidatesIfNeeded(), // Smart - checks cache
-            fetchClientsIfNeeded(), // Smart - checks cache
-            fetchApplicationsIfNeeded(), // Smart - checks cache
-            fetchTeam(),
-          ]);
-          setHasSearched(true);
-        }
-      };
-      loadData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, hasSearched]); // Removed callbacks from deps to prevent re-renders
+  // 🔥 REALTIME: All data including team members now comes from Firestore - no fetch needed!
 
   // Add to recent searches
   useEffect(() => {

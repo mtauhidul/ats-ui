@@ -1,7 +1,7 @@
 import { JobCandidateDetails } from "@/components/job-candidate-details";
 import { useCandidates } from "@/store/hooks/useCandidates";
 import { useJobs } from "@/store/hooks/useJobs";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 export default function JobCandidateDetailPage() {
@@ -11,13 +11,40 @@ export default function JobCandidateDetailPage() {
     clientId?: string;
   }>();
   const navigate = useNavigate();
-  const { currentCandidate, fetchCandidateById } = useCandidates();
-  const { currentJob, fetchJobById } = useJobs();
+  
+  // Get data from Firestore realtime subscriptions
+  const { candidates, isLoading: candidatesLoading, setCurrentCandidate } = useCandidates();
+  const { jobs, isLoading: jobsLoading, setCurrentJob } = useJobs();
+
+  // Find candidate and job from Firestore data
+  const currentCandidate = useMemo(() => {
+    console.log('🔍 Looking for candidate:', candidateId);
+    console.log('📋 Available candidates:', candidates.length, candidates.map(c => c.id));
+    const found = candidates.find((c) => c.id === candidateId);
+    console.log('✅ Found candidate:', found ? 'Yes' : 'No');
+    return found;
+  }, [candidates, candidateId]);
+
+  const currentJob = useMemo(() => {
+    console.log('🔍 Looking for job:', jobId);
+    console.log('📋 Available jobs:', jobs.length, jobs.map(j => j.id));
+    const found = jobs.find((j) => j.id === jobId);
+    console.log('✅ Found job:', found ? 'Yes' : 'No');
+    return found;
+  }, [jobs, jobId]);
+
+  // Set current items in Redux when found
+  useEffect(() => {
+    if (currentCandidate) {
+      setCurrentCandidate(currentCandidate);
+    }
+  }, [currentCandidate, setCurrentCandidate]);
 
   useEffect(() => {
-    if (candidateId) fetchCandidateById(candidateId);
-    if (jobId) fetchJobById(jobId);
-  }, [candidateId, jobId, fetchCandidateById, fetchJobById]);
+    if (currentJob) {
+      setCurrentJob(currentJob);
+    }
+  }, [currentJob, setCurrentJob]);
 
   const handleBack = () => {
     if (clientId) {
@@ -49,6 +76,16 @@ export default function JobCandidateDetailPage() {
     }
   };
 
+  // Show loading state
+  if (candidatesLoading || jobsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  // Show error state
   if (!currentCandidate || !currentJob) {
     return (
       <div className="flex items-center justify-center h-64">

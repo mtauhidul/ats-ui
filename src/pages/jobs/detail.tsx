@@ -2,7 +2,6 @@ import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
-import type { Job } from "@/types/job";
 import {
   ArrowLeft,
   Award,
@@ -20,47 +19,14 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { API_BASE_URL } from "@/config/api";
-
-// Extend Job type to match API response
-type JobWithExtras = Job & {
-  jobType?: string;
-  locationType?: string;
-  skills?: string[];
-};
-
-// Helper function to normalize job data from backend (handle _id to id conversion)
-const normalizeJob = (job: any): JobWithExtras => {
-  return {
-    ...job,
-    id: job.id || job._id, // Handle both id and _id fields
-  };
-};
+import { useJob } from "@/hooks/firestore";
 
 export default function JobDetailPage() {
   const { jobId } = useParams();
-  const [job, setJob] = useState<JobWithExtras | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchJob = async () => {
-      try {
-        // Public endpoint - no authentication needed
-        const response = await fetch(`${API_BASE_URL}/jobs/${jobId}`);
-        const result = await response.json();
-        const jobData = result.data || result;
-        setJob(normalizeJob(jobData));
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching job:", error);
-        setLoading(false);
-      }
-    };
-
-    fetchJob();
-  }, [jobId]);
+  
+  // 🔥 REALTIME: Direct Firestore subscription - updates automatically!
+  const { job, loading } = useJob(jobId!);
 
   const formatSalary = (salary?: {
     min: number;
@@ -165,20 +131,20 @@ export default function JobDetailPage() {
                   </div>
                 )}
 
-                {(job.type || job.jobType) && (
+                {job.type && (
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 rounded-full text-sm font-medium backdrop-blur-sm">
                     <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <span className="capitalize">
-                      {(job.type || job.jobType).replace(/_/g, " ")}
+                      {job.type.replace(/_/g, " ")}
                     </span>
                   </div>
                 )}
 
-                {(job.workMode || job.locationType) && (
+                {job.workMode && (
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 rounded-full text-sm font-medium backdrop-blur-sm">
-                    {getWorkModeIcon(job.workMode || job.locationType || "")}
+                    {getWorkModeIcon(job.workMode || "")}
                     <span className="capitalize">
-                      {job.workMode || job.locationType}
+                      {job.workMode}
                     </span>
                   </div>
                 )}
@@ -365,20 +331,16 @@ export default function JobDetailPage() {
               </div>
             )}
 
-            {/* Skills from Job Array */}
-            {job.skills &&
-              job.skills.length > 0 &&
-              !(
-                job.requirements?.skills?.required &&
-                job.requirements.skills.required.length > 0
-              ) && (
+            {/* Skills from Requirements.skills.required array */}
+            {job.requirements?.skills?.required &&
+              job.requirements.skills.required.length > 0 && (
                 <div className="mb-10">
                   <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
                     <Award className="h-6 w-6 text-primary" />
                     Required Skills
                   </h2>
                   <div className="flex flex-wrap gap-2 pl-8">
-                    {job.skills.map((skill) => (
+                    {job.requirements.skills.required.map((skill: string) => (
                       <Badge
                         key={skill}
                         className="px-3 py-1.5 bg-primary/90 hover:bg-primary"

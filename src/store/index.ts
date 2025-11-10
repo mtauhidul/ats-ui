@@ -17,6 +17,7 @@ import teamReducer from "./slices/teamSlice";
 import usersReducer from "./slices/usersSlice";
 import notificationsReducer from "./slices/notificationsSlice";
 import messagesReducer from "./slices/messagesSlice";
+import emailTemplatesReducer from "./slices/emailTemplatesSlice";
 
 export const store = configureStore({
   reducer: {
@@ -32,6 +33,7 @@ export const store = configureStore({
     candidates: candidatesReducer,
     applications: applicationsReducer,
     emails: emailsReducer,
+    emailTemplates: emailTemplatesReducer,
     categories: categoriesReducer,
     tags: tagsReducer,
     pipelines: pipelinesReducer,

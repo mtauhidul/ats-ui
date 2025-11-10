@@ -1,38 +1,171 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import {
-  fetchNotifications,
-  markAsRead,
-  markAllAsRead,
-  deleteNotification,
-  createNotification,
-  broadcastImportantNotice,
+  setNotificationsFromFirestore,
+  markNotificationAsReadLocally,
+  markAllNotificationsAsReadLocally,
+  deleteNotificationLocally,
+  setLoading,
+  setError,
   type NotificationType,
 } from "../slices/notificationsSlice";
 import type { Notification } from "../slices/notificationsSlice";
+import { firestoreRealtimeService } from "@/services/firestore-realtime.service";
+import { db } from "@/config/firebase";
+import { doc, updateDoc, deleteDoc, addDoc, collection, writeBatch, getDocs } from "firebase/firestore";
 
 export const useNotifications = () => {
   const dispatch = useAppDispatch();
   const { notifications, isLoading, error } = useAppSelector((state) => state.notifications);
 
-  const fetchNotificationsCallback = useCallback(() => dispatch(fetchNotifications()), [dispatch]);
-  const markAsReadCallback = useCallback((id: string) => dispatch(markAsRead(id)), [dispatch]);
-  const markAllAsReadCallback = useCallback(() => dispatch(markAllAsRead()), [dispatch]);
-  const deleteNotificationCallback = useCallback((id: string) => dispatch(deleteNotification(id)), [dispatch]);
-  const createNotificationCallback = useCallback((notification: Omit<Notification, "id">) =>
-      dispatch(createNotification(notification)), [dispatch]);
-  const broadcastImportantNoticeCallback = useCallback((notice: { type: NotificationType; title: string; message: string; priority: 'low' | 'medium' | 'high' | 'urgent'; expiresAt?: string }) =>
-      dispatch(broadcastImportantNotice(notice)), [dispatch]);
+  // 🔥 Subscribe to Firestore notifications real-time
+  useEffect(() => {
+    console.log("🔥 Setting up Firestore notifications subscription");
+    
+    const unsubscribe = firestoreRealtimeService.subscribeToNotifications((notificationsData) => {
+      console.log("🔥 Notifications real-time update:", notificationsData.length);
+      dispatch(setNotificationsFromFirestore(notificationsData));
+    });
+
+    return () => {
+      console.log("🔥 Cleaning up notifications subscription");
+      unsubscribe();
+    };
+  }, [dispatch]);
+
+  // Mark notification as read in Firestore
+  const markAsRead = useCallback(async (id: string) => {
+    try {
+      // Optimistic update
+      dispatch(markNotificationAsReadLocally(id));
+      
+      // Update in Firestore
+      const notificationRef = doc(db, "notifications", id);
+      await updateDoc(notificationRef, { read: true });
+      
+      console.log("✅ Notification marked as read:", id);
+    } catch (error) {
+      console.error("❌ Error marking notification as read:", error);
+      dispatch(setError("Failed to mark notification as read"));
+    }
+  }, [dispatch]);
+
+  // Mark all notifications as read in Firestore
+  const markAllAsRead = useCallback(async () => {
+    try {
+      // Optimistic update
+      dispatch(markAllNotificationsAsReadLocally());
+      
+      // Update all in Firestore using batch
+      const batch = writeBatch(db);
+      const unreadNotifications = notifications.filter(n => !n.read);
+      
+      unreadNotifications.forEach((notification) => {
+        const notificationRef = doc(db, "notifications", notification.id);
+        batch.update(notificationRef, { read: true });
+      });
+      
+      await batch.commit();
+      console.log("✅ All notifications marked as read");
+    } catch (error) {
+      console.error("❌ Error marking all as read:", error);
+      dispatch(setError("Failed to mark all notifications as read"));
+    }
+  }, [dispatch, notifications]);
+
+  // Delete notification from Firestore
+  const deleteNotification = useCallback(async (id: string) => {
+    try {
+      // Optimistic delete
+      dispatch(deleteNotificationLocally(id));
+      
+      // Delete from Firestore
+      const notificationRef = doc(db, "notifications", id);
+      await deleteDoc(notificationRef);
+      
+      console.log("✅ Notification deleted:", id);
+    } catch (error) {
+      console.error("❌ Error deleting notification:", error);
+      dispatch(setError("Failed to delete notification"));
+    }
+  }, [dispatch]);
+
+  // Create notification in Firestore
+  const createNotification = useCallback(async (notification: Omit<Notification, "id">) => {
+    try {
+      dispatch(setLoading(true));
+      
+      // Add to Firestore
+      const notificationsRef = collection(db, "notifications");
+      await addDoc(notificationsRef, {
+        ...notification,
+        createdAt: new Date().toISOString(),
+        read: false,
+      });
+      
+      console.log("✅ Notification created");
+      dispatch(setLoading(false));
+    } catch (error) {
+      console.error("❌ Error creating notification:", error);
+      dispatch(setError("Failed to create notification"));
+      dispatch(setLoading(false));
+      throw error;
+    }
+  }, [dispatch]);
+
+  // Broadcast important notice to all team members
+  const broadcastImportantNotice = useCallback(async (notice: { 
+    type: NotificationType; 
+    title: string; 
+    message: string; 
+    priority: 'low' | 'medium' | 'high' | 'urgent'; 
+    expiresAt?: string;
+  }) => {
+    try {
+      dispatch(setLoading(true));
+      
+      // Get all users to send notification to
+      const usersRef = collection(db, "users");
+      const usersSnapshot = await getDocs(usersRef);
+      
+      // Create batch to add notification for all users
+      const batch = writeBatch(db);
+      const notificationsRef = collection(db, "notifications");
+      
+      usersSnapshot.docs.forEach(() => {
+        const newNotificationRef = doc(notificationsRef);
+        batch.set(newNotificationRef, {
+          type: notice.type,
+          title: notice.title,
+          message: notice.message,
+          priority: notice.priority,
+          expiresAt: notice.expiresAt || null,
+          isImportant: true,
+          read: false,
+          createdAt: new Date().toISOString(),
+          relatedEntity: null,
+        });
+      });
+      
+      await batch.commit();
+      console.log("✅ Important notice broadcast to all users");
+      dispatch(setLoading(false));
+    } catch (error) {
+      console.error("❌ Error broadcasting important notice:", error);
+      dispatch(setError("Failed to broadcast important notice"));
+      dispatch(setLoading(false));
+      throw error;
+    }
+  }, [dispatch]);
 
   return {
     notifications,
     isLoading,
     error,
-    fetchNotifications: fetchNotificationsCallback,
-    markAsRead: markAsReadCallback,
-    markAllAsRead: markAllAsReadCallback,
-    deleteNotification: deleteNotificationCallback,
-    createNotification: createNotificationCallback,
-    broadcastImportantNotice: broadcastImportantNoticeCallback,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    createNotification,
+    broadcastImportantNotice,
   };
 };

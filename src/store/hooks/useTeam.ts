@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import {
-  fetchTeamMembers,
   fetchTeamMemberById,
   createTeamMember,
   updateTeamMember,
@@ -10,14 +9,27 @@ import {
 } from "../slices/teamSlice";
 import type { TeamState } from "../slices/teamSlice";
 import type { TeamMember } from "@/types";
+import { useTeamMembers as useFirestoreTeamMembers } from "@/hooks/firestore";
 
+/**
+ * 🔥 REALTIME: Redux hook now wraps Firestore hook for backward compatibility
+ * Data comes from Firestore realtime subscriptions - no more API calls!
+ */
 export const useTeam = () => {
   const dispatch = useAppDispatch();
-  const { teamMembers, currentMember, isLoading, error } = useAppSelector(
+  const { currentMember } = useAppSelector(
     (state) => state.team as TeamState
   );
 
-  const fetchTeamCallback = useCallback(() => dispatch(fetchTeamMembers()), [dispatch]);
+  // 🔥 Get team members from Firestore realtime subscription
+  const { data: teamMembers, loading: isLoading, error } = useFirestoreTeamMembers();
+
+  // No-op fetchTeam for backward compatibility - Firestore auto-subscribes
+  const fetchTeamCallback = useCallback(() => {
+    console.log('⚠️ fetchTeam called but ignored - using Firestore realtime subscription');
+    return Promise.resolve();
+  }, []);
+
   const fetchTeamMemberByIdCallback = useCallback((id: string) => dispatch(fetchTeamMemberById(id)), [dispatch]);
   const createTeamMemberCallback = useCallback((data: Partial<TeamMember>) => dispatch(createTeamMember(data)), [dispatch]);
   const updateTeamMemberCallback = useCallback((id: string, data: Partial<TeamMember>) =>
@@ -30,7 +42,7 @@ export const useTeam = () => {
     teamMembers,
     currentMember,
     isLoading,
-    error,
+    error: error?.message,
     fetchTeam: fetchTeamCallback,
     fetchTeamMemberById: fetchTeamMemberByIdCallback,
     createTeamMember: createTeamMemberCallback,

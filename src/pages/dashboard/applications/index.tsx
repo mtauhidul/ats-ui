@@ -1,38 +1,31 @@
-import { useEffect } from "react";
 import { DataTable } from "@/components/data-table";
 import { Loader } from "@/components/ui/loader";
-import { useApplications, useJobs, useClients, useAppSelector } from "@/store/hooks/index";
-import { selectApplications, selectJobs, selectClients } from "@/store/selectors";
+import { useApplications, useJobs, useClients, useTeam } from "@/store/hooks/index";
 import type { Application } from "@/types/application";
 import type { Job } from "@/types/job";
 import type { Client } from "@/types/client";
 
 export default function ApplicationsPage() {
-  const { fetchApplicationsIfNeeded, isLoading: applicationsLoading } = useApplications(); // Use smart fetch
-  const { fetchJobsIfNeeded, isLoading: jobsLoading } = useJobs(); // Use smart fetch
-  const { fetchClientsIfNeeded, isLoading: clientsLoading } = useClients(); // Use smart fetch
-  
-  const applications = useAppSelector(selectApplications);
-  const jobs = useAppSelector(selectJobs);
-  const clients = useAppSelector(selectClients);
-
-  useEffect(() => {
-    fetchApplicationsIfNeeded(); // Smart fetch - only if cache is stale
-    fetchJobsIfNeeded(); // Smart fetch - only if cache is stale
-    fetchClientsIfNeeded(); // Smart fetch - only if cache is stale
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty deps - only fetch on mount, cache handles the rest
+  // 🔥 REALTIME: Get data directly from Firestore hooks - auto-updates in realtime!
+  const { applications, isLoading: applicationsLoading } = useApplications();
+  const { jobs, isLoading: jobsLoading } = useJobs();
+  const { clients, isLoading: clientsLoading } = useClients();
+  const { teamMembers, isLoading: teamLoading } = useTeam();
 
   // Log applications data
-  console.log('Applications data:', applications);
-  console.log('Jobs data:', jobs);
-  console.log('Clients data:', clients);
+  console.log('📊 Applications page - Firestore data:', {
+    applications: applications.length,
+    jobs: jobs.length,
+    clients: clients.length,
+    teamMembers: teamMembers.length,
+  });
   
   // Debug date values from first application
   if (applications.length > 0) {
     const firstApp = applications[0];
     console.log('First app submittedAt:', firstApp.submittedAt, 'Type:', typeof firstApp.submittedAt);
     console.log('First app createdAt:', firstApp.createdAt, 'Type:', typeof firstApp.createdAt);
+    console.log('First app reviewedBy:', firstApp.reviewedBy, 'Type:', typeof firstApp.reviewedBy);
   }
 
   const transformedData = applications.map((app: Application) => {
@@ -249,6 +242,11 @@ export default function ApplicationsPage() {
         const reviewer = app.reviewedBy as any;
         return `${reviewer.firstName} ${reviewer.lastName}`;
       }
+      // Look up user by ID (reviewedBy stores user ID from users collection)
+      const reviewer = teamMembers.find((tm) => tm.id === app.reviewedBy);
+      if (reviewer) {
+        return `${reviewer.firstName} ${reviewer.lastName}`;
+      }
       return app.reviewedByName || "Unknown";
     })(),
     source: app.source || "direct_application", // Application source (manual/email/direct apply)
@@ -319,7 +317,19 @@ export default function ApplicationsPage() {
   };
   });
 
-  const isLoading = applicationsLoading || jobsLoading || clientsLoading;
+  // Enrich jobs with client information for the modal
+  const enrichedJobs = jobs.map((job: Job) => {
+    const client = clients.find((c: Client) => c.id === job.clientId);
+    return {
+      ...job,
+      clientId: client ? {
+        id: client.id,
+        companyName: client.companyName,
+      } : job.clientId, // Keep original if client not found
+    };
+  });
+
+  const isLoading = applicationsLoading || jobsLoading || clientsLoading || teamLoading;
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-screen">
@@ -341,7 +351,7 @@ export default function ApplicationsPage() {
               </p>
             </div>
           </div>
-          <DataTable data={transformedData} jobs={jobs} />
+          <DataTable data={transformedData} jobs={enrichedJobs} />
         </div>
       </div>
     </div>

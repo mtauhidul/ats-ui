@@ -10,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAppSelector, useCategories } from "@/store/hooks/index";
-import { selectCategories } from "@/store/selectors";
+import { useCategories as useFirestoreCategories } from "@/hooks/firestore";
+import { useCategories } from "@/store/hooks/index";
 import type {
   Category,
   CategoryTree,
@@ -24,22 +24,19 @@ import {
   Edit2,
   Folder,
   FolderTree,
+  Loader2,
   Plus,
   Search,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export default function CategoriesPage() {
-  const { fetchCategoriesIfNeeded, createCategory, updateCategory, deleteCategory } =
-    useCategories(); // Use smart fetch
-  const categories = useAppSelector(selectCategories);
-
-  useEffect(() => {
-    fetchCategoriesIfNeeded(); // Smart fetch - only if cache is stale
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty deps - only fetch on mount
+  const { createCategory, updateCategory, deleteCategory } = useCategories();
+  
+  // 🔥 REALTIME: Get categories from Firestore with realtime updates
+  const { data: categories, loading: isLoadingCategories } = useFirestoreCategories();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -68,13 +65,18 @@ export default function CategoriesPage() {
       (c: { id: string }) => c.id === categoryId
     );
 
+    if (!category) {
+      toast.error("Category not found");
+      return;
+    }
+
     // Check if category has children
     const hasChildren = categories.some(
       (c: { parentId?: string }) => c.parentId === categoryId
     );
     if (hasChildren) {
       toast.error(
-        `Cannot delete "${category?.name}". Please delete all subcategories first.`,
+        `Cannot delete "${category.name}". Please delete all subcategories first.`,
         { duration: 5000 }
       );
       return;
@@ -195,6 +197,18 @@ export default function CategoriesPage() {
 
   const activeCategories = categories.filter((c: Category) => c.isActive);
   const parentCategories = categories.filter((c: Category) => !c.parentId);
+
+  // Loading state
+  if (isLoadingCategories) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading categories...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Recursive tree renderer
   const renderCategoryTree = (tree: CategoryTree[]) => {

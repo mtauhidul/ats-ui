@@ -132,7 +132,37 @@ export const broadcastImportantNotice = createAsyncThunk(
 const notificationsSlice = createSlice({
   name: "notifications",
   initialState,
-  reducers: {},
+  reducers: {
+    // Set notifications from Firestore real-time subscription
+    setNotificationsFromFirestore: (state, action: PayloadAction<Notification[]>) => {
+      state.notifications = action.payload;
+      state.isLoading = false;
+      state.error = null;
+    },
+    // Optimistic update for marking as read
+    markNotificationAsReadLocally: (state, action: PayloadAction<string>) => {
+      const notification = state.notifications.find(n => n.id === action.payload);
+      if (notification) {
+        notification.read = true;
+      }
+    },
+    // Optimistic update for marking all as read
+    markAllNotificationsAsReadLocally: (state) => {
+      state.notifications.forEach(n => {
+        n.read = true;
+      });
+    },
+    // Optimistic delete
+    deleteNotificationLocally: (state, action: PayloadAction<string>) => {
+      state.notifications = state.notifications.filter(n => n.id !== action.payload);
+    },
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.isLoading = action.payload;
+    },
+    setError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder
       // Fetch notifications
@@ -188,5 +218,14 @@ const notificationsSlice = createSlice({
       );
   },
 });
+
+export const {
+  setNotificationsFromFirestore,
+  markNotificationAsReadLocally,
+  markAllNotificationsAsReadLocally,
+  deleteNotificationLocally,
+  setLoading,
+  setError,
+} = notificationsSlice.actions;
 
 export default notificationsSlice.reducer;

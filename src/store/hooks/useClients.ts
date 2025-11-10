@@ -20,6 +20,14 @@ export const useClients = () => {
   // Get realtime data from Firestore
   const { data: clients, loading: isLoading, error: firestoreError } = useFirestoreClients();
   
+  // Debug logging
+  console.log('🔍 useClients hook:', {
+    clientsCount: clients.length,
+    isLoading,
+    error: firestoreError,
+    clients: clients.slice(0, 2), // Show first 2 for debugging
+  });
+  
   // Keep filters and currentClient from Redux for backward compatibility
   const { currentClient, filters } = useAppSelector(
     (state) => state.clients as ClientsState

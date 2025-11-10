@@ -6,6 +6,7 @@ export interface EmailVariables {
   // Candidate variables
   firstName?: string;
   lastName?: string;
+  candidateName?: string; // ✅ ADDED: Full name
   email?: string;
   phone?: string;
   
@@ -20,11 +21,13 @@ export interface EmailVariables {
   interviewDate?: string;
   interviewTime?: string;
   interviewLocation?: string;
+  interviewDuration?: string; // ✅ ADDED: Duration
   
   // Offer variables
   startDate?: string;
   salary?: string;
   benefits?: string;
+  responseDeadline?: string; // ✅ ADDED: Response deadline
   
   // General variables
   reviewDays?: string;
@@ -76,10 +79,14 @@ export function extractEmailVariables(
   client?: Client,
   customVars?: Record<string, string>
 ): EmailVariables {
+  // Build full candidate name
+  const candidateName = `${candidate.firstName} ${candidate.lastName}`.trim();
+  
   const variables: EmailVariables = {
-    // Candidate info
+    // Candidate info - BOTH individual and combined
     firstName: candidate.firstName,
     lastName: candidate.lastName,
+    candidateName: candidateName, // ✅ ADDED: Combined name for templates
     email: candidate.email,
     phone: candidate.phone,
     
@@ -105,9 +112,11 @@ export function extractEmailVariables(
     interviewDate: "[Interview Date]",
     interviewTime: "[Interview Time]",
     interviewLocation: "[Interview Location]",
+    interviewDuration: "45-60 minutes", // ✅ ADDED: Missing variable
     startDate: "[Start Date]",
     salary: "[Salary]",
     benefits: "[Benefits]",
+    responseDeadline: "[Response Deadline]", // ✅ ADDED: Missing variable
     
     // Add any custom variables
     ...customVars,

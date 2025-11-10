@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useCandidates } from "@/store/hooks/useCandidates";
 import { useJobs } from "@/store/hooks/useJobs";
 import { ArrowLeft } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 export default function JobCandidateCommunicationPage() {
@@ -12,14 +12,47 @@ export default function JobCandidateCommunicationPage() {
     jobId: string;
     candidateId: string;
   }>();
-  const { currentCandidate, fetchCandidateById } = useCandidates();
-  const { currentJob, fetchJobById } = useJobs();
+  
+  // Get data from Firestore realtime subscriptions
+  const { candidates, isLoading: candidatesLoading, setCurrentCandidate } = useCandidates();
+  const { jobs, isLoading: jobsLoading, setCurrentJob } = useJobs();
+
+  // Find candidate and job from Firestore data
+  const currentCandidate = useMemo(() => 
+    candidates.find((c) => c.id === candidateId),
+    [candidates, candidateId]
+  );
+
+  const currentJob = useMemo(() => 
+    jobs.find((j) => j.id === jobId),
+    [jobs, jobId]
+  );
+
+  // Set current items in Redux when found
+  useEffect(() => {
+    if (currentCandidate) {
+      setCurrentCandidate(currentCandidate);
+    }
+  }, [currentCandidate, setCurrentCandidate]);
 
   useEffect(() => {
-    if (jobId) fetchJobById(jobId);
-    if (candidateId) fetchCandidateById(candidateId);
-  }, [jobId, candidateId, fetchJobById, fetchCandidateById]);
+    if (currentJob) {
+      setCurrentJob(currentJob);
+    }
+  }, [currentJob, setCurrentJob]);
 
+  // Show loading state
+  if (candidatesLoading || jobsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
   if (!currentJob || !currentCandidate) {
     return (
       <div className="flex items-center justify-center min-h-screen">

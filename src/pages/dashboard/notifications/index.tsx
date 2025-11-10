@@ -20,7 +20,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/store/hooks/useNotifications";
-import { useTeam } from "@/store/hooks/useTeam";
 import type { NotificationType } from "@/store/slices/notificationsSlice";
 import {
   AlertCircle,
@@ -38,26 +37,20 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export default function NotificationsPage() {
+  // 🔥 REALTIME: useNotifications hook now subscribes to Firestore automatically - no fetchNotifications needed!
   const {
     notifications,
-    fetchNotifications,
     markAsRead,
     markAllAsRead,
     deleteNotification,
     createNotification,
     broadcastImportantNotice,
   } = useNotifications();
-  const { fetchTeam } = useTeam();
   const { user } = useAuth();
-
-  useEffect(() => {
-    fetchNotifications();
-    fetchTeam();
-  }, [fetchNotifications, fetchTeam]);
 
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
 
@@ -202,7 +195,7 @@ export default function NotificationsPage() {
         expiresAt: "",
       });
       toast.success("Important notice broadcast to all team members!");
-      fetchNotifications();
+      // Firestore real-time subscription will automatically update the list
     } catch {
       toast.error("Failed to broadcast important notice");
     }

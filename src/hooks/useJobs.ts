@@ -2,9 +2,7 @@ import { useMemo } from 'react';
 import type { Job } from '@/types';
 import {
   useFirestoreCollection,
-  getCompanyCollectionPath,
   where,
-  orderBy,
   type UseFirestoreCollectionResult,
 } from './useFirestore';
 import type { DocumentData } from 'firebase/firestore';
@@ -93,18 +91,28 @@ export function useJobs(options?: {
       constraints.push(where('clientId', '==', clientId));
     }
 
-    // Default ordering
-    constraints.push(orderBy('createdAt', 'desc'));
+    // Ordering removed to avoid index requirements - sort in frontend if needed
 
     return constraints;
   }, [status, clientId]);
 
-  return useFirestoreCollection<Job>({
-    collectionPath: getCompanyCollectionPath('jobs'),
+  const result = useFirestoreCollection<Job>({
+    collectionPath: 'jobs', // Root level collection
     queryConstraints,
     enabled,
     transform: transformJobDocument,
   });
+
+  console.log('🔍 useJobs hook result:', {
+    jobsCount: result.data.length,
+    loading: result.loading,
+    error: result.error,
+    enabled,
+    status,
+    clientId,
+  });
+
+  return result;
 }
 
 /**

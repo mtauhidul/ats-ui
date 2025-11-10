@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader } from "@/components/ui/loader";
 import { Textarea } from "@/components/ui/textarea";
-import type { Job } from "@/types/job";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -15,19 +14,11 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/config/api";
-
-// Helper function to normalize job data from backend (handle _id to id conversion)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const normalizeJob = (job: any): Job => {
-  return {
-    ...job,
-    id: job.id || job._id, // Handle both id and _id fields
-  };
-};
+import { useJob } from "@/hooks/firestore";
 
 interface Experience {
   title: string;
@@ -68,8 +59,10 @@ interface ParsedCandidate {
 export default function PublicApplyPage() {
   const navigate = useNavigate();
   const { jobId } = useParams<{ jobId: string }>();
-  const [job, setJob] = useState<Job | null>(null);
-  const [loadingJob, setLoadingJob] = useState(true);
+  
+  // 🔥 REALTIME: Direct Firestore subscription for job data
+  const { job, loading: loadingJob } = useJob(jobId!);
+  
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -98,27 +91,6 @@ export default function PublicApplyPage() {
     certifications: [],
     languages: [],
   });
-
-  // Fetch job details
-  useEffect(() => {
-    const fetchJob = async () => {
-      if (!jobId) return;
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/jobs/${jobId}`);
-        const result = await response.json();
-        const jobData = result.data || result;
-        setJob(normalizeJob(jobData));
-      } catch (error) {
-        console.error("Error fetching job:", error);
-        toast.error("Failed to load job details");
-      } finally {
-        setLoadingJob(false);
-      }
-    };
-
-    fetchJob();
-  }, [jobId]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

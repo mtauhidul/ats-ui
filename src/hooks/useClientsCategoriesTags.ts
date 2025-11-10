@@ -3,7 +3,6 @@ import type { Client, Category, Tag } from '@/types';
 import {
   useFirestoreCollection,
   where,
-  orderBy,
   type UseFirestoreCollectionResult,
 } from './useFirestore';
 import type { DocumentData } from 'firebase/firestore';
@@ -43,8 +42,8 @@ export function useClients(options?: {
       constraints.push(where('industry', '==', industry));
     }
 
-    // Default ordering
-    constraints.push(orderBy('createdAt', 'desc'));
+    // Note: Ordering removed to avoid index requirements
+    // Can be added back after creating Firestore index if needed
 
     return constraints;
   }, [status, industry]);
@@ -112,8 +111,8 @@ export function useCategories(options?: {
       constraints.push(where('isActive', '==', isActive));
     }
 
-    // Default ordering
-    constraints.push(orderBy('name', 'asc'));
+    // Note: Ordering removed to avoid index requirements
+    // Can be added back after creating Firestore index if needed
 
     return constraints;
   }, [isActive]);
@@ -181,8 +180,8 @@ export function useTags(options?: {
       constraints.push(where('isActive', '==', isActive));
     }
 
-    // Default ordering
-    constraints.push(orderBy('name', 'asc'));
+    // Note: Ordering removed to avoid index requirements
+    // Can be added back after creating Firestore index if needed
 
     return constraints;
   }, [isActive]);

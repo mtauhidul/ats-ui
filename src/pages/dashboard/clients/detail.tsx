@@ -1,47 +1,86 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useMemo } from "react";
 import { ClientDetails } from "@/components/client-details";
 import { Loader } from "@/components/ui/loader";
 import type { Client } from "@/types/client";
 import type { CreateJobRequest } from "@/types/job";
-import { useClients, useJobs, useCandidates, useAppSelector } from "@/store/hooks/index";
-import { selectClientById, selectJobs, selectCandidates } from "@/store/selectors";
+import { useClient } from "@/hooks/firestore";
+import { useJobs, useCandidates, useClients } from "@/store/hooks/index";
 
 export default function ClientDetailPage() {
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
 
-  const { fetchClients, fetchClientById, deleteClient, updateClient, addCommunicationNote } = useClients();
-  const { fetchJobs, createJob } = useJobs();
-  const { fetchCandidates } = useCandidates();
+  // Get realtime data from Firestore
+  const { client, loading: clientLoading } = useClient(clientId);
+  const { jobs: allJobs, createJob } = useJobs();
+  const { candidates: allCandidates } = useCandidates();
   
-  const client = useAppSelector(state => selectClientById(clientId || '')(state));
-  const allJobs = useAppSelector(selectJobs);
-  const allCandidates = useAppSelector(selectCandidates);
+  // Get write operations from Redux hooks
+  const { deleteClient, updateClient, addCommunicationNote } = useClients();
   
-  const jobs = allJobs.filter(j => j.clientId === clientId);
+  // Filter jobs for this client
+  const jobs = useMemo(() => 
+    allJobs.filter(j => j.clientId === clientId),
+    [allJobs, clientId]
+  );
   
   // Filter candidates by checking if their jobIds include any of the client's jobs
-  const candidates = allCandidates.filter(c => {
-    const jobIdsList = c.jobIds || [];
-    return jobIdsList.some((id: string | {toString(): string}) => {
-      const idString = typeof id === 'string' ? id : id?.toString();
-      return jobs.some(j => j.id === idString);
-    });
-  });
-
-  useEffect(() => {
-    // Early return if no clientId to prevent undefined API calls
-    if (!clientId) {
-      return;
-    }
+  const candidates = useMemo(() => 
+    allCandidates.filter(c => {
+      const jobIdsList = c.jobIds || [];
+      return jobIdsList.some((id: string | {toString(): string}) => {
+        const idString = typeof id === 'string' ? id : id?.toString();
+        return jobs.some(j => j.id === idString);
+      });
+    }),
+    [allCandidates, jobs]
+  );
+  
+  // Calculate real-time statistics from jobs and candidates data
+  const clientWithStats = useMemo(() => {
+    if (!client) return null;
     
-    fetchClientById(clientId);
-    fetchClients();
-    fetchJobs();
-    fetchCandidates();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientId]);
+    const totalJobs = jobs.length;
+    const activeJobs = jobs.filter(job => job.status === 'open').length;
+    const closedJobs = jobs.filter(job => job.status === 'closed').length;
+    const draftJobs = jobs.filter(job => job.status === 'draft').length;
+    
+    const totalCandidates = candidates.length;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const activeCandidates = candidates.filter((c: any) => 
+      c.status === 'active' || c.status === 'interviewing' || c.status === 'offered'
+    ).length;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rejectedCandidates = candidates.filter((c: any) => 
+      c.status === 'rejected'
+    ).length;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hiredCandidates = candidates.filter((c: any) => 
+      c.status === 'hired'
+    ).length;
+    
+    const successRate = totalCandidates > 0 
+      ? Math.round((hiredCandidates / totalCandidates) * 100) 
+      : 0;
+    
+    return {
+      ...client,
+      statistics: {
+        totalJobs,
+        activeJobs,
+        closedJobs,
+        draftJobs,
+        totalCandidates,
+        activeCandidates,
+        rejectedCandidates,
+        hiredCandidates,
+        successRate,
+      }
+    };
+  }, [client, jobs, candidates]);
+
+  // No useEffect needed - all data comes from Firestore realtime subscriptions!
 
   const handleBack = () => {
     navigate("/dashboard/clients");
@@ -50,8 +89,7 @@ export default function ClientDetailPage() {
   const handleAddJob = async (data: CreateJobRequest) => {
     try {
       await createJob(data);
-      // Refresh jobs after creating
-      fetchJobs();
+      // Firestore will automatically update the jobs list in realtime
     } catch (error) {
       console.error("Failed to create job:", error);
     }
@@ -68,12 +106,8 @@ export default function ClientDetailPage() {
       
       await updateClient(clientId, updates);
       
-      console.log('Update successful, fetching updated client...');
-      
-      // Refresh client data after updating
-      await fetchClientById(clientId);
-      
-      console.log('Client refreshed');
+      console.log('Update successful - Firestore will update in realtime');
+      // No need to fetch - Firestore will automatically update the client data
     } catch (error) {
       console.error("Failed to update client:", error);
     }
@@ -92,8 +126,7 @@ export default function ClientDetailPage() {
   const handleAddCommunicationNote = async (clientId: string, note: { type: string; subject: string; content: string }) => {
     try {
       await addCommunicationNote(clientId, note);
-      // Refresh client data after adding note
-      await fetchClientById(clientId);
+      // Firestore will automatically update the client data in realtime
     } catch (error) {
       console.error("Failed to add communication note:", error);
     }
@@ -112,8 +145,8 @@ export default function ClientDetailPage() {
     );
   }
 
-  // Check if client data is loaded
-  if (!client) {
+  // Show loading state while fetching from Firestore
+  if (clientLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader size="md" text="Loading client..." />
@@ -121,9 +154,18 @@ export default function ClientDetailPage() {
     );
   }
 
+  // Check if client exists in Firestore
+  if (!client || !clientWithStats) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Client not found</p>
+      </div>
+    );
+  }
+
   return (
     <ClientDetails
-      client={client}
+      client={clientWithStats}
       jobs={jobs}
       candidates={candidates}
       onBack={handleBack}

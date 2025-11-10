@@ -84,7 +84,6 @@ export default function MessagesPage() {
     conversations,
     setCurrentConversation,
     currentConversation,
-    fetchMessages,
   } = useMessages();
 
   // Inject animation styles
@@ -117,10 +116,7 @@ export default function MessagesPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch messages on mount
-  useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages]);
+  // No need to fetch messages - useMessages hook handles Firestore real-time subscription!
 
   const filteredConversations = searchQuery
     ? conversations.filter((c) =>
@@ -812,7 +808,7 @@ export default function MessagesPage() {
         open={isNewMessageModalOpen}
         onOpenChange={setIsNewMessageModalOpen}
         onSuccess={() => {
-          fetchMessages();
+          // No need to fetch - Firestore real-time subscription will update automatically
         }}
       />
     </div>

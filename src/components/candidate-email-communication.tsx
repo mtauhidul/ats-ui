@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEmailsByCandidateAndJob } from "@/hooks/firestore";
 import { API_BASE_URL } from "@/config/api";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import {
@@ -28,10 +29,7 @@ import {
   replaceTemplateVariables,
 } from "@/lib/email-template-helper";
 import { cn } from "@/lib/utils";
-import {
-  getEmailTemplates,
-  type EmailTemplate,
-} from "@/services/emailTemplate.service";
+import { useEmailTemplates } from "@/store/hooks/index";
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
 import {
@@ -56,7 +54,7 @@ import {
   Trash2,
   Type,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 // System email for sending (matches backend RESEND_FROM_EMAIL)
@@ -107,14 +105,30 @@ export function CandidateEmailCommunication({
   const [activeTab, setActiveTab] = useState("inbox");
   const [selectedEmail, setSelectedEmail] = useState<EmailThread | null>(null);
   const [isComposing, setIsComposing] = useState(false);
-  const [emails, setEmails] = useState<EmailThread[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [isInboxOpen, setIsInboxOpen] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [emailToDelete, setEmailToDelete] = useState<EmailThread | null>(null);
+
+  // 🔥 REALTIME: Get emails from Firestore with realtime updates
+  const { data: firestoreEmails, loading: isLoading } = useEmailsByCandidateAndJob(
+    candidate.id,
+    job.id
+  );
+  
+  // 🔥 REALTIME: Get email templates from Firestore
+  const { templates: emailTemplates } = useEmailTemplates();
+
+  // Transform Firestore emails to match EmailThread interface
+  // Note: Timestamps are already converted to JavaScript Date objects by transformEmailDocument in useEmails hook
+  const emails: EmailThread[] = firestoreEmails.map(email => ({
+    ...email,
+    _id: email.id, // Add _id for backward compatibility
+    timestamp: email.sentAt || email.createdAt,
+    // sentBy is a string (user ID) in Firestore, EmailThread expects object or undefined
+    sentBy: undefined, // Can be populated later if user details are needed
+  }));
 
   // Compose email state
   const [composeData, setComposeData] = useState({
@@ -127,79 +141,7 @@ export function CandidateEmailCommunication({
   const initials =
     `${candidate.firstName[0]}${candidate.lastName[0]}`.toUpperCase();
 
-  // Fetch email templates on mount
-  useEffect(() => {
-    const loadTemplates = async () => {
-      try {
-        const templates = await getEmailTemplates({ isActive: true });
-        setEmailTemplates(templates);
-      } catch (error) {
-        console.error("Failed to load email templates:", error);
-        // Don't show error toast, just log it (templates are optional)
-      }
-    };
-    loadTemplates();
-  }, []);
-
-  // Fetch emails on mount
-  useEffect(() => {
-    const fetchEmails = async () => {
-      try {
-        console.log(
-          "[Email Fetch] Starting fetch at",
-          new Date().toISOString()
-        );
-        setIsLoading(true);
-
-        const startTime = performance.now();
-        const response = await authenticatedFetch(
-          `${API_BASE_URL}/emails?candidateId=${candidate.id}&jobId=${job.id}&sortBy=createdAt&sortOrder=desc&limit=100`
-        );
-        const fetchTime = performance.now() - startTime;
-        console.log(
-          "[Email Fetch] Request completed in",
-          fetchTime.toFixed(2),
-          "ms"
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch emails");
-        }
-
-        const result = await response.json();
-        const emailsData = result.data?.emails || []; // Access nested data.emails
-        console.log("[Email Fetch] Received", emailsData.length, "emails");
-
-        // Transform emails to match our interface
-        const transformedEmails = emailsData.map(
-          (email: {
-            _id?: string;
-            id?: string;
-            sentAt?: string;
-            receivedAt?: string;
-            createdAt?: string;
-            [key: string]: unknown;
-          }) => ({
-            ...email,
-            id: email._id || email.id,
-            timestamp: new Date(
-              email.sentAt || email.receivedAt || email.createdAt || Date.now()
-            ),
-          })
-        );
-
-        setEmails(transformedEmails);
-        console.log("[Email Fetch] Complete");
-      } catch (error) {
-        console.error("[Email Fetch] Error:", error);
-        toast.error("Failed to load emails");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchEmails();
-  }, [candidate.id, job.id]);
+  // Email templates are now loaded in real-time via useEmailTemplates hook!
 
   const sentEmails = emails.filter((e) => e.direction === "outbound");
   const receivedEmails = emails.filter((e) => e.direction === "inbound");
@@ -246,19 +188,9 @@ export function CandidateEmailCommunication({
         throw new Error("Failed to send email");
       }
 
-      const result = await response.json();
-      const sentEmail = result.data; // Extract from success response wrapper
-
-      // Transform the sent email to match our interface
-      const transformedEmail = {
-        ...sentEmail,
-        id: sentEmail._id || sentEmail.id,
-        timestamp: new Date(
-          sentEmail.sentAt || sentEmail.createdAt || Date.now()
-        ),
-      };
-
-      setEmails([transformedEmail, ...emails]);
+      await response.json();
+      // No need to manually update state - Firestore will sync automatically!
+      
       setComposeData({
         to: candidate.email,
         subject: "",
@@ -315,10 +247,8 @@ export function CandidateEmailCommunication({
         throw new Error("Failed to delete email");
       }
 
-      // Remove email from list
-      setEmails(emails.filter((e) => e.id !== emailToDelete.id));
-
-      // Clear selection if this email was selected
+      // No need to manually update state - Firestore will sync automatically!
+      // Just clear selection if this email was selected
       if (selectedEmail?.id === emailToDelete.id) {
         setSelectedEmail(null);
       }
@@ -644,7 +574,7 @@ export function CandidateEmailCommunication({
                       onValueChange={(value) => {
                         if (value === "none") return;
                         const template = emailTemplates.find(
-                          (t) => (t._id || t.id) === value
+                          (t) => t.id === value
                         );
                         if (template) {
                           // Extract variables and apply template
@@ -684,11 +614,10 @@ export function CandidateEmailCommunication({
                           </div>
                         </SelectItem>
                         {emailTemplates.map((template) => {
-                          const templateId = template._id || template.id || "";
                           return (
                             <SelectItem
-                              key={templateId}
-                              value={templateId}
+                              key={template.id}
+                              value={template.id}
                               className="text-sm"
                             >
                               <div className="flex items-center gap-1.5 md:gap-2">

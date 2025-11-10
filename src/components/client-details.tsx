@@ -20,6 +20,7 @@ import { useAppSelector } from "@/store/hooks";
 import type { Candidate } from "@/types/candidate";
 import type {
   Client,
+  ClientActivityHistory,
   CommunicationNote,
   ContactPerson,
   CreateCommunicationNoteRequest,
@@ -64,7 +65,10 @@ interface ClientDetailsProps {
   onDelete: (clientId: string) => void;
   onAddJob?: (job: CreateJobRequest) => void;
   onJobClick?: (jobId: string) => void;
-  onAddCommunicationNote?: (clientId: string, note: { type: string; subject: string; content: string }) => void;
+  onAddCommunicationNote?: (
+    clientId: string,
+    note: { type: string; subject: string; content: string }
+  ) => void;
 }
 
 const statusColors = {
@@ -102,7 +106,7 @@ const industryColors = {
 export function ClientDetails({
   client,
   jobs,
-  // candidates, // Reserved for future use
+  candidates,
   onBack,
   onUpdate,
   onDelete,
@@ -118,43 +122,48 @@ export function ClientDetails({
   const [isAddJobOpen, setIsAddJobOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteConfirmMessage, setDeleteConfirmMessage] = useState("");
-  // const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
-  //   null
-  // );
+
+  // Helper to convert Firestore Timestamp or any date value to Date object
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const toDateObject = (dateValue: any): Date => {
+    if (!dateValue) return new Date();
+
+    // Handle Firestore Timestamp
+    if (dateValue && typeof dateValue === "object" && "seconds" in dateValue) {
+      return new Date(dateValue.seconds * 1000);
+    }
+
+    // Handle string or Date
+    const date = new Date(dateValue);
+    return isNaN(date.getTime()) ? new Date() : date;
+  };
 
   // Ensure contacts and communicationNotes are always arrays
   // Handle both array format and object format (Firestore sometimes returns objects with numeric keys)
-  const contacts = Array.isArray(client.contacts) 
-    ? client.contacts 
-    : client.contacts && typeof client.contacts === 'object'
-    ? Object.values(client.contacts)
+  const contacts: ContactPerson[] = Array.isArray(client.contacts)
+    ? client.contacts
+    : client.contacts && typeof client.contacts === "object"
+    ? (Object.values(client.contacts) as ContactPerson[])
     : [];
-  
-  const communicationNotes = Array.isArray(client.communicationNotes) 
-    ? client.communicationNotes 
-    : client.communicationNotes && typeof client.communicationNotes === 'object'
-    ? Object.values(client.communicationNotes)
+
+  const communicationNotes: CommunicationNote[] = Array.isArray(
+    client.communicationNotes
+  )
+    ? client.communicationNotes
+    : client.communicationNotes && typeof client.communicationNotes === "object"
+    ? (Object.values(client.communicationNotes) as CommunicationNote[])
     : [];
-  
-  const activityHistory = Array.isArray(client.activityHistory) 
-    ? client.activityHistory 
-    : client.activityHistory && typeof client.activityHistory === 'object'
-    ? Object.values(client.activityHistory)
+
+  const activityHistory: ClientActivityHistory[] = Array.isArray(
+    client.activityHistory
+  )
+    ? client.activityHistory
+    : client.activityHistory && typeof client.activityHistory === "object"
+    ? (Object.values(client.activityHistory) as ClientActivityHistory[])
     : [];
-  
-  const tags = Array.isArray(client.tags) ? client.tags : [];
-  
-  // Debug contacts
-  console.log('=== CLIENT DETAILS DEBUG ===');
-  console.log('Client ID:', client.id);
-  console.log('Client contacts raw:', client.contacts);
-  console.log('Contacts array:', contacts);
-  console.log('Contacts length:', contacts.length);
-  if (contacts.length > 0) {
-    console.log('First contact:', contacts[0]);
-  }
-  console.log('===========================');
-  
+
+  const tags: string[] = Array.isArray(client.tags) ? client.tags : [];
+
   // Ensure statistics has default values
   const statistics = client.statistics || {
     totalJobs: 0,
@@ -167,11 +176,40 @@ export function ClientDetails({
     rejectedCandidates: 0,
     successRate: 0,
   };
-  
+
   const primaryContact = contacts.find((c) => c.isPrimary);
 
   // Filter jobs for this client
   const clientJobs = jobs.filter((job) => job.clientId === client.id);
+
+  // Calculate real-time candidate counts for each job
+  const jobCandidateCounts = new Map<
+    string,
+    { total: number; active: number; hired: number }
+  >();
+
+  candidates.forEach((candidate) => {
+    const jobIds = candidate.jobIds || [];
+
+    jobIds.forEach((jobId: string) => {
+      if (!jobCandidateCounts.has(jobId)) {
+        jobCandidateCounts.set(jobId, { total: 0, active: 0, hired: 0 });
+      }
+
+      const count = jobCandidateCounts.get(jobId)!;
+      count.total++;
+
+      if (candidate.status === "hired") {
+        count.hired++;
+      } else if (
+        candidate.status === "active" ||
+        candidate.status === "interviewing" ||
+        candidate.status === "offered"
+      ) {
+        count.active++;
+      }
+    });
+  });
 
   // Get all clients for the job modal (just this one client since we're in client context)
   const clientsList = [client];
@@ -197,7 +235,9 @@ export function ClientDetails({
       action: "contact_added",
       description: `New contact "${data.name}" (${data.position}) was added`,
       performedBy: currentUser?.id || "system",
-      performedByName: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "System",
+      performedByName: currentUser
+        ? `${currentUser.firstName} ${currentUser.lastName}`
+        : "System",
       timestamp: new Date(),
       metadata: {
         contactName: data.name,
@@ -205,11 +245,6 @@ export function ClientDetails({
         email: data.email,
       },
     };
-
-    console.log('Adding contact:', newContact);
-    console.log('Adding activity:', newActivity);
-    console.log('Current contacts:', contacts);
-    console.log('Current activityHistory:', activityHistory);
 
     onUpdate(client.id, {
       contacts: [...contacts, newContact],
@@ -228,7 +263,9 @@ export function ClientDetails({
       action: "contact_removed",
       description: `Contact "${contact?.name}" was removed`,
       performedBy: currentUser?.id || "system",
-      performedByName: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "System",
+      performedByName: currentUser
+        ? `${currentUser.firstName} ${currentUser.lastName}`
+        : "System",
       timestamp: new Date(),
       metadata: { contactName: contact?.name, contactId },
     };
@@ -251,7 +288,9 @@ export function ClientDetails({
         id: `note-${Date.now()}`,
         clientId: client.id,
         createdBy: currentUser?.id || "system",
-        createdByName: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "System",
+        createdByName: currentUser
+          ? `${currentUser.firstName} ${currentUser.lastName}`
+          : "System",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -261,11 +300,14 @@ export function ClientDetails({
         id: `activity-${Date.now()}`,
         clientId: client.id,
         action: "communication_logged",
-        description: `Communication logged: ${data.type.replace(/_/g, " ")} - "${
-          data.subject
-        }"`,
+        description: `Communication logged: ${data.type.replace(
+          /_/g,
+          " "
+        )} - "${data.subject}"`,
         performedBy: currentUser?.id || "system",
-        performedByName: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "System",
+        performedByName: currentUser
+          ? `${currentUser.firstName} ${currentUser.lastName}`
+          : "System",
         timestamp: new Date(),
         metadata: { noteType: data.type, subject: data.subject },
       };
@@ -288,7 +330,9 @@ export function ClientDetails({
       action: "communication_deleted",
       description: `Communication note "${note?.subject}" was deleted`,
       performedBy: currentUser?.id || "system",
-      performedByName: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "System",
+      performedByName: currentUser
+        ? `${currentUser.firstName} ${currentUser.lastName}`
+        : "System",
       timestamp: new Date(),
       metadata: { noteSubject: note?.subject, noteId },
     };
@@ -448,7 +492,10 @@ export function ClientDetails({
             </p>
             <div className="flex flex-wrap gap-1.5">
               {client.status && (
-                <Badge variant="outline" className={statusColors[client.status]}>
+                <Badge
+                  variant="outline"
+                  className={statusColors[client.status]}
+                >
                   {client.status.replace("_", " ")}
                 </Badge>
               )}
@@ -488,8 +535,8 @@ export function ClientDetails({
               {statistics.totalJobs}
             </p>
             <p className="text-xs text-blue-600/70 dark:text-blue-400/70">
-              {statistics.activeJobs}A / {statistics.closedJobs}C
-              / {statistics.draftJobs}D
+              {statistics.activeJobs}A / {statistics.closedJobs}C /{" "}
+              {statistics.draftJobs}D
             </p>
           </div>
           <div className="rounded-lg border bg-linear-to-br from-green-50 to-green-100/20 dark:from-green-950/20 dark:to-green-900/10 p-3 shadow-sm">
@@ -507,9 +554,7 @@ export function ClientDetails({
             <p className="text-xs text-green-600/70 dark:text-green-400/70">
               {statistics.totalJobs > 0
                 ? Math.round(
-                    (statistics.activeJobs /
-                      statistics.totalJobs) *
-                      100
+                    (statistics.activeJobs / statistics.totalJobs) * 100
                   )
                 : 0}
               % of total
@@ -562,8 +607,7 @@ export function ClientDetails({
             <p className="text-xs text-teal-600/70 dark:text-teal-400/70">
               {statistics.totalCandidates > 0
                 ? Math.round(
-                    (statistics.hiredCandidates /
-                      statistics.totalCandidates) *
+                    (statistics.hiredCandidates / statistics.totalCandidates) *
                       100
                   )
                 : 0}
@@ -617,8 +661,7 @@ export function ClientDetails({
             <p className="text-xs text-amber-600/70 dark:text-amber-400/70">
               {statistics.totalCandidates > 0
                 ? Math.round(
-                    (statistics.hiredCandidates /
-                      statistics.totalCandidates) *
+                    (statistics.hiredCandidates / statistics.totalCandidates) *
                       100
                   )
                 : 0}
@@ -688,9 +731,7 @@ export function ClientDetails({
                 <span className="hidden sm:inline">
                   Communications ({communicationNotes.length})
                 </span>
-                <span className="sm:hidden">
-                  ({communicationNotes.length})
-                </span>
+                <span className="sm:hidden">({communicationNotes.length})</span>
               </TabsTrigger>
               <TabsTrigger
                 value="activity"
@@ -700,9 +741,7 @@ export function ClientDetails({
                 <span className="hidden sm:inline">
                   Activity ({activityHistory.length})
                 </span>
-                <span className="sm:hidden">
-                  ({activityHistory.length})
-                </span>
+                <span className="sm:hidden">({activityHistory.length})</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -843,14 +882,22 @@ export function ClientDetails({
               </Button>
             </div>
             <div className="grid gap-4">
-              {clientJobs.map((job) => (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  onClick={() => onJobClick?.(job.id)}
-                  clientName={client.companyName}
-                />
-              ))}
+              {clientJobs.map((job) => {
+                const candidateCounts = jobCandidateCounts.get(job.id) || {
+                  total: 0,
+                  active: 0,
+                  hired: 0,
+                };
+                return (
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    onClick={() => onJobClick?.(job.id)}
+                    clientName={client.companyName}
+                    candidateCounts={candidateCounts}
+                  />
+                );
+              })}
               {clientJobs.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
                   <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-20" />
@@ -978,7 +1025,7 @@ export function ClientDetails({
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4" />
                           <span>
-                            {new Date(note.createdAt).toLocaleDateString(
+                            {toDateObject(note.createdAt).toLocaleDateString(
                               "en-US",
                               {
                                 year: "numeric",
@@ -1055,7 +1102,7 @@ export function ClientDetails({
                                 <div className="flex items-center gap-1.5">
                                   <Clock className="h-3.5 w-3.5" />
                                   <span>
-                                    {new Date(
+                                    {toDateObject(
                                       activity.timestamp
                                     ).toLocaleDateString("en-US", {
                                       year: "numeric",

@@ -68,3 +68,31 @@ export {
   useTags,
   useTag,
 } from '../useClientsCategoriesTags';
+
+// Team Members hooks
+export {
+  useTeamMembers,
+  useActiveTeamMembers,
+  useTeamMembersByRole,
+} from '../useTeamMembers';
+
+// Emails hooks
+export {
+  useEmails,
+  useEmailsByCandidateAndJob,
+  useEmailsByCandidate,
+  useEmailsByThread,
+  useEmailsByStatus,
+  type Email,
+} from '../useEmails';
+
+// Interviews hooks
+export {
+  useInterviews,
+  useInterview,
+  useInterviewsByCandidate,
+  useInterviewsByJob,
+  useInterviewsByCandidateAndJob,
+  useInterviewsByStatus,
+  useUpcomingInterviews,
+} from '../useInterviews';

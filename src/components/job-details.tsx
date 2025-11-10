@@ -34,9 +34,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import { cn } from "@/lib/utils";
 import type { Candidate } from "@/types/candidate";
-import type { Category } from "@/types/category";
 import type { Client } from "@/types/client";
 import type { Job, UpdateJobRequest } from "@/types/job";
+import { useCategories } from "@/hooks/firestore";
 import {
   ArrowLeft,
   BarChart3,
@@ -98,9 +98,11 @@ export function JobDetails({
   );
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Get categories from Firestore realtime
+  const { data: allCategories } = useCategories();
+  
   // Category management state
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [openCategoryPopover, setOpenCategoryPopover] = useState(false);
 
   // Filter candidates for this job
@@ -123,47 +125,16 @@ export function JobDetails({
     setIsEditModalOpen(false);
   };
 
-  // Fetch all categories
-  const fetchCategories = useCallback(async () => {
-    try {
-      const response = await authenticatedFetch(`${API_BASE_URL}/categories`);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch categories");
-      }
-
-      const result = await response.json();
-      const categoriesRaw = result.data || [];
-      
-      // Convert to array if it's an object (Firestore serialization issue)
-      const categoriesArray = Array.isArray(categoriesRaw)
-        ? categoriesRaw
-        : categoriesRaw && typeof categoriesRaw === 'object'
-        ? Object.values(categoriesRaw)
-        : [];
-      
-      // Ensure id field exists - backend may return _id
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const categoriesWithId = categoriesArray.map((category: any) => ({
-        ...category,
-        id: category.id || category._id,
-      }));
-      
-      // Filter for active categories (include if isActive is undefined/missing)
-      const activeCategories = categoriesWithId.filter((c: Category) => c.isActive !== false);
-      console.log('All categories:', categoriesWithId);
-      console.log('Active categories:', activeCategories);
-      setAllCategories(activeCategories);
-    } catch (error) {
-      console.error("Failed to fetch categories:", error);
-      setAllCategories([]);
-    }
-  }, []);
-
-  // Load categories on mount
+  // Categories are now loaded from Firestore in realtime via useCategories hook
+  // Filter for active categories only
+  const activeCategories = allCategories?.filter((c) => c.isActive !== false) || [];
+  
+  // Initialize selectedCategories from job.categoryIds when job loads
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    if (job?.categoryIds && Array.isArray(job.categoryIds)) {
+      setSelectedCategories(job.categoryIds);
+    }
+  }, [job]);
 
   // Load job's categories when job data is available
   useEffect(() => {
@@ -397,8 +368,7 @@ export function JobDetails({
                 <CommandInput placeholder="Search categories..." />
                 <CommandEmpty>No categories found.</CommandEmpty>
                 <CommandGroup className="max-h-[200px] overflow-auto">
-                  {allCategories
-                    .filter((category) => category.isActive)
+                  {activeCategories
                     .map((category) => (
                       <CommandItem
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any

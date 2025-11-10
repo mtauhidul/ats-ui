@@ -18,6 +18,7 @@ interface JobCardProps {
   job: Job;
   onClick: () => void;
   clientName?: string;
+  candidateCounts?: { total: number; active: number; hired: number };
 }
 
 const statusColors = {
@@ -44,12 +45,12 @@ const typeColors = {
     "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
 } as const;
 
-export function JobCard({ job, onClick, clientName }: JobCardProps) {
+export function JobCard({ job, onClick, clientName, candidateCounts }: JobCardProps) {
   const navigate = useNavigate();
   const totalCandidates =
-    job.statistics?.totalCandidates || job.candidateIds?.length || 0;
-  const activeCandidates = job.statistics?.activeCandidates || 0;
-  const hiredCandidates = job.statistics?.hiredCandidates || 0;
+    candidateCounts?.total ?? job.statistics?.totalCandidates ?? job.candidateIds?.length ?? 0;
+  const activeCandidates = candidateCounts?.active ?? job.statistics?.activeCandidates ?? 0;
+  const hiredCandidates = candidateCounts?.hired ?? job.statistics?.hiredCandidates ?? 0;
 
   // Convert categoryIds to array if it's an object (Firestore serialization issue)
   const categoryIds = Array.isArray(job.categoryIds)

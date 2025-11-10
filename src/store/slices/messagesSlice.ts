@@ -121,6 +121,65 @@ const messagesSlice = createSlice({
   name: "messages",
   initialState,
   reducers: {
+    // Set messages from Firestore real-time subscription
+    setMessagesFromFirestore: (state, action: PayloadAction<Message[]>) => {
+      const messages = action.payload.map((msg) => ({
+        ...msg,
+        status: msg.read ? 'seen' : 'sent' as MessageStatus,
+      }));
+      
+      state.messages = messages;
+      
+      // Group messages into conversations
+      const conversationsMap = new Map<string, Conversation>();
+      
+      messages.forEach((msg) => {
+        const { conversationId } = msg;
+        
+        if (!conversationsMap.has(conversationId)) {
+          conversationsMap.set(conversationId, {
+            id: conversationId,
+            participantId: msg.senderId === msg.recipientId ? msg.senderId : 
+                          (msg.senderId !== msg.recipientId ? 
+                            (msg.senderId || msg.recipientId) : msg.recipientId),
+            participantName: msg.senderName || msg.recipientName,
+            participantAvatar: msg.senderAvatar || msg.recipientAvatar,
+            participantRole: msg.senderRole || msg.recipientRole,
+            lastMessage: msg.message,
+            lastMessageTime: msg.sentAt,
+            unreadCount: 0,
+            messages: [],
+          });
+        }
+        
+        const conv = conversationsMap.get(conversationId)!;
+        conv.messages.push(msg);
+        
+        // Update last message if this message is newer
+        if (new Date(msg.sentAt) > new Date(conv.lastMessageTime)) {
+          conv.lastMessage = msg.message;
+          conv.lastMessageTime = msg.sentAt;
+        }
+        
+        // Count unread messages
+        if (!msg.read) {
+          conv.unreadCount++;
+        }
+      });
+      
+      state.conversations = Array.from(conversationsMap.values())
+        .sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
+      
+      // Update current conversation if it exists
+      if (state.currentConversation) {
+        const updatedConv = state.conversations.find(
+          c => c.id === state.currentConversation?.id
+        );
+        if (updatedConv) {
+          state.currentConversation = updatedConv;
+        }
+      }
+    },
     setCurrentConversation: (
       state,
       action: PayloadAction<Conversation | null>
@@ -307,6 +366,7 @@ const messagesSlice = createSlice({
 });
 
 export const {
+  setMessagesFromFirestore,
   setCurrentConversation,
   addOptimisticMessage,
   updateMessageStatus,

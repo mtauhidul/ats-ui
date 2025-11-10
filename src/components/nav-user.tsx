@@ -1,4 +1,7 @@
 // import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/lib/auth";
 import {
   IconDotsVertical,
   IconLogout,
@@ -6,9 +9,6 @@ import {
   IconUserCircle,
 } from "@tabler/icons-react";
 import { Link } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { Badge } from "@/components/ui/badge";
-import { useUserRole } from "@/lib/auth";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -46,9 +46,9 @@ export function NavUser({
 
   const getInitials = (name: string) => {
     return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
       .toUpperCase();
   };
 
@@ -66,99 +66,105 @@ export function NavUser({
               <SidebarMenuButton
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent group hover:bg-sidebar-accent relative z-10 focus-visible:outline-none focus-visible:ring-0"
-                style={{ isolation: 'isolate' }}
+                style={{ isolation: "isolate" }}
               >
-              <Avatar className="h-8 w-8 rounded-lg grayscale">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg group-hover:text-sidebar-accent group-data-[state=open]:text-sidebar-accent">
-                  {getInitials(user.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div 
-                className="grid flex-1 text-left text-sm leading-tight"
-                style={{
-                  '--name-color': 'hsl(var(--sidebar-foreground))',
-                  '--email-color': 'hsl(var(--muted-foreground))',
-                } as React.CSSProperties}
-              >
-                <span 
-                  className="truncate font-medium"
-                  style={{ 
-                    color: 'var(--name-color) !important',
-                  }}
-                >
-                  {user.name}
-                </span>
-                <span 
-                  className="truncate text-xs"
-                  style={{ 
-                    color: 'var(--email-color) !important',
-                  }}
-                >
-                  {user.email}
-                </span>
-              </div>
-              <IconDotsVertical 
-                className="ml-auto size-4 group-hover:!text-sidebar-accent group-data-[state=open]:!text-sidebar-accent" 
-                style={{ 
-                  color: 'var(--default-icon-color, hsl(var(--sidebar-foreground))) !important',
-                }}
-              />
-            </SidebarMenuButton>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
-            align="end"
-            sideOffset={4}
-          >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
+                <Avatar className="h-8 w-8 rounded-lg grayscale">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">
+                  <AvatarFallback className="rounded-lg group-hover:text-sidebar-accent group-data-[state=open]:text-sidebar-accent">
                     {getInitials(user.name)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate font-medium">{user.name}</span>
-                    {userRole && (
-                      <Badge variant="secondary" className="text-xs capitalize">
-                        {userRole.replace('_', ' ')}
-                      </Badge>
-                    )}
-                  </div>
-                  <span className="text-muted-foreground truncate text-xs">
+                <div
+                  className="grid flex-1 text-left text-sm leading-tight"
+                  style={
+                    {
+                      "--name-color": "hsl(var(--sidebar-foreground))",
+                      "--email-color": "hsl(var(--muted-foreground))",
+                    } as React.CSSProperties
+                  }
+                >
+                  <span
+                    className="truncate font-medium"
+                    style={{
+                      color: "var(--name-color) !important",
+                    }}
+                  >
+                    {user.name}
+                  </span>
+                  <span
+                    className="truncate text-xs"
+                    style={{
+                      color: "var(--email-color) !important",
+                    }}
+                  >
                     {user.email}
                   </span>
                 </div>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem asChild>
-                <Link to="/dashboard/account">
-                  <IconUserCircle />
-                  Account
-                </Link>
+                <IconDotsVertical
+                  className="ml-auto size-4 group-hover:text-sidebar-accent! group-data-[state=open]:text-sidebar-accent!"
+                  style={{
+                    color:
+                      "var(--default-icon-color, hsl(var(--sidebar-foreground))) !important",
+                  }}
+                />
+              </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+              side={isMobile ? "bottom" : "right"}
+              align="end"
+              sideOffset={4}
+            >
+              <DropdownMenuLabel className="p-0 font-normal">
+                <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarFallback className="rounded-lg">
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate font-medium">{user.name}</span>
+                      {userRole && (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs capitalize"
+                        >
+                          {userRole.replace("_", " ")}
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="text-muted-foreground truncate text-xs">
+                      {user.email}
+                    </span>
+                  </div>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard/account">
+                    <IconUserCircle />
+                    Account
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard/notifications">
+                    <IconNotification />
+                    Notifications
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut}>
+                <IconLogout />
+                Log out
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/dashboard/notifications">
-                  <IconNotification />
-                  Notifications
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut}>
-              <IconLogout />
-              Log out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarMenuItem>
-    </SidebarMenu>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </SidebarMenuItem>
+      </SidebarMenu>
     </div>
   );
 }

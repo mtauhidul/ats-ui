@@ -10,11 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAppSelector, useClients, useJobs } from "@/store/hooks/index";
-import {
-  selectFilteredAndSortedJobs,
-  selectJobStatistics,
-} from "@/store/selectors/jobSelectors";
+import { useCandidates, useClients, useJobs } from "@/store/hooks/index";
 import type { CreateJobRequest } from "@/types/job";
 import {
   Briefcase,
@@ -24,7 +20,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function DashboardJobsPage() {
@@ -38,28 +34,101 @@ export default function DashboardJobsPage() {
   const [clientFilter, setClientFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
 
-  // Redux hooks
-  const { fetchJobsIfNeeded, createJob } = useJobs(); // Use smart fetch
-  const { clients, fetchClientsIfNeeded } = useClients(); // Use smart fetch
+  // 🔥 REALTIME: Redux hooks now use Firestore internally - data auto-updates!
+  const { jobs, createJob } = useJobs();
+  const { clients } = useClients();
+  const { candidates } = useCandidates();
 
-  // Select filtered and sorted jobs
-  const filteredJobs = useAppSelector((state) =>
-    selectFilteredAndSortedJobs(state, {
-      search: searchQuery,
-      status: statusFilter,
-      type: typeFilter,
-      clientId: clientFilter,
-      sortBy,
+  console.log("📋 Jobs page - jobs from hook:", jobs.length);
+
+  // 🔥 REALTIME: Calculate candidate counts from actual candidates collection
+  // This ensures accurate counts even after deletions
+  const jobCandidateCounts = useMemo(() => {
+    const counts = new Map<
+      string,
+      { total: number; active: number; hired: number }
+    >();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    candidates.forEach((candidate: any) => {
+      // Get all job IDs this candidate is associated with
+      const jobIds = candidate.jobIds || [];
+
+      jobIds.forEach((jobId: string) => {
+        if (!counts.has(jobId)) {
+          counts.set(jobId, { total: 0, active: 0, hired: 0 });
+        }
+
+        const count = counts.get(jobId)!;
+        count.total++;
+
+        // Count by status
+        if (candidate.status === "hired") {
+          count.hired++;
+        } else if (
+          candidate.status === "active" ||
+          candidate.status === "interviewing" ||
+          candidate.status === "offered"
+        ) {
+          count.active++;
+        }
+      });
+    });
+
+    return counts;
+  }, [candidates]);
+
+  // Filter and sort jobs locally (no longer using Redux selector)
+  const filteredJobs = jobs
+    .filter((job) => {
+      // Search filter
+      const matchesSearch =
+        !searchQuery ||
+        job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Status filter
+      const matchesStatus =
+        statusFilter === "all" || job.status === statusFilter;
+
+      // Type filter
+      const matchesType = typeFilter === "all" || job.type === typeFilter;
+
+      // Client filter
+      const matchesClient =
+        clientFilter === "all" || job.clientId === clientFilter;
+
+      return matchesSearch && matchesStatus && matchesType && matchesClient;
     })
-  );
-  const stats = useAppSelector(selectJobStatistics);
+    .sort((a, b) => {
+      if (sortBy === "newest")
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      if (sortBy === "oldest")
+        return (
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      if (sortBy === "title") return a.title.localeCompare(b.title);
+      return 0;
+    });
 
-  // Fetch data on mount
-  useEffect(() => {
-    fetchJobsIfNeeded(); // Smart fetch - only if cache is stale
-    fetchClientsIfNeeded(); // Smart fetch - only if cache is stale
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty deps - only fetch on mount
+  // Calculate stats from jobs
+  const stats = {
+    total: jobs.length,
+    open: jobs.filter((j) => j.status === "open").length,
+    closed: jobs.filter((j) => j.status === "closed").length,
+    draft: jobs.filter((j) => j.status === "draft").length,
+    onHold: jobs.filter((j) => j.status === "on_hold").length,
+    totalCandidates: Array.from(jobCandidateCounts.values()).reduce(
+      (sum, counts) => sum + counts.total,
+      0
+    ),
+    totalOpenings: jobs.reduce((sum, j) => sum + (j.openings || 0), 0),
+    filled: jobs.reduce((sum, j) => sum + (j.filledPositions || 0), 0),
+  };
+
+  // No useEffect needed - Firestore provides realtime data automatically!
 
   // Get client name helper
   const getClientName = (
@@ -69,8 +138,10 @@ export default function DashboardJobsPage() {
 
     // If a string id was passed
     if (typeof clientOrId === "string") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const client = clients.find((c) => c.id === clientOrId || (c as any)._id === clientOrId);
+      const client = clients.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (c) => c.id === clientOrId || (c as any)._id === clientOrId
+      );
       return client?.companyName || clientOrId;
     }
 
@@ -80,8 +151,10 @@ export default function DashboardJobsPage() {
       if (clientOrId.companyName) return clientOrId.companyName;
       const id = clientOrId.id || clientOrId._id;
       if (id) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const client = clients.find((c) => c.id === id || (c as any)._id === id);
+        const client = clients.find(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (c) => c.id === id || (c as any)._id === id
+        );
         return client?.companyName || id;
       }
     }
@@ -364,14 +437,22 @@ export default function DashboardJobsPage() {
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {filteredJobs.map((job) => (
-                    <JobCard
-                      key={job.id}
-                      job={job}
-                      onClick={() => navigate(`/dashboard/jobs/${job.id}`)}
-                      clientName={getClientName(job.clientId)}
-                    />
-                  ))}
+                  {filteredJobs.map((job) => {
+                    const candidateCounts = jobCandidateCounts.get(job.id) || {
+                      total: 0,
+                      active: 0,
+                      hired: 0,
+                    };
+                    return (
+                      <JobCard
+                        key={job.id}
+                        job={job}
+                        onClick={() => navigate(`/dashboard/jobs/${job.id}`)}
+                        clientName={getClientName(job.clientId)}
+                        candidateCounts={candidateCounts}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </div>

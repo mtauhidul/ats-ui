@@ -1,27 +1,29 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import { InterviewManagement } from "@/components/interview-management";
-import { useJobs, useCandidates, useClients, useAppSelector } from "@/store/hooks/index";
-import { selectJobById, selectCandidateById, selectClientById } from "@/store/selectors";
+import { useCandidate, useJob, useClient } from "@/hooks/firestore";
+import { Loader2 } from "lucide-react";
 
 export default function InterviewPage() {
   const { jobId, candidateId, clientId } = useParams<{ jobId: string; candidateId: string; clientId?: string }>();
   const navigate = useNavigate();
   
-  const { fetchJobById } = useJobs();
-  const { fetchCandidates } = useCandidates();
-  const { fetchClients } = useClients();
+  // Get realtime data from Firestore hooks
+  const { candidate, loading: candidateLoading } = useCandidate(candidateId);
+  const { job, loading: jobLoading } = useJob(jobId);
   
-  const candidate = useAppSelector(state => selectCandidateById(candidateId || '')(state));
-  const job = useAppSelector(state => selectJobById(jobId || '')(state));
-  const client = useAppSelector(state => selectClientById(typeof job?.clientId === 'string' ? job.clientId : job?.clientId?.id || job?.clientId?._id || '')(state));
+  // Get client ID from job
+  const resolvedClientId = typeof job?.clientId === 'string' 
+    ? job.clientId 
+    : job?.clientId?.id || job?.clientId?._id || clientId;
+  
+  const { client } = useClient(resolvedClientId);
   const clientName = client?.companyName || "Client";
 
-  useEffect(() => {
-    if (jobId) fetchJobById(jobId);
-    fetchCandidates();
-    fetchClients();
-  }, [jobId, fetchJobById, fetchCandidates, fetchClients]);
+  console.log("🎯 Interview Page - Candidate ID:", candidateId);
+  console.log("🎯 Interview Page - Job ID:", jobId);
+  console.log("🎯 Interview Page - Candidate Data:", candidate);
+  console.log("🎯 Interview Page - Job Data:", job);
+  console.log("🎯 Interview Page - Loading:", { candidateLoading, jobLoading });
 
   const handleBack = () => {
     if (clientId) {
@@ -31,6 +33,16 @@ export default function InterviewPage() {
     }
   };
 
+  // Show loading state
+  if (candidateLoading || jobLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Show error state
   if (!candidate || !job) {
     return (
       <div className="flex items-center justify-center h-64">
