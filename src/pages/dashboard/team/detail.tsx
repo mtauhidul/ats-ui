@@ -22,6 +22,22 @@ import {
   Shield,
   TrendingUp,
   Users,
+  UserCheck,
+  UserPlus,
+  CheckCircle,
+  XCircle,
+  LogIn,
+  LogOut,
+  GitBranch,
+  Upload,
+  MessageSquare,
+  Clock,
+  Video,
+  Building2,
+  Send,
+  Settings,
+  Lock,
+  Download,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -31,12 +47,79 @@ interface Activity {
   action: string;
   resourceType?: string;
   resourceName?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, string | number | boolean | null>;
   createdAt: string;
 }
 
 const getInitials = (firstName: string, lastName: string) => {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+};
+
+type ActivityIconConfig = {
+  icon: typeof Activity;
+  color: string;
+  bgColor: string;
+};
+
+const getActivityIcon = (action: string): ActivityIconConfig => {
+  const iconMap: Record<string, ActivityIconConfig> = {
+    // Authentication
+    login: { icon: LogIn, color: "text-green-600", bgColor: "bg-green-100 dark:bg-green-900/20" },
+    logout: { icon: LogOut, color: "text-gray-600", bgColor: "bg-gray-100 dark:bg-gray-900/20" },
+    
+    // Candidate Activities
+    created_candidate: { icon: UserPlus, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    updated_candidate: { icon: UserCheck, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    reviewed_candidate: { icon: UserCheck, color: "text-purple-600", bgColor: "bg-purple-100 dark:bg-purple-900/20" },
+    candidate_status_changed: { icon: GitBranch, color: "text-orange-600", bgColor: "bg-orange-100 dark:bg-orange-900/20" },
+    candidate_assigned: { icon: Users, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    candidate_stage_changed: { icon: GitBranch, color: "text-indigo-600", bgColor: "bg-indigo-100 dark:bg-indigo-900/20" },
+    candidate_document_uploaded: { icon: Upload, color: "text-green-600", bgColor: "bg-green-100 dark:bg-green-900/20" },
+    candidate_note_added: { icon: MessageSquare, color: "text-yellow-600", bgColor: "bg-yellow-100 dark:bg-yellow-900/20" },
+    
+    // Job Activities
+    created_job: { icon: Briefcase, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    updated_job: { icon: Briefcase, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    job_published: { icon: CheckCircle, color: "text-green-600", bgColor: "bg-green-100 dark:bg-green-900/20" },
+    job_closed: { icon: XCircle, color: "text-red-600", bgColor: "bg-red-100 dark:bg-red-900/20" },
+    job_archived: { icon: FileText, color: "text-gray-600", bgColor: "bg-gray-100 dark:bg-gray-900/20" },
+    job_assigned: { icon: Users, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    
+    // Application Activities
+    created_application: { icon: FileText, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    updated_application: { icon: FileText, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    application_approved: { icon: CheckCircle, color: "text-green-600", bgColor: "bg-green-100 dark:bg-green-900/20" },
+    application_rejected: { icon: XCircle, color: "text-red-600", bgColor: "bg-red-100 dark:bg-red-900/20" },
+    application_status_changed: { icon: GitBranch, color: "text-orange-600", bgColor: "bg-orange-100 dark:bg-orange-900/20" },
+    reviewed_application: { icon: CheckCircle, color: "text-purple-600", bgColor: "bg-purple-100 dark:bg-purple-900/20" },
+    
+    // Client Activities
+    created_client: { icon: Building2, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    updated_client: { icon: Building2, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    client_note_added: { icon: MessageSquare, color: "text-yellow-600", bgColor: "bg-yellow-100 dark:bg-yellow-900/20" },
+    
+    // Interview Activities
+    scheduled_interview: { icon: Clock, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    completed_interview: { icon: CheckCircle, color: "text-green-600", bgColor: "bg-green-100 dark:bg-green-900/20" },
+    interview_rescheduled: { icon: Clock, color: "text-orange-600", bgColor: "bg-orange-100 dark:bg-orange-900/20" },
+    interview_cancelled: { icon: XCircle, color: "text-red-600", bgColor: "bg-red-100 dark:bg-red-900/20" },
+    created_zoom_meeting: { icon: Video, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    
+    // Communication
+    sent_email: { icon: Send, color: "text-green-600", bgColor: "bg-green-100 dark:bg-green-900/20" },
+    email_template_used: { icon: Mail, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    
+    // Profile & Settings
+    profile_updated: { icon: Settings, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/20" },
+    permissions_changed: { icon: Shield, color: "text-purple-600", bgColor: "bg-purple-100 dark:bg-purple-900/20" },
+    password_changed: { icon: Lock, color: "text-red-600", bgColor: "bg-red-100 dark:bg-red-900/20" },
+    
+    // Other
+    export_data: { icon: Download, color: "text-green-600", bgColor: "bg-green-100 dark:bg-green-900/20" },
+    bulk_action: { icon: Users, color: "text-purple-600", bgColor: "bg-purple-100 dark:bg-purple-900/20" },
+  };
+  
+  return iconMap[action] || { icon: Activity, color: "text-gray-600", bgColor: "bg-gray-100 dark:bg-gray-900/20" };
 };
 
 const getRoleBadgeColor = (role: string) => {
@@ -77,7 +160,16 @@ export default function TeamMemberDetailPage() {
     memberId,
     member: currentMember,
     loading: isLoading,
-    error: memberError
+    error: memberError,
+    dateFields: currentMember ? {
+      createdAt: currentMember.createdAt,
+      startDate: currentMember.startDate,
+      lastLoginAt: currentMember.lastLoginAt,
+    } : null,
+    statusFields: currentMember ? {
+      status: currentMember.status,
+      isActive: (currentMember as unknown as Record<string, unknown>).isActive,
+    } : null
   });
   
   const { jobs } = useJobs(); // Realtime data from Firestore
@@ -142,18 +234,60 @@ export default function TeamMemberDetailPage() {
 
   const formatActivityAction = (action: string): string => {
     const actionMap: Record<string, string> = {
+      // Authentication
       login: "Logged in",
       logout: "Logged out",
-      reviewed_candidate: "Reviewed candidate",
-      updated_job: "Updated job",
-      created_job: "Created job",
-      sent_email: "Sent email",
-      reviewed_application: "Reviewed application",
-      updated_candidate: "Updated candidate",
+      
+      // Candidate Activities
       created_candidate: "Created candidate",
-      completed_interview: "Completed interview",
+      updated_candidate: "Updated candidate",
+      reviewed_candidate: "Reviewed candidate",
+      candidate_status_changed: "Changed candidate status",
+      candidate_assigned: "Assigned candidate",
+      candidate_stage_changed: "Moved candidate to new stage",
+      candidate_document_uploaded: "Uploaded candidate document",
+      candidate_note_added: "Added note to candidate",
+      
+      // Job Activities
+      created_job: "Created job",
+      updated_job: "Updated job",
+      job_published: "Published job",
+      job_closed: "Closed job",
+      job_archived: "Archived job",
+      job_assigned: "Assigned job",
+      
+      // Application Activities
+      created_application: "Created application",
+      updated_application: "Updated application",
+      application_approved: "Approved application",
+      application_rejected: "Rejected application",
+      application_status_changed: "Changed application status",
+      reviewed_application: "Reviewed application",
+      
+      // Client Activities
+      created_client: "Created client",
+      updated_client: "Updated client",
+      client_note_added: "Added note to client",
+      
+      // Interview Activities
       scheduled_interview: "Scheduled interview",
+      completed_interview: "Completed interview",
+      interview_rescheduled: "Rescheduled interview",
+      interview_cancelled: "Cancelled interview",
       created_zoom_meeting: "Created Zoom meeting",
+      
+      // Communication
+      sent_email: "Sent email",
+      email_template_used: "Used email template",
+      
+      // Profile & Settings
+      profile_updated: "Updated profile",
+      permissions_changed: "Changed permissions",
+      password_changed: "Changed password",
+      
+      // Other
+      export_data: "Exported data",
+      bulk_action: "Performed bulk action",
     };
     return actionMap[action] || action.replace(/_/g, " ");
   };
@@ -347,7 +481,7 @@ export default function TeamMemberDetailPage() {
                       variant="outline"
                       className={`${getRoleBadgeColor(
                         currentMember.role
-                      )} text-xs md:text-sm`}
+                      )} text-xs md:text-sm w-full md:w-auto md:min-w-[120px] justify-center py-1.5`}
                     >
                       {formatRoleName(currentMember.role)}
                     </Badge>
@@ -394,59 +528,84 @@ export default function TeamMemberDetailPage() {
                         <Calendar className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
                         <span>
                           Joined{" "}
-                          {currentMember.createdAt
-                            ? (() => {
-                                const d = new Date(currentMember.createdAt);
-                                if (isNaN(d.getTime())) return "Unknown";
-                                const day = String(d.getDate()).padStart(
-                                  2,
-                                  "0"
-                                );
-                                const months = [
-                                  "Jan",
-                                  "Feb",
-                                  "Mar",
-                                  "Apr",
-                                  "May",
-                                  "Jun",
-                                  "Jul",
-                                  "Aug",
-                                  "Sep",
-                                  "Oct",
-                                  "Nov",
-                                  "Dec",
-                                ];
-                                return `${day} ${
-                                  months[d.getMonth()]
-                                }, ${d.getFullYear()}`;
-                              })()
-                            : "Unknown"}
+                          {(() => {
+                            // Try different date fields
+                            const memberData = currentMember as unknown as Record<string, unknown>;
+                            const dateValue = currentMember.createdAt || currentMember.startDate || memberData.createdDate;
+                            if (!dateValue) return "recently";
+                            
+                            try {
+                              // Handle Firestore Timestamp
+                              let date: Date;
+                              if (dateValue && typeof dateValue === 'object' && 'toDate' in dateValue) {
+                                date = (dateValue as { toDate: () => Date }).toDate();
+                              } else {
+                                date = new Date(dateValue as string | number | Date);
+                              }
+                              
+                              if (isNaN(date.getTime())) return "recently";
+                              
+                              const day = String(date.getDate()).padStart(2, "0");
+                              const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                              return `${day} ${months[date.getMonth()]}, ${date.getFullYear()}`;
+                            } catch (error) {
+                              console.error('Error parsing date:', error);
+                              return "recently";
+                            }
+                          })()}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
                         <Activity className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground shrink-0" />
                         <span className="text-xs md:text-sm text-muted-foreground">
                           Last active:{" "}
-                          {currentMember.lastLoginAt
-                            ? new Date(
-                                currentMember.lastLoginAt
-                              ).toLocaleString()
-                            : "Never"}
+                          {(() => {
+                            const memberData = currentMember as unknown as Record<string, unknown>;
+                            const lastActive = currentMember.lastLoginAt || memberData.lastLogin || memberData.lastActive;
+                            
+                            if (!lastActive) return "Not recorded";
+                            
+                            try {
+                              // Handle Firestore Timestamp
+                              let date: Date;
+                              if (lastActive && typeof lastActive === 'object' && 'toDate' in lastActive) {
+                                date = (lastActive as { toDate: () => Date }).toDate();
+                              } else {
+                                date = new Date(lastActive as string | number | Date);
+                              }
+                              
+                              if (isNaN(date.getTime())) return "Not recorded";
+                              
+                              return date.toLocaleString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                              });
+                            } catch (error) {
+                              console.error('Error parsing last active date:', error);
+                              return "Not recorded";
+                            }
+                          })()}
                         </span>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className={`${
-                          currentMember.status === "active"
-                            ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20"
-                            : "bg-muted text-muted-foreground border"
-                        } text-xs`}
-                      >
-                        {currentMember.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs md:text-sm text-muted-foreground">Status:</span>
+                        <Badge
+                          variant="outline"
+                          className={`${
+                            (currentMember.status === "active" || (currentMember as unknown as Record<string, unknown>).isActive === true)
+                              ? "bg-green-500/10 text-green-600 dark:text-green-500 border-green-500/20"
+                              : "bg-muted text-muted-foreground border"
+                          } text-xs capitalize`}
+                        >
+                          {currentMember.status || ((currentMember as unknown as Record<string, unknown>).isActive ? "active" : "inactive")}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -727,28 +886,49 @@ export default function TeamMemberDetailPage() {
                     <Loader size="md" text="Loading activities..." />
                   </div>
                 ) : activities.length > 0 ? (
-                  <div className="space-y-4">
-                    {activities.map((activity) => (
-                      <div
-                        key={activity._id}
-                        className="flex items-start gap-4 pb-4 border-b last:border-0"
-                      >
-                        <div className="h-2 w-2 rounded-full bg-primary mt-2 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">
-                            {formatActivityAction(activity.action)}
-                          </p>
-                          {activity.resourceName && (
-                            <p className="text-sm text-muted-foreground truncate">
-                              {activity.resourceName}
+                  <div className="space-y-3">
+                    {activities.map((activity) => {
+                      const iconConfig = getActivityIcon(activity.action);
+                      const IconComponent = iconConfig.icon;
+                      
+                      return (
+                        <div
+                          key={activity._id}
+                          className="flex items-start gap-3 pb-3 border-b last:border-0 hover:bg-muted/50 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                        >
+                          <div className={`rounded-full p-2 shrink-0 ${iconConfig.bgColor}`}>
+                            <IconComponent className={`h-4 w-4 ${iconConfig.color}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium">
+                              {formatActivityAction(activity.action)}
                             </p>
-                          )}
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatTimeAgo(activity.createdAt)}
-                          </p>
+                            {activity.resourceName && (
+                              <p className="text-sm text-muted-foreground truncate mt-0.5">
+                                {activity.resourceName}
+                              </p>
+                            )}
+                            {activity.metadata && Object.keys(activity.metadata).length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {'status' in activity.metadata && activity.metadata.status && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {String(activity.metadata.status)}
+                                  </Badge>
+                                )}
+                                {'stage' in activity.metadata && activity.metadata.stage && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {String(activity.metadata.stage)}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatTimeAgo(activity.createdAt)}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-12">
