@@ -17,6 +17,7 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import {
   Popover,
   PopoverContent,
@@ -37,6 +38,7 @@ import type { Candidate } from "@/types/candidate";
 import type { Client } from "@/types/client";
 import type { Job, UpdateJobRequest } from "@/types/job";
 import { useCategories } from "@/hooks/firestore";
+import { useJobs } from "@/store/hooks/useJobs";
 import {
   ArrowLeft,
   BarChart3,
@@ -50,6 +52,7 @@ import {
   FileText,
   Check as IconCheck,
   Tag as IconTag,
+  Trash2,
   X as IconX,
   MapPin,
   Target,
@@ -91,12 +94,15 @@ export function JobDetails({
   onEditJob,
 }: JobDetailsProps) {
   const navigate = useNavigate();
+  const { deleteJob } = useJobs();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
     null
   );
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Helper function to safely convert date values (Firestore Timestamps, Date objects, or strings)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -152,6 +158,21 @@ export function JobDetails({
       onEditJob(id, data);
     }
     setIsEditModalOpen(false);
+  };
+
+  const handleDeleteJob = async () => {
+    if (!job.id) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteJob(job.id);
+      setIsDeleteDialogOpen(false);
+      // Navigate back after successful deletion
+      onBack();
+    } catch (error) {
+      console.error("Failed to delete job:", error);
+      setIsDeleting(false);
+    }
   };
 
   // Categories are now loaded from Firestore in realtime via useCategories hook
@@ -330,6 +351,16 @@ export function JobDetails({
               <Edit className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Edit</span>
             </Button>
+            {job.status === 'closed' && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Delete</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -877,6 +908,19 @@ export function JobDetails({
         clients={clients}
         onClose={() => setIsEditModalOpen(false)}
         onSubmit={handleEditJob}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Delete Closed Job"
+        description={`Are you sure you want to delete "${job.title}"? This action cannot be undone. All associated data including candidates and applications will remain, but they will no longer be linked to this job.`}
+        confirmText="Delete Job"
+        cancelText="Cancel"
+        onConfirm={handleDeleteJob}
+        variant="destructive"
+        isLoading={isDeleting}
       />
     </div>
   );

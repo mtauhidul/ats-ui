@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -45,17 +46,27 @@ const typeColors = {
     "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
 } as const;
 
-export function JobCard({ job, onClick, clientName, candidateCounts }: JobCardProps) {
+export function JobCard({
+  job,
+  onClick,
+  clientName,
+  candidateCounts,
+}: JobCardProps) {
   const navigate = useNavigate();
   const totalCandidates =
-    candidateCounts?.total ?? job.statistics?.totalCandidates ?? job.candidateIds?.length ?? 0;
-  const activeCandidates = candidateCounts?.active ?? job.statistics?.activeCandidates ?? 0;
-  const hiredCandidates = candidateCounts?.hired ?? job.statistics?.hiredCandidates ?? 0;
+    candidateCounts?.total ??
+    job.statistics?.totalCandidates ??
+    job.candidateIds?.length ??
+    0;
+  const activeCandidates =
+    candidateCounts?.active ?? job.statistics?.activeCandidates ?? 0;
+  const hiredCandidates =
+    candidateCounts?.hired ?? job.statistics?.hiredCandidates ?? 0;
 
   // Convert categoryIds to array if it's an object (Firestore serialization issue)
   const categoryIds = Array.isArray(job.categoryIds)
     ? job.categoryIds
-    : job.categoryIds && typeof job.categoryIds === 'object'
+    : job.categoryIds && typeof job.categoryIds === "object"
     ? Object.values(job.categoryIds)
     : [];
 
@@ -64,17 +75,53 @@ export function JobCard({ job, onClick, clientName, candidateCounts }: JobCardPr
     navigate(`/dashboard/jobs/pipeline/${job.id}`);
   };
 
+  const isClosed = job.status === "closed";
+
   return (
     <Card
-      className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary hover:border-l-primary/80"
+      className={cn(
+        "cursor-pointer transition-all duration-200 border-l-4 relative overflow-hidden",
+        isClosed
+          ? "opacity-70 border-l-gray-500 hover:opacity-80 hover:shadow-md bg-linear-to-br from-muted/50 to-muted/30"
+          : "hover:shadow-lg border-l-primary hover:border-l-primary/80"
+      )}
       onClick={onClick}
     >
-      <CardContent className="p-3 md:p-4">
+      {isClosed && (
+        <>
+          {/* Diagonal stripe pattern overlay */}
+          <div
+            className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, transparent, transparent 10px, currentColor 10px, currentColor 11px)",
+            }}
+          />
+          {/* Subtle corner ribbon */}
+          <div className="absolute top-0 right-0 w-0 h-0 border-l-40 border-l-transparent border-t-40 border-t-gray-400/20 dark:border-t-gray-600/20" />
+        </>
+      )}
+      <CardContent
+        className={cn("p-3 md:p-4 relative", isClosed && "grayscale-[0.3]")}
+      >
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm md:text-base font-semibold text-foreground mb-1 line-clamp-1">
-              {job.title}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3
+                className={cn(
+                  "text-sm md:text-base font-semibold mb-1 line-clamp-1",
+                  isClosed &&
+                    "text-muted-foreground line-through decoration-[3px] decoration-gray-600 dark:decoration-gray-500"
+                )}
+              >
+                {job.title}
+              </h3>
+              {isClosed && (
+                <span className="px-1.5 py-0.5 bg-gray-500/20 dark:bg-gray-600/20 rounded text-[9px] font-bold text-gray-600 dark:text-gray-400 tracking-wide mb-1 shrink-0">
+                  CLOSED
+                </span>
+              )}
+            </div>
             {clientName && (
               <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground">
                 <Building2 className="h-3 w-3 md:h-3.5 md:w-3.5" />

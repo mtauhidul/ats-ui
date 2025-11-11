@@ -125,7 +125,9 @@ export function ClientDetails({
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAddingContact, setIsAddingContact] = useState(false);
-  const [isDeletingContact, setIsDeletingContact] = useState<string | null>(null);
+  const [isDeletingContact, setIsDeletingContact] = useState<string | null>(
+    null
+  );
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isDeletingNote, setIsDeletingNote] = useState<string | null>(null);
 
@@ -152,13 +154,13 @@ export function ClientDetails({
     ? (Object.values(client.contacts) as ContactPerson[])
     : [];
 
-  const communicationNotes: CommunicationNote[] = (Array.isArray(
-    client.communicationNotes
-  )
-    ? client.communicationNotes
-    : client.communicationNotes && typeof client.communicationNotes === "object"
-    ? (Object.values(client.communicationNotes) as CommunicationNote[])
-    : []
+  const communicationNotes: CommunicationNote[] = (
+    Array.isArray(client.communicationNotes)
+      ? client.communicationNotes
+      : client.communicationNotes &&
+        typeof client.communicationNotes === "object"
+      ? (Object.values(client.communicationNotes) as CommunicationNote[])
+      : []
   ).sort((a, b) => {
     // Sort by createdAt in descending order (latest first)
     const timeA = toDateObject(a.createdAt).getTime();
@@ -166,13 +168,12 @@ export function ClientDetails({
     return timeB - timeA;
   });
 
-  const activityHistory: ClientActivityHistory[] = (Array.isArray(
-    client.activityHistory
-  )
-    ? client.activityHistory
-    : client.activityHistory && typeof client.activityHistory === "object"
-    ? (Object.values(client.activityHistory) as ClientActivityHistory[])
-    : []
+  const activityHistory: ClientActivityHistory[] = (
+    Array.isArray(client.activityHistory)
+      ? client.activityHistory
+      : client.activityHistory && typeof client.activityHistory === "object"
+      ? (Object.values(client.activityHistory) as ClientActivityHistory[])
+      : []
   ).sort((a, b) => {
     // Sort by timestamp in descending order (latest first)
     const timeA = toDateObject(a.timestamp).getTime();
@@ -243,7 +244,7 @@ export function ClientDetails({
   const handleAddContact = async (data: CreateContactRequest) => {
     const toastId = toast.loading("Adding contact...");
     setIsAddingContact(true);
-    
+
     try {
       const newContact: ContactPerson = {
         ...data,
@@ -272,7 +273,7 @@ export function ClientDetails({
         contacts: [...contacts, newContact],
         activityHistory: [newActivity, ...activityHistory],
       });
-      
+
       toast.success("Contact added successfully", { id: toastId });
     } catch (error) {
       toast.error("Failed to add contact", { id: toastId });
@@ -285,7 +286,7 @@ export function ClientDetails({
   const handleDeleteContact = async (contactId: string) => {
     const toastId = toast.loading("Deleting contact...");
     setIsDeletingContact(contactId);
-    
+
     try {
       const contact = contacts.find((c) => c.id === contactId);
 
@@ -307,7 +308,7 @@ export function ClientDetails({
         contacts: contacts.filter((c) => c.id !== contactId),
         activityHistory: [newActivity, ...activityHistory],
       });
-      
+
       toast.success("Contact deleted successfully", { id: toastId });
     } catch (error) {
       toast.error("Failed to delete contact", { id: toastId });
@@ -320,7 +321,7 @@ export function ClientDetails({
   const handleAddNote = async (data: CreateCommunicationNoteRequest) => {
     const toastId = toast.loading("Adding communication note...");
     setIsAddingNote(true);
-    
+
     try {
       if (onAddCommunicationNote) {
         // Use the dedicated endpoint for adding communication notes
@@ -374,7 +375,7 @@ export function ClientDetails({
   const handleDeleteNote = async (noteId: string) => {
     const toastId = toast.loading("Deleting communication note...");
     setIsDeletingNote(noteId);
-    
+
     try {
       const note = communicationNotes.find((n) => n.id === noteId);
 
@@ -396,7 +397,7 @@ export function ClientDetails({
         communicationNotes: communicationNotes.filter((n) => n.id !== noteId),
         activityHistory: [newActivity, ...activityHistory],
       });
-      
+
       toast.success("Communication note deleted successfully", { id: toastId });
     } catch (error) {
       toast.error("Failed to delete communication note", { id: toastId });
@@ -673,60 +674,6 @@ export function ClientDetails({
               {statistics.hiredCandidates}
             </p>
             <p className="text-xs text-teal-600/70 dark:text-teal-400/70">
-              {statistics.totalCandidates > 0
-                ? Math.round(
-                    (statistics.hiredCandidates / statistics.totalCandidates) *
-                      100
-                  )
-                : 0}
-              % success rate
-            </p>
-          </div>
-          <div className="rounded-lg border bg-linear-to-br from-purple-50 to-purple-100/20 dark:from-purple-950/20 dark:to-purple-900/10 p-3 shadow-sm">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="rounded-md bg-purple-500/10 p-1.5">
-                <UsersIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-              </div>
-              <span className="text-xs font-medium text-purple-700 dark:text-purple-400">
-                Total Candidates
-              </span>
-            </div>
-            <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
-              {statistics.totalCandidates}
-            </p>
-            <p className="text-xs text-purple-600/70 dark:text-purple-400/70">
-              {statistics.activeCandidates} active
-            </p>
-          </div>
-          <div className="rounded-lg border bg-linear-to-br from-cyan-50 to-cyan-100/20 dark:from-cyan-950/20 dark:to-cyan-900/10 p-3 shadow-sm">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="rounded-md bg-cyan-500/10 p-1.5">
-                <UsersIcon className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-              </div>
-              <span className="text-xs font-medium text-cyan-700 dark:text-cyan-400">
-                Active Candidates
-              </span>
-            </div>
-            <p className="text-xl font-bold text-cyan-600 dark:text-cyan-400">
-              {statistics.activeCandidates}
-            </p>
-            <p className="text-xs text-cyan-600/70 dark:text-cyan-400/70">
-              In pipeline
-            </p>
-          </div>
-          <div className="rounded-lg border bg-linear-to-br from-amber-50 to-amber-100/20 dark:from-amber-950/20 dark:to-amber-900/10 p-3 shadow-sm">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="rounded-md bg-amber-500/10 p-1.5">
-                <UserCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              </div>
-              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                Hired
-              </span>
-            </div>
-            <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
-              {statistics.hiredCandidates}
-            </p>
-            <p className="text-xs text-amber-600/70 dark:text-amber-400/70">
               {statistics.totalCandidates > 0
                 ? Math.round(
                     (statistics.hiredCandidates / statistics.totalCandidates) *
@@ -1115,7 +1062,9 @@ export function ClientDetails({
                             className="ml-auto h-8 px-2 text-destructive hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-1" />
-                            {isDeletingNote === note.id ? "Deleting..." : "Delete"}
+                            {isDeletingNote === note.id
+                              ? "Deleting..."
+                              : "Delete"}
                           </Button>
                         )}
                       </div>
