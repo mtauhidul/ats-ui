@@ -7,6 +7,7 @@ import { createContext, useState, useEffect, useCallback, type ReactNode } from 
 import { login as apiLogin, logout as apiLogout, getCurrentUser, refreshAccessToken } from '@/services/auth.service';
 import type { LoginCredentials } from '@/services/auth.service';
 import * as authUtils from '@/lib/auth-utils';
+import { useFirestoreDocument } from '@/hooks/useFirestore';
 
 interface User {
   id: string;
@@ -50,6 +51,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // 🔥 REALTIME: Subscribe to current user's Firestore document
+  const { data: firestoreUser } = useFirestoreDocument<User>({
+    documentPath: userId ? `users/${userId}` : '',
+    enabled: !!userId,
+  });
+
+  // Update user state when Firestore data changes (real-time sync)
+  useEffect(() => {
+    if (firestoreUser && userId) {
+      console.log('🔥 Auth: User data updated from Firestore', firestoreUser);
+      setUser(firestoreUser);
+    }
+  }, [firestoreUser, userId]);
 
   // Logout function
   const handleLogout = useCallback(async () => {
@@ -64,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       authUtils.clearTokens();
       setUser(null);
       setAccessToken(null);
+      setUserId(null);
     }
   }, [accessToken]);
 
@@ -92,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setUser(response.data.user);
+      setUserId(response.data.user.id);
     } catch (error) {
       console.error('Token refresh failed:', error);
       await handleLogout();
@@ -117,6 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const user = (userData.user || userData) as User;
             setUser(user);
             setAccessToken(storedToken);
+            // Set userId to enable Firestore subscription
+            setUserId(user.id);
+            console.log('🔥 Auth: Initialized with user ID:', user.id);
           } else {
             console.error('Invalid user data received:', userData);
             // Invalid response, clear auth
@@ -174,6 +195,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setUser(userData);
+      setUserId(userData.id);
+      console.log('🔥 Auth: Logged in with user ID:', userData.id);
     } catch (error) {
       console.error('Login failed:', error);
       throw error;

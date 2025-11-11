@@ -1036,7 +1036,7 @@ export function EditJobModal({
                       </div>
 
                       <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div className="space-y-2">
                             <Label
                               htmlFor="salaryMin"
@@ -1098,6 +1098,41 @@ export function EditJobModal({
                               className="h-11"
                             />
                           </div>
+
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="salaryPeriod"
+                              className="text-sm font-medium text-muted-foreground"
+                            >
+                              Period
+                            </Label>
+                            <Select
+                              value={formData.salaryRange?.period || "yearly"}
+                              onValueChange={(value) =>
+                                setFormData({
+                                  ...formData,
+                                  salaryRange: {
+                                    ...formData.salaryRange,
+                                    min: formData.salaryRange?.min || 0,
+                                    max: formData.salaryRange?.max || 0,
+                                    currency:
+                                      formData.salaryRange?.currency || "USD",
+                                    period: value as "hourly" | "daily" | "monthly" | "yearly",
+                                  },
+                                })
+                              }
+                            >
+                              <SelectTrigger className="h-11">
+                                <SelectValue placeholder="Select period" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="hourly">Hourly</SelectItem>
+                                <SelectItem value="daily">Daily</SelectItem>
+                                <SelectItem value="monthly">Monthly</SelectItem>
+                                <SelectItem value="yearly">Yearly</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
 
                         {formData.salaryRange?.min &&
@@ -1106,7 +1141,7 @@ export function EditJobModal({
                               <span className="font-medium">Range:</span>
                               <Badge variant="secondary" className="font-mono">
                                 ${formData.salaryRange.min.toLocaleString()} - $
-                                {formData.salaryRange.max.toLocaleString()}
+                                {formData.salaryRange.max.toLocaleString()} / {formData.salaryRange.period || 'yearly'}
                               </Badge>
                             </div>
                           )}

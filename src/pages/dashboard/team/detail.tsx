@@ -3,9 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
-import { API_BASE_URL } from "@/config/api";
-import { authenticatedFetch } from "@/lib/authenticated-fetch";
-import { useFirestoreDocument } from "@/hooks/firestore";
+import { useFirestoreDocument, useActivitiesByUser } from "@/hooks/firestore";
 import { useCandidates } from "@/store/hooks/useCandidates";
 import { useJobs } from "@/store/hooks/useJobs";
 import type { Candidate } from "@/types/candidate";
@@ -39,7 +37,7 @@ import {
   Lock,
   Download,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 interface Activity {
@@ -174,63 +172,26 @@ export default function TeamMemberDetailPage() {
   
   const { jobs } = useJobs(); // Realtime data from Firestore
   const { candidates } = useCandidates(); // Realtime data from Firestore
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [isLoadingActivities, setIsLoadingActivities] = useState(true);
+  
+  // Get activities from Firestore with realtime updates
+  const { 
+    data: firestoreActivities, 
+    loading: isLoadingActivities
+  } = useActivitiesByUser(memberId, { limitCount: 50 });
 
-  const fetchActivities = useCallback(async (userId: string) => {
-    try {
-      setIsLoadingActivities(true);
-      const response = await authenticatedFetch(
-        `${API_BASE_URL}/activities/user/${userId}`
-      );
-      if (response.ok) {
-        const result = await response.json();
-        setActivities(result.data || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch activities:", error);
-    } finally {
-      setIsLoadingActivities(false);
-    }
-  }, []);
+  // Transform Firestore activities to match component interface
+  const activities = useMemo(() => {
+    return (firestoreActivities || []).map(activity => ({
+      _id: activity.id,
+      action: activity.action,
+      resourceType: activity.resourceType,
+      resourceName: activity.resourceName,
+      metadata: activity.metadata as Record<string, string | number | boolean | null> | undefined,
+      createdAt: activity.createdAt.toISOString(),
+    }));
+  }, [firestoreActivities]);
 
-  useEffect(() => {
-    if (memberId) {
-      // No need to fetch team member - Firestore hook handles it automatically!
-      // Only fetch activities from backend (not yet migrated)
-      fetchActivities(memberId);
-    }
-    // No need to fetch jobs/candidates - Firestore provides realtime data automatically!
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memberId]); // Only memberId in deps - callbacks are stable
-
-  // Stable callback for handling refetch events
-  const handleRefetch = useCallback(() => {
-    console.log("🔔 Team detail page: Received refetchCandidates event!");
-    console.log("🔔 Team detail page: memberId:", memberId);
-    if (memberId) {
-      // No need to fetch team member - Firestore hook updates automatically!
-      // Just refresh activities (not yet on Firestore)
-      console.log("🔔 Team detail page: Refreshing activities...");
-      fetchActivities(memberId);
-    }
-    // Firestore will automatically update both team member and candidates in realtime!
-    console.log("🔔 Team detail page: Team member & candidates update automatically via Firestore");
-  }, [memberId, fetchActivities]);
-
-  // Listen for refetchCandidates event (triggered when candidate is assigned)
-  useEffect(() => {
-    console.log(
-      "👂 Team detail page: Adding event listener for refetchCandidates"
-    );
-    window.addEventListener("refetchCandidates", handleRefetch);
-    return () => {
-      console.log(
-        "🚫 Team detail page: Removing event listener for refetchCandidates"
-      );
-      window.removeEventListener("refetchCandidates", handleRefetch);
-    };
-  }, [handleRefetch]);
+  console.log("� Activities from Firestore (realtime):", activities.length);
 
   const formatActivityAction = (action: string): string => {
     const actionMap: Record<string, string> = {
@@ -396,10 +357,6 @@ export default function TeamMemberDetailPage() {
       </div>
     );
   }
-
-  const assignedJobs = jobs.filter(
-    (job: Job) => job.assignedRecruiterId === currentMember.id
-  );
 
   // assignedTo references User ID (currentMember.userId), not TeamMember ID (currentMember.id)
   // assignedTo can be either a string (User ID) or a populated user object
@@ -612,18 +569,18 @@ export default function TeamMemberDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Statistics */}
+            {/* Statistics - Real-time from Firestore */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
               <Card>
                 <CardContent className="pt-4 md:pt-6">
                   <div className="flex items-center justify-between mb-2">
-                    <Briefcase className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-500" />
+                    <Users className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-500" />
                   </div>
                   <div className="text-xl md:text-2xl font-bold">
-                    {currentMember.statistics?.activeJobs || 0}
+                    {assignedCandidates.length}
                   </div>
                   <p className="text-[10px] md:text-xs text-muted-foreground">
-                    Active Jobs
+                    Assigned Candidates
                   </p>
                 </CardContent>
               </Card>
@@ -631,13 +588,13 @@ export default function TeamMemberDetailPage() {
               <Card>
                 <CardContent className="pt-4 md:pt-6">
                   <div className="flex items-center justify-between mb-2">
-                    <Users className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-500" />
+                    <UserCheck className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-500" />
                   </div>
                   <div className="text-xl md:text-2xl font-bold">
-                    {currentMember.statistics?.placedCandidates || 0}
+                    {assignedCandidates.filter((c: Candidate) => c.status === 'hired').length}
                   </div>
                   <p className="text-[10px] md:text-xs text-muted-foreground">
-                    Placed Candidates
+                    Hired Candidates
                   </p>
                 </CardContent>
               </Card>
@@ -645,13 +602,15 @@ export default function TeamMemberDetailPage() {
               <Card>
                 <CardContent className="pt-4 md:pt-6">
                   <div className="flex items-center justify-between mb-2">
-                    <FileText className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-500" />
+                    <Clock className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-500" />
                   </div>
                   <div className="text-xl md:text-2xl font-bold">
-                    {currentMember.statistics?.pendingReviews || 0}
+                    {assignedCandidates.filter((c: Candidate) => 
+                      c.status === 'active' || c.status === 'interviewing' || c.status === 'offered'
+                    ).length}
                   </div>
                   <p className="text-[10px] md:text-xs text-muted-foreground">
-                    Pending Reviews
+                    In Progress
                   </p>
                 </CardContent>
               </Card>
@@ -659,13 +618,13 @@ export default function TeamMemberDetailPage() {
               <Card>
                 <CardContent className="pt-4 md:pt-6">
                   <div className="flex items-center justify-between mb-2">
-                    <Mail className="h-4 w-4 md:h-5 md:w-5 text-purple-600 dark:text-purple-500" />
+                    <Activity className="h-4 w-4 md:h-5 md:w-5 text-purple-600 dark:text-purple-500" />
                   </div>
                   <div className="text-xl md:text-2xl font-bold">
-                    {currentMember.statistics?.emailsSent || 0}
+                    {activities.length}
                   </div>
                   <p className="text-[10px] md:text-xs text-muted-foreground">
-                    Emails Sent
+                    Recent Activities
                   </p>
                 </CardContent>
               </Card>
@@ -711,52 +670,8 @@ export default function TeamMemberDetailPage() {
                 </CardContent>
               </Card>
 
-              {/* Assigned Jobs */}
+              {/* Assigned Candidates */}
               <Card>
-                <CardHeader className="p-4 md:p-6">
-                  <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-                    <Briefcase className="h-4 w-4 md:h-5 md:w-5" />
-                    Assigned Jobs
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 md:p-6 pt-0">
-                  {assignedJobs.length > 0 ? (
-                    <div className="space-y-3">
-                      {assignedJobs.map((job) => (
-                        <div
-                          key={job.id}
-                          className="flex items-start justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() =>
-                            navigate(`/dashboard/jobs/pipeline/${job.id}`)
-                          }
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{job.title}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {typeof job.location === "string"
-                                ? job.location
-                                : `${job.location?.city || ""}, ${
-                                    job.location?.country || ""
-                                  }`}
-                            </p>
-                          </div>
-                          <Badge variant="outline" className="ml-2 shrink-0">
-                            {job.status}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      No active jobs assigned
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Assigned Candidates */}
-            <Card className="mt-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
@@ -871,6 +786,7 @@ export default function TeamMemberDetailPage() {
                 )}
               </CardContent>
             </Card>
+            </div>
 
             {/* Activity Timeline */}
             <Card className="mt-6">

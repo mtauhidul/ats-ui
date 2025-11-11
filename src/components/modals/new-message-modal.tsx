@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,13 +14,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Loader2 } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { fetchUsers } from "@/store/slices/usersSlice";
-import { sendMessage } from "@/store/slices/messagesSlice";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/lib/auth";
-import type { User } from "@/types";
+import { useTeamMembers } from "@/hooks/firestore";
+import type { TeamMember } from "@/types/team";
 import { toast } from "sonner";
+import { chatService } from "@/services/chat.service";
 
 interface NewMessageModalProps {
   open: boolean;
@@ -37,32 +35,27 @@ const getInitials = (name: string) => {
     .slice(0, 2);
 };
 
-// Generate conversationId from two user IDs (sorted to ensure consistency)
-function generateConversationId(userId1: string, userId2: string): string {
-  const ids = [userId1, userId2].sort();
-  return `${ids[0]}_${ids[1]}`;
-}
-
 export function NewMessageModal({ open, onOpenChange, onSuccess }: NewMessageModalProps) {
-  const dispatch = useAppDispatch();
   const { user } = useAuth();
-  const userRole = useUserRole();
-  const { users, isLoading: usersLoading } = useAppSelector((state) => state.users);
+  
+  // 🔥 REALTIME: Get team members from Firestore
+  const { data: teamMembers, loading: usersLoading, error: membersError } = useTeamMembers();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<TeamMember | null>(null);
   const [messageText, setMessageText] = useState("");
   const [isSending, setIsSending] = useState(false);
 
-  // Fetch users when modal opens
-  useEffect(() => {
-    if (open) {
-      dispatch(fetchUsers());
-    }
-  }, [open, dispatch]);
+  console.log('📨 New Message Modal - Team Members:', {
+    teamMembers,
+    count: teamMembers?.length,
+    loading: usersLoading,
+    error: membersError,
+    currentUserId: user?.id
+  });
 
   // Filter out current user and filter by search
-  const filteredUsers = users
+  const filteredUsers = teamMembers
     .filter((u) => u.id !== user?.id)
     .filter((u) => {
       if (!searchQuery) return true;
@@ -80,25 +73,21 @@ export function NewMessageModal({ open, onOpenChange, onSuccess }: NewMessageMod
     setIsSending(true);
 
     try {
-      const conversationId = generateConversationId(user.id, selectedUser.id);
+      const conversationId = chatService.generateConversationId(user.id, selectedUser.id);
       const senderName = `${user.firstName} ${user.lastName}`.trim() || user.email;
       const recipientName = `${selectedUser.firstName} ${selectedUser.lastName}`.trim() || selectedUser.email;
 
-      await dispatch(
-        sendMessage({
-          conversationId,
-          senderId: user.id,
-          senderName,
-          senderRole: userRole,
-          senderAvatar: "",
-          recipientId: selectedUser.id,
-          recipientName,
-          recipientRole: selectedUser.role,
-          recipientAvatar: "",
-          message: messageText,
-          read: false,
-        })
-      ).unwrap();
+      // Send message directly to Firestore
+      await chatService.sendMessage({
+        conversationId,
+        senderId: user.id,
+        senderName,
+        senderAvatar: user.avatar || "",
+        recipientId: selectedUser.id,
+        recipientName,
+        recipientAvatar: "",
+        message: messageText.trim(),
+      });
 
       // Reset form
       setSelectedUser(null);
@@ -106,9 +95,11 @@ export function NewMessageModal({ open, onOpenChange, onSuccess }: NewMessageMod
       setSearchQuery("");
 
       // Close modal and notify success
+      toast.success("Message sent!");
       onOpenChange(false);
       onSuccess?.();
-    } catch (error) {
+    } catch (err) {
+      console.error('Failed to send message:', err);
       toast.error("Failed to send message");
     } finally {
       setIsSending(false);

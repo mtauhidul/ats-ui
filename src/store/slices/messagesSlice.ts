@@ -1,13 +1,13 @@
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import {
   createAsyncThunk,
   createSlice,
   type PayloadAction,
 } from "@reduxjs/toolkit";
-import { authenticatedFetch } from "@/lib/authenticated-fetch";
 
 import { API_BASE_URL } from "@/config/api";
 
-export type MessageStatus = 'sending' | 'sent' | 'failed' | 'seen';
+export type MessageStatus = "sending" | "sent" | "failed" | "seen";
 
 export interface Message {
   id: string;
@@ -75,18 +75,18 @@ export const sendMessage = createAsyncThunk(
           sentAt: new Date().toISOString(),
         }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('❌ Send message failed:', response.status, errorData);
+        console.error("❌ Send message failed:", response.status, errorData);
         throw new Error(errorData.message || "Failed to send message");
       }
-      
+
       const result = await response.json();
-      console.log('✅ Send message response:', result);
+      console.log("✅ Send message response:", result);
       return result.data || result;
     } catch (error) {
-      console.error('❌ Send message error:', error);
+      console.error("❌ Send message error:", error);
       throw error;
     }
   }
@@ -95,10 +95,13 @@ export const sendMessage = createAsyncThunk(
 export const markMessageAsRead = createAsyncThunk(
   "messages/markAsRead",
   async (id: string) => {
-    const response = await authenticatedFetch(`${API_BASE_URL}/messages/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ read: true }),
-    });
+    const response = await authenticatedFetch(
+      `${API_BASE_URL}/messages/${id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ read: true }),
+      }
+    );
     if (!response.ok) throw new Error("Failed to mark message as read");
     const result = await response.json();
     return result.data || result;
@@ -108,9 +111,12 @@ export const markMessageAsRead = createAsyncThunk(
 export const deleteMessage = createAsyncThunk(
   "messages/delete",
   async (id: string) => {
-    const response = await authenticatedFetch(`${API_BASE_URL}/messages/${id}`, {
-      method: "DELETE",
-    });
+    const response = await authenticatedFetch(
+      `${API_BASE_URL}/messages/${id}`,
+      {
+        method: "DELETE",
+      }
+    );
     if (!response.ok) throw new Error("Failed to delete message");
     await response.json();
     return id;
@@ -122,58 +128,88 @@ const messagesSlice = createSlice({
   initialState,
   reducers: {
     // Set messages from Firestore real-time subscription
-    setMessagesFromFirestore: (state, action: PayloadAction<Message[]>) => {
-      const messages = action.payload.map((msg) => ({
+    setMessagesFromFirestore: (
+      state,
+      action: PayloadAction<{ messages: Message[]; currentUserId: string }>
+    ) => {
+      const { messages: rawMessages, currentUserId } = action.payload;
+      
+      const messages = rawMessages.map((msg) => ({
         ...msg,
-        status: msg.read ? 'seen' : 'sent' as MessageStatus,
+        status: msg.read ? "seen" : ("sent" as MessageStatus),
       }));
-      
+
       state.messages = messages;
-      
+
       // Group messages into conversations
       const conversationsMap = new Map<string, Conversation>();
-      
+
       messages.forEach((msg) => {
         const { conversationId } = msg;
-        
+
         if (!conversationsMap.has(conversationId)) {
+          // Determine the other participant (not the current user)
+          const isCurrentUserSender = msg.senderId === currentUserId;
+          const otherUserId = isCurrentUserSender
+            ? msg.recipientId
+            : msg.senderId;
+          const otherUserName = isCurrentUserSender
+            ? msg.recipientName
+            : msg.senderName;
+          const otherUserAvatar = isCurrentUserSender
+            ? msg.recipientAvatar
+            : msg.senderAvatar;
+          const otherUserRole = isCurrentUserSender
+            ? msg.recipientRole
+            : msg.senderRole;
+
           conversationsMap.set(conversationId, {
             id: conversationId,
-            participantId: msg.senderId === msg.recipientId ? msg.senderId : 
-                          (msg.senderId !== msg.recipientId ? 
-                            (msg.senderId || msg.recipientId) : msg.recipientId),
-            participantName: msg.senderName || msg.recipientName,
-            participantAvatar: msg.senderAvatar || msg.recipientAvatar,
-            participantRole: msg.senderRole || msg.recipientRole,
+            participantId: otherUserId,
+            participantName: otherUserName,
+            participantAvatar: otherUserAvatar,
+            participantRole: otherUserRole,
             lastMessage: msg.message,
             lastMessageTime: msg.sentAt,
             unreadCount: 0,
             messages: [],
           });
         }
-        
+
         const conv = conversationsMap.get(conversationId)!;
         conv.messages.push(msg);
-        
+
         // Update last message if this message is newer
         if (new Date(msg.sentAt) > new Date(conv.lastMessageTime)) {
           conv.lastMessage = msg.message;
           conv.lastMessageTime = msg.sentAt;
         }
-        
-        // Count unread messages
-        if (!msg.read) {
+
+        // Count unread messages received by current user (not read yet)
+        if (!msg.read && msg.recipientId === currentUserId) {
           conv.unreadCount++;
         }
       });
-      
+
       state.conversations = Array.from(conversationsMap.values())
-        .sort((a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
-      
+        .map((conv) => ({
+          ...conv,
+          // Sort messages chronologically (oldest first, newest last)
+          messages: conv.messages.sort(
+            (a, b) =>
+              new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime()
+          ),
+        }))
+        .sort(
+          (a, b) =>
+            new Date(b.lastMessageTime).getTime() -
+            new Date(a.lastMessageTime).getTime()
+        );
+
       // Update current conversation if it exists
       if (state.currentConversation) {
         const updatedConv = state.conversations.find(
-          c => c.id === state.currentConversation?.id
+          (c) => c.id === state.currentConversation?.id
         );
         if (updatedConv) {
           state.currentConversation = updatedConv;
@@ -188,11 +224,16 @@ const messagesSlice = createSlice({
     },
     // Optimistic update: add message immediately with 'sending' status
     addOptimisticMessage: (state, action: PayloadAction<Message>) => {
-      const optimisticMsg = { ...action.payload, status: 'sending' as MessageStatus };
+      const optimisticMsg = {
+        ...action.payload,
+        status: "sending" as MessageStatus,
+      };
 
       // Add to current conversation immediately
-      if (state.currentConversation &&
-          state.currentConversation.id === optimisticMsg.conversationId) {
+      if (
+        state.currentConversation &&
+        state.currentConversation.id === optimisticMsg.conversationId
+      ) {
         state.currentConversation.messages.push(optimisticMsg);
         state.currentConversation.lastMessage = optimisticMsg.message;
         state.currentConversation.lastMessageTime = optimisticMsg.sentAt;
@@ -200,7 +241,7 @@ const messagesSlice = createSlice({
 
       // Update conversation in list
       const convIndex = state.conversations.findIndex(
-        c => c.id === optimisticMsg.conversationId
+        (c) => c.id === optimisticMsg.conversationId
       );
       if (convIndex !== -1) {
         state.conversations[convIndex].lastMessage = optimisticMsg.message;
@@ -215,14 +256,18 @@ const messagesSlice = createSlice({
     // Update message status (sent, failed, seen)
     updateMessageStatus: (
       state,
-      action: PayloadAction<{ tempId: string; status: MessageStatus; realId?: string }>
+      action: PayloadAction<{
+        tempId: string;
+        status: MessageStatus;
+        realId?: string;
+      }>
     ) => {
       const { tempId, status, realId } = action.payload;
 
       // Update in current conversation
       if (state.currentConversation) {
         const msgIndex = state.currentConversation.messages.findIndex(
-          m => m.tempId === tempId || m.id === tempId
+          (m) => m.tempId === tempId || m.id === tempId
         );
         if (msgIndex !== -1) {
           state.currentConversation.messages[msgIndex].status = status;
@@ -233,9 +278,9 @@ const messagesSlice = createSlice({
       }
 
       // Update in conversations list
-      state.conversations.forEach(conv => {
+      state.conversations.forEach((conv) => {
         const msgIndex = conv.messages.findIndex(
-          m => m.tempId === tempId || m.id === tempId
+          (m) => m.tempId === tempId || m.id === tempId
         );
         if (msgIndex !== -1) {
           conv.messages[msgIndex].status = status;
@@ -250,13 +295,12 @@ const messagesSlice = createSlice({
       const tempId = action.payload;
 
       if (state.currentConversation) {
-        state.currentConversation.messages = state.currentConversation.messages.filter(
-          m => m.tempId !== tempId
-        );
+        state.currentConversation.messages =
+          state.currentConversation.messages.filter((m) => m.tempId !== tempId);
       }
 
-      state.conversations.forEach(conv => {
-        conv.messages = conv.messages.filter(m => m.tempId !== tempId);
+      state.conversations.forEach((conv) => {
+        conv.messages = conv.messages.filter((m) => m.tempId !== tempId);
       });
     },
   },
@@ -269,20 +313,34 @@ const messagesSlice = createSlice({
       })
       .addCase(
         fetchMessages.fulfilled,
-        (state, action: PayloadAction<any>) => {
+        (
+          state,
+          action: PayloadAction<{
+            messages: Message[];
+            conversations: Conversation[];
+          }>
+        ) => {
           state.isLoading = false;
           // Backend returns {messages: [], conversations: []} already processed
-          const messages = (action.payload.messages || []).map((msg: any) => ({
+          const messages = (action.payload.messages || []).map((msg) => ({
             ...msg,
-            status: msg.read ? 'seen' : 'sent', // Set default status based on read status
+            status: (msg.read ? "seen" : "sent") as MessageStatus, // Set default status based on read status
           }));
-          const conversations = (action.payload.conversations || []).map((conv: any) => ({
-            ...conv,
-            messages: conv.messages.map((msg: any) => ({
-              ...msg,
-              status: msg.read ? 'seen' : 'sent',
-            })),
-          }));
+          const conversations = (action.payload.conversations || []).map(
+            (conv) => ({
+              ...conv,
+              // Sort messages chronologically (oldest first, newest last)
+              messages: conv.messages
+                .map((msg) => ({
+                  ...msg,
+                  status: (msg.read ? "seen" : "sent") as MessageStatus,
+                }))
+                .sort(
+                  (a: Message, b: Message) =>
+                    new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime()
+                ),
+            })
+          );
 
           state.messages = messages;
           state.conversations = conversations;
@@ -290,7 +348,7 @@ const messagesSlice = createSlice({
           // Update current conversation if it exists
           if (state.currentConversation) {
             const updatedConv = state.conversations.find(
-              c => c.id === state.currentConversation?.id
+              (c) => c.id === state.currentConversation?.id
             );
             if (updatedConv) {
               state.currentConversation = updatedConv;
@@ -315,13 +373,10 @@ const messagesSlice = createSlice({
           // This will be handled by the component dispatching updateMessageStatus
         }
       )
-      .addCase(
-        sendMessage.rejected,
-        () => {
-          // Mark the optimistic message as failed
-          // This will be handled by the component dispatching updateMessageStatus with 'failed'
-        }
-      )
+      .addCase(sendMessage.rejected, () => {
+        // Mark the optimistic message as failed
+        // This will be handled by the component dispatching updateMessageStatus with 'failed'
+      })
       // Mark as read
       .addCase(
         markMessageAsRead.fulfilled,
@@ -336,7 +391,7 @@ const messagesSlice = createSlice({
           // Update in current conversation
           if (state.currentConversation) {
             const msgIndex = state.currentConversation.messages.findIndex(
-              m => m.id === updatedMessage.id
+              (m) => m.id === updatedMessage.id
             );
             if (msgIndex !== -1) {
               state.currentConversation.messages[msgIndex] = updatedMessage;
@@ -350,14 +405,13 @@ const messagesSlice = createSlice({
         deleteMessage.fulfilled,
         (state, action: PayloadAction<string>) => {
           const deletedId = action.payload;
-          state.messages = state.messages.filter(
-            (m) => m.id !== deletedId
-          );
+          state.messages = state.messages.filter((m) => m.id !== deletedId);
           // Remove from current conversation
           if (state.currentConversation) {
-            state.currentConversation.messages = state.currentConversation.messages.filter(
-              m => m.id !== deletedId
-            );
+            state.currentConversation.messages =
+              state.currentConversation.messages.filter(
+                (m) => m.id !== deletedId
+              );
           }
           // Note: Should refetch to properly update conversations list
         }

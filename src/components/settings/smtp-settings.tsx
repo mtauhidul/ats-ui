@@ -483,11 +483,12 @@ export function SmtpSettings() {
             on email address
           </p>
           <p className="font-medium text-foreground mt-4">
-            📧 Recommended Settings for Provider:
+            📧 Recommended IMAP Settings by Provider:
           </p>
-          <p>• Host: imap.provider.com</p>
-          <p>• Port: 993</p>
-          <p>• Secure: Enabled (TLS/SSL)</p>
+          <p>• <strong>Gmail:</strong> imap.gmail.com, Port 993, TLS/SSL Enabled</p>
+          <p>• <strong>Outlook:</strong> outlook.office365.com, Port 993, TLS/SSL Enabled</p>
+          <p>• <strong>Yahoo:</strong> imap.mail.yahoo.com, Port 993, TLS/SSL Enabled</p>
+          <p>• <strong>Custom:</strong> Check your email provider's documentation</p>
         </CardContent>
       </Card>
     </div>

@@ -393,7 +393,7 @@ export function EmailMonitoringSettings() {
                 />
                 {automationStatus?.enabled && (
                   <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">
-                    Checking emails every 5 minutes
+                    Monitoring emails automatically
                   </p>
                 )}
               </div>
@@ -454,20 +454,19 @@ export function EmailMonitoringSettings() {
                   <div className="flex items-center gap-1.5 md:gap-2">
                     <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-blue-600 shrink-0" />
                     <span className="text-blue-700">
-                      Emails are checked every 5 minutes
+                      Emails are checked automatically on a scheduled interval
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 md:gap-2">
                     <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-blue-600 shrink-0" />
                     <span className="text-blue-700">
-                      Last checked times are updated below for each account
+                      Last checked times are displayed below for each account
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 md:gap-2">
                     <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-blue-600 shrink-0" />
                     <span className="text-blue-700">
-                      Use the refresh button on each account to check
-                      immediately
+                      Use "Check Now" button to trigger immediate email check
                     </span>
                   </div>
                 </div>

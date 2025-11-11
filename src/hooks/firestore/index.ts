@@ -96,3 +96,12 @@ export {
   useInterviewsByStatus,
   useUpcomingInterviews,
 } from '../useInterviews';
+
+// Activities hooks
+export {
+  useActivities,
+  useActivitiesByUser,
+  useActivitiesByAction,
+  useActivitiesByResource,
+  type Activity,
+} from '../useActivities';

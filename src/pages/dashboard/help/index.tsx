@@ -213,10 +213,10 @@ const faqData: FAQItem[] = [
   {
     id: "faq-034",
     category: "Jobs",
-    question: "Can I duplicate a job to create a similar one?",
+    question: "How do I schedule an interview for a candidate?",
     answer:
-      "This feature is not currently available, but you can manually create a new job and copy/paste the details from an existing job. Contact support if you need a duplicate job feature.",
-    tags: ["jobs", "duplicate", "copy"],
+      "Go to the Jobs page, click on a job to see the pipeline, find the candidate you want to interview, and click on their card. Look for the 'Schedule Interview' button. Fill in the interview details including date, time, type (video, phone, in-person), duration, and optionally create a Zoom meeting link. The candidate will receive an automated email invitation with all the details.",
+    tags: ["jobs", "interview", "schedule", "zoom"],
   },
   {
     id: "faq-035",
@@ -401,8 +401,8 @@ const faqData: FAQItem[] = [
     category: "Settings",
     question: "What are Email Templates?",
     answer:
-      "Email Templates are pre-written email messages you can reuse. Go to Settings > Email Templates to create templates for common emails like interview invitations, rejection letters, offer letters, or follow-ups. You can use variables like {{candidateName}} or {{jobTitle}} that get replaced with real information when you send the email.",
-    tags: ["settings", "email", "templates"],
+      "Email Templates are pre-written email messages you can reuse. Go to Settings > Email Templates to create templates for common emails like interview invitations, rejection letters, offer letters, or follow-ups. You can use variables in two formats: {{candidateName}} or [Candidate Name], {{jobTitle}} or [Job Title], {{companyName}} or [Company Name], {{interviewDate}} or [Interview Date], etc. These variables get automatically replaced with real information when you send the email.",
+    tags: ["settings", "email", "templates", "variables"],
   },
   {
     id: "faq-084",
@@ -529,6 +529,40 @@ const faqData: FAQItem[] = [
     tags: ["troubleshooting", "display", "ui"],
   },
 
+  // ==================== REAL-TIME & MESSAGING ====================
+  {
+    id: "faq-106",
+    category: "Communication",
+    question: "How do I send messages to my team members?",
+    answer:
+      "Click 'Messages' in the left sidebar to access the internal chat system. Select a team member from the list to start a conversation. All messages are real-time - your teammate will see them immediately without refreshing. You can send text messages and the system shows read receipts and typing indicators.",
+    tags: ["messages", "chat", "communication", "team"],
+  },
+  {
+    id: "faq-107",
+    category: "Communication",
+    question: "Are updates in the system real-time?",
+    answer:
+      "Yes! The system uses Firestore real-time technology. When someone approves an application, moves a candidate, or makes any change, everyone sees it immediately without refreshing the page. This prevents duplicate work and keeps everyone synchronized.",
+    tags: ["realtime", "firestore", "updates", "synchronization"],
+  },
+  {
+    id: "faq-108",
+    category: "Notifications",
+    question: "How do notifications work?",
+    answer:
+      "Click the bell icon in the top navigation to see your notifications. You'll be notified when: someone assigns you work, a candidate moves to a new stage, new applications arrive, team members message you, or important system events occur. You can mark notifications as read or delete them (admins only can delete).",
+    tags: ["notifications", "alerts", "bell"],
+  },
+  {
+    id: "faq-109",
+    category: "Dashboard",
+    question: "What is the Activities timeline?",
+    answer:
+      "The Activities section (visible on Dashboard and Team pages) shows a real-time log of all actions in the system: who created jobs, approved applications, moved candidates, scheduled interviews, etc. Each activity shows the user, action, timestamp, and affected resource. It's useful for tracking team productivity and auditing changes.",
+    tags: ["activities", "timeline", "audit", "tracking"],
+  },
+
   // ==================== BEST PRACTICES ====================
   {
     id: "faq-110",
@@ -652,12 +686,26 @@ export default function HelpPage() {
         return <Shield className="h-4 w-4" />;
       case "Communication":
         return <MessageCircle className="h-4 w-4" />;
-      case "Analytics":
+      case "Dashboard":
         return <FileText className="h-4 w-4" />;
       case "Search":
         return <Search className="h-4 w-4" />;
       case "Notifications":
         return <Mail className="h-4 w-4" />;
+      case "Common Tasks":
+        return <FileText className="h-4 w-4" />;
+      case "Troubleshooting":
+        return <HelpCircle className="h-4 w-4" />;
+      case "Best Practices":
+        return <BookOpen className="h-4 w-4" />;
+      case "Settings":
+        return <Shield className="h-4 w-4" />;
+      case "Applications":
+        return <FileText className="h-4 w-4" />;
+      case "Jobs":
+        return <Briefcase className="h-4 w-4" />;
+      case "Team":
+        return <Users className="h-4 w-4" />;
       case "Security":
         return <Shield className="h-4 w-4" />;
       default:

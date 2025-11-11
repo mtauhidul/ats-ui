@@ -4,6 +4,7 @@ import {
   onSnapshot, 
   query, 
   orderBy,
+  where,
   type Unsubscribe,
   type QueryConstraint
 } from 'firebase/firestore';
@@ -130,13 +131,60 @@ export class FirestoreRealtimeService {
   }
 
   /**
-   * Subscribe to messages
+   * Subscribe to messages for a specific user
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  subscribeToMessages(callback: (messages: any[]) => void): () => void {
-    return this.subscribeToCollection('messages', callback, [
-      orderBy('sentAt', 'desc')
-    ]);
+  subscribeToMessages(userId: string, callback: (messages: any[]) => void): () => void {
+    const key = `messages_${Date.now()}`;
+    
+    const collectionRef = collection(db, 'messages');
+    
+    // Query for messages where user is either sender or recipient
+    // Note: Firestore doesn't support OR queries directly, so we'll fetch all and filter
+    // For better performance in production, consider composite queries or denormalization
+    const q = query(collectionRef, orderBy('sentAt', 'desc'));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const data = snapshot.docs
+          .map((doc) => {
+            const docData = doc.data();
+            return {
+              id: doc.id,
+              ...docData,
+              // Convert Firestore Timestamp to ISO string for sentAt
+              sentAt: docData.sentAt?.toDate?.() 
+                ? docData.sentAt.toDate().toISOString() 
+                : docData.sentAt,
+            };
+          })
+          // Filter for messages where user is sender or recipient
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .filter((msg: any) => {
+            const isSender = msg.senderId === userId;
+            const isRecipient = msg.recipientId === userId;
+            const hasConversationId = !!msg.conversationId;
+            const notEmailTracking = !msg.emailId;
+            
+            return (isSender || isRecipient) && hasConversationId && notEmailTracking;
+          });
+        
+        console.log(`🔥 Real-time update from messages (filtered for user ${userId}):`, data.length, 'items');
+        callback(data);
+      },
+      (error) => {
+        console.error(`Error in messages subscription:`, error);
+      }
+    );
+
+    this.unsubscribers.set(key, unsubscribe);
+
+    // Return cleanup function
+    return () => {
+      unsubscribe();
+      this.unsubscribers.delete(key);
+    };
   }
 
   /**
@@ -153,10 +201,52 @@ export class FirestoreRealtimeService {
    * Subscribe to notifications for current user
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  subscribeToNotifications(callback: (notifications: any[]) => void): () => void {
-    return this.subscribeToCollection('notifications', callback, [
+  subscribeToNotifications(userId: string, callback: (notifications: any[]) => void): () => void {
+    const key = `notifications_${Date.now()}`;
+    
+    const collectionRef = collection(db, 'notifications');
+    const q = query(
+      collectionRef,
+      where('userId', '==', userId),
       orderBy('createdAt', 'desc')
-    ]);
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            ...docData,
+            // Convert Firestore Timestamps to ISO strings
+            createdAt: docData.createdAt?.toDate?.() 
+              ? docData.createdAt.toDate().toISOString() 
+              : docData.createdAt,
+            updatedAt: docData.updatedAt?.toDate?.() 
+              ? docData.updatedAt.toDate().toISOString() 
+              : docData.updatedAt,
+            expiresAt: docData.expiresAt?.toDate?.() 
+              ? docData.expiresAt.toDate().toISOString() 
+              : docData.expiresAt,
+          };
+        });
+        
+        console.log(`🔥 Real-time update from notifications (user ${userId}):`, data.length, 'items');
+        callback(data);
+      },
+      (error) => {
+        console.error(`Error in notifications subscription:`, error);
+      }
+    );
+
+    this.unsubscribers.set(key, unsubscribe);
+
+    // Return cleanup function
+    return () => {
+      unsubscribe();
+      this.unsubscribers.delete(key);
+    };
   }
 
   /**

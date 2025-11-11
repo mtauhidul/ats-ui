@@ -4,7 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { hasPermission } from "@/lib/rbac";
-import { useAppSelector } from "@/store/hooks";
+import { useAuth } from "@/hooks/useAuth";
+import { 
+  useJobs, 
+  useCandidates, 
+  useClients, 
+  useApplications, 
+  useTeamMembers 
+} from "@/hooks/firestore";
 import type { Application } from "@/types/application";
 import type { Candidate } from "@/types/candidate";
 import type { Client } from "@/types/client";
@@ -116,23 +123,23 @@ export default function SearchPage() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const jobsData = useAppSelector(
-    (state) => (state.jobs as { jobs: Job[] }).jobs
-  );
-  const candidatesData = useAppSelector(
-    (state) => (state.candidates as { candidates: Candidate[] }).candidates
-  );
-  const clientsData = useAppSelector(
-    (state) => (state.clients as { clients: Client[] }).clients
-  );
-  const applicationsData = useAppSelector(
-    (state) =>
-      (state.applications as { applications: Application[] }).applications
-  );
-  const teamData = useAppSelector(
-    (state) => (state.team as { teamMembers: TeamMember[] }).teamMembers
-  );
-  const currentUser = teamData[0];
+  // Get current user for permissions
+  const { user: currentUser } = useAuth();
+
+  // Get data from Firestore with realtime updates
+  const { data: jobsData = [] } = useJobs();
+  const { data: candidatesData = [] } = useCandidates();
+  const { data: clientsData = [] } = useClients();
+  const { data: applicationsData = [] } = useApplications();
+  const { data: teamData = [] } = useTeamMembers();
+
+  console.log("🔍 Search Page - Firestore Data:", {
+    jobs: jobsData.length,
+    candidates: candidatesData.length,
+    clients: clientsData.length,
+    applications: applicationsData.length,
+    team: teamData.length,
+  });
 
   // Debounced search query
   const debouncedQuery = useDebounce(searchQuery, 300);

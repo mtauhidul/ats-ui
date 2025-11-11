@@ -20,6 +20,7 @@ export type NotificationType =
 
 export interface Notification {
   id: string;
+  userId: string; // User this notification belongs to
   type: NotificationType;
   title: string;
   message: string;
@@ -28,6 +29,7 @@ export interface Notification {
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   expiresAt?: string;
   createdAt: string;
+  updatedAt?: string;
   relatedEntity: {
     type: string;
     id: string;

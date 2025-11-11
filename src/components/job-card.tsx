@@ -172,6 +172,7 @@ export function JobCard({
                 {job.salaryRange.currency || "USD"}{" "}
                 {job.salaryRange.min.toLocaleString()} -{" "}
                 {job.salaryRange.max.toLocaleString()}
+                {job.salaryRange.period && ` / ${job.salaryRange.period}`}
               </span>
             </div>
           )}

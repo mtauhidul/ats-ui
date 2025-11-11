@@ -533,16 +533,19 @@ export default function NotificationsPage() {
                                     </span>
                                   </Button>
                                 )}
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 md:h-8 px-2 md:px-3"
-                                  onClick={() =>
-                                    handleDeleteNotification(notification.id)
-                                  }
-                                >
-                                  <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
-                                </Button>
+                                {/* Only admin can delete notifications */}
+                                {isAdmin && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 md:h-8 px-2 md:px-3"
+                                    onClick={() =>
+                                      handleDeleteNotification(notification.id)
+                                    }
+                                  >
+                                    <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
+                                  </Button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -655,16 +658,19 @@ export default function NotificationsPage() {
                                     </span>
                                   </Button>
                                 )}
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 md:h-8 px-2 md:px-3"
-                                  onClick={() =>
-                                    handleDeleteNotification(notification.id)
-                                  }
-                                >
-                                  <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
-                                </Button>
+                                {/* Only admin can delete notifications */}
+                                {isAdmin && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 md:h-8 px-2 md:px-3"
+                                    onClick={() =>
+                                      handleDeleteNotification(notification.id)
+                                    }
+                                  >
+                                    <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
+                                  </Button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -777,16 +783,19 @@ export default function NotificationsPage() {
                                     </span>
                                   </Button>
                                 )}
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 md:h-8 px-2 md:px-3"
-                                  onClick={() =>
-                                    handleDeleteNotification(notification.id)
-                                  }
-                                >
-                                  <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
-                                </Button>
+                                {/* Only admin can delete notifications */}
+                                {isAdmin && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 md:h-8 px-2 md:px-3"
+                                    onClick={() =>
+                                      handleDeleteNotification(notification.id)
+                                    }
+                                  >
+                                    <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
+                                  </Button>
+                                )}
                               </div>
                             </div>
                           </div>
