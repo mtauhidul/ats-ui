@@ -61,14 +61,14 @@ interface ClientDetailsProps {
   jobs: Job[];
   candidates: Candidate[];
   onBack: () => void;
-  onUpdate: (clientId: string, updates: Partial<Client>) => void;
-  onDelete: (clientId: string) => void;
+  onUpdate: (clientId: string, updates: Partial<Client>) => Promise<void>;
+  onDelete: (clientId: string) => Promise<void>;
   onAddJob?: (job: CreateJobRequest) => void;
   onJobClick?: (jobId: string) => void;
   onAddCommunicationNote?: (
     clientId: string,
     note: { type: string; subject: string; content: string }
-  ) => void;
+  ) => Promise<void>;
 }
 
 const statusColors = {
@@ -122,6 +122,12 @@ export function ClientDetails({
   const [isAddJobOpen, setIsAddJobOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteConfirmMessage, setDeleteConfirmMessage] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isAddingContact, setIsAddingContact] = useState(false);
+  const [isDeletingContact, setIsDeletingContact] = useState<string | null>(null);
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const [isDeletingNote, setIsDeletingNote] = useState<string | null>(null);
 
   // Helper to convert Firestore Timestamp or any date value to Date object
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -146,21 +152,33 @@ export function ClientDetails({
     ? (Object.values(client.contacts) as ContactPerson[])
     : [];
 
-  const communicationNotes: CommunicationNote[] = Array.isArray(
+  const communicationNotes: CommunicationNote[] = (Array.isArray(
     client.communicationNotes
   )
     ? client.communicationNotes
     : client.communicationNotes && typeof client.communicationNotes === "object"
     ? (Object.values(client.communicationNotes) as CommunicationNote[])
-    : [];
+    : []
+  ).sort((a, b) => {
+    // Sort by createdAt in descending order (latest first)
+    const timeA = toDateObject(a.createdAt).getTime();
+    const timeB = toDateObject(b.createdAt).getTime();
+    return timeB - timeA;
+  });
 
-  const activityHistory: ClientActivityHistory[] = Array.isArray(
+  const activityHistory: ClientActivityHistory[] = (Array.isArray(
     client.activityHistory
   )
     ? client.activityHistory
     : client.activityHistory && typeof client.activityHistory === "object"
     ? (Object.values(client.activityHistory) as ClientActivityHistory[])
-    : [];
+    : []
+  ).sort((a, b) => {
+    // Sort by timestamp in descending order (latest first)
+    const timeA = toDateObject(a.timestamp).getTime();
+    const timeB = toDateObject(b.timestamp).getTime();
+    return timeB - timeA;
+  });
 
   const tags: string[] = Array.isArray(client.tags) ? client.tags : [];
 
@@ -222,126 +240,170 @@ export function ClientDetails({
     }
   };
 
-  const handleAddContact = (data: CreateContactRequest) => {
-    const newContact: ContactPerson = {
-      ...data,
-      id: `contact-${Date.now()}`,
-    };
-
-    // Create activity for adding contact
-    const newActivity = {
-      id: `activity-${Date.now()}`,
-      clientId: client.id,
-      action: "contact_added",
-      description: `New contact "${data.name}" (${data.position}) was added`,
-      performedBy: currentUser?.id || "system",
-      performedByName: currentUser
-        ? `${currentUser.firstName} ${currentUser.lastName}`
-        : "System",
-      timestamp: new Date(),
-      metadata: {
-        contactName: data.name,
-        position: data.position,
-        email: data.email,
-      },
-    };
-
-    onUpdate(client.id, {
-      contacts: [...contacts, newContact],
-      activityHistory: [newActivity, ...activityHistory],
-    });
-    toast.success("Contact added successfully");
-  };
-
-  const handleDeleteContact = (contactId: string) => {
-    const contact = contacts.find((c) => c.id === contactId);
-
-    // Create activity for deleting contact
-    const newActivity = {
-      id: `activity-${Date.now()}`,
-      clientId: client.id,
-      action: "contact_removed",
-      description: `Contact "${contact?.name}" was removed`,
-      performedBy: currentUser?.id || "system",
-      performedByName: currentUser
-        ? `${currentUser.firstName} ${currentUser.lastName}`
-        : "System",
-      timestamp: new Date(),
-      metadata: { contactName: contact?.name, contactId },
-    };
-
-    onUpdate(client.id, {
-      contacts: contacts.filter((c) => c.id !== contactId),
-      activityHistory: [newActivity, ...activityHistory],
-    });
-    toast.success("Contact deleted successfully");
-  };
-
-  const handleAddNote = (data: CreateCommunicationNoteRequest) => {
-    if (onAddCommunicationNote) {
-      // Use the dedicated endpoint for adding communication notes
-      onAddCommunicationNote(client.id, data);
-    } else {
-      // Fallback to the old way using onUpdate
-      const newNote: CommunicationNote = {
+  const handleAddContact = async (data: CreateContactRequest) => {
+    const toastId = toast.loading("Adding contact...");
+    setIsAddingContact(true);
+    
+    try {
+      const newContact: ContactPerson = {
         ...data,
-        id: `note-${Date.now()}`,
-        clientId: client.id,
-        createdBy: currentUser?.id || "system",
-        createdByName: currentUser
-          ? `${currentUser.firstName} ${currentUser.lastName}`
-          : "System",
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        id: `contact-${Date.now()}`,
       };
 
-      // Create activity for adding communication note
+      // Create activity for adding contact
       const newActivity = {
         id: `activity-${Date.now()}`,
         clientId: client.id,
-        action: "communication_logged",
-        description: `Communication logged: ${data.type.replace(
-          /_/g,
-          " "
-        )} - "${data.subject}"`,
+        action: "contact_added",
+        description: `New contact "${data.name}" (${data.position}) was added`,
         performedBy: currentUser?.id || "system",
         performedByName: currentUser
           ? `${currentUser.firstName} ${currentUser.lastName}`
           : "System",
         timestamp: new Date(),
-        metadata: { noteType: data.type, subject: data.subject },
+        metadata: {
+          contactName: data.name,
+          position: data.position,
+          email: data.email,
+        },
       };
 
-      onUpdate(client.id, {
-        communicationNotes: [newNote, ...communicationNotes],
+      await onUpdate(client.id, {
+        contacts: [...contacts, newContact],
         activityHistory: [newActivity, ...activityHistory],
       });
-      toast.success("Communication note added successfully");
+      
+      toast.success("Contact added successfully", { id: toastId });
+    } catch (error) {
+      toast.error("Failed to add contact", { id: toastId });
+      throw error;
+    } finally {
+      setIsAddingContact(false);
     }
   };
 
-  const handleDeleteNote = (noteId: string) => {
-    const note = communicationNotes.find((n) => n.id === noteId);
+  const handleDeleteContact = async (contactId: string) => {
+    const toastId = toast.loading("Deleting contact...");
+    setIsDeletingContact(contactId);
+    
+    try {
+      const contact = contacts.find((c) => c.id === contactId);
 
-    // Create activity for deleting note
-    const newActivity = {
-      id: `activity-${Date.now()}`,
-      clientId: client.id,
-      action: "communication_deleted",
-      description: `Communication note "${note?.subject}" was deleted`,
-      performedBy: currentUser?.id || "system",
-      performedByName: currentUser
-        ? `${currentUser.firstName} ${currentUser.lastName}`
-        : "System",
-      timestamp: new Date(),
-      metadata: { noteSubject: note?.subject, noteId },
-    };
+      // Create activity for deleting contact
+      const newActivity = {
+        id: `activity-${Date.now()}`,
+        clientId: client.id,
+        action: "contact_removed",
+        description: `Contact "${contact?.name}" was removed`,
+        performedBy: currentUser?.id || "system",
+        performedByName: currentUser
+          ? `${currentUser.firstName} ${currentUser.lastName}`
+          : "System",
+        timestamp: new Date(),
+        metadata: { contactName: contact?.name, contactId },
+      };
 
-    onUpdate(client.id, {
-      communicationNotes: communicationNotes.filter((n) => n.id !== noteId),
-      activityHistory: [newActivity, ...activityHistory],
-    });
-    toast.success("Communication note deleted successfully");
+      await onUpdate(client.id, {
+        contacts: contacts.filter((c) => c.id !== contactId),
+        activityHistory: [newActivity, ...activityHistory],
+      });
+      
+      toast.success("Contact deleted successfully", { id: toastId });
+    } catch (error) {
+      toast.error("Failed to delete contact", { id: toastId });
+      throw error;
+    } finally {
+      setIsDeletingContact(null);
+    }
+  };
+
+  const handleAddNote = async (data: CreateCommunicationNoteRequest) => {
+    const toastId = toast.loading("Adding communication note...");
+    setIsAddingNote(true);
+    
+    try {
+      if (onAddCommunicationNote) {
+        // Use the dedicated endpoint for adding communication notes
+        await onAddCommunicationNote(client.id, data);
+        toast.success("Communication note added successfully", { id: toastId });
+      } else {
+        // Fallback to the old way using onUpdate
+        const newNote: CommunicationNote = {
+          ...data,
+          id: `note-${Date.now()}`,
+          clientId: client.id,
+          createdBy: currentUser?.id || "system",
+          createdByName: currentUser
+            ? `${currentUser.firstName} ${currentUser.lastName}`
+            : "System",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        // Create activity for adding communication note
+        const newActivity = {
+          id: `activity-${Date.now()}`,
+          clientId: client.id,
+          action: "communication_logged",
+          description: `Communication logged: ${data.type.replace(
+            /_/g,
+            " "
+          )} - "${data.subject}"`,
+          performedBy: currentUser?.id || "system",
+          performedByName: currentUser
+            ? `${currentUser.firstName} ${currentUser.lastName}`
+            : "System",
+          timestamp: new Date(),
+          metadata: { noteType: data.type, subject: data.subject },
+        };
+
+        await onUpdate(client.id, {
+          communicationNotes: [newNote, ...communicationNotes],
+          activityHistory: [newActivity, ...activityHistory],
+        });
+        toast.success("Communication note added successfully", { id: toastId });
+      }
+    } catch (error) {
+      toast.error("Failed to add communication note", { id: toastId });
+      throw error;
+    } finally {
+      setIsAddingNote(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    const toastId = toast.loading("Deleting communication note...");
+    setIsDeletingNote(noteId);
+    
+    try {
+      const note = communicationNotes.find((n) => n.id === noteId);
+
+      // Create activity for deleting note
+      const newActivity = {
+        id: `activity-${Date.now()}`,
+        clientId: client.id,
+        action: "communication_deleted",
+        description: `Communication note "${note?.subject}" was deleted`,
+        performedBy: currentUser?.id || "system",
+        performedByName: currentUser
+          ? `${currentUser.firstName} ${currentUser.lastName}`
+          : "System",
+        timestamp: new Date(),
+        metadata: { noteSubject: note?.subject, noteId },
+      };
+
+      await onUpdate(client.id, {
+        communicationNotes: communicationNotes.filter((n) => n.id !== noteId),
+        activityHistory: [newActivity, ...activityHistory],
+      });
+      
+      toast.success("Communication note deleted successfully", { id: toastId });
+    } catch (error) {
+      toast.error("Failed to delete communication note", { id: toastId });
+      throw error;
+    } finally {
+      setIsDeletingNote(null);
+    }
   };
 
   const handleDeleteClient = () => {
@@ -371,9 +433,15 @@ export function ClientDetails({
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDeleteClient = () => {
-    onDelete(client.id);
-    onBack();
+  const confirmDeleteClient = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(client.id);
+      onBack();
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+    }
   };
 
   const getCommunicationIcon = (type: string) => {
@@ -941,6 +1009,7 @@ export function ClientDetails({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteContact(contact.id!)}
+                          disabled={isDeletingContact === contact.id}
                           className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1042,10 +1111,11 @@ export function ClientDetails({
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteNote(note.id!)}
+                            disabled={isDeletingNote === note.id}
                             className="ml-auto h-8 px-2 text-destructive hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
+                            {isDeletingNote === note.id ? "Deleting..." : "Delete"}
                           </Button>
                         )}
                       </div>
@@ -1149,19 +1219,30 @@ export function ClientDetails({
         open={isAddContactOpen}
         onClose={() => setIsAddContactOpen(false)}
         onSubmit={handleAddContact}
+        isLoading={isAddingContact}
       />
 
       <AddCommunicationNoteModal
         open={isAddNoteOpen}
         onClose={() => setIsAddNoteOpen(false)}
         onSubmit={handleAddNote}
+        isLoading={isAddingNote}
       />
 
       <EditClientModal
         open={isEditClientOpen}
         onClose={() => setIsEditClientOpen(false)}
-        onSubmit={(updates) => onUpdate(client.id, updates)}
+        onSubmit={async (updates) => {
+          setIsUpdating(true);
+          try {
+            await onUpdate(client.id, updates);
+            setIsEditClientOpen(false);
+          } finally {
+            setIsUpdating(false);
+          }
+        }}
         client={client}
+        isLoading={isUpdating}
       />
 
       <AddJobModal
@@ -1182,6 +1263,7 @@ export function ClientDetails({
         cancelText="Cancel"
         onConfirm={confirmDeleteClient}
         variant="destructive"
+        isLoading={isDeleting}
       />
     </div>
   );

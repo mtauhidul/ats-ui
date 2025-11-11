@@ -98,6 +98,35 @@ export function JobDetails({
   );
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Helper function to safely convert date values (Firestore Timestamps, Date objects, or strings)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const toSafeDate = (dateValue: any): Date | null => {
+    if (!dateValue) return null;
+
+    try {
+      // Firestore Timestamp object with toDate() method
+      if (typeof dateValue === 'object' && dateValue !== null && 'toDate' in dateValue && typeof dateValue.toDate === 'function') {
+        return dateValue.toDate();
+      }
+
+      // Already a Date object
+      if (dateValue instanceof Date) {
+        return isNaN(dateValue.getTime()) ? null : dateValue;
+      }
+
+      // String or number - try to parse
+      if (typeof dateValue === 'string' || typeof dateValue === 'number') {
+        const parsed = new Date(dateValue);
+        return isNaN(parsed.getTime()) ? null : parsed;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error converting date:', error);
+      return null;
+    }
+  };
+
   // Get categories from Firestore realtime
   const { data: allCategories } = useCategories();
   
@@ -311,7 +340,10 @@ export function JobDetails({
           <span className="text-xs">•</span>
           <Calendar className="h-4 w-4" />
           <span className="text-sm">
-            Posted {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A'}
+            Posted {(() => {
+              const date = toSafeDate(job.createdAt);
+              return date ? date.toLocaleDateString() : 'N/A';
+            })()}
           </span>
         </div>
 

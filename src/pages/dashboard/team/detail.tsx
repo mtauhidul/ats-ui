@@ -641,32 +641,58 @@ export default function TeamMemberDetailPage() {
                             </p>
                             <p className="text-sm text-muted-foreground truncate">
                               {/* eslint-disable @typescript-eslint/no-explicit-any */}
-                              {candidate.jobIds &&
-                              candidate.jobIds.length > 0 ? (
-                                <>
-                                  {typeof candidate.jobIds[0] === "object" &&
-                                  (candidate.jobIds[0] as any).title
-                                    ? (candidate.jobIds[0] as any).title
-                                    : "No job"}
-                                  {typeof candidate.jobIds[0] === "object" &&
-                                    (candidate.jobIds[0] as any).clientId &&
-                                    typeof (candidate.jobIds[0] as any)
-                                      .clientId === "object" &&
-                                    (candidate.jobIds[0] as any).clientId
-                                      .companyName && (
+                              {(() => {
+                                if (!candidate.jobIds || candidate.jobIds.length === 0) {
+                                  return "No job assigned";
+                                }
+
+                                // Get the first job ID (can be string or populated object)
+                                const firstJobId = typeof candidate.jobIds[0] === "string" 
+                                  ? candidate.jobIds[0] 
+                                  : (candidate.jobIds[0] as any)?.id || (candidate.jobIds[0] as any)?._id;
+
+                                if (!firstJobId) {
+                                  return "No job assigned";
+                                }
+
+                                // Look up the job from the jobs array
+                                const job = jobs.find((j: Job) => j.id === firstJobId || (j as any)._id === firstJobId);
+
+                                if (!job) {
+                                  return "Job not found";
+                                }
+
+                                // Get client name if available
+                                const clientId = typeof job.clientId === "string" 
+                                  ? job.clientId 
+                                  : (job.clientId as any)?.id || (job.clientId as any)?._id;
+
+                                const client = clientId 
+                                  ? jobs.find((j: Job) => {
+                                      const jClientId = typeof j.clientId === "string" 
+                                        ? j.clientId 
+                                        : (j.clientId as any)?.id || (j.clientId as any)?._id;
+                                      return jClientId === clientId;
+                                    }) 
+                                  : null;
+
+                                const clientName = client && typeof job.clientId === "object" 
+                                  ? (job.clientId as any)?.companyName 
+                                  : null;
+
+                                return (
+                                  <>
+                                    {job.title}
+                                    {clientName && (
                                       <>
                                         {" "}
                                         •{" "}
-                                        {
-                                          (candidate.jobIds[0] as any).clientId
-                                            .companyName
-                                        }
+                                        {clientName}
                                       </>
                                     )}
-                                </>
-                              ) : (
-                                "No job assigned"
-                              )}
+                                  </>
+                                );
+                              })()}
                               {/* eslint-enable @typescript-eslint/no-explicit-any */}
                             </p>
                           </div>

@@ -89,6 +89,9 @@ export const fetchClientById = createAsyncThunk(
 export const createClient = createAsyncThunk(
   "clients/create",
   async (clientData: CreateClientRequest, { rejectWithValue }) => {
+    // Show loading toast
+    const loadingToast = toast.loading("Creating client...");
+    
     try {
       console.log('=== REDUX CREATE CLIENT ===');
       console.log('Client data being sent:', clientData);
@@ -103,7 +106,7 @@ export const createClient = createAsyncThunk(
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.message || "Failed to create client";
-        toast.error(errorMessage);
+        toast.error(errorMessage, { id: loadingToast });
         return rejectWithValue(errorMessage);
       }
       
@@ -114,11 +117,11 @@ export const createClient = createAsyncThunk(
       console.log('Contacts in response:', (result.data || result).contacts);
       console.log('==============================');
       
-      toast.success("Client created successfully");
+      toast.success("Client created successfully", { id: loadingToast });
       return result.data || result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to create client";
-      toast.error(errorMessage);
+      toast.error(errorMessage, { id: loadingToast });
       return rejectWithValue(errorMessage);
     }
   }
@@ -126,15 +129,31 @@ export const createClient = createAsyncThunk(
 
 export const updateClient = createAsyncThunk(
   "clients/update",
-  async ({ id, data }: { id: string; data: UpdateClientRequest }) => {
-    const response = await authenticatedFetch(`${API_BASE_URL}/clients/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error("Failed to update client");
-    const result = await response.json();
-    toast.success("Client updated successfully");
-    return result.data || result;
+  async ({ id, data }: { id: string; data: UpdateClientRequest }, { rejectWithValue }) => {
+    // Show loading toast
+    const loadingToast = toast.loading("Updating client...");
+    
+    try {
+      const response = await authenticatedFetch(`${API_BASE_URL}/clients/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || "Failed to update client";
+        toast.error(errorMessage, { id: loadingToast });
+        return rejectWithValue(errorMessage);
+      }
+      
+      const result = await response.json();
+      toast.success("Client updated successfully", { id: loadingToast });
+      return result.data || result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to update client";
+      toast.error(errorMessage, { id: loadingToast });
+      return rejectWithValue(errorMessage);
+    }
   }
 );
 
@@ -155,6 +174,8 @@ export const addCommunicationNote = createAsyncThunk(
 export const deleteClient = createAsyncThunk(
   "clients/delete",
   async (id: string, { rejectWithValue }) => {
+    const toastId = toast.loading("Deleting client...");
+    
     try {
       const response = await authenticatedFetch(`${API_BASE_URL}/clients/${id}`, {
         method: "DELETE",
@@ -163,16 +184,16 @@ export const deleteClient = createAsyncThunk(
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.message || "Failed to delete client";
-        toast.error(errorMessage);
+        toast.error(errorMessage, { id: toastId });
         return rejectWithValue(errorMessage);
       }
 
       await response.json();
-      toast.success("Client deleted successfully");
+      toast.success("Client deleted successfully", { id: toastId });
       return id;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to delete client";
-      toast.error(errorMessage);
+      toast.error(errorMessage, { id: toastId });
       return rejectWithValue(errorMessage);
     }
   }

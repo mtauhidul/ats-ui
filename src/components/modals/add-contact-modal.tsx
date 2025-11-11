@@ -8,10 +8,11 @@ import type { CreateContactRequest } from "@/types/client";
 interface AddContactModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateContactRequest) => void;
+  onSubmit: (data: CreateContactRequest) => Promise<void>;
+  isLoading?: boolean;
 }
 
-export function AddContactModal({ open, onClose, onSubmit }: AddContactModalProps) {
+export function AddContactModal({ open, onClose, onSubmit, isLoading = false }: AddContactModalProps) {
   const [formData, setFormData] = useState<CreateContactRequest>({
     name: "",
     email: "",
@@ -20,17 +21,22 @@ export function AddContactModal({ open, onClose, onSubmit }: AddContactModalProp
     isPrimary: false,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      position: "",
-      isPrimary: false,
-    });
-    onClose();
+    try {
+      await onSubmit(formData);
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        position: "",
+        isPrimary: false,
+      });
+      onClose();
+    } catch (error) {
+      // Error is handled in parent
+      console.error("Failed to add contact:", error);
+    }
   };
 
   return (
@@ -83,11 +89,11 @@ export function AddContactModal({ open, onClose, onSubmit }: AddContactModalProp
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit">
-              Add Contact
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Adding..." : "Add Contact"}
             </Button>
           </div>
         </form>

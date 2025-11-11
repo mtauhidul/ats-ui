@@ -12,10 +12,11 @@ import { Building2 } from "lucide-react";
 interface AddClientModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateClientRequest) => void;
+  onSubmit: (data: CreateClientRequest) => Promise<void>;
+  isLoading?: boolean;
 }
 
-export function AddClientModal({ open, onClose, onSubmit }: AddClientModalProps) {
+export function AddClientModal({ open, onClose, onSubmit, isLoading = false }: AddClientModalProps) {
   const [formData, setFormData] = useState<CreateClientRequest>({
     companyName: "",
     email: "",
@@ -64,15 +65,15 @@ export function AddClientModal({ open, onClose, onSubmit }: AddClientModalProps)
     setFormData({ ...formData, logo: undefined });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('=== ADD CLIENT FORM SUBMIT ===');
     console.log('Form data:', formData);
     console.log('Contacts:', formData.contacts);
     console.log('First contact:', formData.contacts[0]);
     console.log('==============================');
-    onSubmit(formData);
-    onClose();
+    await onSubmit(formData);
+    // Don't close immediately - let the parent handle closing after success
   };
 
   return (
@@ -344,11 +345,11 @@ export function AddClientModal({ open, onClose, onSubmit }: AddClientModalProps)
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit">
-              Create Client
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Creating..." : "Create Client"}
             </Button>
           </div>
         </form>

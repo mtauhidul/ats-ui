@@ -9,25 +9,31 @@ import { CommunicationNoteType, type CreateCommunicationNoteRequest } from "@/ty
 interface AddCommunicationNoteModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateCommunicationNoteRequest) => void;
+  onSubmit: (data: CreateCommunicationNoteRequest) => Promise<void>;
+  isLoading?: boolean;
 }
 
-export function AddCommunicationNoteModal({ open, onClose, onSubmit }: AddCommunicationNoteModalProps) {
+export function AddCommunicationNoteModal({ open, onClose, onSubmit, isLoading = false }: AddCommunicationNoteModalProps) {
   const [formData, setFormData] = useState<CreateCommunicationNoteRequest>({
     type: CommunicationNoteType.GENERAL,
     subject: "",
     content: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
-    setFormData({
-      type: CommunicationNoteType.GENERAL,
-      subject: "",
-      content: "",
-    });
-    onClose();
+    try {
+      await onSubmit(formData);
+      setFormData({
+        type: CommunicationNoteType.GENERAL,
+        subject: "",
+        content: "",
+      });
+      onClose();
+    } catch (error) {
+      // Error is handled in parent
+      console.error("Failed to add communication note:", error);
+    }
   };
 
   return (
@@ -82,11 +88,11 @@ export function AddCommunicationNoteModal({ open, onClose, onSubmit }: AddCommun
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit">
-              Add Note
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Adding..." : "Add Note"}
             </Button>
           </div>
         </form>

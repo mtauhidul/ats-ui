@@ -36,6 +36,7 @@ export default function ClientsPage() {
   const navigate = useNavigate();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Get realtime data from Firestore via Redux hook
   const { clients, filters, createClient, deleteClient, setFilters } =
@@ -137,8 +138,13 @@ export default function ClientsPage() {
   // No useEffect needed - Firestore provides realtime data automatically via Redux hooks!
 
   const handleAddClient = async (data: CreateClientRequest) => {
-    await createClient(data);
-    closeModal("addClient");
+    setIsCreating(true);
+    try {
+      await createClient(data);
+      closeModal("addClient");
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const confirmDeleteClient = async () => {
@@ -362,6 +368,7 @@ export default function ClientsPage() {
         open={modals.addClient}
         onClose={() => closeModal("addClient")}
         onSubmit={handleAddClient}
+        isLoading={isCreating}
       />
 
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>

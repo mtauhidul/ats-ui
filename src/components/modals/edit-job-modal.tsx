@@ -40,7 +40,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface EditJobModalProps {
   open: boolean;
@@ -122,18 +122,26 @@ export function EditJobModal({
   };
 
   const [currentTab, setCurrentTab] = useState("basic");
-  const [formData, setFormData] = useState<UpdateJobRequest>(
+  const [formData, setFormData] = useState<UpdateJobRequest>(() => 
     transformJobToFormData(job)
   );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const previousJobIdRef = useRef<string | null>(null);
 
-  // Update form data when job changes
+  // Update form data when modal opens or when editing a different job
+  // Only reset if job ID actually changes, not on every render
   useEffect(() => {
-    if (open && job) {
+    if (open && job && job.id !== previousJobIdRef.current) {
       setFormData(transformJobToFormData(job));
       setCurrentTab("basic");
       setErrors({});
+      previousJobIdRef.current = job.id;
+    }
+    
+    // Reset ref when modal closes
+    if (!open) {
+      previousJobIdRef.current = null;
     }
   }, [open, job]);
 
@@ -145,6 +153,12 @@ export function EditJobModal({
     if (currentTab !== "details") {
       return;
     }
+
+    console.log("🔴 SUBMIT CLICKED - Current formData:", {
+      experience: formData.requirements?.experience,
+      skills: formData.requirements?.skills?.required,
+      responsibilities: formData.responsibilities,
+    });
 
     const newErrors: Record<string, string> = {};
 
@@ -199,54 +213,21 @@ export function EditJobModal({
       return;
     }
 
-    // Transform data to match backend schema
-    const requiredSkills = (
-      formData.requirements?.skills?.required || []
-    ).filter((s) => s.trim());
-    const experience = formData.requirements?.experience?.trim() || "";
+    // Send data in FRONTEND format - the Redux thunk will transform it to backend format
+    const cleanedData = {
+      ...formData,
+      responsibilities: (formData.responsibilities || []).filter((r) => r.trim()),
+      requirements: {
+        experience: formData.requirements?.experience?.trim() || "",
+        skills: {
+          required: (formData.requirements?.skills?.required || []).filter((s) => s.trim()),
+          preferred: formData.requirements?.skills?.preferred || [],
+        },
+      },
+    };
 
-    // Backend expects requirements as string array for general requirements
-    // We'll store the experience description in requirements array
-    const requirementsArray: string[] = [];
-    if (experience) {
-      requirementsArray.push(experience);
-    }
-
-    // Backend expects location as string, not Address object
-    const locationString =
-      typeof formData.location === "string"
-        ? formData.location
-        : `${formData.location?.city || ""}, ${
-            formData.location?.country || ""
-          }`
-            .trim()
-            .replace(/^,\s*|,\s*$/, "");
-
-    const transformedData = {
-      title: formData.title,
-      description: formData.description,
-      status: formData.status,
-      type: formData.type,
-      experienceLevel: formData.experienceLevel,
-      priority: formData.priority,
-      openings: formData.openings,
-      requirements: requirementsArray,
-      responsibilities: (formData.responsibilities || []).filter((r) =>
-        r.trim()
-      ),
-      skills: requiredSkills,
-      location: locationString,
-      locationType: formData.workMode, // Map workMode to locationType for backend
-      salaryRange: formData.salaryRange,
-      applicationDeadline: formData.applicationDeadline,
-    } as Record<string, unknown>;
-
-    console.log("=== Updating Job ===");
-    console.log("Experience input value:", formData.requirements?.experience);
-    console.log("Requirements array being sent:", requirementsArray);
-    console.log("Full transformed data:", transformedData);
-
-    onSubmit(job.id, transformedData as UpdateJobRequest);
+    console.log("🟢 SENDING TO REDUX:", cleanedData);
+    onSubmit(job.id, cleanedData as UpdateJobRequest);
     handleClose();
   };
 
@@ -257,7 +238,7 @@ export function EditJobModal({
   };
 
   const handleAddSkill = () => {
-    setFormData({
+    const newFormData = {
       ...formData,
       requirements: {
         ...(formData.requirements || {
@@ -269,7 +250,9 @@ export function EditJobModal({
           required: [...(formData.requirements?.skills?.required || []), ""],
         },
       },
-    });
+    };
+    
+    setFormData(newFormData);
   };
 
   const handleSkillChange = (index: number, value: string) => {
@@ -310,10 +293,12 @@ export function EditJobModal({
   };
 
   const handleAddResponsibility = () => {
-    setFormData({
+    const newFormData = {
       ...formData,
       responsibilities: [...(formData.responsibilities || []), ""],
-    });
+    };
+    
+    setFormData(newFormData);
   };
 
   const handleResponsibilityChange = (index: number, value: string) => {
@@ -890,21 +875,9 @@ export function EditJobModal({
 
                   {/* Required Skills */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-base font-semibold">
-                        Required Skills <span className="text-red-500">*</span>
-                      </Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAddSkill}
-                        className="h-8"
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add Skill
-                      </Button>
-                    </div>
+                    <Label className="text-base font-semibold">
+                      Required Skills <span className="text-red-500">*</span>
+                    </Label>
 
                     <Card className="border-dashed">
                       <CardContent className="p-4">
@@ -914,7 +887,7 @@ export function EditJobModal({
                             <ListChecks className="h-8 w-8 mx-auto mb-2 opacity-50" />
                             <p className="text-sm">No skills added yet</p>
                             <p className="text-xs mt-1">
-                              Click "Add Skill" to add required skills
+                              Click "Add Skill" below to add required skills
                             </p>
                           </div>
                         ) : (
@@ -949,6 +922,16 @@ export function EditJobModal({
                             )}
                           </div>
                         )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAddSkill}
+                          className="w-full mt-3"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add Skill
+                        </Button>
                       </CardContent>
                     </Card>
 
@@ -962,22 +945,10 @@ export function EditJobModal({
 
                   {/* Key Responsibilities */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-base font-semibold">
-                        Key Responsibilities{" "}
-                        <span className="text-red-500">*</span>
-                      </Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAddResponsibility}
-                        className="h-8"
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add Responsibility
-                      </Button>
-                    </div>
+                    <Label className="text-base font-semibold">
+                      Key Responsibilities{" "}
+                      <span className="text-red-500">*</span>
+                    </Label>
 
                     <Card className="border-dashed">
                       <CardContent className="p-4">
@@ -990,7 +961,7 @@ export function EditJobModal({
                               No responsibilities added yet
                             </p>
                             <p className="text-xs mt-1">
-                              Click "Add Responsibility" to add key
+                              Click "Add Responsibility" below to add key
                               responsibilities
                             </p>
                           </div>
@@ -1030,6 +1001,16 @@ export function EditJobModal({
                             ))}
                           </div>
                         )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAddResponsibility}
+                          className="w-full mt-3"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add Responsibility
+                        </Button>
                       </CardContent>
                     </Card>
 
@@ -1146,9 +1127,7 @@ export function EditJobModal({
                       type="date"
                       value={
                         formData.applicationDeadline
-                          ? new Date(formData.applicationDeadline)
-                              .toISOString()
-                              .split("T")[0]
+                          ? String(formData.applicationDeadline).split("T")[0]
                           : ""
                       }
                       onChange={(e) =>

@@ -11,11 +11,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface EditClientModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (updates: Partial<Client>) => void;
+  onSubmit: (updates: Partial<Client>) => Promise<void>;
   client: Client;
+  isLoading?: boolean;
 }
 
-export function EditClientModal({ open, onClose, onSubmit, client }: EditClientModalProps) {
+export function EditClientModal({ open, onClose, onSubmit, client, isLoading = false }: EditClientModalProps) {
   const [formData, setFormData] = useState({
     companyName: client.companyName,
     email: client.email,
@@ -75,13 +76,13 @@ export function EditClientModal({ open, onClose, onSubmit, client }: EditClientM
     setLogoPreview("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({
+    await onSubmit({
       ...formData,
       logo: logoPreview,
     });
-    onClose();
+    // Don't close immediately - let the parent handle closing after success
   };
 
   return (
@@ -315,11 +316,11 @@ export function EditClientModal({ open, onClose, onSubmit, client }: EditClientM
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit">
-              Save Changes
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </form>

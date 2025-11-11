@@ -1,11 +1,11 @@
-import { useMemo } from 'react';
-import type { Job } from '@/types';
+import type { Job } from "@/types";
+import type { DocumentData } from "firebase/firestore";
+import { useMemo } from "react";
 import {
   useFirestoreCollection,
   where,
   type UseFirestoreCollectionResult,
-} from './useFirestore';
-import type { DocumentData } from 'firebase/firestore';
+} from "./useFirestore";
 
 /**
  * Transform Firestore document to Job type
@@ -14,43 +14,70 @@ import type { DocumentData } from 'firebase/firestore';
 function transformJobDocument(doc: DocumentData): Job {
   // Parse location string to Address object
   let locationObj: { city?: string; country?: string } | undefined;
-  if (typeof doc.location === 'string') {
-    const parts = doc.location.split(',').map((p: string) => p.trim());
+  if (typeof doc.location === "string") {
+    const parts = doc.location.split(",").map((p: string) => p.trim());
     locationObj = {
-      city: parts[0] || '',
-      country: parts[1] || '',
+      city: parts[0] || "",
+      country: parts[1] || "",
     };
-  } else if (doc.location && typeof doc.location === 'object') {
+  } else if (doc.location && typeof doc.location === "object") {
     locationObj = doc.location as { city?: string; country?: string };
   }
 
   // Transform requirements and skills
-  const backendRequirements = Array.isArray(doc.requirements) ? doc.requirements as string[] : [];
-  const backendSkills = Array.isArray(doc.skills) ? doc.skills as string[] : [];
+  // Handle BOTH formats:
+  // 1. Old format: requirements: string[], skills: string[]
+  // 2. New format: requirements: {experience: string, skills: {...}}, skills: string[]
 
-  // Try to find experience requirement
-  const experienceReq = backendRequirements.find(req =>
-    req.toLowerCase().includes('year') ||
-    req.toLowerCase().includes('experience') ||
-    /\d+/.test(req)
-  ) || backendRequirements[0] || '';
+  let requirementsObj;
 
-  const requirementsObj = {
-    experience: experienceReq,
-    skills: {
-      required: backendSkills,
-      preferred: [],
-    },
-  };
+  if (
+    doc.requirements &&
+    typeof doc.requirements === "object" &&
+    !Array.isArray(doc.requirements)
+  ) {
+    // New format: requirements is already an object
+    requirementsObj = doc.requirements as {
+      experience: string;
+      skills: { required: string[]; preferred: string[] };
+    };
+  } else {
+    // Old format: requirements is an array of strings
+    const backendRequirements = Array.isArray(doc.requirements)
+      ? (doc.requirements as string[])
+      : [];
+    const backendSkills = Array.isArray(doc.skills)
+      ? (doc.skills as string[])
+      : [];
+
+    // Try to find experience requirement
+    const experienceReq =
+      backendRequirements.find(
+        (req) =>
+          req.toLowerCase().includes("year") ||
+          req.toLowerCase().includes("experience") ||
+          /\d+/.test(req)
+      ) ||
+      backendRequirements[0] ||
+      "";
+
+    requirementsObj = {
+      experience: experienceReq,
+      skills: {
+        required: backendSkills,
+        preferred: [],
+      },
+    };
+  }
 
   // Extract IDs from populated objects if needed
   let clientId = doc.clientId;
-  if (clientId && typeof clientId === 'object') {
+  if (clientId && typeof clientId === "object") {
     clientId = clientId.id || clientId._id;
   }
 
   let pipelineId = doc.pipelineId;
-  if (pipelineId && typeof pipelineId === 'object') {
+  if (pipelineId && typeof pipelineId === "object") {
     pipelineId = pipelineId.id || pipelineId._id;
   }
 
@@ -60,7 +87,7 @@ function transformJobDocument(doc: DocumentData): Job {
     clientId,
     pipelineId,
     location: locationObj,
-    workMode: (doc.locationType as 'remote' | 'onsite' | 'hybrid') || 'hybrid',
+    workMode: (doc.locationType as "remote" | "onsite" | "hybrid") || "hybrid",
     requirements: requirementsObj,
     type: doc.jobType || doc.type,
     // Ensure arrays are properly typed
@@ -84,11 +111,11 @@ export function useJobs(options?: {
     const constraints = [];
 
     if (status) {
-      constraints.push(where('status', '==', status));
+      constraints.push(where("status", "==", status));
     }
 
     if (clientId) {
-      constraints.push(where('clientId', '==', clientId));
+      constraints.push(where("clientId", "==", clientId));
     }
 
     // Ordering removed to avoid index requirements - sort in frontend if needed
@@ -97,13 +124,13 @@ export function useJobs(options?: {
   }, [status, clientId]);
 
   const result = useFirestoreCollection<Job>({
-    collectionPath: 'jobs', // Root level collection
+    collectionPath: "jobs", // Root level collection
     queryConstraints,
     enabled,
     transform: transformJobDocument,
   });
 
-  console.log('🔍 useJobs hook result:', {
+  console.log("🔍 useJobs hook result:", {
     jobsCount: result.data.length,
     loading: result.loading,
     error: result.error,
@@ -131,7 +158,7 @@ export function useJob(jobId: string | null | undefined): {
 
   const job = useMemo(() => {
     if (!jobId || !jobs.length) return null;
-    return jobs.find(j => j.id === jobId) || null;
+    return jobs.find((j) => j.id === jobId) || null;
   }, [jobId, jobs]);
 
   return {
@@ -145,14 +172,20 @@ export function useJob(jobId: string | null | undefined): {
 /**
  * Hook to get jobs by status with realtime updates
  */
-export function useJobsByStatus(status: string, enabled = true): UseFirestoreCollectionResult<Job> {
+export function useJobsByStatus(
+  status: string,
+  enabled = true
+): UseFirestoreCollectionResult<Job> {
   return useJobs({ enabled, status });
 }
 
 /**
  * Hook to get jobs by client with realtime updates
  */
-export function useJobsByClient(clientId: string | null, enabled = true): UseFirestoreCollectionResult<Job> {
+export function useJobsByClient(
+  clientId: string | null,
+  enabled = true
+): UseFirestoreCollectionResult<Job> {
   const shouldEnable = enabled && !!clientId;
   return useJobs({ enabled: shouldEnable, clientId: clientId || undefined });
 }

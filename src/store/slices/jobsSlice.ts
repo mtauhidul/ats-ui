@@ -162,35 +162,43 @@ export const fetchJobById = createAsyncThunk(
 export const createJob = createAsyncThunk(
   "jobs/create",
   async (jobData: CreateJobRequest | Record<string, unknown>) => {
-    // The add-job-modal already transforms the data to backend format
-    // So we can pass it through directly, just ensure field mappings
-    const dataAny = jobData as Record<string, unknown>;
-    const backendData: Record<string, unknown> = {
-      ...dataAny,
-      // Ensure these field mappings are correct
-      jobType: dataAny.type || dataAny.jobType,
-      locationType: dataAny.locationType || dataAny.workMode,
-      // Remove frontend-only fields if any
-      type: undefined,
-      workMode: undefined,
-    };
+    const toastId = toast.loading("Creating job...");
+    
+    try {
+      // The add-job-modal already transforms the data to backend format
+      // So we can pass it through directly, just ensure field mappings
+      const dataAny = jobData as Record<string, unknown>;
+      const backendData: Record<string, unknown> = {
+        ...dataAny,
+        // Ensure these field mappings are correct
+        jobType: dataAny.type || dataAny.jobType,
+        locationType: dataAny.locationType || dataAny.workMode,
+        // Remove frontend-only fields if any
+        type: undefined,
+        workMode: undefined,
+      };
 
-    console.log("Redux: Sending to API with clientId:", backendData.clientId);
-    console.log("Redux: Full payload:", JSON.stringify(backendData, null, 2));
+      console.log("Redux: Sending to API with clientId:", backendData.clientId);
+      console.log("Redux: Full payload:", JSON.stringify(backendData, null, 2));
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/jobs`, {
-      method: "POST",
-      body: JSON.stringify(backendData),
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Failed to create job:", response.status, errorText);
-      throw new Error(`Failed to create job: ${response.status}`);
+      const response = await authenticatedFetch(`${API_BASE_URL}/jobs`, {
+        method: "POST",
+        body: JSON.stringify(backendData),
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Failed to create job:", response.status, errorText);
+        toast.error("Failed to create job", { id: toastId });
+        throw new Error(`Failed to create job: ${response.status}`);
+      }
+      const result = await response.json();
+      const job = result.data || result;
+      toast.success("Job created successfully", { id: toastId });
+      return normalizeJob(job);
+    } catch (error) {
+      toast.error("Failed to create job", { id: toastId });
+      throw error;
     }
-    const result = await response.json();
-    const job = result.data || result;
-    toast.success("Job created successfully");
-    return normalizeJob(job);
   }
 );
 
@@ -266,25 +274,45 @@ export const updateJob = createAsyncThunk(
       backendData,
     });
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/jobs/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(backendData),
-    });
-    if (!response.ok) throw new Error("Failed to update job");
-    const result = await response.json();
-    const job = result.data || result;
-    toast.success("Job updated successfully");
-    return normalizeJob(job);
+    const toastId = toast.loading("Updating job...");
+    
+    try {
+      const response = await authenticatedFetch(`${API_BASE_URL}/jobs/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(backendData),
+      });
+      if (!response.ok) {
+        toast.error("Failed to update job", { id: toastId });
+        throw new Error("Failed to update job");
+      }
+      const result = await response.json();
+      const job = result.data || result;
+      toast.success("Job updated successfully", { id: toastId });
+      return normalizeJob(job);
+    } catch (error) {
+      toast.error("Failed to update job", { id: toastId });
+      throw error;
+    }
   }
 );
 
 export const deleteJob = createAsyncThunk("jobs/delete", async (id: string) => {
-  const response = await authenticatedFetch(`${API_BASE_URL}/jobs/${id}`, {
-    method: "DELETE",
-  });
-  if (!response.ok) throw new Error("Failed to delete job");
-  toast.success("Job deleted successfully");
-  return id;
+  const toastId = toast.loading("Deleting job...");
+  
+  try {
+    const response = await authenticatedFetch(`${API_BASE_URL}/jobs/${id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      toast.error("Failed to delete job", { id: toastId });
+      throw new Error("Failed to delete job");
+    }
+    toast.success("Job deleted successfully", { id: toastId });
+    return id;
+  } catch (error) {
+    toast.error("Failed to delete job", { id: toastId });
+    throw error;
+  }
 });
 
 const jobsSlice = createSlice({

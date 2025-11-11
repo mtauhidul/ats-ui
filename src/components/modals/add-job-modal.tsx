@@ -171,8 +171,8 @@ export function AddJobModal({
     );
     const experience = formData.requirements.experience.trim();
 
-    // Backend expects requirements as string array for general requirements
-    // We'll store the experience description in requirements array
+    // Backend expects requirements as string array
+    // Store the experience description in requirements array
     const requirementsArray: string[] = [];
     if (experience) {
       requirementsArray.push(experience);
@@ -190,7 +190,7 @@ export function AddJobModal({
       title: formData.title,
       description: formData.description,
       clientId: formData.clientId,
-      type: formData.type,
+      jobType: formData.type, // Backend uses 'jobType' not 'type'
       experienceLevel: formData.experienceLevel,
       priority: formData.priority,
       status: "open", // Set status to 'open' so job is immediately available
@@ -199,8 +199,9 @@ export function AddJobModal({
       responsibilities: formData.responsibilities.filter((r) => r.trim()),
       skills: requiredSkills,
       location: locationString,
-      locationType: formData.workMode, // Map workMode to locationType for backend
+      locationType: formData.workMode, // Backend uses 'locationType' not 'workMode'
       salaryRange: formData.salaryRange,
+      applicationDeadline: formData.applicationDeadline,
       categoryIds: formData.categoryIds || [],
       tagIds: formData.tagIds || [],
       recruiterIds: formData.recruiterIds || [],
@@ -209,6 +210,7 @@ export function AddJobModal({
     console.log("=== Submitting Job ===");
     console.log("Experience input value:", formData.requirements.experience);
     console.log("Requirements array being sent:", requirementsArray);
+    console.log("Skills array being sent:", requiredSkills);
     console.log("Full transformed data:", transformedData);
 
     onSubmit(transformedData as unknown as CreateJobRequest);
@@ -836,21 +838,9 @@ export function AddJobModal({
 
                   {/* Required Skills */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-base font-semibold">
-                        Required Skills <span className="text-red-500">*</span>
-                      </Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAddSkill}
-                        className="h-8"
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add Skill
-                      </Button>
-                    </div>
+                    <Label className="text-base font-semibold">
+                      Required Skills <span className="text-red-500">*</span>
+                    </Label>
 
                     <Card className="border-dashed">
                       <CardContent className="p-4">
@@ -859,7 +849,7 @@ export function AddJobModal({
                             <ListChecks className="h-8 w-8 mx-auto mb-2 opacity-50" />
                             <p className="text-sm">No skills added yet</p>
                             <p className="text-xs mt-1">
-                              Click "Add Skill" to add required skills
+                              Click "Add Skill" below to add required skills
                             </p>
                           </div>
                         ) : (
@@ -894,6 +884,16 @@ export function AddJobModal({
                             )}
                           </div>
                         )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAddSkill}
+                          className="w-full mt-3"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add Skill
+                        </Button>
                       </CardContent>
                     </Card>
 
@@ -907,22 +907,10 @@ export function AddJobModal({
 
                   {/* Key Responsibilities */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-base font-semibold">
-                        Key Responsibilities{" "}
-                        <span className="text-red-500">*</span>
-                      </Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAddResponsibility}
-                        className="h-8"
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add Responsibility
-                      </Button>
-                    </div>
+                    <Label className="text-base font-semibold">
+                      Key Responsibilities{" "}
+                      <span className="text-red-500">*</span>
+                    </Label>
 
                     <Card className="border-dashed">
                       <CardContent className="p-4">
@@ -933,7 +921,7 @@ export function AddJobModal({
                               No responsibilities added yet
                             </p>
                             <p className="text-xs mt-1">
-                              Click "Add Responsibility" to add key
+                              Click "Add Responsibility" below to add key
                               responsibilities
                             </p>
                           </div>
@@ -973,6 +961,16 @@ export function AddJobModal({
                             ))}
                           </div>
                         )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAddResponsibility}
+                          className="w-full mt-3"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add Responsibility
+                        </Button>
                       </CardContent>
                     </Card>
 

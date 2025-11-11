@@ -331,27 +331,6 @@ export default function JobDetailPage() {
               </div>
             )}
 
-            {/* Skills from Requirements.skills.required array */}
-            {job.requirements?.skills?.required &&
-              job.requirements.skills.required.length > 0 && (
-                <div className="mb-10">
-                  <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                    <Award className="h-6 w-6 text-primary" />
-                    Required Skills
-                  </h2>
-                  <div className="flex flex-wrap gap-2 pl-8">
-                    {job.requirements.skills.required.map((skill: string) => (
-                      <Badge
-                        key={skill}
-                        className="px-3 py-1.5 bg-primary/90 hover:bg-primary"
-                      >
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
             {/* Benefits */}
             {job.benefits &&
               Array.isArray(job.benefits) &&
