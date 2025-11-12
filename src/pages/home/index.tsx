@@ -12,6 +12,15 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
+// Import logo images
+import openaiLogo from "@/assets/logo/openai.png";
+import zoomLogo from "@/assets/logo/zoom.png";
+import resendLogo from "@/assets/logo/resend.png";
+import herokuLogo from "@/assets/logo/heroku.png";
+import cloudinaryLogo from "@/assets/logo/cloudinary.png";
+import affindaLogo from "@/assets/logo/affinda.png";
+import vercelLogo from "@/assets/logo/vercel.png";
+
 export default function HomePage() {
   const features = [
     {
@@ -116,31 +125,31 @@ export default function HomePage() {
 
 const logos = [
   {
-    src: "/src/assets/logo/openai.png",
+    src: openaiLogo,
     alt: "OpenAI",
   },
   {
-    src: "/src/assets/logo/zoom.png",
+    src: zoomLogo,
     alt: "Zoom",
   },
   {
-    src: "/src/assets/logo/resend.png",
+    src: resendLogo,
     alt: "Resend",
   },
   {
-    src: "/src/assets/logo/heroku.png",
+    src: herokuLogo,
     alt: "Heroku",
   },
   {
-    src: "/src/assets/logo/cloudinary.png",
+    src: cloudinaryLogo,
     alt: "Cloudinary",
   },
   {
-    src: "/src/assets/logo/affinda.png",
+    src: affindaLogo,
     alt: "Affinda",
   },
   {
-    src: "/src/assets/logo/vercel.png",
+    src: vercelLogo,
     alt: "Vercel",
   },
 ];
