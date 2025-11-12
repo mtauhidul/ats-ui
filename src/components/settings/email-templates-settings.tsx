@@ -152,6 +152,7 @@ export function EmailTemplatesSettings() {
   };
 
   const handleDuplicate = async (template: EmailTemplate) => {
+    const loadingToast = toast.loading("Duplicating template...");
     try {
       await createEmailTemplate({
         name: `${template.name} (Copy)`,
@@ -159,27 +160,28 @@ export function EmailTemplatesSettings() {
         body: template.body,
         type: template.type,
       });
-      toast.success("Template duplicated successfully");
+      toast.success("Template duplicated successfully", { id: loadingToast });
       // No need to reload - Firestore real-time will update automatically!
-    } catch (error) {
-      toast.error("Failed to duplicate template");
+    } catch {
+      toast.error("Failed to duplicate template", { id: loadingToast });
     }
   };
 
   const handleDelete = async () => {
     if (deleteTemplate) {
+      const loadingToast = toast.loading("Deleting template...");
       try {
         const templateId = deleteTemplate.id;
         if (!templateId) {
-          toast.error("Invalid template ID");
+          toast.error("Invalid template ID", { id: loadingToast });
           return;
         }
 
         await deleteEmailTemplateAPI(templateId);
-        toast.success("Template deleted successfully");
+        toast.success("Template deleted successfully", { id: loadingToast });
         // No need to reload - Firestore real-time will update automatically!
-      } catch (error) {
-        toast.error("Failed to delete template");
+      } catch {
+        toast.error("Failed to delete template", { id: loadingToast });
       } finally {
         setDeleteTemplate(null);
       }
@@ -192,21 +194,25 @@ export function EmailTemplatesSettings() {
       return;
     }
 
+    const loadingToast = toast.loading(
+      editingTemplate ? "Updating template..." : "Creating template..."
+    );
+
     try {
       if (editingTemplate) {
         // Update existing template
         const templateId = editingTemplate.id;
         if (!templateId) {
-          toast.error("Invalid template ID");
+          toast.error("Invalid template ID", { id: loadingToast });
           return;
         }
 
         await updateEmailTemplate(templateId, formData);
-        toast.success("Template updated successfully");
+        toast.success("Template updated successfully", { id: loadingToast });
       } else {
         // Add new template
         await createEmailTemplate(formData);
-        toast.success("Template created successfully");
+        toast.success("Template created successfully", { id: loadingToast });
       }
 
       // No need to reload - Firestore real-time will update automatically!
@@ -214,8 +220,8 @@ export function EmailTemplatesSettings() {
       setIsAddOpen(false);
       setEditingTemplate(null);
       setFormData({ name: "", subject: "", body: "", type: "general" });
-    } catch (error) {
-      toast.error("Failed to save template");
+    } catch {
+      toast.error("Failed to save template", { id: loadingToast });
     }
   };
 
@@ -288,18 +294,12 @@ export function EmailTemplatesSettings() {
 
       <div className="grid gap-3 md:gap-4">
         {isLoading ? (
-          <Card>
-            <CardContent className="py-8 md:py-12 p-3 md:p-6">
-              <div className="text-center space-y-2 md:space-y-3">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-muted rounded-full flex items-center justify-center mx-auto">
-                  <Mail className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground animate-pulse" />
-                </div>
-                <p className="text-xs md:text-sm text-muted-foreground">
-                  Loading templates...
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center justify-center py-8">
+            <div className="flex flex-col items-center gap-2">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+              <p className="text-sm text-muted-foreground">Loading templates...</p>
+            </div>
+          </div>
         ) : templates.length === 0 ? (
           <Card>
             <CardContent className="py-8 md:py-12 p-3 md:p-6">

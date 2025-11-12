@@ -41,7 +41,6 @@ import {
   Server,
   Shield,
   Trash2,
-  UserPlus,
   Users,
   Zap,
 } from "lucide-react";
@@ -52,18 +51,16 @@ import { useEmailAccounts } from "@/hooks/useEmailAccounts";
 import { useAutomationStatus } from "@/hooks/useAutomationStatus";
 import { useEmails } from "@/hooks/useEmails";
 import { useApplications } from "@/hooks/useApplications";
-import { useCandidates } from "@/hooks/useCandidates";
 import { EmailConnectionDialog } from "./email-connection-dialog";
 
 export function EmailMonitoringSettings() {
   // 🔥 REALTIME: Get data from Firestore with real-time updates
   const { data: emailAccounts = [], loading: accountsLoading, error: accountsError } = useEmailAccounts();
-  const { data: automationStatus, loading: statusLoading, error: statusError, exists: statusExists } = useAutomationStatus();
+  const { data: automationStatus, loading: statusLoading, error: statusError } = useAutomationStatus();
   
   // 🔥 REALTIME: Get actual data for accurate statistics
-  const { data: emails = [], loading: emailsLoading } = useEmails();
-  const { data: applications = [], loading: applicationsLoading } = useApplications();
-  const { data: candidates = [], loading: candidatesLoading } = useCandidates();
+  const { data: emails = [] } = useEmails();
+  const { data: applications = [] } = useApplications();
   
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showStopDialog, setShowStopDialog] = useState(false);
@@ -73,17 +70,18 @@ export function EmailMonitoringSettings() {
   
   // 📊 Calculate real-time accurate statistics from actual data
   const calculatedStats = useMemo(() => {
-    // Total emails processed (all emails in the system)
+    // 1. Total emails processed (all emails in the system)
     const totalEmailsProcessed = emails.length;
     
-    // Applications created - count all applications regardless of source
-    // (In reality, applications come from various sources, not just email)
+    // 2. Applications created - count all applications regardless of source
     const totalApplicationsCreated = applications.length;
     
-    // Candidates created - count all unique candidates in the system
-    const totalCandidatesCreated = candidates.length;
+    // 3. Inbound emails collected (emails with direction='inbound' or type='received')
+    const inboundEmailsCollected = emails.filter(
+      email => email.direction === 'inbound' || email.status === 'received'
+    ).length;
     
-    // Total errors - emails with failed status
+    // 4. Total errors - emails with failed status
     const totalErrors = emails.filter(
       email => email.status === 'failed'
     ).length;
@@ -91,10 +89,10 @@ export function EmailMonitoringSettings() {
     return {
       totalEmailsProcessed,
       totalApplicationsCreated,
-      totalCandidatesCreated,
+      inboundEmailsCollected,
       totalErrors,
     };
-  }, [emails, applications, candidates]);
+  }, [emails, applications]);
   
   // Default automation status if document doesn't exist
   const defaultAutomationStatus = {
@@ -194,7 +192,7 @@ export function EmailMonitoringSettings() {
       } else {
         throw new Error("Failed to start automation");
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to start email monitoring");
     } finally {
       setActionLoading(null);
@@ -216,7 +214,7 @@ export function EmailMonitoringSettings() {
       } else {
         throw new Error("Failed to stop automation");
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to stop email monitoring");
     } finally {
       setActionLoading(null);
@@ -249,7 +247,7 @@ export function EmailMonitoringSettings() {
       } else {
         throw new Error("Failed to update account");
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to update account automation");
     } finally {
       setActionLoading(null);
@@ -271,7 +269,7 @@ export function EmailMonitoringSettings() {
       } else {
         throw new Error("Failed to trigger email check");
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to trigger email check");
     } finally {
       setActionLoading(null);
@@ -295,7 +293,7 @@ export function EmailMonitoringSettings() {
       } else {
         throw new Error("Failed to delete account");
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to delete account");
     } finally {
       setActionLoading(null);
@@ -504,24 +502,24 @@ export function EmailMonitoringSettings() {
                 </div>
               </div>
 
-              {/* Candidates Created */}
+              {/* Inbound Emails Collected */}
               <div className="rounded-lg border bg-card p-3 md:p-4">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs md:text-sm font-medium text-muted-foreground">
-                      Candidates Created
+                      Inbound Emails Collected
                     </p>
                     <p className="text-lg md:text-2xl font-bold mt-0.5 md:mt-1 text-purple-600 truncate">
-                      {calculatedStats.totalCandidatesCreated}
+                      {calculatedStats.inboundEmailsCollected}
                     </p>
                   </div>
                   <div className="rounded-full bg-purple-500/10 p-2 md:p-3 shrink-0">
-                    <UserPlus className="h-4 w-4 md:h-5 md:w-5 text-purple-600" />
+                    <Mail className="h-4 w-4 md:h-5 md:w-5 text-purple-600" />
                   </div>
                 </div>
               </div>
 
-              {/* Errors */}
+              {/* Total Errors */}
               <div className="rounded-lg border bg-card p-3 md:p-4">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
@@ -612,7 +610,7 @@ export function EmailMonitoringSettings() {
                         } else {
                           throw new Error("Failed to update interval");
                         }
-                      } catch (err) {
+                      } catch {
                         toast.error("Failed to update check interval");
                       }
                     }}
@@ -656,7 +654,7 @@ export function EmailMonitoringSettings() {
                           } else {
                             throw new Error("Failed to update interval");
                           }
-                        } catch (err) {
+                        } catch {
                           toast.error("Failed to update check interval");
                         }
                       } else {
@@ -683,7 +681,7 @@ export function EmailMonitoringSettings() {
                         } else {
                           throw new Error("Failed to update interval");
                         }
-                      } catch (err) {
+                      } catch {
                         toast.error("Failed to update check interval");
                       }
                     } else {
