@@ -563,25 +563,439 @@ const faqData: FAQItem[] = [
     tags: ["activities", "timeline", "audit", "tracking"],
   },
 
-  // ==================== BEST PRACTICES ====================
+  // ==================== RESUME PARSING & QUICK IMPORT ====================
   {
     id: "faq-110",
-    category: "Best Practices",
-    question: "How often should I review new applications?",
+    category: "Resume Parsing",
+    question: "What is the Quick Import feature?",
     answer:
-      "Check applications at least once daily if you're actively hiring. Quick response times (within 24-48 hours) improve candidate experience and increase acceptance rates. Set up email notifications in Settings so you're alerted when new applications arrive.",
-    tags: ["best-practices", "applications", "workflow"],
+      "Quick Import allows you to upload a resume file (PDF or DOCX) and have the system automatically extract candidate information like name, email, phone, skills, work experience, and education. Go to Candidates > Quick Import to access this feature. The system uses advanced parsing technology with three fallback methods (pdf-parse, pdf2json, and mammoth) to ensure successful extraction.",
+    tags: ["resume", "parsing", "quick-import", "upload"],
   },
   {
     id: "faq-111",
-    category: "Best Practices",
-    question: "Should I use tags for candidates?",
+    category: "Resume Parsing",
+    question: "What file formats are supported for resume uploads?",
     answer:
-      "Yes! Tags make searching and organizing much easier. Create tags for: skills (JavaScript, Marketing), levels (Junior, Senior), preferences (Remote, Relocation), and specialties (Frontend, B2B Sales). Tag candidates as you review them - it takes 5 seconds but saves hours of searching later.",
-    tags: ["best-practices", "tags", "organization"],
+      "The system supports PDF and DOCX (Microsoft Word) formats. The parser has a triple fallback strategy: it first tries pdf-parse for PDFs, then pdf2json if that fails, and uses mammoth for DOCX files. This ensures high success rates even with complex resume layouts.",
+    tags: ["resume", "formats", "pdf", "docx"],
   },
   {
     id: "faq-112",
+    category: "Resume Parsing",
+    question: "What information does the resume parser extract?",
+    answer:
+      "The parser extracts: personal information (first name, last name, email, phone, location), professional summary, current job title and company, years of experience, education level, skills, work experience history, education details, certifications, languages, and LinkedIn/website URLs. After extraction, you can review and edit all fields before creating the candidate.",
+    tags: ["resume", "parsing", "extraction", "data"],
+  },
+  {
+    id: "faq-113",
+    category: "Resume Parsing",
+    question: "Can I edit the parsed resume data before saving?",
+    answer:
+      "Yes! After uploading a resume, the system shows you all extracted fields in an editable form. You can correct any mistakes, add missing information, or modify any field before clicking 'Create Candidate'. The parsed data is just a starting point to save you time.",
+    tags: ["resume", "editing", "review", "validation"],
+  },
+  {
+    id: "faq-114",
+    category: "Resume Parsing",
+    question: "What if the resume parser makes mistakes?",
+    answer:
+      "Resume parsing accuracy depends on the resume format and layout. Complex layouts, tables, or images may result in extraction errors. Always review the extracted data before saving. You can manually correct any fields. If a resume consistently fails to parse, try asking for a cleaner PDF format or manually create the candidate profile.",
+    tags: ["resume", "errors", "accuracy", "troubleshooting"],
+  },
+
+  // ==================== BULK OPERATIONS ====================
+  {
+    id: "faq-120",
+    category: "Bulk Operations",
+    question: "Can I approve or reject multiple applications at once?",
+    answer:
+      "Yes! On the Applications page, use the checkboxes on the left side of each row to select multiple applications. You can also click the checkbox in the table header to select all applications on the current page. Once selected, bulk action buttons appear at the top allowing you to approve or reject multiple applications simultaneously.",
+    tags: ["bulk", "applications", "approve", "reject"],
+  },
+  {
+    id: "faq-121",
+    category: "Bulk Operations",
+    question: "Can I delete multiple applications at once?",
+    answer:
+      "Yes! Select multiple applications using the checkboxes, then use the bulk delete option. The system will delete the selected applications and their associated files from Cloudinary storage. This action cannot be undone, so a confirmation dialog will appear before deletion.",
+    tags: ["bulk", "delete", "applications"],
+  },
+  {
+    id: "faq-122",
+    category: "Bulk Operations",
+    question: "Can I move multiple candidates to a new stage at once?",
+    answer:
+      "Yes! The system supports bulk moving of candidates. Select multiple candidates and use the bulk move action to change their pipeline stage simultaneously. You can also add notes that will apply to all selected candidates. This is useful when multiple candidates pass the same interview round.",
+    tags: ["bulk", "candidates", "stages", "pipeline"],
+  },
+  {
+    id: "faq-123",
+    category: "Bulk Operations",
+    question: "What is Bulk Import in Settings?",
+    answer:
+      "Bulk Import allows you to process multiple applications from email monitoring all at once. Go to Settings > Bulk Import to trigger a manual import of all pending emails in your monitored inbox. This is useful if email automation was paused and you want to catch up on accumulated resumes.",
+    tags: ["bulk", "import", "email", "settings"],
+  },
+
+  // ==================== EMAIL & COMMUNICATION ====================
+  {
+    id: "faq-130",
+    category: "Email Communication",
+    question: "How do I send an email to a candidate?",
+    answer:
+      "Open the candidate's profile or the candidate detail page from the job pipeline. Look for the 'Send Email' or communication section. You can compose a new email, use an email template, or reply to previous correspondence. The email will be tracked in the candidate's communication history.",
+    tags: ["email", "candidates", "communication"],
+  },
+  {
+    id: "faq-131",
+    category: "Email Communication",
+    question: "What variables can I use in email templates?",
+    answer:
+      "Email templates support these variables: {{candidateName}} or [Candidate Name], {{jobTitle}} or [Job Title], {{companyName}} or [Company Name], {{interviewDate}} or [Interview Date], {{interviewTime}} or [Interview Time], {{interviewLocation}} or [Interview Location], {{recruiterName}} or [Recruiter Name]. The system automatically replaces these with actual values when sending.",
+    tags: ["email", "templates", "variables"],
+  },
+  {
+    id: "faq-132",
+    category: "Email Communication",
+    question: "How do I view email history with a candidate?",
+    answer:
+      "Open the candidate's profile and navigate to the communication or email history section. You'll see all emails sent to and received from the candidate, organized by thread. Each email shows the date, subject, sender, and full content. You can also view inbound emails (candidate replies) from the main emails page.",
+    tags: ["email", "history", "communication", "tracking"],
+  },
+  {
+    id: "faq-133",
+    category: "Email Communication",
+    question: "What is email threading?",
+    answer:
+      "Email threading groups related emails together into conversations. When you view emails, they're organized by thread ID, showing the entire conversation history. This makes it easy to follow the back-and-forth communication with candidates without losing context.",
+    tags: ["email", "threading", "conversations"],
+  },
+  {
+    id: "faq-134",
+    category: "Email Communication",
+    question: "Can I save emails as drafts?",
+    answer:
+      "Yes! When composing an email to a candidate, you can save it as a draft instead of sending immediately. Go to the emails section, create or update a draft, and send it when ready. Drafts are saved and can be edited or deleted later.",
+    tags: ["email", "drafts", "saving"],
+  },
+
+  // ==================== INTERVIEWS ====================
+  {
+    id: "faq-140",
+    category: "Interviews",
+    question: "How do I schedule an interview?",
+    answer:
+      "Go to the Jobs page, click on a job, find the candidate in the pipeline, and click on their card. Look for 'Schedule Interview' button. Fill in details: interview date and time, type (video/phone/in-person), duration, interviewer, and location or meeting link. You can also create Zoom meetings directly from this form.",
+    tags: ["interviews", "scheduling", "candidates"],
+  },
+  {
+    id: "faq-141",
+    category: "Interviews",
+    question: "Can I create Zoom meetings for interviews?",
+    answer:
+      "Yes! When scheduling an interview, look for the 'Create Zoom Meeting' option. The system will generate a Zoom link and automatically include it in the interview invitation email sent to the candidate. This requires your Zoom integration to be configured in Settings.",
+    tags: ["interviews", "zoom", "video", "meetings"],
+  },
+  {
+    id: "faq-142",
+    category: "Interviews",
+    question: "How do I view upcoming interviews?",
+    answer:
+      "Go to the Interviews section from the sidebar. The system shows all scheduled interviews with filters for upcoming, today, this week, and past interviews. You can see interview details, candidate information, job title, interview type, date/time, and status.",
+    tags: ["interviews", "upcoming", "schedule", "view"],
+  },
+  {
+    id: "faq-143",
+    category: "Interviews",
+    question: "How do I add feedback after an interview?",
+    answer:
+      "After conducting an interview, go to the Interviews section, find the interview, and click 'Add Feedback'. You can rate the candidate, add detailed notes, mark strengths and concerns, and make a recommendation (hire, maybe, reject). This feedback is saved to the candidate's profile.",
+    tags: ["interviews", "feedback", "evaluation", "notes"],
+  },
+  {
+    id: "faq-144",
+    category: "Interviews",
+    question: "How do I cancel or reschedule an interview?",
+    answer:
+      "Find the interview in the Interviews section and click on it. You can either cancel it (which notifies the candidate) or edit the details to reschedule. When rescheduling, the candidate receives an updated invitation with the new date and time.",
+    tags: ["interviews", "cancel", "reschedule", "edit"],
+  },
+  {
+    id: "faq-145",
+    category: "Interviews",
+    question: "What interview types are supported?",
+    answer:
+      "The system supports three interview types: Video (Zoom, Teams, etc.), Phone (telephone interview), and In-Person (on-site interview). Select the appropriate type when scheduling, as it affects what information you need to provide (meeting link vs. physical location).",
+    tags: ["interviews", "types", "video", "phone", "in-person"],
+  },
+
+  // ==================== PIPELINE MANAGEMENT ====================
+  {
+    id: "faq-150",
+    category: "Pipeline Management",
+    question: "How do I create a custom pipeline for a job?",
+    answer:
+      "When creating or editing a job, you can select or create a custom pipeline. Pipelines define the stages candidates go through (e.g., Screening, Interview, Assessment, Offer, Hired). You can create pipeline templates in Settings that can be reused across multiple jobs, or create job-specific pipelines.",
+    tags: ["pipeline", "custom", "stages", "creation"],
+  },
+  {
+    id: "faq-151",
+    category: "Pipeline Management",
+    question: "Can I reorder pipeline stages?",
+    answer:
+      "Yes! In the pipeline builder or pipeline editor, you can drag and drop stages to reorder them. The order affects how stages appear in the Kanban board. Typically, stages should flow from initial screening to final hiring steps.",
+    tags: ["pipeline", "reorder", "stages", "organization"],
+  },
+  {
+    id: "faq-152",
+    category: "Pipeline Management",
+    question: "What is a default pipeline?",
+    answer:
+      "A default pipeline is a template that automatically applies to new jobs if you don't select a specific pipeline. It includes standard stages like Applied, Screening, Interview, Assessment, Offer, Hired, and Rejected. You can view and modify the default pipeline in Settings.",
+    tags: ["pipeline", "default", "template"],
+  },
+  {
+    id: "faq-153",
+    category: "Pipeline Management",
+    question: "Can I delete a pipeline stage?",
+    answer:
+      "Yes, but be cautious. If you delete a stage that has candidates currently in it, those candidates will need to be moved to another stage first. The system will warn you if a stage contains candidates before allowing deletion.",
+    tags: ["pipeline", "delete", "stages", "warning"],
+  },
+  {
+    id: "faq-154",
+    category: "Pipeline Management",
+    question: "Can I edit stage names and colors?",
+    answer:
+      "Yes! Click the edit button on any stage in the pipeline view. You can change the stage name and select a different color. Colors help visually distinguish stages in the Kanban board. Changes apply to the pipeline and affect all jobs using that pipeline.",
+    tags: ["pipeline", "edit", "stages", "colors", "customization"],
+  },
+
+  // ==================== REAL-TIME FEATURES ====================
+  {
+    id: "faq-160",
+    category: "Real-time Features",
+    question: "Why do I see changes without refreshing the page?",
+    answer:
+      "The application uses Firestore real-time synchronization. When anyone on your team makes a change (approves an application, moves a candidate, creates a job), the update appears immediately for all users without refreshing. This prevents duplicate work and keeps everyone synchronized.",
+    tags: ["realtime", "firestore", "synchronization", "updates"],
+  },
+  {
+    id: "faq-161",
+    category: "Real-time Features",
+    question: "What is optimistic UI updating?",
+    answer:
+      "When you drag a candidate to a new stage in the Kanban board, the UI updates immediately before the server confirms the change. This makes the interface feel fast and responsive. If the server operation fails, the UI automatically reverts the change and shows an error message.",
+    tags: ["optimistic", "ui", "performance", "ux"],
+  },
+  {
+    id: "faq-162",
+    category: "Real-time Features",
+    question: "Do multiple team members see the same data?",
+    answer:
+      "Yes! All team members see the same real-time data. If a recruiter approves an application, hiring managers see that candidate appear immediately. If someone schedules an interview, it shows up in everyone's interview list instantly. This is powered by Firestore's real-time listeners.",
+    tags: ["realtime", "team", "collaboration", "synchronization"],
+  },
+
+  // ==================== USER ROLES & PERMISSIONS ====================
+  {
+    id: "faq-170",
+    category: "Roles & Permissions",
+    question: "What is the difference between Admin and Recruiter roles?",
+    answer:
+      "Admins have full access to everything including team management, settings, and system configuration. Recruiters can manage clients, jobs, applications, and candidates but cannot modify team members or critical system settings. Both can create jobs and manage the hiring process.",
+    tags: ["roles", "permissions", "admin", "recruiter"],
+  },
+  {
+    id: "faq-171",
+    category: "Roles & Permissions",
+    question: "What can a Hiring Manager do?",
+    answer:
+      "Hiring Managers can view and manage jobs and candidates, review applications for their specific jobs, schedule interviews, provide feedback, and move candidates through stages. They have limited access to client management and cannot modify system settings or manage team members.",
+    tags: ["roles", "permissions", "hiring-manager"],
+  },
+  {
+    id: "faq-172",
+    category: "Roles & Permissions",
+    question: "What is the Viewer role?",
+    answer:
+      "Viewers have read-only access. They can view jobs, candidates, applications, and reports but cannot make any changes. This role is useful for stakeholders who need visibility into hiring activities without the ability to modify data.",
+    tags: ["roles", "permissions", "viewer", "read-only"],
+  },
+  {
+    id: "faq-173",
+    category: "Roles & Permissions",
+    question: "Can I have custom permission levels?",
+    answer:
+      "The system has predefined roles (Admin, Recruiter, Hiring Manager, Viewer), but Admins can toggle specific permissions for individual users. For example, you could give a Hiring Manager permission to create jobs, which is normally a Recruiter privilege.",
+    tags: ["roles", "permissions", "custom", "flexibility"],
+  },
+
+  // ==================== ANALYTICS & REPORTING ====================
+  {
+    id: "faq-180",
+    category: "Analytics",
+    question: "What analytics are shown on the Dashboard?",
+    answer:
+      "The Dashboard displays: total applications received, approval rate percentage, applications over time chart (by source: direct apply, manual, email automation), application status breakdown, recent activity timeline, and quick stats for jobs, candidates, and clients. You can change the time range for charts (7, 30, 90 days, etc.).",
+    tags: ["analytics", "dashboard", "metrics", "reporting"],
+  },
+  {
+    id: "faq-181",
+    category: "Analytics",
+    question: "Can I see which application source performs best?",
+    answer:
+      "Yes! The Dashboard chart shows applications color-coded by source: direct apply (candidates applying through your website), manual (team-added applications), and email automation (resumes from monitored emails). This helps you understand which channels bring in the most candidates.",
+    tags: ["analytics", "sources", "tracking", "performance"],
+  },
+  {
+    id: "faq-182",
+    category: "Analytics",
+    question: "How do I track team member productivity?",
+    answer:
+      "Go to the Team page to see activity summaries for each member. The Activities timeline (visible on Dashboard and throughout the app) shows who created jobs, approved applications, moved candidates, and scheduled interviews. Each activity is timestamped and attributed to the user who performed it.",
+    tags: ["analytics", "team", "productivity", "tracking"],
+  },
+  {
+    id: "faq-183",
+    category: "Analytics",
+    question: "Can I see candidate statistics?",
+    answer:
+      "Yes! The Candidates page shows total candidate counts. Individual job pages display candidate statistics including how many candidates are in each pipeline stage, approval rates, and time-in-stage metrics. You can also access candidate stats via the API endpoint for custom reporting.",
+    tags: ["analytics", "candidates", "statistics", "metrics"],
+  },
+
+  // ==================== SEARCH & FILTERING ====================
+  {
+    id: "faq-190",
+    category: "Search & Filtering",
+    question: "How does the global search work?",
+    answer:
+      "Press Cmd+K (Mac) or Ctrl+K (Windows) from anywhere, or click 'Search' in the sidebar. Type your query to search across all resources: jobs, candidates, clients, applications, and team members. Results appear instantly and are organized by category. Click any result to navigate to that item.",
+    tags: ["search", "global", "keyboard-shortcut"],
+  },
+  {
+    id: "faq-191",
+    category: "Search & Filtering",
+    question: "Can I search by multiple criteria at once?",
+    answer:
+      "Each page (Jobs, Candidates, Applications) has its own search box and filters. You can combine text search with dropdown filters. For example, on the Candidates page, search for 'JavaScript' and filter by 'Interview' stage and a specific client to narrow results.",
+    tags: ["search", "filters", "multiple", "criteria"],
+  },
+  {
+    id: "faq-192",
+    category: "Search & Filtering",
+    question: "Are my recent searches saved?",
+    answer:
+      "Yes! The Help page and Search page remember your last 5 searches. These appear as quick-access buttons at the top of the search interface. Click any recent search to run it again, or clear them all if you want to start fresh.",
+    tags: ["search", "history", "recent", "saved"],
+  },
+
+  // ==================== DATA MANAGEMENT ====================
+  {
+    id: "faq-200",
+    category: "Data Management",
+    question: "Where are uploaded files stored?",
+    answer:
+      "All uploaded resumes and documents are stored in Cloudinary, a cloud-based file storage service. When you upload a resume through Quick Import or the application form, it's automatically uploaded to Cloudinary and the URL is saved in Firestore. Files are secure and accessible only to authenticated users.",
+    tags: ["files", "storage", "cloudinary", "resumes"],
+  },
+  {
+    id: "faq-201",
+    category: "Data Management",
+    question: "What happens to data when I delete a candidate?",
+    answer:
+      "When you delete a candidate, their Firestore document is removed and their resume file is deleted from Cloudinary storage. Associated data like interview records and email history may be archived or deleted depending on system configuration. This action cannot be undone.",
+    tags: ["data", "deletion", "candidates", "permanent"],
+  },
+  {
+    id: "faq-202",
+    category: "Data Management",
+    question: "Is my data backed up?",
+    answer:
+      "Yes! Firestore (the database) automatically creates backups and provides point-in-time recovery. Your data is replicated across multiple data centers for redundancy. Cloudinary also maintains backups of uploaded files. However, you should periodically export important data for your own records.",
+    tags: ["backup", "data", "firestore", "security"],
+  },
+  {
+    id: "faq-203",
+    category: "Data Management",
+    question: "Can I export data to CSV or Excel?",
+    answer:
+      "Data export functionality for CSV/Excel is planned for future updates. Currently, you can view and copy data from tables. For bulk exports, contact support who can generate custom reports. The API also provides endpoints for programmatic data access.",
+    tags: ["export", "csv", "excel", "data"],
+  },
+
+  // ==================== TROUBLESHOOTING (EXPANDED) ====================
+  {
+    id: "faq-210",
+    category: "Troubleshooting",
+    question: "The Kanban board is empty but I have candidates. Why?",
+    answer:
+      "Check these: 1) Ensure candidates are assigned to this specific job (check their jobIds field). 2) Verify the job has a pipeline assigned - if not, create one using Pipeline Builder. 3) Check if candidates have a currentPipelineStageId that matches a stage in the pipeline. 4) Try refreshing the page or checking browser console for errors.",
+    tags: ["troubleshooting", "kanban", "pipeline", "candidates"],
+  },
+  {
+    id: "faq-211",
+    category: "Troubleshooting",
+    question: "I see 'No data' on multiple pages. What should I do?",
+    answer:
+      "This is usually a Firestore connection or data issue. Check: 1) Open browser DevTools Console and look for Firestore errors. 2) Verify you're logged in and authenticated. 3) Check if other team members see data. 4) Try the FirestoreDebug component (add it to DashboardLayout) to see connection status. 5) Verify Firestore Security Rules allow read access. See the FIRESTORE_NO_DATA_TROUBLESHOOTING.md guide for detailed steps.",
+    tags: ["troubleshooting", "no-data", "firestore", "connection"],
+  },
+  {
+    id: "faq-212",
+    category: "Troubleshooting",
+    question: "Resume upload fails or hangs. What's wrong?",
+    answer:
+      "Common causes: 1) File too large (over 10MB) - compress the PDF or DOCX. 2) Network timeout - check your internet connection. 3) Cloudinary quota exceeded - contact admin to check storage limits. 4) Unsupported file format - only PDF and DOCX are supported. Try converting the file or use a different resume.",
+    tags: ["troubleshooting", "upload", "resume", "files"],
+  },
+  {
+    id: "faq-213",
+    category: "Troubleshooting",
+    question: "Email monitoring stopped working. How do I fix it?",
+    answer:
+      "Check: 1) Go to Settings > Email Monitoring and ensure the account is not paused (look for pause/play icon). 2) Verify 'Auto Process Resumes' toggle is ON. 3) Check IMAP credentials are still valid (email password may have changed). 4) Look for error messages next to the email account. 5) Check email quota limits. 6) Use Bulk Import to manually process pending emails.",
+    tags: ["troubleshooting", "email", "monitoring", "automation"],
+  },
+  {
+    id: "faq-214",
+    category: "Troubleshooting",
+    question: "Why can't I see the changes I just made?",
+    answer:
+      "If real-time updates aren't working: 1) Check your internet connection. 2) Look for Firestore connection errors in browser console. 3) Try hard refreshing (Cmd+Shift+R or Ctrl+Shift+R). 4) Clear browser cache. 5) Check if Firestore rules are blocking updates. Real-time sync requires active WebSocket connection to Firestore.",
+    tags: ["troubleshooting", "realtime", "updates", "sync"],
+  },
+  {
+    id: "faq-215",
+    category: "Troubleshooting",
+    question: "I get 'Permission Denied' errors. Why?",
+    answer:
+      "This means either: 1) Your user role doesn't have permission for that action (e.g., Viewers can't edit data). Contact your admin to adjust permissions. 2) Firestore Security Rules are blocking the operation. 3) Your authentication session expired - try logging out and back in. 4) You're trying to access data from a different company/tenant.",
+    tags: ["troubleshooting", "permissions", "access", "firestore-rules"],
+  },
+
+  // ==================== BEST PRACTICES ====================
+  {
+    id: "faq-220",
+    category: "Best Practices",
+    question: "How often should I review new applications?",
+    answer:
+      "Check applications at least once daily if you're actively hiring. Quick response times (within 24-48 hours) improve candidate experience and increase acceptance rates. Configure email notifications in Settings so you're alerted when new applications arrive.",
+    tags: ["best-practices", "applications", "workflow"],
+  },
+  {
+    id: "faq-221",
+    category: "Best Practices",
+    question: "Should I use tags for candidates?",
+    answer:
+      "Yes! Tags make searching and organizing much easier. Create tags for: skills (JavaScript, Marketing), levels (Junior, Senior), preferences (Remote, Relocation), and specialties (Frontend, B2B Sales). Tag candidates as you review them - it takes seconds but saves hours of searching later.",
+    tags: ["best-practices", "tags", "organization"],
+  },
+  {
+    id: "faq-222",
     category: "Best Practices",
     question: "What's the best way to organize jobs?",
     answer:
@@ -589,7 +1003,7 @@ const faqData: FAQItem[] = [
     tags: ["best-practices", "jobs", "organization"],
   },
   {
-    id: "faq-113",
+    id: "faq-223",
     category: "Best Practices",
     question: "How should I use client notes?",
     answer:
@@ -597,11 +1011,11 @@ const faqData: FAQItem[] = [
     tags: ["best-practices", "clients", "notes"],
   },
   {
-    id: "faq-114",
+    id: "faq-224",
     category: "Best Practices",
     question: "What's the most efficient workflow for my team?",
     answer:
-      "1) Assign applications to specific reviewers to avoid duplicate work. 2) Use tags and notes consistently. 3) Move candidates through stages promptly - don't leave them stuck. 4) Review the Dashboard weekly to spot bottlenecks. 5) Use email templates to save time on common communications. 6) Close or archive old jobs regularly.",
+      "1) Assign applications to specific reviewers to avoid duplicate work. 2) Use tags and notes consistently. 3) Move candidates through stages promptly - don't leave them stuck. 4) Review the Dashboard weekly to spot bottlenecks. 5) Use email templates to save time on common communications. 6) Close or archive old jobs regularly. 7) Leverage bulk operations for efficiency.",
     tags: ["best-practices", "workflow", "efficiency", "team"],
   },
 ];

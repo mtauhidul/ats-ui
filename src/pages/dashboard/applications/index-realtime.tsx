@@ -5,7 +5,8 @@ import { DataTable } from "@/components/data-table";
 import { Loader } from "@/components/ui/loader";
 import type { Application } from "@/types/application";
 import type { Job } from "@/types/job";
-import type { Client } from "@/types/client";
+import { schema } from "@/components/data-table-schema";
+import { z } from "zod";
 
 /**
  * Applications Page - Real-Time Version
@@ -15,7 +16,6 @@ import type { Client } from "@/types/client";
 export default function ApplicationsPageRealtime() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,25 +48,11 @@ export default function ApplicationsPageRealtime() {
       }
     );
 
-    // Subscribe to clients
-    const unsubClients = onSnapshot(
-      query(collection(db, "clients"), orderBy("createdAt", "desc")),
-      (snapshot) => {
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Client[];
-        console.log("🔥 Clients updated:", data.length);
-        setClients(data);
-      }
-    );
-
     // Cleanup all subscriptions on unmount
     return () => {
       console.log("🧹 Cleaning up applications page subscriptions");
       unsubApplications();
       unsubJobs();
-      unsubClients();
     };
   }, []); // Empty deps - subscriptions run once
 
@@ -90,10 +76,8 @@ export default function ApplicationsPageRealtime() {
       </div>
 
       <DataTable
-        data={applications}
+        data={applications as unknown as z.infer<typeof schema>[]}
         jobs={jobs}
-        clients={clients}
-        type="applications"
       />
     </div>
   );

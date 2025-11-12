@@ -343,7 +343,7 @@ const jobsSlice = createSlice({
           : action.payload && typeof action.payload === 'object'
           ? Object.values(action.payload)
           : [];
-        state.jobs = jobs;
+        state.jobs = jobs as Job[];
         state.lastFetched = Date.now(); // Update cache timestamp
         state.cacheValid = true; // Mark cache as valid
       })

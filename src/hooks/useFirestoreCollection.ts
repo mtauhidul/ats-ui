@@ -1,6 +1,6 @@
 import {
   collection,
-  DocumentData,
+  type DocumentData,
   limit,
   onSnapshot,
   orderBy,
@@ -8,7 +8,7 @@ import {
   Query,
   QueryConstraint,
   where,
-  WhereFilterOp,
+  type WhereFilterOp,
 } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import { db } from "../config/firebase";
@@ -23,7 +23,7 @@ export interface FirestoreHookResult<T> {
 export interface QueryFilter {
   field: string;
   operator: WhereFilterOp;
-  value: any;
+  value: unknown;
 }
 
 export interface QueryOptions {
@@ -58,6 +58,10 @@ export function useFirestoreCollection<T extends DocumentData>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [refetchTrigger, setRefetchTrigger] = useState(0);
+
+  // Create stable references for filters and options
+  const filtersKey = JSON.stringify(filters);
+  const optionsKey = JSON.stringify(options);
 
   const refetch = useCallback(() => {
     setRefetchTrigger((prev) => prev + 1);
@@ -125,10 +129,11 @@ export function useFirestoreCollection<T extends DocumentData>(
       setError(err as Error);
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     collectionPath,
-    JSON.stringify(filters),
-    JSON.stringify(options),
+    filtersKey,
+    optionsKey,
     refetchTrigger,
   ]);
 
@@ -180,7 +185,7 @@ export function useFirestoreDocument<T extends DocumentData>(
         (snapshot) => {
           if (!snapshot.empty) {
             const doc = snapshot.docs[0];
-            setData([{ id: doc.id, ...doc.data() } as T]);
+            setData([{ id: doc.id, ...doc.data() } as unknown as T]);
           } else {
             setData([]);
           }
@@ -232,6 +237,8 @@ export function useFirestoreChanges<T extends DocumentData>(
   onModified?: (doc: T & { id: string }) => void,
   onRemoved?: (doc: T & { id: string }) => void
 ): void {
+  const filtersKey2 = JSON.stringify(filters);
+
   useEffect(() => {
     if (!collectionPath) return;
 
@@ -269,5 +276,6 @@ export function useFirestoreChanges<T extends DocumentData>(
     } catch (err) {
       console.error("Firestore changes subscription error:", err);
     }
-  }, [collectionPath, JSON.stringify(filters), onAdded, onModified, onRemoved]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectionPath, filtersKey2, onAdded, onModified, onRemoved]);
 }
