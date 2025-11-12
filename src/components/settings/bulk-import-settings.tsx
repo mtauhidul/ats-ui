@@ -11,7 +11,7 @@ import { Download, Calendar, AlertCircle, CheckCircle, Info } from "lucide-react
 import { useState } from "react";
 import { API_BASE_URL } from "@/config/api";
 
-const API_URL = `${API_BASE_URL}/api`;
+const API_URL = API_BASE_URL; // API_BASE_URL already includes /api
 
 interface BulkImportResult {
   success: boolean;
