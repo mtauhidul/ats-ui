@@ -11,11 +11,12 @@ export interface Email {
   candidateId: string;
   jobId: string;
   direction: 'inbound' | 'outbound';
-  status: 'draft' | 'sent' | 'failed' | 'delivered' | 'opened' | 'clicked';
+  status: 'draft' | 'sent' | 'failed' | 'delivered' | 'opened' | 'clicked' | 'received' | 'processed';
   messageId?: string;
   threadId?: string;
   sentBy?: string;
   sentAt?: Date;
+  receivedAt?: Date; // For inbound emails
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,6 +48,7 @@ function transformEmailDocument(doc: DocumentData): Email {
   return {
     ...doc,
     sentAt: toDate(doc.sentAt),
+    receivedAt: toDate(doc.receivedAt),
     createdAt: toDate(doc.createdAt) || new Date(),
     updatedAt: toDate(doc.updatedAt) || new Date(),
   } as Email;

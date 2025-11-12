@@ -38,36 +38,42 @@ const allNavItems = {
       url: "/dashboard",
       icon: IconDashboard,
       permission: null, // Everyone can see dashboard
+      adminOnly: false,
     },
     {
       title: "Clients",
       url: "/dashboard/clients",
       icon: IconBuilding,
       permission: "canManageClients" as const,
+      adminOnly: false,
     },
     {
       title: "Jobs",
       url: "/dashboard/jobs",
       icon: IconBriefcase,
       permission: "canManageJobs" as const,
+      adminOnly: false,
     },
     {
       title: "Candidates",
       url: "/dashboard/candidates",
       icon: IconUserCheck,
       permission: "canManageCandidates" as const,
+      adminOnly: false,
     },
     {
       title: "Applications",
       url: "/dashboard/applications",
       icon: IconFileText,
       permission: "canReviewApplications" as const,
+      adminOnly: false,
     },
     {
       title: "Team",
       url: "/dashboard/team",
       icon: IconUsers,
       permission: "canManageTeam" as const,
+      adminOnly: false,
     },
   ],
   navSecondary: [
@@ -76,18 +82,21 @@ const allNavItems = {
       url: "/dashboard/search",
       icon: IconSearch,
       permission: null, // Everyone can search
+      adminOnly: false,
     },
     {
       title: "Settings",
       url: "/dashboard/settings",
       icon: IconSettings,
-      permission: null, // Everyone can access settings
+      permission: null,
+      adminOnly: true, // 🔒 Only admins can access settings
     },
     {
       title: "Get Help",
       url: "/dashboard/help",
       icon: IconHelp,
       permission: null, // Everyone can get help
+      adminOnly: false,
     },
   ],
   utilities: [
@@ -96,12 +105,14 @@ const allNavItems = {
       url: "/dashboard/tags",
       icon: IconTag,
       permission: "canManageCandidates" as const, // Tags are for organizing candidates
+      adminOnly: false,
     },
     {
       name: "Categories",
       url: "/dashboard/categories",
       icon: IconBookmark,
       permission: "canManageJobs" as const, // Categories are for jobs
+      adminOnly: false,
     },
   ],
 };
@@ -146,23 +157,32 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       };
     }
 
-    // Filter based on permissions
+    // Filter based on permissions and adminOnly flag
     const filteredNavMain = allNavItems.navMain
-      .filter(
-        (item) => !item.permission || hasPermission(user, item.permission)
-      )
+      .filter((item) => {
+        // Hide admin-only items from non-admins
+        if (item.adminOnly) return false;
+        // Show items with no permission requirement or items user has permission for
+        return !item.permission || hasPermission(user, item.permission);
+      })
       .map((item) => ({ title: item.title, url: item.url, icon: item.icon }));
 
     const filteredUtilities = allNavItems.utilities
-      .filter(
-        (item) => !item.permission || hasPermission(user, item.permission)
-      )
+      .filter((item) => {
+        // Hide admin-only items from non-admins
+        if (item.adminOnly) return false;
+        // Show items with no permission requirement or items user has permission for
+        return !item.permission || hasPermission(user, item.permission);
+      })
       .map((item) => ({ name: item.name, url: item.url, icon: item.icon }));
 
     const filteredNavSecondary = allNavItems.navSecondary
-      .filter(
-        (item) => !item.permission || hasPermission(user, item.permission)
-      )
+      .filter((item) => {
+        // Hide admin-only items from non-admins
+        if (item.adminOnly) return false;
+        // Show items with no permission requirement or items user has permission for
+        return !item.permission || hasPermission(user, item.permission);
+      })
       .map((item) => ({ title: item.title, url: item.url, icon: item.icon }));
 
     return {

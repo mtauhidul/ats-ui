@@ -10,6 +10,42 @@ import {
 } from 'firebase/firestore';
 
 /**
+ * Convert Firestore Timestamps to JavaScript Dates recursively
+ * This ensures Redux doesn't complain about non-serializable values
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function convertTimestamps(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  // Check if it's a Firestore Timestamp
+  if (obj?.toDate && typeof obj.toDate === 'function') {
+    return obj.toDate();
+  }
+
+  // Handle arrays
+  if (Array.isArray(obj)) {
+    return obj.map(item => convertTimestamps(item));
+  }
+
+  // Handle objects
+  if (typeof obj === 'object') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const converted: Record<string, any> = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        converted[key] = convertTimestamps(obj[key]);
+      }
+    }
+    return converted;
+  }
+
+  // Return primitives as-is
+  return obj;
+}
+
+/**
  * Firestore Real-time Service
  * Direct Firestore subscriptions for real-time updates
  * No API calls, no caching needed - just real-time data
@@ -34,10 +70,11 @@ export class FirestoreRealtimeService {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as T[];
+        const data = snapshot.docs.map((doc) => {
+          const rawData = { id: doc.id, ...doc.data() };
+          // Convert all Firestore Timestamps to JavaScript Dates
+          return convertTimestamps(rawData);
+        }) as T[];
         
         console.log(`🔥 Real-time update from ${collectionName}:`, data.length, 'items');
         callback(data);

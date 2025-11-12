@@ -6,6 +6,7 @@ import {
   type UseFirestoreCollectionResult,
 } from './useFirestore';
 import type { DocumentData } from 'firebase/firestore';
+import { useAuth } from './useAuth';
 
 /**
  * Transform Firestore document to Candidate type
@@ -66,6 +67,7 @@ export function useCandidates(options?: {
   jobId?: string;
 }): UseFirestoreCollectionResult<Candidate> {
   const { enabled = true, status, jobId } = options || {};
+  const { user } = useAuth();
 
   // Build query constraints
   const queryConstraints = useMemo(() => {
@@ -79,11 +81,16 @@ export function useCandidates(options?: {
       constraints.push(where('jobIds', 'array-contains', jobId));
     }
 
+    // 🔒 RBAC: Non-admin users can only see candidates assigned to them
+    if (user && user.role !== 'admin' && user.id) {
+      constraints.push(where('assignedTo', '==', user.id));
+    }
+
     // Note: orderBy removed to avoid Firestore index requirement
     // Candidates will be sorted client-side if needed
 
     return constraints;
-  }, [status, jobId]);
+  }, [status, jobId, user]);
 
   return useFirestoreCollection<Candidate>({
     collectionPath: 'candidates', // Root level collection

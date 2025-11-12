@@ -1,6 +1,5 @@
 import type { Candidate } from "@/types/candidate";
 import type { Job } from "@/types/job";
-import type { Client } from "@/types/client";
 
 export interface EmailVariables {
   // Candidate variables
@@ -66,17 +65,15 @@ export function replaceTemplateVariables(
 }
 
 /**
- * Extract variables from candidate, job, and client data
+ * Extract variables from candidate and job data
  * @param candidate - Candidate object
  * @param job - Job object (optional)
- * @param client - Client object (optional)
  * @param customVars - Additional custom variables
  * @returns EmailVariables object
  */
 export function extractEmailVariables(
   candidate: Candidate,
   job?: Job,
-  client?: Client,
   customVars?: Record<string, string>
 ): EmailVariables {
   // Build full candidate name
@@ -94,12 +91,8 @@ export function extractEmailVariables(
     jobTitle: job?.title || "[Job Title]",
     department: job?.department || "[Department]",
     
-    // Company info - handle both populated and unpopulated clientId
-    companyName: client?.companyName || 
-                 (typeof job?.clientId === 'object' && job?.clientId !== null 
-                   ? job.clientId.companyName
-                   : undefined) || 
-                 "[Company Name]",
+    // Company info - ALWAYS use YTFCS (client details are confidential)
+    companyName: "YTFCS",
     
     // Default recruiter info (should come from user context in real app)
     recruiterName: "HR Team",

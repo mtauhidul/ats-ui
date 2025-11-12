@@ -43,54 +43,51 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
+import { useEmailAccounts } from "@/hooks/useEmailAccounts";
+import { useAutomationStatus } from "@/hooks/useAutomationStatus";
 import { EmailConnectionDialog } from "./email-connection-dialog";
 
-interface EmailAccount {
-  id: string;
-  name: string;
-  email: string;
-  provider: "gmail" | "outlook" | "custom";
-  imapHost: string;
-  imapPort: number;
-  imapUser: string;
-  imapTls: boolean;
-  isActive: boolean;
-  autoProcessResumes: boolean;
-  defaultApplicationStatus: string;
-  lastChecked?: string;
-  createdBy?: { firstName?: string; lastName?: string; email?: string };
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface AutomationStatus {
-  enabled: boolean;
-  running: boolean;
-  stats?: {
-    totalEmailsProcessed: number;
-    totalCandidatesCreated: number;
-    totalErrors: number;
-    lastRunAt: string | null;
-    lastRunDuration: number;
-  };
-}
-
 export function EmailMonitoringSettings() {
-  const [automationStatus, setAutomationStatus] =
-    useState<AutomationStatus | null>(null);
-  const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 🔥 REALTIME: Get data from Firestore with real-time updates
+  const { data: emailAccounts = [], loading: accountsLoading, error: accountsError } = useEmailAccounts();
+  const { data: automationStatus, loading: statusLoading, error: statusError, exists: statusExists } = useAutomationStatus();
+  
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showStopDialog, setShowStopDialog] = useState(false);
   const [showAddAccountDialog, setShowAddAccountDialog] = useState(false);
 
-  // Polling interval refs
-  const automationIntervalRef = useRef<number | null>(null);
-  const importsIntervalRef = useRef<number | null>(null);
+  const loading = accountsLoading || statusLoading;
+  
+  // Default automation status if document doesn't exist
+  const defaultAutomationStatus = {
+    enabled: false,
+    running: false,
+    lastRunAt: null,
+    lastRunDuration: 0,
+    cronIntervalMinutes: 1,
+    stats: {
+      totalEmailsProcessed: 0,
+      totalCandidatesCreated: 0,
+      totalRepliesStored: 0,
+      totalErrors: 0,
+    },
+    updatedAt: new Date(),
+  };
+  
+  const currentAutomationStatus = automationStatus || defaultAutomationStatus;
+
+  console.log('[Email Monitoring] Firestore data:', {
+    accountsCount: emailAccounts.length,
+    automationStatus: currentAutomationStatus,
+    statusExists,
+    loading,
+    accountsError,
+    statusError
+  });
 
   // Status indicator component
   const StatusIndicator = ({
@@ -156,48 +153,7 @@ export function EmailMonitoringSettings() {
     );
   };
 
-  // Fetch automation status and accounts
-  const fetchData = async () => {
-    try {
-      const [statusResponse, accountsResponse] = await Promise.all([
-        authenticatedFetch("/emails/automation/status"),
-        authenticatedFetch("/email-accounts"),
-      ]);
-
-      if (statusResponse.ok && accountsResponse.ok) {
-        const statusData = await statusResponse.json();
-        const accountsData = await accountsResponse.json();
-
-        console.log("[Email Monitoring] Status data:", statusData);
-        console.log("[Email Monitoring] Accounts data:", accountsData);
-        console.log(
-          "[Email Monitoring] Accounts data.data:",
-          accountsData.data
-        );
-        console.log(
-          "[Email Monitoring] Accounts data.data.emailAccounts:",
-          accountsData.data?.emailAccounts
-        );
-
-        setAutomationStatus(statusData.data || null);
-        // Backend returns { data: { emailAccounts: [...], pagination: {...} } }
-        const accounts =
-          accountsData.data?.emailAccounts || accountsData.data || [];
-        console.log("[Email Monitoring] Setting emailAccounts to:", accounts);
-        setEmailAccounts(Array.isArray(accounts) ? accounts : []);
-      } else {
-        if (statusResponse.status === 429 || accountsResponse.status === 429) {
-          toast.error("Rate limit exceeded. Please wait a moment.");
-        } else {
-          console.error("Failed to load automation data");
-        }
-      }
-    } catch (err) {
-      console.error("Error fetching automation data:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 🔥 REALTIME: No need for fetchData, Firestore hooks handle everything automatically!
 
   // Start automation
   const startAutomation = async () => {
@@ -209,7 +165,7 @@ export function EmailMonitoringSettings() {
 
       if (response.ok) {
         toast.success("Email monitoring started successfully");
-        fetchData();
+        // 🔥 REALTIME: Firestore hook will auto-update, no need to refetch!
       } else {
         throw new Error("Failed to start automation");
       }
@@ -231,7 +187,7 @@ export function EmailMonitoringSettings() {
 
       if (response.ok) {
         toast.success("Email monitoring stopped");
-        fetchData();
+        // 🔥 REALTIME: Firestore hook will auto-update!
         setShowStopDialog(false);
       } else {
         throw new Error("Failed to stop automation");
@@ -266,7 +222,7 @@ export function EmailMonitoringSettings() {
         toast.success(
           `Automation ${enabled ? "enabled" : "disabled"} for account`
         );
-        await fetchData();
+        // 🔥 REALTIME: Firestore hook will auto-update!
       } else {
         throw new Error("Failed to update account");
       }
@@ -282,17 +238,14 @@ export function EmailMonitoringSettings() {
   const forceCheckAllAccounts = async () => {
     setActionLoading("check-all");
     try {
-      const response = await authenticatedFetch("/email-automation/trigger", {
+      const response = await authenticatedFetch("/emails/automation/trigger", {
         method: "POST",
       });
 
       if (response.ok) {
         const result = await response.json();
         toast.success(result.message || "Email check triggered successfully");
-        // Wait a bit for processing to complete, then refresh data
-        setTimeout(async () => {
-          await fetchData();
-        }, 2000);
+        // 🔥 REALTIME: Firestore hook will show updates automatically!
       } else {
         throw new Error("Failed to trigger email check");
       }
@@ -317,7 +270,7 @@ export function EmailMonitoringSettings() {
 
       if (response.ok) {
         toast.success("Email account removed successfully");
-        await fetchData();
+        // 🔥 REALTIME: Firestore hook will auto-update!
       } else {
         throw new Error("Failed to delete account");
       }
@@ -330,8 +283,8 @@ export function EmailMonitoringSettings() {
   };
 
   // Format time ago
-  const formatTimeAgo = (dateString: string) => {
-    const lastCheck = new Date(dateString);
+  const formatTimeAgo = (date: Date | string) => {
+    const lastCheck = date instanceof Date ? date : new Date(date);
     const now = new Date();
     const diffMinutes = Math.floor(
       (now.getTime() - lastCheck.getTime()) / (1000 * 60)
@@ -343,26 +296,31 @@ export function EmailMonitoringSettings() {
     return lastCheck.toLocaleDateString();
   };
 
-  // Setup intervals and initial data loading
-  useEffect(() => {
-    fetchData();
+  // 🔥 REALTIME: No need for polling or useEffect! Firestore hooks handle everything automatically
 
-    // Poll automation status every 30 seconds
-    const automationInterval = window.setInterval(fetchData, 30000);
-    automationIntervalRef.current = automationInterval;
-
-    // Store the current value for cleanup
-    const importsInterval = importsIntervalRef.current;
-
-    return () => {
-      if (automationInterval) {
-        clearInterval(automationInterval);
-      }
-      if (importsInterval) {
-        clearInterval(importsInterval);
-      }
-    };
-  }, []);
+  // Show errors if any
+  if (accountsError || statusError) {
+    return (
+      <div className="flex items-center justify-center min-h-[300px] md:min-h-[400px]">
+        <Card className="max-w-md">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+              <div>
+                <h3 className="font-semibold">Connection Error</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {accountsError?.message || statusError?.message || "Failed to connect to Firestore"}
+                </p>
+              </div>
+              <Button onClick={() => window.location.reload()} variant="outline">
+                Reload Page
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -498,7 +456,7 @@ export function EmailMonitoringSettings() {
                       Emails Processed
                     </p>
                     <p className="text-lg md:text-2xl font-bold mt-0.5 md:mt-1 truncate">
-                      {automationStatus.stats.totalEmailsProcessed}
+                      {currentAutomationStatus.stats.totalEmailsProcessed}
                     </p>
                   </div>
                   <div className="rounded-full bg-blue-500/10 p-2 md:p-3 shrink-0">
@@ -515,7 +473,7 @@ export function EmailMonitoringSettings() {
                       Applications Created
                     </p>
                     <p className="text-lg md:text-2xl font-bold mt-0.5 md:mt-1 text-emerald-600 truncate">
-                      {automationStatus.stats.totalCandidatesCreated}
+                      {currentAutomationStatus.stats.totalCandidatesCreated}
                     </p>
                   </div>
                   <div className="rounded-full bg-emerald-500/10 p-2 md:p-3 shrink-0">
@@ -532,7 +490,7 @@ export function EmailMonitoringSettings() {
                       Total Errors
                     </p>
                     <p className="text-lg md:text-2xl font-bold mt-0.5 md:mt-1 text-amber-600 truncate">
-                      {automationStatus.stats.totalErrors}
+                      {currentAutomationStatus.stats.totalErrors}
                     </p>
                   </div>
                   <div className="rounded-full bg-amber-500/10 p-2 md:p-3 shrink-0">
@@ -549,15 +507,13 @@ export function EmailMonitoringSettings() {
                       Last Run
                     </p>
                     <p className="text-xs md:text-sm font-bold mt-0.5 md:mt-1 truncate">
-                      {automationStatus.stats.lastRunAt
-                        ? new Date(
-                            automationStatus.stats.lastRunAt
-                          ).toLocaleTimeString()
+                      {currentAutomationStatus.lastRunAt
+                        ? new Date(currentAutomationStatus.lastRunAt).toLocaleTimeString()
                         : "Never"}
                     </p>
                     <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1 truncate">
-                      {automationStatus.stats.lastRunDuration
-                        ? `${automationStatus.stats.lastRunDuration}s duration`
+                      {currentAutomationStatus.lastRunDuration
+                        ? `${currentAutomationStatus.lastRunDuration}s duration`
                         : "No data"}
                     </p>
                   </div>
@@ -566,6 +522,147 @@ export function EmailMonitoringSettings() {
                   </div>
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cron Interval Configuration */}
+      {automationStatus && (
+        <Card>
+          <CardHeader className="p-3 md:p-6">
+            <CardTitle className="flex items-center gap-1.5 md:gap-2 text-base md:text-lg">
+              <Clock className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+              Check Interval
+            </CardTitle>
+            <CardDescription className="text-xs md:text-sm">
+              Configure how often to check for new emails
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-3 md:p-6 pt-0 space-y-4">
+            {/* Current Interval Display */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Current Interval</span>
+              </div>
+              <span className="text-sm font-semibold text-primary">
+                Every {currentAutomationStatus.cronIntervalMinutes} minute{currentAutomationStatus.cronIntervalMinutes > 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {/* Quick Preset Buttons */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                Quick Select
+              </label>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {[1, 2, 5, 10, 15, 30].map((minutes) => (
+                  <Button
+                    key={minutes}
+                    size="sm"
+                    variant={currentAutomationStatus.cronIntervalMinutes === minutes ? "primary" : "outline"}
+                    onClick={async () => {
+                      try {
+                        const response = await authenticatedFetch("/emails/automation/interval", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ intervalMinutes: minutes }),
+                        });
+                        if (response.ok) {
+                          toast.success(`Check interval updated to ${minutes} minute${minutes > 1 ? 's' : ''}`);
+                        } else {
+                          throw new Error("Failed to update interval");
+                        }
+                      } catch (err) {
+                        console.error("Error updating interval:", err);
+                        toast.error("Failed to update check interval");
+                      }
+                    }}
+                    disabled={actionLoading !== null}
+                    className="text-xs"
+                  >
+                    {minutes}m
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Interval Input */}
+            <div>
+              <label htmlFor="cronInterval" className="text-xs font-medium text-muted-foreground mb-2 block">
+                Custom Interval (1-60 minutes)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="cronInterval"
+                  type="number"
+                  min="1"
+                  max="60"
+                  placeholder="Enter minutes..."
+                  className="flex-1 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={actionLoading !== null}
+                  onKeyDown={async (e) => {
+                    if (e.key === 'Enter') {
+                      const input = e.currentTarget;
+                      const newInterval = parseInt(input.value) || 1;
+                      if (newInterval >= 1 && newInterval <= 60) {
+                        try {
+                          const response = await authenticatedFetch("/emails/automation/interval", {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ intervalMinutes: newInterval }),
+                          });
+                          if (response.ok) {
+                            toast.success(`Check interval updated to ${newInterval} minute${newInterval > 1 ? 's' : ''}`);
+                            input.value = '';
+                          } else {
+                            throw new Error("Failed to update interval");
+                          }
+                        } catch (err) {
+                          console.error("Error updating interval:", err);
+                          toast.error("Failed to update check interval");
+                        }
+                      } else {
+                        toast.error("Please enter a value between 1 and 60 minutes");
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    const input = document.getElementById('cronInterval') as HTMLInputElement;
+                    const newInterval = parseInt(input.value) || 1;
+                    if (newInterval >= 1 && newInterval <= 60) {
+                      try {
+                        const response = await authenticatedFetch("/emails/automation/interval", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ intervalMinutes: newInterval }),
+                        });
+                        if (response.ok) {
+                          toast.success(`Check interval updated to ${newInterval} minute${newInterval > 1 ? 's' : ''}`);
+                          input.value = '';
+                        } else {
+                          throw new Error("Failed to update interval");
+                        }
+                      } catch (err) {
+                        console.error("Error updating interval:", err);
+                        toast.error("Failed to update check interval");
+                      }
+                    } else {
+                      toast.error("Please enter a value between 1 and 60 minutes");
+                    }
+                  }}
+                  disabled={actionLoading !== null}
+                >
+                  Apply
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1.5">
+                Press Enter or click Apply to set custom interval
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -588,13 +685,13 @@ export function EmailMonitoringSettings() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={fetchData}
-                disabled={actionLoading === "refresh"}
+                onClick={() => toast.info("Data updates automatically in real-time!")}
+                disabled={loading}
                 className="h-8 md:h-9 text-xs md:text-sm"
               >
                 <RefreshCw
                   className={`h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2 ${
-                    actionLoading === "refresh" ? "animate-spin" : ""
+                    loading ? "animate-spin" : ""
                   }`}
                 />
                 Refresh
@@ -628,7 +725,7 @@ export function EmailMonitoringSettings() {
                         imports may be interrupted.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+                    <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-2">
                       <AlertDialogCancel className="w-full sm:w-auto h-9 md:h-10 text-xs md:text-sm">
                         Cancel
                       </AlertDialogCancel>
@@ -883,7 +980,8 @@ export function EmailMonitoringSettings() {
         isOpen={showAddAccountDialog}
         onOpenChange={setShowAddAccountDialog}
         onConnectionSuccess={() => {
-          fetchData();
+          // 🔥 REALTIME: Firestore hook will auto-update!
+          toast.success("Account added successfully");
           setShowAddAccountDialog(false);
         }}
       />

@@ -44,7 +44,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { InputDialog } from "@/components/ui/input-dialog";
+import { Label } from "@/components/ui/label";
 
 import {
   DropdownMenu,
@@ -70,6 +79,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
 import { useClients } from "@/hooks/firestore";
 import { useCandidates, useJobs, useTeam } from "@/store/hooks/index";
 import type { schema } from "./data-table-schema.tsx";
@@ -115,6 +125,10 @@ function AssignedSelector({
   // 🔥 REALTIME: Team members come from Firestore automatically
   const { teamMembers } = useTeam();
   const { updateCandidate } = useCandidates();
+  
+  // 🔒 RBAC: Check if current user is admin
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   // Debug: Log team members
   React.useEffect(() => {
@@ -186,6 +200,19 @@ function AssignedSelector({
     return member?.id || "unassigned";
   }, [selectedMember, teamMembers]);
 
+  // 🔒 RBAC: Non-admin users see read-only view
+  if (!isAdmin || disabled) {
+    return (
+      <div className="h-8 px-3 py-2 text-sm border rounded-md bg-muted/50 flex items-center w-full cursor-not-allowed">
+        {selectedMember || 
+          (candidateStatus?.toLowerCase() === "hired" ? "Hired" : 
+           candidateStatus?.toLowerCase() === "rejected" ? "Rejected" : 
+           "Not assigned")}
+      </div>
+    );
+  }
+
+  // Admin users get the interactive Select dropdown
   return (
     <Select
       open={isOpen}
@@ -196,12 +223,7 @@ function AssignedSelector({
     >
       <SelectTrigger className="h-8 text-sm w-full" disabled={disabled}>
         <SelectValue>
-          {disabled
-            ? selectedMember ||
-              (candidateStatus?.toLowerCase() === "hired"
-                ? "Hired"
-                : "Rejected")
-            : selectedMember || "Assign someone"}
+          {selectedMember || "Assign someone"}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
@@ -686,6 +708,7 @@ export function CandidatesDataTable({
   const [assignTeamDialogOpen, setAssignTeamDialogOpen] = React.useState(false);
   const [bulkAssignTeamDialogOpen, setBulkAssignTeamDialogOpen] =
     React.useState(false);
+  const [bulkAssignSelectedMember, setBulkAssignSelectedMember] = React.useState<string>("");
   const [candidateIdForAssign, setCandidateIdForAssign] = React.useState<
     string | number | null
   >(null);
@@ -770,29 +793,35 @@ export function CandidatesDataTable({
   };
 
   const handleBulkAssignTeam = () => {
+    setBulkAssignSelectedMember("");
     setBulkAssignTeamDialogOpen(true);
   };
 
-  const handleBulkAssignTeamConfirm = async (teamMember: string) => {
+  const handleBulkAssignTeamConfirm = async () => {
+    if (!bulkAssignSelectedMember) {
+      toast.error("Please select a team member");
+      return;
+    }
+
     const selectedRows = table.getFilteredSelectedRowModel().rows;
     const selectedIds = selectedRows.map((r) => r.original.id);
 
     try {
-      // Find team member ID from name
-      const member = teamMembers.find(
-        (m) => `${m.firstName} ${m.lastName}`.trim() === teamMember
-      );
+      // Find team member by ID
+      const member = teamMembers.find((m) => m.id === bulkAssignSelectedMember);
 
       if (!member) {
         toast.error("Team member not found");
         return;
       }
 
+      const teamMemberName = `${member.firstName} ${member.lastName}`.trim();
+
       // Optimistic update
       setData((prevData) =>
         prevData.map((item) =>
           selectedIds.includes(item.id)
-            ? { ...item, reviewer: teamMember }
+            ? { ...item, reviewer: teamMemberName }
             : item
         )
       );
@@ -808,9 +837,11 @@ export function CandidatesDataTable({
 
       await Promise.all(updatePromises);
       toast.success(
-        `${selectedRows.length} candidates assigned to ${teamMember}`
+        `${selectedRows.length} candidates assigned to ${teamMemberName}`
       );
       table.resetRowSelection();
+      setBulkAssignTeamDialogOpen(false);
+      setBulkAssignSelectedMember("");
     } catch (error) {
       console.error("Error bulk assigning team member:", error);
       toast.error("Failed to assign some candidates");
@@ -1713,17 +1744,59 @@ export function CandidatesDataTable({
         cancelText="Cancel"
       />
 
-      <InputDialog
-        open={bulkAssignTeamDialogOpen}
-        onOpenChange={setBulkAssignTeamDialogOpen}
-        title="Assign Team Member"
-        description="Enter the name of the team member to assign to selected candidates."
-        label="Team Member Name"
-        placeholder="Enter team member name"
-        onConfirm={handleBulkAssignTeamConfirm}
-        confirmText="Assign"
-        cancelText="Cancel"
-      />
+      <Dialog open={bulkAssignTeamDialogOpen} onOpenChange={setBulkAssignTeamDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Team Member</DialogTitle>
+            <DialogDescription>
+              Select a team member to assign to {table.getFilteredSelectedRowModel().rows.length} selected candidates.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="team-member-select">Team Member</Label>
+              <Select
+                value={bulkAssignSelectedMember}
+                onValueChange={setBulkAssignSelectedMember}
+              >
+                <SelectTrigger id="team-member-select">
+                  <SelectValue placeholder="Select a team member" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teamMembers.length === 0 ? (
+                    <SelectItem value="no-members" disabled>
+                      No team members available
+                    </SelectItem>
+                  ) : (
+                    teamMembers.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {`${member.firstName} ${member.lastName}`.trim() || member.email}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setBulkAssignTeamDialogOpen(false);
+                setBulkAssignSelectedMember("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleBulkAssignTeamConfirm}
+              disabled={!bulkAssignSelectedMember}
+            >
+              Assign
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmationDialog
         open={hireConfirmDialogOpen}

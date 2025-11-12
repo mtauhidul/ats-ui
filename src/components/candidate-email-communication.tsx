@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEmailsByCandidateAndJob } from "@/hooks/firestore";
 import { API_BASE_URL } from "@/config/api";
+import { useEmailsByCandidate } from "@/hooks/useEmails";
+import { useEmailAccounts } from "@/hooks/useEmailAccounts";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import {
   extractEmailVariables,
@@ -56,9 +57,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-
-// System email for sending (matches backend RESEND_FROM_EMAIL)
-const SYSTEM_FROM_EMAIL = "noreply@notequik.com";
 
 interface CandidateEmailCommunicationProps {
   candidate: Candidate;
@@ -111,18 +109,28 @@ export function CandidateEmailCommunication({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [emailToDelete, setEmailToDelete] = useState<EmailThread | null>(null);
 
-  // 🔥 REALTIME: Get emails from Firestore with realtime updates
-  const { data: firestoreEmails, loading: isLoading } = useEmailsByCandidateAndJob(
-    candidate.id,
-    job.id
+  // 🔥 REALTIME: Get ALL emails for candidate from Firestore (not just for this job)
+  // This ensures reply emails are visible even if they're associated with a different job
+  const { data: allCandidateEmails, loading: isLoading } = useEmailsByCandidate(
+    candidate.id
   );
+  
+  // 🔥 REALTIME: Get email accounts from Firestore
+  const { data: emailAccounts } = useEmailAccounts();
   
   // 🔥 REALTIME: Get email templates from Firestore
   const { templates: emailTemplates } = useEmailTemplates();
+  
+  // Get first active email account for sending
+  const activeEmailAccount = emailAccounts?.find(acc => acc.isActive);
+  const fromEmail = activeEmailAccount?.email || '';  // Filter emails for current job, but include emails with no jobId (replies without job context)
+  const firestoreEmails = allCandidateEmails.filter(
+    (email) => email.jobId === job.id || !email.jobId
+  );
 
   // Transform Firestore emails to match EmailThread interface
   // Note: Timestamps are already converted to JavaScript Date objects by transformEmailDocument in useEmails hook
-  const emails: EmailThread[] = firestoreEmails.map(email => ({
+  const emails: EmailThread[] = firestoreEmails.map((email) => ({
     ...email,
     _id: email.id, // Add _id for backward compatibility
     timestamp: email.sentAt || email.createdAt,
@@ -171,11 +179,17 @@ export function CandidateEmailCommunication({
         variables
       );
 
+      // Ensure we have an email account configured
+      if (!fromEmail) {
+        toast.error("No email account configured. Please add an email account in Settings.");
+        return;
+      }
+
       const response = await authenticatedFetch(`${API_BASE_URL}/emails`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          from: SYSTEM_FROM_EMAIL,
+          from: fromEmail, // Use email from configured account
           to: [composeData.to],
           subject: processedSubject,
           body: processedContent,
@@ -190,7 +204,7 @@ export function CandidateEmailCommunication({
 
       await response.json();
       // No need to manually update state - Firestore will sync automatically!
-      
+
       setComposeData({
         to: candidate.email,
         subject: "",

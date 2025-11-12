@@ -3,6 +3,7 @@ import DashboardLayout from "./components/dashboard-layout";
 import Layout from "./components/layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PermissionGuard } from "./components/auth/PermissionGuard";
+import { RoleGuard } from "./components/auth/RoleGuard";
 import { Toaster } from "./components/ui/sonner";
 import PublicApplyPage from "./pages/apply";
 import ApplySuccessPage from "./pages/apply/success";
@@ -126,7 +127,7 @@ function App() {
           <Route path="account" element={<AccountPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="search" element={<SearchPage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings" element={<RoleGuard allowedRoles={["admin"]}><SettingsPage /></RoleGuard>} />
           <Route path="help" element={<HelpPage />} />
           <Route path="messages" element={<MessagesPage />} />
         </Route>

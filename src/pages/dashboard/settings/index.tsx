@@ -1,8 +1,8 @@
 import { EmailMonitoringSettings } from "@/components/settings/email-monitoring-settings";
 import { EmailTemplatesSettings } from "@/components/settings/email-templates-settings";
-import { SmtpSettings } from "@/components/settings/smtp-settings";
+import { BulkImportSettings } from "@/components/settings/bulk-import-settings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Mail, Server, Settings } from "lucide-react";
+import { Activity, Mail, Download, Settings } from "lucide-react";
 import { useState } from "react";
 
 export default function SettingsPage() {
@@ -51,12 +51,12 @@ export default function SettingsPage() {
                     <span className="sm:hidden">Monitoring</span>
                   </TabsTrigger>
                   <TabsTrigger
-                    value="smtp-settings"
+                    value="bulk-import"
                     className="flex-1 md:flex-initial px-3 md:px-6 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap"
                   >
-                    <Server className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
-                    <span className="hidden sm:inline">IMAP Settings</span>
-                    <span className="sm:hidden">IMAP</span>
+                    <Download className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                    <span className="hidden sm:inline">Bulk Import</span>
+                    <span className="sm:hidden">Import</span>
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -69,8 +69,8 @@ export default function SettingsPage() {
                 <EmailMonitoringSettings />
               </TabsContent>
 
-              <TabsContent value="smtp-settings" className="mt-0">
-                <SmtpSettings />
+              <TabsContent value="bulk-import" className="mt-0">
+                <BulkImportSettings />
               </TabsContent>
             </Tabs>
           </div>

@@ -8,6 +8,8 @@ export const EmailStatus = {
   OPENED: "opened",
   BOUNCED: "bounced",
   FAILED: "failed",
+  RECEIVED: "received", // For inbound emails from email automation
+  PROCESSED: "processed", // For processed application emails
 } as const;
 
 export type EmailStatus = (typeof EmailStatus)[keyof typeof EmailStatus];
