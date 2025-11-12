@@ -78,7 +78,7 @@ export function BulkImportSettings() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `${API_URL}/email/automation/bulk-import`,
+        `${API_URL}/emails/automation/bulk-import`,
         {
           method: "POST",
           headers: {
