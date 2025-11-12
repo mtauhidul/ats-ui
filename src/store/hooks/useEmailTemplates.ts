@@ -11,16 +11,13 @@ export const useEmailTemplates = () => {
 
   // Subscribe to Firestore real-time updates
   useEffect(() => {
-    console.log('🔥 Setting up Firestore real-time subscription for email templates');
     dispatch(setLoading(true));
     
     const unsubscribe = firestoreRealtimeService.subscribeToEmailTemplates((templatesData) => {
-      console.log('📧 Received email templates from Firestore:', templatesData.length);
       dispatch(setEmailTemplates(templatesData));
     });
 
     return () => {
-      console.log('🔥 Cleaning up email templates Firestore subscription');
       unsubscribe();
     };
   }, [dispatch]);

@@ -76,12 +76,10 @@ export class FirestoreRealtimeService {
           return convertTimestamps(rawData);
         }) as T[];
         
-        console.log(`🔥 Real-time update from ${collectionName}:`, data.length, 'items');
         callback(data);
       },
       (error) => {
-        console.error(`Error in ${collectionName} subscription:`, error);
-      }
+        }
     );
 
     this.unsubscribers.set(key, unsubscribe);
@@ -207,12 +205,10 @@ export class FirestoreRealtimeService {
             return (isSender || isRecipient) && hasConversationId && notEmailTracking;
           });
         
-        console.log(`🔥 Real-time update from messages (filtered for user ${userId}):`, data.length, 'items');
         callback(data);
       },
       (error) => {
-        console.error(`Error in messages subscription:`, error);
-      }
+        }
     );
 
     this.unsubscribers.set(key, unsubscribe);
@@ -269,12 +265,10 @@ export class FirestoreRealtimeService {
           };
         });
         
-        console.log(`🔥 Real-time update from notifications (user ${userId}):`, data.length, 'items');
         callback(data);
       },
       (error) => {
-        console.error(`Error in notifications subscription:`, error);
-      }
+        }
     );
 
     this.unsubscribers.set(key, unsubscribe);
@@ -292,8 +286,7 @@ export class FirestoreRealtimeService {
   unsubscribeAll(): void {
     this.unsubscribers.forEach((unsubscribe) => unsubscribe());
     this.unsubscribers.clear();
-    console.log('🔥 All Firestore subscriptions cleaned up');
-  }
+    }
 }
 
 export const firestoreRealtimeService = new FirestoreRealtimeService();

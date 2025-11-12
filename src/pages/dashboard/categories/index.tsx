@@ -111,9 +111,6 @@ export default function CategoriesPage() {
   ): CategoryTree[] => {
     // Prevent infinite recursion by limiting depth
     if (level > 10) {
-      console.warn(
-        "Maximum category nesting depth (10) exceeded. Possible circular reference."
-      );
       return [];
     }
 
@@ -121,7 +118,6 @@ export default function CategoriesPage() {
       .filter((item) => {
         // Validate that item has an ID
         if (!item.id) {
-          console.error(`Category missing ID:`, item);
           return false;
         }
 

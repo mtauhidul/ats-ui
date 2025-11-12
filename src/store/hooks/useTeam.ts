@@ -26,7 +26,6 @@ export const useTeam = () => {
 
   // No-op fetchTeam for backward compatibility - Firestore auto-subscribes
   const fetchTeamCallback = useCallback(() => {
-    console.log('⚠️ fetchTeam called but ignored - using Firestore realtime subscription');
     return Promise.resolve();
   }, []);
 

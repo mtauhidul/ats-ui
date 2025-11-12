@@ -12,8 +12,6 @@ export const useFirestoreRealtime = () => {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    console.log('🔥 Setting up Firestore real-time subscriptions');
-
     // Subscribe to candidates
     const unsubCandidates = firestoreRealtimeService.subscribeToCandidates((candidates) => {
       dispatch({
@@ -78,11 +76,8 @@ export const useFirestoreRealtime = () => {
       });
     });
 
-    console.log('✅ All Firestore subscriptions active');
-
     // Cleanup all subscriptions on unmount
     return () => {
-      console.log('🧹 Cleaning up Firestore subscriptions');
       unsubCandidates();
       unsubJobs();
       unsubApplications();

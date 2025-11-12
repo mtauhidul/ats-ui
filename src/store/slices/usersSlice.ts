@@ -37,11 +37,9 @@ export const fetchUsersIfNeeded = createAsyncThunk(
     const { lastFetched, cacheValid, users } = state.users;
 
     if (cacheValid && isCacheValid(lastFetched) && users.length > 0) {
-      console.log('✅ Using cached users');
       return null; // Return null to skip fetch
     }
 
-    console.log('📡 Fetching fresh users from API');
     const response = await authenticatedFetch(`${API_BASE_URL}/users`);
     if (!response.ok) throw new Error("Failed to fetch users");
     const result = await response.json();
@@ -56,7 +54,6 @@ export const fetchUsersIfNeeded = createAsyncThunk(
 );
 
 export const fetchUsers = createAsyncThunk("users/fetchAll", async () => {
-  console.log('📡 Fetching fresh users from API');
   const response = await authenticatedFetch(`${API_BASE_URL}/users`);
   if (!response.ok) throw new Error("Failed to fetch users");
   const result = await response.json();

@@ -154,22 +154,6 @@ export default function TeamMemberDetailPage() {
     enabled: !!memberId,
   });
   
-  console.log('👤 Team Member Detail - Firestore:', {
-    memberId,
-    member: currentMember,
-    loading: isLoading,
-    error: memberError,
-    dateFields: currentMember ? {
-      createdAt: currentMember.createdAt,
-      startDate: currentMember.startDate,
-      lastLoginAt: currentMember.lastLoginAt,
-    } : null,
-    statusFields: currentMember ? {
-      status: currentMember.status,
-      isActive: (currentMember as unknown as Record<string, unknown>).isActive,
-    } : null
-  });
-  
   const { jobs } = useJobs(); // Realtime data from Firestore
   const { candidates } = useCandidates(); // Realtime data from Firestore
   
@@ -190,8 +174,6 @@ export default function TeamMemberDetailPage() {
       createdAt: activity.createdAt.toISOString(),
     }));
   }, [firestoreActivities]);
-
-  console.log("� Activities from Firestore (realtime):", activities.length);
 
   const formatActivityAction = (action: string): string => {
     const actionMap: Record<string, string> = {
@@ -378,16 +360,6 @@ export default function TeamMemberDetailPage() {
     return false;
   });
 
-  console.log("Team detail - currentMember.id:", currentMember.id);
-  console.log("Team detail - currentMember.userId:", currentMember.userId);
-  console.log("Team detail - userIdToMatch:", userIdToMatch);
-  console.log("Team detail - Total candidates:", candidates.length);
-  console.log("Team detail - Assigned candidates:", assignedCandidates.length);
-  console.log(
-    "Team detail - Sample candidate assignedTo values:",
-    candidates.slice(0, 3).map((c) => ({ id: c.id, assignedTo: c.assignedTo }))
-  );
-
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
@@ -506,7 +478,6 @@ export default function TeamMemberDetailPage() {
                               const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                               return `${day} ${months[date.getMonth()]}, ${date.getFullYear()}`;
                             } catch (error) {
-                              console.error('Error parsing date:', error);
                               return "recently";
                             }
                           })()}
@@ -544,7 +515,6 @@ export default function TeamMemberDetailPage() {
                                 minute: '2-digit',
                               });
                             } catch (error) {
-                              console.error('Error parsing last active date:', error);
                               return "Not recorded";
                             }
                           })()}

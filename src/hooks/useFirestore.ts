@@ -62,8 +62,7 @@ export function useFirestoreCollection<T = DocumentData>(
       setData(docs as T[]);
     } catch (err) {
       setError(err as FirestoreError);
-      console.error(`Error fetching ${collectionPath}:`, err);
-    } finally {
+      } finally {
       setLoading(false);
     }
   }, [collectionPath, queryConstraints, transform]);
@@ -97,24 +96,20 @@ export function useFirestoreCollection<T = DocumentData>(
           setData(docs as T[]);
           setLoading(false);
           
-          console.log(`📊 Firestore realtime update: ${collectionPath} (${docs.length} documents)`);
-        },
+          },
         (err) => {
           setError(err);
           setLoading(false);
-          console.error(`❌ Firestore subscription error for ${collectionPath}:`, err);
-        }
+          }
       );
     } catch (err) {
       setError(err as FirestoreError);
       setLoading(false);
-      console.error(`❌ Error setting up Firestore subscription for ${collectionPath}:`, err);
-    }
+      }
 
     // Cleanup subscription on unmount or when dependencies change
     return () => {
       if (unsubscribe) {
-        console.log(`🔌 Unsubscribing from ${collectionPath}`);
         unsubscribe();
       }
     };
@@ -179,17 +174,14 @@ export function useFirestoreDocument<T = DocumentData>(
         }
         setLoading(false);
         
-        console.log(`📄 Firestore document update: ${documentPath}`);
-      },
+        },
       (err: FirestoreError) => {
         setError(err);
         setLoading(false);
-        console.error(`❌ Firestore document subscription error for ${documentPath}:`, err);
-      }
+        }
     );
 
     return () => {
-      console.log(`🔌 Unsubscribing from document ${documentPath}`);
       unsubscribe();
     };
   }, [documentPath, enabled, transform]);
@@ -223,6 +215,5 @@ export function getUserCompanyId(): string {
  */
 export function getCompanyCollectionPath(collectionName: string): string {
   const companyId = getUserCompanyId();
-  console.log(`🏢 Building Firestore path: companies/${companyId}/${collectionName}`);
   return `companies/${companyId}/${collectionName}`;
 }

@@ -96,8 +96,7 @@ export default function AccountPage() {
       toast.success("Profile updated successfully!");
     } catch (error) {
       toast.error("Failed to update profile");
-      console.error(error);
-    } finally {
+      } finally {
       setIsProfileLoading(false);
     }
   };
@@ -137,8 +136,7 @@ export default function AccountPage() {
       });
     } catch (error: unknown) {
       toast.error("Failed to change password");
-      console.error(error);
-    } finally {
+      } finally {
       setIsPasswordLoading(false);
     }
   };
@@ -180,7 +178,6 @@ export default function AccountPage() {
         }
       }
     } catch (error) {
-      console.error("Photo upload error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to save profile photo");
     } finally {
       setIsPhotoUploading(false);

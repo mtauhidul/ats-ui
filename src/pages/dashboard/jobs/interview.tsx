@@ -19,12 +19,6 @@ export default function InterviewPage() {
   const { client } = useClient(resolvedClientId);
   const clientName = client?.companyName || "Client";
 
-  console.log("🎯 Interview Page - Candidate ID:", candidateId);
-  console.log("🎯 Interview Page - Job ID:", jobId);
-  console.log("🎯 Interview Page - Candidate Data:", candidate);
-  console.log("🎯 Interview Page - Job Data:", job);
-  console.log("🎯 Interview Page - Loading:", { candidateLoading, jobLoading });
-
   const handleBack = () => {
     if (clientId) {
       navigate(`/dashboard/clients/${clientId}/jobs/${jobId}/candidates/${candidateId}`);

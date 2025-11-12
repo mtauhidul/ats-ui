@@ -50,7 +50,6 @@ const isCacheValid = (lastFetched: number | null): boolean => {
 
 // Async thunks
 export const fetchClients = createAsyncThunk("clients/fetchAll", async () => {
-  console.log('📡 Fetching fresh clients from API');
   const response = await authenticatedFetch(`${API_BASE_URL}/clients`);
   if (!response.ok) throw new Error("Failed to fetch clients");
   const result = await response.json();
@@ -66,12 +65,10 @@ export const fetchClientsIfNeeded = createAsyncThunk(
     
     // If cache is valid and we have data, skip fetch
     if (cacheValid && isCacheValid(lastFetched) && clients.length > 0) {
-      console.log('✅ Using cached clients (age: ' + Math.round((Date.now() - (lastFetched || 0)) / 1000) + 's)');
       return null;
     }
     
     // Cache is stale or invalid, fetch fresh data
-    console.log('🔄 Cache stale or invalid, fetching clients...');
     return dispatch(fetchClients()).then((result) => result.payload);
   }
 );
@@ -93,11 +90,6 @@ export const createClient = createAsyncThunk(
     const loadingToast = toast.loading("Creating client...");
     
     try {
-      console.log('=== REDUX CREATE CLIENT ===');
-      console.log('Client data being sent:', clientData);
-      console.log('Contacts:', clientData.contacts);
-      console.log('==========================');
-      
       const response = await authenticatedFetch(`${API_BASE_URL}/clients`, {
         method: "POST",
         body: JSON.stringify(clientData),
@@ -111,12 +103,6 @@ export const createClient = createAsyncThunk(
       }
       
       const result = await response.json();
-      console.log('=== CREATE CLIENT RESPONSE ===');
-      console.log('Response:', result);
-      console.log('Data:', result.data || result);
-      console.log('Contacts in response:', (result.data || result).contacts);
-      console.log('==============================');
-      
       toast.success("Client created successfully", { id: loadingToast });
       return result.data || result;
     } catch (error) {
@@ -219,8 +205,7 @@ const clientsSlice = createSlice({
     invalidateClientsCache: (state) => {
       state.cacheValid = false;
       state.lastFetched = null;
-      console.log('🔄 Clients cache invalidated');
-    },
+      },
   },
   extraReducers: (builder) => {
     builder

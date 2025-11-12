@@ -32,8 +32,7 @@ export function AddCommunicationNoteModal({ open, onClose, onSubmit, isLoading =
       onClose();
     } catch (error) {
       // Error is handled in parent
-      console.error("Failed to add communication note:", error);
-    }
+      }
   };
 
   return (

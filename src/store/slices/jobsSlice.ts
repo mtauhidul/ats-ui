@@ -67,17 +67,6 @@ const normalizeJob = (job: Job | Record<string, unknown>): Job => {
     },
   };
   
-  console.log("Normalizing job:", {
-    originalClientId: jobAny.clientId,
-    extractedClientId: clientId,
-    originalPipelineId: jobAny.pipelineId,
-    extractedPipelineId: pipelineId,
-    jobTitle: jobAny.title,
-    backendRequirements,
-    backendSkills,
-    transformedRequirements: requirementsObj,
-  });
-  
   return {
     ...job,
     clientId: clientId,
@@ -120,7 +109,6 @@ const isCacheValid = (lastFetched: number | null): boolean => {
 
 // Async thunks
 export const fetchJobs = createAsyncThunk("jobs/fetchAll", async () => {
-  console.log('📡 Fetching fresh jobs from API');
   const response = await authenticatedFetch(`${API_BASE_URL}/jobs`);
   if (!response.ok) throw new Error("Failed to fetch jobs");
   const result = await response.json();
@@ -138,12 +126,10 @@ export const fetchJobsIfNeeded = createAsyncThunk(
     
     // If cache is valid and we have data, skip fetch
     if (cacheValid && isCacheValid(lastFetched) && jobs.length > 0) {
-      console.log('✅ Using cached jobs (age: ' + Math.round((Date.now() - (lastFetched || 0)) / 1000) + 's)');
       return null;
     }
     
     // Cache is stale or invalid, fetch fresh data
-    console.log('🔄 Cache stale or invalid, fetching jobs...');
     return dispatch(fetchJobs()).then((result) => result.payload);
   }
 );
@@ -178,16 +164,12 @@ export const createJob = createAsyncThunk(
         workMode: undefined,
       };
 
-      console.log("Redux: Sending to API with clientId:", backendData.clientId);
-      console.log("Redux: Full payload:", JSON.stringify(backendData, null, 2));
-
       const response = await authenticatedFetch(`${API_BASE_URL}/jobs`, {
         method: "POST",
         body: JSON.stringify(backendData),
       });
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Failed to create job:", response.status, errorText);
+        await response.text(); // Consume the response body
         toast.error("Failed to create job", { id: toastId });
         throw new Error(`Failed to create job: ${response.status}`);
       }
@@ -269,11 +251,6 @@ export const updateJob = createAsyncThunk(
         .map(([key]) => key);
     }
 
-    console.log("Redux updateJob: Transforming data for API:", {
-      frontendData: data,
-      backendData,
-    });
-
     const toastId = toast.loading("Updating job...");
     
     try {
@@ -326,8 +303,7 @@ const jobsSlice = createSlice({
     invalidateJobsCache: (state) => {
       state.cacheValid = false;
       state.lastFetched = null;
-      console.log('🔄 Jobs cache invalidated');
-    },
+      },
   },
   extraReducers: (builder) => {
     builder

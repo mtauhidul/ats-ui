@@ -50,11 +50,9 @@ export const fetchPipelinesIfNeeded = createAsyncThunk(
     
     if (cacheValid && isCacheValid(lastFetched) && pipelines.length > 0) {
       const age = lastFetched ? Math.floor((Date.now() - lastFetched) / 1000) : 0;
-      console.log(`✅ Using cached pipelines (age: ${age}s)`);
       return null;
     }
     
-    console.log('🔄 Pipelines cache stale or empty, fetching fresh data...');
     const result = await dispatch(fetchPipelines());
     return result.payload;
   }
@@ -84,7 +82,6 @@ export const createPipeline = createAsyncThunk(
     });
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Failed to create pipeline:", response.status, errorText);
       throw new Error(`Failed to create pipeline: ${response.status}`);
     }
     const result = await response.json();

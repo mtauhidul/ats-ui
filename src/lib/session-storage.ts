@@ -11,8 +11,7 @@ export function saveJobSelectionToSession(jobId: string): void {
   try {
     sessionStorage.setItem(SESSION_KEYS.SELECTED_JOB_ID, jobId);
   } catch (error) {
-    console.error("Failed to save job selection to session:", error);
-  }
+    }
 }
 
 /**
@@ -22,7 +21,6 @@ export function getJobSelectionFromSession(): string | null {
   try {
     return sessionStorage.getItem(SESSION_KEYS.SELECTED_JOB_ID);
   } catch (error) {
-    console.error("Failed to get job selection from session:", error);
     return null;
   }
 }
@@ -34,6 +32,5 @@ export function clearJobSelectionFromSession(): void {
   try {
     sessionStorage.removeItem(SESSION_KEYS.SELECTED_JOB_ID);
   } catch (error) {
-    console.error("Failed to clear job selection from session:", error);
-  }
+    }
 }

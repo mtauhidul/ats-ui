@@ -98,17 +98,6 @@ export function JobCandidateDetails({
   const candidateData = candidate as any;
 
   // Debug: Log candidate data structure
-  console.log("=== CANDIDATE DETAILS DEBUG ===");
-  console.log("Full Candidate Object:", candidateData);
-  console.log("Skills:", candidateData.skills);
-  console.log("Experience:", candidateData.experience);
-  console.log("Education:", candidateData.education);
-  console.log("Summary:", candidateData.summary);
-  console.log("AI Score:", candidateData.aiScore);
-  console.log("Certifications:", candidateData.certifications);
-  console.log("Languages:", candidateData.languages);
-  console.log("===============================");
-
   // Check if this candidate is associated with this job
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isAssociatedWithJob = candidateData.jobIds?.some((jobId: any) => {
@@ -148,15 +137,6 @@ export function JobCandidateDetails({
       createdAt: interview.createdAt,
       updatedAt: interview.updatedAt,
     };
-  });
-
-  console.log('📋 Job Candidate Details - Interviews:', { 
-    candidateId, 
-    jobId, 
-    count: interviews.length,
-    interviews,
-    loading: isLoadingInterviews,
-    error: interviewsError
   });
 
   if (!isAssociatedWithJob) {

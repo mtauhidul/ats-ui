@@ -44,8 +44,7 @@ export default function JobDetailPage() {
       await updateJob(jobIdParam, data);
       // Firestore will automatically update the job data in realtime
     } catch (error) {
-      console.error("Failed to update job:", error);
-    }
+      }
   };
 
   // Get client name

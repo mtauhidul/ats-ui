@@ -1414,7 +1414,6 @@ function TableCellViewer({
         }
       }
     } catch (error) {
-      console.error(`Failed to ${approvalAction} application:`, error);
       toast.error(`Failed to ${approvalAction} application`);
     } finally {
       setShowJobSelectionModal(false);
@@ -1858,7 +1857,6 @@ function TableCellViewer({
                               className="w-full h-[500px]"
                               title="Resume Preview"
                               onError={(e) => {
-                                console.error("PDF preview failed:", e);
                                 (e.target as HTMLIFrameElement).style.display =
                                   "none";
                               }}

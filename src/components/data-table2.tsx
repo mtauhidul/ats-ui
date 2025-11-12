@@ -262,9 +262,6 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
             defaultValue={isAssigned ? row.original.reviewer : undefined}
             onValueChange={(value) => {
               // Update the reviewer in the data
-              console.log(
-                `Assigning reviewer ${value} to application ${row.original.id}`
-              );
               // In a real app, this would update the backend/state
             }}
           >
@@ -475,7 +472,6 @@ export function DataTable({
     const selectedData = table
       .getFilteredSelectedRowModel()
       .rows.map((r) => r.original);
-    console.log("Exporting data:", selectedData);
     // In real app, this would trigger file download
     toast.success(`Exporting ${selectedData.length} applications`);
   };
@@ -1758,7 +1754,6 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                               className="w-full h-[500px]"
                               title="Resume Preview"
                               onError={(e) => {
-                                console.error("PDF preview failed:", e);
                                 (e.target as HTMLIFrameElement).style.display =
                                   "none";
                               }}
@@ -1947,9 +1942,6 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                     const selectedJob = jobs.find(
                       (j) => j.id === selectedJobId
                     );
-                    console.log(
-                      `Approving application for ${item.header} and assigning to job: ${selectedJobId}`
-                    );
                     setShowJobAssignDialog(false);
                     // In real app, this would update the backend
                     toast.success(
@@ -1997,8 +1989,7 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    console.log(`Rejecting application for ${item.header}`);
-                  }}
+                    }}
                   className="flex-1 h-11"
                   disabled={item.status === "Rejected"}
                 >

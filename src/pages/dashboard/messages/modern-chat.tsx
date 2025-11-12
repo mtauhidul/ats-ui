@@ -67,17 +67,14 @@ export default function ModernChat() {
   useEffect(() => {
     if (!user?.id) return;
 
-    console.log("🔥 Subscribing to conversations for user:", user.id);
     const unsubscribe = chatService.subscribeToUserConversations(
       user.id,
       (convs) => {
-        console.log("📨 Received conversations:", convs.length);
         setConversations(convs);
       }
     );
 
     return () => {
-      console.log("🔥 Unsubscribing from conversations");
       unsubscribe();
     };
   }, [user?.id]);
@@ -89,35 +86,25 @@ export default function ModernChat() {
       return;
     }
 
-    console.log(
-      "🔥 [COMPONENT] Subscribing to messages for conversation:",
-      selectedConversation.id
-    );
     const unsubscribe = chatService.subscribeToConversation(
       selectedConversation.id,
       (msgs) => {
-        console.log("📨 [COMPONENT] Callback invoked! Received messages:", msgs.length);
-        console.log("📨 [COMPONENT] Messages data:", msgs.map(m => ({
-          id: m.id,
-          message: m.message.substring(0, 30),
-          sentAt: m.sentAt
-        })));
         // Replace all messages with fresh data from Firestore
         // This will automatically include newly sent messages
         setMessages(msgs);
-        console.log("✅ [COMPONENT] setMessages called");
-      }
+        }
     );
 
     // Mark conversation as read when opened
     if (user?.id) {
       chatService
         .markConversationAsRead(selectedConversation.id, user.id)
-        .catch(console.error);
+        .catch(() => {
+          // Silently handle errors
+        });
     }
 
     return () => {
-      console.log("🔥 Unsubscribing from messages");
       unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -147,9 +134,7 @@ export default function ModernChat() {
         message: messageText,
       });
 
-      console.log("✅ Message sent successfully, Firestore subscription will update UI");
-    } catch (error) {
-      console.error("❌ Error sending message:", error);
+      } catch {
       toast.error("Failed to send message");
       setMessageInput(messageText); // Restore input on error
     } finally {

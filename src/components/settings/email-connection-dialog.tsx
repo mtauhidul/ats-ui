@@ -110,8 +110,6 @@ function EmailConnectionDialog({
 
       if (!addAccountResponse.ok) {
         const errorData = await addAccountResponse.json();
-        console.error("API Error:", errorData);
-
         // Handle validation errors
         if (errorData.errors && Array.isArray(errorData.errors)) {
           const errorMessages = (
@@ -142,7 +140,6 @@ function EmailConnectionDialog({
         onConnectionSuccess();
       }
     } catch (error) {
-      console.error("Connection error:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to connect to email"
       );

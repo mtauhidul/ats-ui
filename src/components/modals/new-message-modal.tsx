@@ -46,14 +46,6 @@ export function NewMessageModal({ open, onOpenChange, onSuccess }: NewMessageMod
   const [messageText, setMessageText] = useState("");
   const [isSending, setIsSending] = useState(false);
 
-  console.log('📨 New Message Modal - Team Members:', {
-    teamMembers,
-    count: teamMembers?.length,
-    loading: usersLoading,
-    error: membersError,
-    currentUserId: user?.id
-  });
-
   // Filter out current user and filter by search
   const filteredUsers = teamMembers
     .filter((u) => u.id !== user?.id)
@@ -99,7 +91,6 @@ export function NewMessageModal({ open, onOpenChange, onSuccess }: NewMessageMod
       onOpenChange(false);
       onSuccess?.();
     } catch (err) {
-      console.error('Failed to send message:', err);
       toast.error("Failed to send message");
     } finally {
       setIsSending(false);

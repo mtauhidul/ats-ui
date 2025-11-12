@@ -69,11 +69,9 @@ export const fetchCategoriesIfNeeded = createAsyncThunk(
     
     if (cacheValid && isCacheValid(lastFetched) && categories.length > 0) {
       const age = lastFetched ? Math.floor((Date.now() - lastFetched) / 1000) : 0;
-      console.log(`✅ Using cached categories (age: ${age}s)`);
       return null;
     }
     
-    console.log('🔄 Categories cache stale or empty, fetching fresh data...');
     const result = await dispatch(fetchCategories());
     return result.payload;
   }

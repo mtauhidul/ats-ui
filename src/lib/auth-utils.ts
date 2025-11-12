@@ -62,7 +62,6 @@ export function isTokenExpired(token: string | null): boolean {
     // This gives us time to refresh before it actually expires
     return Date.now() >= expirationTime - 60000;
   } catch (error) {
-    console.error('Error checking token expiration:', error);
     return true;
   }
 }

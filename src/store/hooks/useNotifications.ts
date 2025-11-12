@@ -23,19 +23,14 @@ export const useNotifications = () => {
   // 🔥 Subscribe to Firestore notifications real-time for current user
   useEffect(() => {
     if (!user?.id) {
-      console.log("⏳ Waiting for user authentication before subscribing to notifications");
       return;
     }
 
-    console.log("🔥 Setting up Firestore notifications subscription for user:", user.id);
-    
     const unsubscribe = firestoreRealtimeService.subscribeToNotifications(user.id, (notificationsData) => {
-      console.log("🔥 Notifications real-time update:", notificationsData.length);
       dispatch(setNotificationsFromFirestore(notificationsData));
     });
 
     return () => {
-      console.log("🔥 Cleaning up notifications subscription");
       unsubscribe();
     };
   }, [dispatch, user?.id]);
@@ -50,9 +45,7 @@ export const useNotifications = () => {
       const notificationRef = doc(db, "notifications", id);
       await updateDoc(notificationRef, { read: true });
       
-      console.log("✅ Notification marked as read:", id);
-    } catch (error) {
-      console.error("❌ Error marking notification as read:", error);
+      } catch (error) {
       dispatch(setError("Failed to mark notification as read"));
     }
   }, [dispatch]);
@@ -73,9 +66,7 @@ export const useNotifications = () => {
       });
       
       await batch.commit();
-      console.log("✅ All notifications marked as read");
-    } catch (error) {
-      console.error("❌ Error marking all as read:", error);
+      } catch (error) {
       dispatch(setError("Failed to mark all notifications as read"));
     }
   }, [dispatch, notifications]);
@@ -84,7 +75,6 @@ export const useNotifications = () => {
   const deleteNotification = useCallback(async (id: string) => {
     // Check if user is admin
     if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
-      console.error("❌ Permission denied: Only admins can delete notifications");
       dispatch(setError("Permission denied: Only admins can delete notifications"));
       return;
     }
@@ -97,9 +87,7 @@ export const useNotifications = () => {
       const notificationRef = doc(db, "notifications", id);
       await deleteDoc(notificationRef);
       
-      console.log("✅ Notification deleted by admin:", id);
-    } catch (error) {
-      console.error("❌ Error deleting notification:", error);
+      } catch (error) {
       dispatch(setError("Failed to delete notification"));
     }
   }, [dispatch, user]);
@@ -107,7 +95,6 @@ export const useNotifications = () => {
   // Create notification in Firestore (for single user - current user)
   const createNotification = useCallback(async (notification: Omit<Notification, "id" | "userId">) => {
     if (!user?.id) {
-      console.error("❌ Cannot create notification: User not authenticated");
       return;
     }
 
@@ -124,10 +111,8 @@ export const useNotifications = () => {
         read: false,
       });
       
-      console.log("✅ Notification created for user:", user.id);
       dispatch(setLoading(false));
     } catch (error) {
-      console.error("❌ Error creating notification:", error);
       dispatch(setError("Failed to create notification"));
       dispatch(setLoading(false));
       throw error;
@@ -148,8 +133,6 @@ export const useNotifications = () => {
       // Get all users to send notification to
       const usersRef = collection(db, "users");
       const usersSnapshot = await getDocs(usersRef);
-      
-      console.log(`📢 Broadcasting to ${usersSnapshot.docs.length} users...`);
       
       // Create batch to add notification for all users
       const batch = writeBatch(db);
@@ -176,10 +159,8 @@ export const useNotifications = () => {
       });
       
       await batch.commit();
-      console.log(`✅ Important notice broadcast to ${usersSnapshot.docs.length} users`);
       dispatch(setLoading(false));
     } catch (error) {
-      console.error("❌ Error broadcasting important notice:", error);
       dispatch(setError("Failed to broadcast important notice"));
       dispatch(setLoading(false));
       throw error;

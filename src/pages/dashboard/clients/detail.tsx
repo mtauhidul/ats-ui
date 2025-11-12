@@ -91,26 +91,16 @@ export default function ClientDetailPage() {
       await createJob(data);
       // Firestore will automatically update the jobs list in realtime
     } catch (error) {
-      console.error("Failed to create job:", error);
-    }
+      }
   };
 
   const handleUpdate = async (clientId: string, updates: Partial<Client>) => {
     try {
-      console.log('=== HANDLE UPDATE ===');
-      console.log('Client ID:', clientId);
-      console.log('Updates to send:', updates);
-      console.log('Contacts in updates:', updates.contacts);
-      console.log('ActivityHistory in updates:', updates.activityHistory);
-      console.log('====================');
-      
       await updateClient(clientId, updates);
       
-      console.log('Update successful - Firestore will update in realtime');
       // No need to fetch - Firestore will automatically update the client data
     } catch (error) {
-      console.error("Failed to update client:", error);
-    }
+      }
   };
 
   const handleDelete = async (clientId: string) => {
@@ -119,8 +109,7 @@ export default function ClientDetailPage() {
       navigate("/dashboard/clients");
     } catch (error) {
       // Error is already handled in the Redux thunk with toast notification
-      console.error("Failed to delete client:", error);
-    }
+      }
   };
 
   const handleAddCommunicationNote = async (clientId: string, note: { type: string; subject: string; content: string }) => {
@@ -128,8 +117,7 @@ export default function ClientDetailPage() {
       await addCommunicationNote(clientId, note);
       // Firestore will automatically update the client data in realtime
     } catch (error) {
-      console.error("Failed to add communication note:", error);
-    }
+      }
   };
 
   const handleJobClick = (jobId: string) => {

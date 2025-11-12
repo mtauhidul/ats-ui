@@ -154,12 +154,6 @@ export function EditJobModal({
       return;
     }
 
-    console.log("🔴 SUBMIT CLICKED - Current formData:", {
-      experience: formData.requirements?.experience,
-      skills: formData.requirements?.skills?.required,
-      responsibilities: formData.responsibilities,
-    });
-
     const newErrors: Record<string, string> = {};
 
     // Validation
@@ -226,7 +220,6 @@ export function EditJobModal({
       },
     };
 
-    console.log("🟢 SENDING TO REDUX:", cleanedData);
     onSubmit(job.id, cleanedData as UpdateJobRequest);
     handleClose();
   };

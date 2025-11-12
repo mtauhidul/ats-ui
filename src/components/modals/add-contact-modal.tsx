@@ -35,8 +35,7 @@ export function AddContactModal({ open, onClose, onSubmit, isLoading = false }: 
       onClose();
     } catch (error) {
       // Error is handled in parent
-      console.error("Failed to add contact:", error);
-    }
+      }
   };
 
   return (

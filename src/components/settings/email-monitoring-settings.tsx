@@ -80,15 +80,6 @@ export function EmailMonitoringSettings() {
   
   const currentAutomationStatus = automationStatus || defaultAutomationStatus;
 
-  console.log('[Email Monitoring] Firestore data:', {
-    accountsCount: emailAccounts.length,
-    automationStatus: currentAutomationStatus,
-    statusExists,
-    loading,
-    accountsError,
-    statusError
-  });
-
   // Status indicator component
   const StatusIndicator = ({
     status,
@@ -170,7 +161,6 @@ export function EmailMonitoringSettings() {
         throw new Error("Failed to start automation");
       }
     } catch (err) {
-      console.error("Error starting automation:", err);
       toast.error("Failed to start email monitoring");
     } finally {
       setActionLoading(null);
@@ -193,7 +183,6 @@ export function EmailMonitoringSettings() {
         throw new Error("Failed to stop automation");
       }
     } catch (err) {
-      console.error("Error stopping automation:", err);
       toast.error("Failed to stop email monitoring");
     } finally {
       setActionLoading(null);
@@ -227,7 +216,6 @@ export function EmailMonitoringSettings() {
         throw new Error("Failed to update account");
       }
     } catch (err) {
-      console.error("Error updating account:", err);
       toast.error("Failed to update account automation");
     } finally {
       setActionLoading(null);
@@ -250,7 +238,6 @@ export function EmailMonitoringSettings() {
         throw new Error("Failed to trigger email check");
       }
     } catch (err) {
-      console.error("Error triggering email check:", err);
       toast.error("Failed to trigger email check");
     } finally {
       setActionLoading(null);
@@ -275,7 +262,6 @@ export function EmailMonitoringSettings() {
         throw new Error("Failed to delete account");
       }
     } catch (err) {
-      console.error("Error deleting account:", err);
       toast.error("Failed to delete account");
     } finally {
       setActionLoading(null);
@@ -575,7 +561,6 @@ export function EmailMonitoringSettings() {
                           throw new Error("Failed to update interval");
                         }
                       } catch (err) {
-                        console.error("Error updating interval:", err);
                         toast.error("Failed to update check interval");
                       }
                     }}
@@ -620,7 +605,6 @@ export function EmailMonitoringSettings() {
                             throw new Error("Failed to update interval");
                           }
                         } catch (err) {
-                          console.error("Error updating interval:", err);
                           toast.error("Failed to update check interval");
                         }
                       } else {
@@ -648,7 +632,6 @@ export function EmailMonitoringSettings() {
                           throw new Error("Failed to update interval");
                         }
                       } catch (err) {
-                        console.error("Error updating interval:", err);
                         toast.error("Failed to update check interval");
                       }
                     } else {

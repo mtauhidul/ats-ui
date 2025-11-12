@@ -40,8 +40,7 @@ export default function CandidatesPage() {
   // // Refetch candidates when window regains focus (for real-time sync)
   // useEffect(() => {
   //   const handleFocus = () => {
-  //     console.log('Window focused, refetching candidates for real-time sync...');
-  //     fetchCandidates();
+  //     //     fetchCandidates();
   //   };
   //
   //   window.addEventListener('focus', handleFocus);
@@ -52,8 +51,7 @@ export default function CandidatesPage() {
   // useEffect(() => {
   //   const interval = setInterval(() => {
   //     if (document.visibilityState === 'visible') {
-  //       console.log('Polling for candidate updates...');
-  //       fetchCandidates();
+  //       //       fetchCandidates();
   //     }
   //   }, 30000); // 30 seconds
 
@@ -66,21 +64,14 @@ export default function CandidatesPage() {
       // Firestore will automatically update the list after deletion
       invalidateCache();
     } catch (error) {
-      console.error("Failed to delete candidate:", error);
-    }
+      }
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const transformedData = candidates.map((candidate: any, index) => {
     // Debug: Log candidate resume data
     if (index === 0) {
-      console.log('Candidate resume data:', {
-        resume: candidate.resume,
-        resumeUrl: candidate.resumeUrl,
-        documents: candidate.documents,
-        attachments: candidate.attachments,
-      });
-    }
+      }
 
     // Randomly assign 0-3 team members
     const teamMemberCount = Math.floor(Math.random() * 4);

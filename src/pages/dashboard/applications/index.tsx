@@ -13,20 +13,10 @@ export default function ApplicationsPage() {
   const { teamMembers, isLoading: teamLoading } = useTeam();
 
   // Log applications data
-  console.log('📊 Applications page - Firestore data:', {
-    applications: applications.length,
-    jobs: jobs.length,
-    clients: clients.length,
-    teamMembers: teamMembers.length,
-  });
-  
   // Debug date values from first application
   if (applications.length > 0) {
     const firstApp = applications[0];
-    console.log('First app submittedAt:', firstApp.submittedAt, 'Type:', typeof firstApp.submittedAt);
-    console.log('First app createdAt:', firstApp.createdAt, 'Type:', typeof firstApp.createdAt);
-    console.log('First app reviewedBy:', firstApp.reviewedBy, 'Type:', typeof firstApp.reviewedBy);
-  }
+    }
 
   const transformedData = applications.map((app: Application) => {
     const job = jobs.find((j: Job) => j.id === app.targetJobId);
@@ -51,10 +41,7 @@ export default function ApplicationsPage() {
     // Calculate years of experience from experience array
     const calculateYearsOfExperience = () => {
       const experience = Array.isArray(backendApp.parsedData?.experience) ? backendApp.parsedData.experience : [];
-      console.log('Calculating experience for:', app.id, 'Experience array:', experience);
-      
       if (experience.length === 0) {
-        console.log('No experience data found for:', app.id);
         return undefined;
       }
       
@@ -125,7 +112,6 @@ export default function ApplicationsPage() {
       
       // Convert months to years (round to nearest integer)
       const years = Math.round(totalMonths / 12);
-      console.log('Calculated years of experience:', years, 'Total months:', totalMonths, 'for app:', app.id);
       return years > 0 ? years : undefined;
     };
 
@@ -273,7 +259,6 @@ export default function ApplicationsPage() {
       const calculated = calculateYearsOfExperience();
       const fallback = app.yearsOfExperience;
       const final = calculated || fallback;
-      console.log('Years of experience - Calculated:', calculated, 'Fallback:', fallback, 'Final:', final, 'for app:', app.id);
       return final;
     })(),
     skills: backendApp.parsedData?.skills || app.skills || [],

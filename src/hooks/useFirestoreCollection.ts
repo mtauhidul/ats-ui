@@ -116,7 +116,6 @@ export function useFirestoreCollection<T extends DocumentData>(
           setLoading(false);
         },
         (err) => {
-          console.error("Firestore subscription error:", err);
           setError(err as Error);
           setLoading(false);
         }
@@ -125,7 +124,6 @@ export function useFirestoreCollection<T extends DocumentData>(
       // Cleanup subscription on unmount
       return () => unsubscribe();
     } catch (err) {
-      console.error("Firestore query setup error:", err);
       setError(err as Error);
       setLoading(false);
     }
@@ -192,7 +190,6 @@ export function useFirestoreDocument<T extends DocumentData>(
           setLoading(false);
         },
         (err) => {
-          console.error("Firestore document subscription error:", err);
           setError(err as Error);
           setLoading(false);
         }
@@ -200,7 +197,6 @@ export function useFirestoreDocument<T extends DocumentData>(
 
       return () => unsubscribe();
     } catch (err) {
-      console.error("Firestore document query error:", err);
       setError(err as Error);
       setLoading(false);
     }
@@ -274,8 +270,7 @@ export function useFirestoreChanges<T extends DocumentData>(
 
       return () => unsubscribe();
     } catch (err) {
-      console.error("Firestore changes subscription error:", err);
-    }
+      }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collectionPath, filtersKey2, onAdded, onModified, onRemoved]);
 }

@@ -132,9 +132,7 @@ function AssignedSelector({
 
   // Debug: Log team members
   React.useEffect(() => {
-    console.log("AssignedSelector - Team members:", teamMembers);
-    console.log("AssignedSelector - Team members count:", teamMembers.length);
-  }, [teamMembers]);
+    }, [teamMembers]);
 
   // Update selected member when initialAssignee changes (e.g., after data refresh)
   React.useEffect(() => {
@@ -152,7 +150,6 @@ function AssignedSelector({
         onUpdate?.(); // Trigger parent refresh
         toast.success("Team member unassigned");
       } catch (error) {
-        console.error("Failed to unassign candidate:", error);
         toast.error("Failed to unassign team member");
         setSelectedMember(previousAssignee);
       }
@@ -167,21 +164,12 @@ function AssignedSelector({
         try {
           // Use userId (the actual user's ID), not id (the team member document ID)
           const userIdToAssign = member.userId || member.id;
-          console.log(
-            "🔵 Assigning candidate:",
-            candidateId,
-            "to user:",
-            userIdToAssign
-          );
-          console.log("🔵 Member object:", member);
           await updateCandidate(candidateId.toString(), {
             assignedTo: userIdToAssign,
           });
-          console.log("✅ Assignment successful");
           onUpdate?.(); // Trigger parent refresh
           toast.success(`Assigned ${memberName} to candidate`);
         } catch (error) {
-          console.error("Failed to assign candidate:", error);
           toast.error("Failed to assign team member");
           setSelectedMember(initialAssignee || null);
         }
@@ -559,9 +547,6 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
             onUpdate={() => {
               // Trigger a refetch of candidates when assignment changes
               // This will be handled by the parent component
-              console.log(
-                "📢 CandidatesDataTable: Dispatching refetchCandidates event"
-              );
               window.dispatchEvent(new CustomEvent("refetchCandidates"));
             }}
           />
@@ -757,7 +742,6 @@ export function CandidatesDataTable({
       toast.success(`${selectedRows.length} candidates marked as hired`);
       table.resetRowSelection();
     } catch (error) {
-      console.error("Error bulk hiring candidates:", error);
       toast.error("Failed to update some candidates");
       setData(initialData);
     }
@@ -786,7 +770,6 @@ export function CandidatesDataTable({
       toast.success(`${selectedRows.length} candidates rejected`);
       table.resetRowSelection();
     } catch (error) {
-      console.error("Error bulk rejecting candidates:", error);
       toast.error("Failed to update some candidates");
       setData(initialData);
     }
@@ -843,7 +826,6 @@ export function CandidatesDataTable({
       setBulkAssignTeamDialogOpen(false);
       setBulkAssignSelectedMember("");
     } catch (error) {
-      console.error("Error bulk assigning team member:", error);
       toast.error("Failed to assign some candidates");
       setData(initialData);
     }
@@ -853,7 +835,6 @@ export function CandidatesDataTable({
     const selectedData = table
       .getFilteredSelectedRowModel()
       .rows.map((r) => r.original);
-    console.log("Exporting data:", selectedData);
     toast.success(`Exporting ${selectedData.length} candidates`);
   };
 
@@ -896,7 +877,6 @@ export function CandidatesDataTable({
       await updateCandidate(candidateId, { status: "hired" });
       toast.success("Candidate marked as hired");
     } catch (error) {
-      console.error("Error marking candidate as hired:", error);
       toast.error("Failed to update candidate status");
       // Revert optimistic update on error
       setData(initialData);
@@ -944,7 +924,6 @@ export function CandidatesDataTable({
 
       toast.success("Candidate marked as rejected");
     } catch (error) {
-      console.error("Error rejecting candidate:", error);
       toast.error("Failed to reject candidate");
       // Revert optimistic update on error
       setData(initialData);
@@ -991,7 +970,6 @@ export function CandidatesDataTable({
       });
       toast.success(`Assigned to ${teamMember}`);
     } catch (error) {
-      console.error("Error assigning team member:", error);
       toast.error("Failed to assign team member");
       // Revert optimistic update on error
       setData(initialData);
@@ -1123,7 +1101,6 @@ export function CandidatesDataTable({
       setCandidateToReassign(null);
       setSelectedJobForReassign("");
     } catch (error) {
-      console.error("Error reassigning candidate:", error);
       toast.error("Failed to reassign candidate");
     }
   };
@@ -1178,9 +1155,6 @@ export function CandidatesDataTable({
                   candidateId={row.original.id}
                   initialAssignee={assignedName}
                   onUpdate={() => {
-                    console.log(
-                      "📢 CandidatesDataTable: Dispatching refetchCandidates event"
-                    );
                     window.dispatchEvent(new CustomEvent("refetchCandidates"));
                   }}
                 />

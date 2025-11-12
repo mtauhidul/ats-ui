@@ -74,8 +74,7 @@ export function RejectApplicationModal({
       setSendEmail(true);
       onClose();
     } catch (error) {
-      console.error("Error rejecting application:", error);
-    } finally {
+      } finally {
       setIsSubmitting(false);
     }
   };

@@ -21,14 +21,10 @@ export const useMessages = () => {
   // Subscribe to Firestore real-time updates
   useEffect(() => {
     if (!user?.id) {
-      console.log('⏳ Waiting for user to be authenticated before subscribing to messages');
       return;
     }
 
-    console.log('🔥 Setting up Firestore real-time subscription for messages with userId:', user.id);
-    
     const unsubscribe = firestoreRealtimeService.subscribeToMessages(user.id, (messagesData) => {
-      console.log('📨 Received messages from Firestore:', messagesData.length);
       dispatch(setMessagesFromFirestore({ 
         messages: messagesData, 
         currentUserId: user.id 
@@ -36,7 +32,6 @@ export const useMessages = () => {
     });
 
     return () => {
-      console.log('🔥 Cleaning up messages Firestore subscription');
       unsubscribe();
     };
   }, [dispatch, user?.id]);

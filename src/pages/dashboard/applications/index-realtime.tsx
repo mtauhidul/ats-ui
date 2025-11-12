@@ -19,8 +19,6 @@ export default function ApplicationsPageRealtime() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("🔥 Setting up real-time subscriptions for applications page");
-
     // Subscribe to applications
     const unsubApplications = onSnapshot(
       query(collection(db, "applications"), orderBy("createdAt", "desc")),
@@ -29,7 +27,6 @@ export default function ApplicationsPageRealtime() {
           id: doc.id,
           ...doc.data(),
         })) as Application[];
-        console.log("🔥 Applications updated:", data.length);
         setApplications(data);
         setLoading(false);
       }
@@ -43,14 +40,12 @@ export default function ApplicationsPageRealtime() {
           id: doc.id,
           ...doc.data(),
         })) as Job[];
-        console.log("🔥 Jobs updated:", data.length);
         setJobs(data);
       }
     );
 
     // Cleanup all subscriptions on unmount
     return () => {
-      console.log("🧹 Cleaning up applications page subscriptions");
       unsubApplications();
       unsubJobs();
     };

@@ -67,11 +67,6 @@ export function AddClientModal({ open, onClose, onSubmit, isLoading = false }: A
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('=== ADD CLIENT FORM SUBMIT ===');
-    console.log('Form data:', formData);
-    console.log('Contacts:', formData.contacts);
-    console.log('First contact:', formData.contacts[0]);
-    console.log('==============================');
     await onSubmit(formData);
     // Don't close immediately - let the parent handle closing after success
   };

@@ -82,10 +82,6 @@ export default function JobPipelinePage() {
     return matches;
   });
 
-  console.log(
-    `Pipeline page: ${candidates.length} candidates for job ${jobId}`
-  );
-
   // State
   const [isBuilding, setIsBuilding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -94,19 +90,8 @@ export default function JobPipelinePage() {
   useEffect(() => {
     if (!job || !jobId) return;
 
-    console.log("🔥 Pipeline sync:", {
-      jobId,
-      firestorePipeline: firestorePipeline?.id,
-      currentPipeline: currentPipeline?.id,
-      pipelineLoading,
-    });
-
     // If we have a pipeline from Firestore, use it
     if (firestorePipeline && firestorePipeline.id !== currentPipeline?.id) {
-      console.log(
-        "🔥 Setting currentPipeline from Firestore:",
-        firestorePipeline
-      );
       setCurrentPipeline(firestorePipeline);
     }
     // If no pipeline exists in Firestore yet, user needs to create one (show empty state)
@@ -177,24 +162,18 @@ export default function JobPipelinePage() {
           })),
         });
 
-        console.log("✅ Pipeline created:", result);
-
         // Update job with the new pipeline ID
         if (result.payload && "id" in result.payload) {
           const pipelineId = result.payload.id;
-          console.log("✅ Updating job with pipelineId:", pipelineId);
-
           await updateJob(job.id, { pipelineId });
 
           // Firestore realtime subscription will automatically update firestorePipeline
           // which will then update currentPipeline via useEffect
           toast.success("Pipeline created successfully!");
         } else {
-          console.error("Failed to get pipeline ID from result:", result);
           toast.error("Failed to get pipeline ID");
         }
       } catch (error) {
-        console.error("Failed to create pipeline:", error);
         toast.error("Failed to create pipeline");
       }
     }
@@ -246,7 +225,6 @@ export default function JobPipelinePage() {
       setIsBuilding(false);
       setIsEditing(false);
     } catch (error) {
-      console.error("Failed to save pipeline:", error);
       toast.error("Failed to save pipeline");
     }
   };
@@ -260,8 +238,6 @@ export default function JobPipelinePage() {
     candidateId: string,
     newStageId: string
   ) => {
-    console.log("Status change:", { candidateId, newStageId });
-
     // Check if candidate is rejected
     const candidate = candidates.find((c) => c.id === candidateId);
     if (candidate && candidate.status?.toLowerCase() === "rejected") {
@@ -295,7 +271,6 @@ export default function JobPipelinePage() {
       // Firestore will automatically update candidates in realtime
       toast.success("Candidate moved to new stage!");
     } catch (error) {
-      console.error("Failed to update candidate stage:", error);
       toast.error("Failed to move candidate");
 
       // Firestore will automatically sync the correct state
@@ -320,12 +295,9 @@ export default function JobPipelinePage() {
         })),
       });
     } catch (error) {
-      console.error("Failed to update stage:", error);
       toast.error("Failed to update stage");
     }
   };
-
-  console.log("Sidebar width:", sidebarWidth, "| State:", sidebarState);
 
   return (
     <div className="flex flex-col h-full w-full">

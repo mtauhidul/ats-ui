@@ -62,7 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Update user state when Firestore data changes (real-time sync)
   useEffect(() => {
     if (firestoreUser && userId) {
-      console.log('🔥 Auth: User data updated from Firestore', firestoreUser);
       setUser(firestoreUser);
     }
   }, [firestoreUser, userId]);
@@ -74,8 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await apiLogout(accessToken);
       }
     } catch (error) {
-      console.error('Logout API call failed:', error);
-    } finally {
+      } finally {
       // Clear all auth data regardless of API result
       authUtils.clearTokens();
       setUser(null);
@@ -111,7 +109,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response.data.user);
       setUserId(response.data.user.id);
     } catch (error) {
-      console.error('Token refresh failed:', error);
       await handleLogout();
     }
   }, [handleLogout]);
@@ -137,14 +134,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setAccessToken(storedToken);
             // Set userId to enable Firestore subscription
             setUserId(user.id);
-            console.log('🔥 Auth: Initialized with user ID:', user.id);
-          } else {
-            console.error('Invalid user data received:', userData);
+            } else {
             // Invalid response, clear auth
             authUtils.clearTokens();
           }
         } catch (error) {
-          console.error('Token validation failed:', error);
           // Clear invalid tokens
           authUtils.clearTokens();
         }
@@ -165,7 +159,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Check if token is expired or will expire soon
       if (authUtils.isTokenExpired(token)) {
-        console.log('Access token expired or expiring soon, refreshing...');
         await handleTokenRefresh();
       }
     };
@@ -196,9 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(userData);
       setUserId(userData.id);
-      console.log('🔥 Auth: Logged in with user ID:', userData.id);
-    } catch (error) {
-      console.error('Login failed:', error);
+      } catch (error) {
       throw error;
     }
   };

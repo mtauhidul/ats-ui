@@ -85,8 +85,7 @@ export function ApproveApplicationModal({
       setNotes("");
       onClose();
     } catch (error) {
-      console.error("Error approving application:", error);
-    } finally {
+      } finally {
       setIsSubmitting(false);
     }
   };

@@ -65,15 +65,12 @@ const isCacheValid = (lastFetched: number | null): boolean => {
 export const fetchCandidates = createAsyncThunk(
   "candidates/fetchAll",
   async () => {
-    console.log('📡 Fetching fresh candidates from API');
     const response = await authenticatedFetch(`${API_BASE_URL}/candidates`);
     if (!response.ok) throw new Error("Failed to fetch candidates");
     const result = await response.json();
     // Extract data from wrapped response and normalize
     const candidates = result.data?.candidates || result.data || result;
-    console.log('📥 Fetched candidates, sample assignedTo:', candidates.slice(0, 3).map((c: Candidate) => ({ id: c.id || (c as unknown as { _id: string })._id, assignedTo: c.assignedTo })));
     const normalized = normalizeCandidates(candidates);
-    console.log('📥 Normalized candidates, sample assignedTo:', normalized.slice(0, 3).map((c: Candidate) => ({ id: c.id, assignedTo: c.assignedTo })));
     return normalized;
   }
 );
@@ -87,12 +84,10 @@ export const fetchCandidatesIfNeeded = createAsyncThunk(
     
     // If cache is valid and we have data, skip fetch
     if (cacheValid && isCacheValid(lastFetched) && candidates.length > 0) {
-      console.log('✅ Using cached candidates (age: ' + Math.round((Date.now() - (lastFetched || 0)) / 1000) + 's)');
       return null;
     }
     
     // Cache is stale or invalid, fetch fresh data
-    console.log('🔄 Cache stale or invalid, fetching candidates...');
     return dispatch(fetchCandidates()).then((result) => result.payload);
   }
 );
@@ -158,8 +153,7 @@ const candidatesSlice = createSlice({
     invalidateCandidatesCache: (state) => {
       state.cacheValid = false;
       state.lastFetched = null;
-      console.log('🔄 Candidates cache invalidated');
-    },
+      },
     // Optimistic update for candidate stage change
     updateCandidateStageOptimistic: (state, action: PayloadAction<{ candidateId: string; newStageId: string; newStageData?: { id: string; name: string; color: string; order: number } }>) => {
       const { candidateId, newStageId, newStageData } = action.payload;

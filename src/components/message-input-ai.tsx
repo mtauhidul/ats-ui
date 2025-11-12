@@ -69,7 +69,6 @@ export default function MessageInputAi({
             // Handle file upload
             const files = e.target.files;
             if (files) {
-              console.log("Files selected:", files);
               // TODO: Implement file attachment logic
             }
           }}

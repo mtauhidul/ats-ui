@@ -34,14 +34,6 @@ function transformInterviewDocument(doc: DocumentData): Interview {
     return undefined;
   };
 
-  console.log('🎙️ Transforming interview doc:', { 
-    id: doc.id, 
-    scheduledAt: doc.scheduledAt,
-    interviewDate: doc.interviewDate,
-    candidateId: doc.candidateId,
-    jobId: doc.jobId 
-  });
-
   return {
     ...doc,
     id: doc.id,

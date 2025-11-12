@@ -32,7 +32,6 @@ export async function getClerkToken(): Promise<string | null> {
     const token = await session.getToken();
     return token;
   } catch (error) {
-    console.error('Failed to get Clerk authentication token:', error);
     return null;
   }
 }

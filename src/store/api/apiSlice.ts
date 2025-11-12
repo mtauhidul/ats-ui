@@ -29,8 +29,6 @@ const baseQueryWithReauth: BaseQueryFn<
   
   // Handle 401 Unauthorized - token expired, try to refresh
   if (result.error && result.error.status === 401) {
-    console.log("Access token expired, attempting to refresh...");
-    
     const refreshToken = getRefreshToken();
     
     if (refreshToken) {
@@ -53,22 +51,17 @@ const baseQueryWithReauth: BaseQueryFn<
             setRefreshToken(newRefreshToken);
           }
 
-          console.log("Token refreshed successfully, retrying request...");
-          
           // Retry the original request with new token
           result = await baseQuery(args, api, extraOptions);
         } else {
-          console.warn("Token refresh failed, logging out...");
           clearTokens();
           window.location.href = '/login';
         }
       } catch (error) {
-        console.error("Error during token refresh:", error);
         clearTokens();
         window.location.href = '/login';
       }
     } else {
-      console.warn("No refresh token available, redirecting to login");
       clearTokens();
       window.location.href = '/login';
     }

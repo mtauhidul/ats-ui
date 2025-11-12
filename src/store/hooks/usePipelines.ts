@@ -28,13 +28,6 @@ export const usePipelines = () => {
     (state) => state.pipelines as PipelinesState
   );
 
-  console.log('🔥 usePipelines hook:', {
-    firestorePipelines: firestorePipelines.length,
-    currentPipeline: currentPipeline?.id,
-    firestoreLoading,
-    reduxLoading,
-  });
-
   // Use Firestore data as the source of truth, fallback to Redux for backward compatibility
   const pipelines = firestorePipelines.length > 0 ? firestorePipelines : [];
   const isLoading = firestoreLoading || reduxLoading;

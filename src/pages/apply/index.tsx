@@ -386,8 +386,7 @@ export default function PublicApplyPage() {
           finalVideoUrl = videoResult.data.url;
         } else {
           // Video upload failed but continue with application (it's optional)
-          console.error("Video upload failed, continuing without video");
-        }
+          }
       }
 
       // Step 3: Create Application using PUBLIC endpoint

@@ -47,12 +47,6 @@ export default function ClientsPage() {
 
   // Calculate client statistics from jobs and candidates data in real-time
   const clientsWithStats = useMemo(() => {
-    console.log('📊 Recalculating client stats:', { 
-      clientsCount: clients.length, 
-      jobsCount: jobs.length,
-      candidatesCount: candidates.length 
-    });
-    
     return clients.map(client => {
       // Calculate job statistics from real-time jobs data
       const clientJobs = jobs.filter(job => job.clientId === client.id);
@@ -88,15 +82,6 @@ export default function ClientsPage() {
       const successRate = totalCandidates > 0 
         ? Math.round((hiredCandidates / totalCandidates) * 100) 
         : 0;
-      
-      console.log(`Client ${client.companyName}:`, {
-        totalJobs,
-        activeJobs,
-        totalCandidates,
-        activeCandidates,
-        hiredCandidates,
-        successRate
-      });
       
       return {
         ...client,
@@ -156,8 +141,7 @@ export default function ClientsPage() {
       setClientToDelete(null);
     } catch (error) {
       // Error is already handled in the Redux thunk with toast notification
-      console.error("Failed to delete client:", error);
-    }
+      }
   };
 
   return (

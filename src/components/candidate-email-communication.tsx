@@ -213,7 +213,6 @@ export function CandidateEmailCommunication({
       setIsComposing(false);
       toast.success("Email sent successfully");
     } catch (error) {
-      console.error("Error sending email:", error);
       toast.error("Failed to send email");
     } finally {
       setIsSending(false);
@@ -269,7 +268,6 @@ export function CandidateEmailCommunication({
 
       toast.success("Email deleted successfully");
     } catch (error) {
-      console.error("Error deleting email:", error);
       toast.error("Failed to delete email");
     }
   };

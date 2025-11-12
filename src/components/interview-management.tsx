@@ -172,10 +172,6 @@ export function InterviewManagement({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   })) || []) as any[];
 
-  console.log("🎙️ Interviews from Firestore:", interviews);
-  console.log("🎙️ Loading:", isLoading);
-  console.log("🎙️ Error:", interviewsError);
-
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(
@@ -269,7 +265,6 @@ export function InterviewManagement({
       resetForm();
       // Firestore will automatically update the interviews list
     } catch (error: unknown) {
-      console.error("Failed to schedule interview:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to schedule interview"
       );
@@ -319,7 +314,6 @@ export function InterviewManagement({
       setIsInstantZoomDialogOpen(false);
       // Firestore will automatically update the interviews list
     } catch (error: unknown) {
-      console.error("Failed to create instant meeting:", error);
       toast.error(
         error instanceof Error
           ? error.message
@@ -358,7 +352,6 @@ export function InterviewManagement({
 
       // Firestore will automatically update the interviews list
     } catch (error: unknown) {
-      console.error("Failed to create Zoom meeting:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to create Zoom meeting"
       );
@@ -392,7 +385,6 @@ export function InterviewManagement({
       setInterviewToCancel(null);
       // Firestore will automatically update the interviews list
     } catch (error) {
-      console.error("Failed to delete interview:", error);
       toast.error("Failed to delete interview");
     }
   };
@@ -449,7 +441,6 @@ export function InterviewManagement({
       setReviewingInterview(null);
       // Firestore will automatically update the interviews list
     } catch (error: unknown) {
-      console.error("Failed to submit review:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to submit review"
       );

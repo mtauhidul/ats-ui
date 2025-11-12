@@ -23,13 +23,6 @@ export function usePipelinesFirestore(options: UsePipelinesFirestoreOptions = {}
     ? data.filter(p => p.jobId === jobId)
     : data;
 
-  console.log('🔥 usePipelinesFirestore:', {
-    jobId,
-    totalPipelines: data.length,
-    filteredPipelines: filteredData.length,
-    pipelines: filteredData,
-  });
-
   return {
     pipelines: filteredData,
     pipelinesCount: filteredData.length,
@@ -47,12 +40,6 @@ export function usePipelineByJobId(jobId: string | undefined) {
   const { pipelines, loading, error } = usePipelinesFirestore({
     enabled: !!jobId,
     jobId,
-  });
-
-  console.log('🔥 usePipelineByJobId:', {
-    jobId,
-    pipelinesFound: pipelines.length,
-    pipeline: pipelines[0],
   });
 
   return {
@@ -73,12 +60,6 @@ export function usePipelineById(pipelineId: string | undefined) {
 
   // Filter by ID on client side
   const pipeline = data.find(p => p.id === pipelineId) || null;
-
-  console.log('🔥 usePipelineById:', {
-    pipelineId,
-    totalPipelines: data.length,
-    pipeline,
-  });
 
   return {
     pipeline,

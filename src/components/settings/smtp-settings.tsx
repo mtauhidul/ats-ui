@@ -71,7 +71,6 @@ export function SmtpSettings() {
         }
       }
     } catch (error) {
-      console.error("Error fetching IMAP settings:", error);
       toast.error("Failed to load IMAP settings");
     } finally {
       setLoading(false);
@@ -123,7 +122,6 @@ export function SmtpSettings() {
         toast.error(data.message || "Failed to save IMAP settings");
       }
     } catch (error) {
-      console.error("Error saving IMAP settings:", error);
       toast.error("Failed to save IMAP settings");
     } finally {
       setSaving(false);
@@ -164,7 +162,6 @@ export function SmtpSettings() {
         toast.error("Connection test failed");
       }
     } catch (error) {
-      console.error("Error testing connection:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       setTestResult({ success: false, message: errorMessage });
@@ -195,7 +192,6 @@ export function SmtpSettings() {
         toast.error(data.message || "Failed to sync emails");
       }
     } catch (error) {
-      console.error("Error syncing emails:", error);
       toast.error("Failed to sync emails");
     } finally {
       setSyncing(false);

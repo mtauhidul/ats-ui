@@ -56,29 +56,16 @@ export function JobSelectionModal({
   useEffect(() => {
     if (open) {
       setSelectedJobId(currentJobId || "");
-      console.log("Modal opened with jobs:", JSON.stringify(jobs, null, 2));
-      console.log(
-        "Job IDs:",
-        jobs.map((j) => ({ _id: j._id, id: j.id, title: j.title }))
-      );
-      console.log("Current job ID:", currentJobId);
-    }
+      }
   }, [open, currentJobId, jobs]);
 
   const selectedJob = jobs.find((job) => getJobId(job) === selectedJobId);
-
-  console.log("Selected job ID:", selectedJobId);
-  console.log("Found selected job:", selectedJob);
-  console.log("Selected job clientId:", selectedJob?.clientId);
 
   const clientId = selectedJob?.clientId
     ? typeof selectedJob.clientId === "string"
       ? selectedJob.clientId
       : selectedJob.clientId._id || selectedJob.clientId.id || ""
     : "";
-
-  console.log("Extracted client ID:", clientId);
-  console.log("Button disabled:", !selectedJobId || !clientId);
 
   const handleConfirm = () => {
     if (selectedJobId && clientId) {
@@ -110,11 +97,6 @@ export function JobSelectionModal({
             <Select
               value={selectedJobId}
               onValueChange={(value) => {
-                console.log("Value changed to:", value);
-                console.log(
-                  "Job object:",
-                  jobs.find((j) => getJobId(j) === value)
-                );
                 setSelectedJobId(value);
               }}
             >
@@ -148,7 +130,6 @@ export function JobSelectionModal({
                       typeof job.clientId === "object"
                         ? job.clientId.companyName
                         : "Unknown Client";
-                    console.log("Rendering job:", jobId, job.title);
                     return (
                       <SelectItem
                         key={jobId}

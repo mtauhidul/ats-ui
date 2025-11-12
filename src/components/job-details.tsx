@@ -128,7 +128,6 @@ export function JobDetails({
 
       return null;
     } catch (error) {
-      console.error('Error converting date:', error);
       return null;
     }
   };
@@ -170,7 +169,6 @@ export function JobDetails({
       // Navigate back after successful deletion
       onBack();
     } catch (error) {
-      console.error("Failed to delete job:", error);
       setIsDeleting(false);
     }
   };
@@ -206,7 +204,6 @@ export function JobDetails({
         typeof id === "object" ? id._id || id.id || "" : id
       ).filter(Boolean);
       
-      console.log('Job categoryIds loaded:', categoryIds);
       setSelectedCategories(categoryIds);
     } else {
       setSelectedCategories([]);
@@ -240,8 +237,7 @@ export function JobDetails({
           onEditJob(job.id, { categoryIds } as any);
         }
       } catch (error) {
-        console.error("Failed to update job categories:", error);
-      }
+        }
     },
     [job?.id, onEditJob]
   );

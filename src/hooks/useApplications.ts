@@ -94,14 +94,7 @@ export function useApplications(options?: {
   // Debug logging for first application
   if (result.data.length > 0) {
     const firstApp = result.data[0];
-    console.log('🔥 useApplications - First application dates:', {
-      id: firstApp.id,
-      submittedAt: firstApp.submittedAt,
-      createdAt: firstApp.createdAt,
-      submittedAtType: typeof firstApp.submittedAt,
-      createdAtType: typeof firstApp.createdAt,
-    });
-  }
+    }
 
   return result;
 }

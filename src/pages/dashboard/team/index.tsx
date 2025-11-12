@@ -104,13 +104,6 @@ export default function TeamPage() {
   // 🔥 REALTIME: Get all team members from Firestore with real-time updates
   const { data: firestoreMembers, loading: isLoadingMembers, error: membersError } = useTeamMembers();
   
-  console.log('👥 Team Page - Firestore Members:', {
-    members: firestoreMembers,
-    count: firestoreMembers?.length,
-    loading: isLoadingMembers,
-    error: membersError
-  });
-
   // Convert Firestore members to display format
   const members: TeamMember[] = (firestoreMembers || []).map(
     (member) =>
@@ -258,7 +251,6 @@ export default function TeamPage() {
       setSelectedMember(null);
       resetForm();
     } catch (error) {
-      console.error("Failed to update user:", error);
       toast.error("Failed to update user");
     }
   };
@@ -274,7 +266,6 @@ export default function TeamPage() {
         `${selectedMember.firstName} ${selectedMember.lastName} has been deleted`
       );
     } catch (error: unknown) {
-      console.error("Failed to delete user:", error);
       // Show the backend error message if available
       const errorMessage =
         (error as { message?: string; error?: string }).message ||
@@ -337,8 +328,7 @@ export default function TeamPage() {
         }`
       );
     } catch (error) {
-      console.error("Failed to toggle user status:", error);
-    }
+      }
   };
 
   const resetForm = () => {

@@ -39,8 +39,6 @@ export default function DashboardJobsPage() {
   const { clients } = useClients();
   const { candidates } = useCandidates();
 
-  console.log("📋 Jobs page - jobs from hook:", jobs.length);
-
   // 🔥 REALTIME: Calculate candidate counts from actual candidates collection
   // This ensures accurate counts even after deletions
   const jobCandidateCounts = useMemo(() => {

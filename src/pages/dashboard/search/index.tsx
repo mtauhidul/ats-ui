@@ -133,14 +133,6 @@ export default function SearchPage() {
   const { data: applicationsData = [] } = useApplications();
   const { data: teamData = [] } = useTeamMembers();
 
-  console.log("🔍 Search Page - Firestore Data:", {
-    jobs: jobsData.length,
-    candidates: candidatesData.length,
-    clients: clientsData.length,
-    applications: applicationsData.length,
-    team: teamData.length,
-  });
-
   // Debounced search query
   const debouncedQuery = useDebounce(searchQuery, 300);
 

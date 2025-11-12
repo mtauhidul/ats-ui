@@ -39,7 +39,6 @@ const isCacheValid = (lastFetched: number | null): boolean => {
 export const fetchApplications = createAsyncThunk(
   "applications/fetchAll",
   async () => {
-    console.log('📡 Fetching fresh applications from API');
     const response = await authenticatedFetch(`${API_BASE_URL}/applications`);
     if (!response.ok) throw new Error("Failed to fetch applications");
     const result = await response.json();
@@ -56,12 +55,10 @@ export const fetchApplicationsIfNeeded = createAsyncThunk(
     
     // If cache is valid and we have data, skip fetch
     if (cacheValid && isCacheValid(lastFetched) && applications.length > 0) {
-      console.log('✅ Using cached applications (age: ' + Math.round((Date.now() - (lastFetched || 0)) / 1000) + 's)');
       return null;
     }
     
     // Cache is stale or invalid, fetch fresh data
-    console.log('🔄 Cache stale or invalid, fetching applications...');
     return dispatch(fetchApplications()).then((result) => result.payload);
   }
 );
@@ -131,8 +128,7 @@ const applicationsSlice = createSlice({
     invalidateApplicationsCache: (state) => {
       state.cacheValid = false;
       state.lastFetched = null;
-      console.log('🔄 Applications cache invalidated');
-    },
+      },
   },
   extraReducers: (builder) => {
     builder

@@ -214,7 +214,6 @@ export default function QuickImportPage() {
     } catch (error) {
       setIsUploading(false);
       setIsParsing(false);
-      console.error("Resume parsing error:", error);
       const message =
         error instanceof Error
           ? error.message

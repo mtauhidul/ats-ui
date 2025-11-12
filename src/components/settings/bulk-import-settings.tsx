@@ -102,7 +102,6 @@ export function BulkImportSettings() {
 
       setImportResult(data);
     } catch (err) {
-      console.error("Bulk import error:", err);
       setError(err instanceof Error ? err.message : "Failed to perform bulk import");
     } finally {
       setIsImporting(false);

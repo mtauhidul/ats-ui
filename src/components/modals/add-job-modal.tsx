@@ -114,12 +114,7 @@ export function AddJobModal({
     // Always validate clientId - it's required whether selector is hidden or not
     if (!formData.clientId) {
       newErrors.clientId = "Client is required";
-      console.error("ClientId is missing:", {
-        formData,
-        prefilledClientId,
-        hideClientSelector,
-      });
-    }
+      }
     if (!formData.location?.city?.trim()) {
       newErrors.locationCity = "City is required";
     }
@@ -206,12 +201,6 @@ export function AddJobModal({
       tagIds: formData.tagIds || [],
       recruiterIds: formData.recruiterIds || [],
     } as Record<string, unknown>;
-
-    console.log("=== Submitting Job ===");
-    console.log("Experience input value:", formData.requirements.experience);
-    console.log("Requirements array being sent:", requirementsArray);
-    console.log("Skills array being sent:", requiredSkills);
-    console.log("Full transformed data:", transformedData);
 
     onSubmit(transformedData as unknown as CreateJobRequest);
     handleClose();
@@ -337,11 +326,7 @@ export function AddJobModal({
         if (!hideClientSelector) {
           newErrors.clientId = "Client is required";
         } else {
-          console.error(
-            "ClientId missing even though selector is hidden:",
-            prefilledClientId
-          );
-        }
+          }
       }
       if (!formData.location?.city?.trim()) {
         newErrors.locationCity = "City is required";

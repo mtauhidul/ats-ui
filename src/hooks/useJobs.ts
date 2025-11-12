@@ -130,15 +130,6 @@ export function useJobs(options?: {
     transform: transformJobDocument,
   });
 
-  console.log("🔍 useJobs hook result:", {
-    jobsCount: result.data.length,
-    loading: result.loading,
-    error: result.error,
-    enabled,
-    status,
-    clientId,
-  });
-
   return result;
 }
 

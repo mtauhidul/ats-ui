@@ -79,12 +79,9 @@ export function JobKanbanBoard({
 
   // Ensure stages is always an array
   const stages = useMemo(() => {
-    console.log("🎯 KANBAN: pipeline?.stages =", pipeline?.stages);
     if (pipeline?.stages && Array.isArray(pipeline.stages)) {
-      console.log("🎯 KANBAN: Returning pipeline.stages:", pipeline.stages);
       return pipeline.stages;
     }
-    console.log("🎯 KANBAN: No stages, returning empty array");
     return [];
   }, [pipeline?.stages]);
 
@@ -92,22 +89,8 @@ export function JobKanbanBoard({
   const columnData = useMemo(() => {
     // Use optimistic state if available, otherwise compute from candidates
     if (optimisticColumns) {
-      console.log("🚀 USING OPTIMISTIC STATE - Skipping candidate grouping");
       return optimisticColumns;
     }
-
-    console.log("=== KANBAN BOARD: Grouping Candidates (from Firestore) ===");
-    console.log("Total candidates received:", candidates.length);
-    console.log("Pipeline stages (full objects):", stages);
-    console.log(
-      "Pipeline stages (mapped):",
-      stages.map((s) => ({
-        id: s.id,
-        name: s.name,
-        order: s.order,
-        color: s.color,
-      }))
-    );
 
     const grouped: Record<string, Candidate[]> = {};
 
@@ -123,46 +106,24 @@ export function JobKanbanBoard({
         currentStage?: { id: string };
       };
 
-      console.log(`\nCandidate ${index + 1}:`, {
-        name: getCandidateName(candidate),
-        id: candidate.id,
-        currentPipelineStageId: candidateWithStage.currentPipelineStageId,
-        currentStage: candidateWithStage.currentStage,
-      });
-
       const currentStageId =
         candidateWithStage.currentPipelineStageId?.toString() ||
         candidateWithStage.currentStage?.id;
 
-      console.log(`  -> Current stage ID: ${currentStageId}`);
-      console.log(
-        `  -> Stage exists in grouped: ${!!grouped[currentStageId || ""]}`
-      );
-
       if (currentStageId && grouped[currentStageId]) {
         grouped[currentStageId].push(candidate);
-        console.log(`  -> Added to stage: ${currentStageId}`);
-      } else {
+        } else {
         // If no stage assigned, put in first stage
         const firstStage = stages[0];
         if (firstStage) {
           grouped[firstStage.id].push(candidate);
-          console.log(
-            `  -> No stage assigned, added to first stage: ${firstStage.name} (${firstStage.id})`
-          );
-        }
+          }
       }
     });
 
-    console.log("\n=== Final grouped candidates by stage: ===");
     Object.entries(grouped).forEach(([stageId, stageCandidates]) => {
       const stage = stages.find((s) => s.id === stageId);
-      console.log(
-        `${stage?.name} (${stageId}): ${stageCandidates.length} candidates`
-      );
-    });
-    console.log("=========================================\n");
-
+      });
     return grouped;
   }, [candidates, stages, optimisticColumns]);
 
@@ -174,8 +135,7 @@ export function JobKanbanBoard({
   // Listen for real-time updates and clear optimistic state when Firestore updates arrive
   useEffect(() => {
     const handleRefetch = () => {
-      console.log("Received refetch event in Kanban board");
-    };
+      };
 
     window.addEventListener("refetchCandidates", handleRefetch);
 
@@ -200,9 +160,6 @@ export function JobKanbanBoard({
   const handleColumnsChange = async (
     newColumns: Record<string, Candidate[]>
   ) => {
-    console.log("🎯 Columns changed (OPTIMISTIC UPDATE):", newColumns);
-    console.log("🎯 Current columnData:", columnData);
-
     // Get the actual current state (not optimistic)
     const currentColumns = optimisticColumns || columnData;
 
@@ -224,30 +181,21 @@ export function JobKanbanBoard({
           // This candidate was moved to this stage
           movedCandidateId = candidate.id;
           targetStageId = stageId;
-          console.log(`🔍 Detected move: ${candidate.id} -> ${stageId}`);
-        }
+          }
       });
     });
 
     // 3. Call API in background
     if (movedCandidateId && targetStageId) {
       try {
-        console.log(
-          `🚀 API CALL: Moving candidate ${movedCandidateId} to stage ${targetStageId}`
-        );
         await onStatusChange(movedCandidateId, targetStageId);
 
         // 4. API succeeded - wait briefly for Firestore to sync, then clear optimistic state
-        console.log("✅ API SUCCESS: Waiting for Firestore to sync...");
         setTimeout(() => {
-          console.log(
-            "✅ Clearing optimistic state - Firestore should be synced"
-          );
           setOptimisticColumns(null);
         }, 500); // Give Firestore realtime listener time to update
       } catch (error) {
         // 5. API failed - revert to original state immediately
-        console.error("❌ API FAILED: Reverting to original state", error);
         setOptimisticColumns(null);
 
         // Show error toast
@@ -259,15 +207,7 @@ export function JobKanbanBoard({
 
   // Debug: log when columnData changes
   useEffect(() => {
-    console.log("📊 columnData updated:", {
-      isOptimistic: !!optimisticColumns,
-      stageCount: Object.keys(columnData).length,
-      candidateCounts: Object.entries(columnData).map(([stageId, cands]) => ({
-        stageId,
-        count: cands.length,
-      })),
-    });
-  }, [columnData, optimisticColumns]);
+    }, [columnData, optimisticColumns]);
 
   return (
     <div className="h-full flex flex-col overflow-hidden">

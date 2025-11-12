@@ -168,8 +168,6 @@ function SortableRow({
 
   const application = row.original;
 
-
-
   const getAIValidityBadge = (isValid: boolean) => {
     return isValid ? (
       <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
@@ -591,8 +589,6 @@ export function ApplicationsDataTable({ data }: ApplicationsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [applicationToDelete, setApplicationToDelete] = React.useState<{ id: string; isBulk: boolean; count?: number } | null>(null);
-
-
 
   const sensors = useSensors(
     useSensor(MouseSensor),

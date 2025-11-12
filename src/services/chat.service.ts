@@ -74,10 +74,8 @@ class ChatService {
       };
 
       const docRef = await addDoc(collection(db, this.messagesCollection), messageData);
-      console.log('✅ Message sent to Firestore:', docRef.id);
       return docRef.id;
     } catch (error) {
-      console.error('❌ Error sending message:', error);
       throw error;
     }
   }
@@ -98,16 +96,6 @@ class ChatService {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        console.log('🔥 Firestore snapshot triggered!', {
-          conversationId,
-          docCount: snapshot.docs.length,
-          docChanges: snapshot.docChanges().map(change => ({
-            type: change.type,
-            id: change.doc.id,
-            message: change.doc.data().message?.substring(0, 50)
-          }))
-        });
-
         const messages = snapshot.docs.map((doc) => {
           const data = doc.data();
           
@@ -139,12 +127,10 @@ class ChatService {
           } as ChatMessage;
         });
         
-        console.log('📨 Calling callback with messages:', messages.length);
         callback(messages);
       },
       (error) => {
-        console.error('❌ Error subscribing to conversation:', error);
-      }
+        }
     );
 
     return unsubscribe;
@@ -216,12 +202,10 @@ class ChatService {
           return timeB.getTime() - timeA.getTime();
         });
 
-        console.log('📨 Subscription received conversations:', conversations.length);
         callback(conversations);
       },
       (error) => {
-        console.error('❌ Error subscribing to conversations:', error);
-      }
+        }
     );
 
     return unsubscribe;
@@ -238,7 +222,6 @@ class ChatService {
         updatedAt: new Date(),
       });
     } catch (error) {
-      console.error('Error marking message as read:', error);
       throw error;
     }
   }
@@ -264,9 +247,7 @@ class ChatService {
       );
 
       await Promise.all(updatePromises);
-      console.log(`✅ Marked ${updatePromises.length} messages as read`);
-    } catch (error) {
-      console.error('Error marking conversation as read:', error);
+      } catch (error) {
       throw error;
     }
   }

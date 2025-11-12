@@ -28,14 +28,11 @@ try {
 
   // Connect to emulators in development
   if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
-    console.log('🔧 Using Firebase Emulators');
     connectFirestoreEmulator(db, 'localhost', 8080);
     connectAuthEmulator(auth, 'http://localhost:9099');
   }
 
-  console.log('✅ Firebase initialized successfully');
-} catch (error) {
-  console.error('❌ Firebase initialization error:', error);
+  } catch (error) {
   throw error;
 }
 

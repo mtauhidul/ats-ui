@@ -78,15 +78,12 @@ export const sendMessage = createAsyncThunk(
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error("❌ Send message failed:", response.status, errorData);
         throw new Error(errorData.message || "Failed to send message");
       }
 
       const result = await response.json();
-      console.log("✅ Send message response:", result);
       return result.data || result;
     } catch (error) {
-      console.error("❌ Send message error:", error);
       throw error;
     }
   }

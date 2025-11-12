@@ -162,7 +162,6 @@ export function EmailTemplatesSettings() {
       toast.success("Template duplicated successfully");
       // No need to reload - Firestore real-time will update automatically!
     } catch (error) {
-      console.error("Failed to duplicate template:", error);
       toast.error("Failed to duplicate template");
     }
   };
@@ -180,7 +179,6 @@ export function EmailTemplatesSettings() {
         toast.success("Template deleted successfully");
         // No need to reload - Firestore real-time will update automatically!
       } catch (error) {
-        console.error("Failed to delete template:", error);
         toast.error("Failed to delete template");
       } finally {
         setDeleteTemplate(null);
@@ -217,7 +215,6 @@ export function EmailTemplatesSettings() {
       setEditingTemplate(null);
       setFormData({ name: "", subject: "", body: "", type: "general" });
     } catch (error) {
-      console.error("Failed to save template:", error);
       toast.error("Failed to save template");
     }
   };

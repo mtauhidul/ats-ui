@@ -18,18 +18,12 @@ export default function JobCandidateDetailPage() {
 
   // Find candidate and job from Firestore data
   const currentCandidate = useMemo(() => {
-    console.log('🔍 Looking for candidate:', candidateId);
-    console.log('📋 Available candidates:', candidates.length, candidates.map(c => c.id));
     const found = candidates.find((c) => c.id === candidateId);
-    console.log('✅ Found candidate:', found ? 'Yes' : 'No');
     return found;
   }, [candidates, candidateId]);
 
   const currentJob = useMemo(() => {
-    console.log('🔍 Looking for job:', jobId);
-    console.log('📋 Available jobs:', jobs.length, jobs.map(j => j.id));
     const found = jobs.find((j) => j.id === jobId);
-    console.log('✅ Found job:', found ? 'Yes' : 'No');
     return found;
   }, [jobs, jobId]);
 

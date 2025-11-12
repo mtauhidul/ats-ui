@@ -124,42 +124,16 @@ export default function CandidateDetailsPage() {
     error: interviewsError,
   } = useInterviewsByCandidate(actualCandidateId);
 
-  console.log("🔍 Candidate ID Debug:", {
-    urlParam: candidateId,
-    candidateDataId: candidateData?.id,
-    actualId: actualCandidateId,
-    firestoreInterviews: firestoreInterviews,
-    firestoreInterviewsLength: firestoreInterviews?.length,
-    loading: isLoadingInterviews,
-    error: interviewsError,
-  });
-
   if (interviewsError) {
-    console.error("❌ Error fetching interviews:", interviewsError);
-  }
+    }
 
   // Transform Firestore interviews to match the interface
   const interviews: Interview[] = React.useMemo(() => {
-    console.log("🔄 Transforming interviews:", {
-      firestoreInterviews,
-      firestoreCount: firestoreInterviews?.length,
-      jobsCount: jobs.length,
-      clientsCount: clients.length,
-    });
-
     if (!firestoreInterviews || firestoreInterviews.length === 0) return [];
 
     return firestoreInterviews.map((interview) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const interviewData = interview as any;
-
-      console.log("📝 Processing interview:", {
-        id: interview.id,
-        jobId: interview.jobId,
-        clientId: interview.clientId,
-        jobTitle: interview.jobTitle,
-        clientName: interview.clientName,
-      });
 
       // Look up job and client from store if jobTitle/clientName not available
       const job = jobs.find(
@@ -168,11 +142,6 @@ export default function CandidateDetailsPage() {
       const client = clients.find(
         (c) => c.id === interview.clientId || c.id === interviewData.clientId
       );
-
-      console.log("🔎 Lookup results:", {
-        foundJob: job?.title,
-        foundClient: client?.companyName,
-      });
 
       const jobTitle = interview.jobTitle || job?.title || "Unknown Position";
       const clientName =
@@ -202,13 +171,6 @@ export default function CandidateDetailsPage() {
       };
     });
   }, [firestoreInterviews, jobs, clients]);
-
-  console.log("📋 Candidate Details - Interviews:", {
-    candidateId,
-    count: interviews.length,
-    interviews,
-    loading: isLoadingInterviews,
-  });
 
   // 🔥 REALTIME: Get team members for assignee name lookup
   const { teamMembers } = useTeam();
@@ -285,7 +247,6 @@ export default function CandidateDetailsPage() {
       setReassignJobDialogOpen(false);
       setSelectedJobForReassign("");
     } catch (error) {
-      console.error("Error reassigning candidate:", error);
       toast.error("Failed to reassign candidate");
     }
   };
@@ -297,16 +258,6 @@ export default function CandidateDetailsPage() {
     error: emailsError,
   } = useEmailsByCandidate(actualCandidateId);
 
-  console.log("📧 Email Debug:", {
-    candidateId,
-    candidateDataId: candidateData?.id,
-    actualCandidateId,
-    emails,
-    emailsLength: emails?.length,
-    loading: isLoadingEmails,
-    error: emailsError,
-  });
-
   // DISABLED: Excessive refetching causes performance issues and API spam
   // Only refetch on user action or manual page refresh
   //
@@ -314,10 +265,7 @@ export default function CandidateDetailsPage() {
   // React.useEffect(() => {
   //   const handleFocus = () => {
   //     if (candidateId) {
-  //       console.log(
-  //         "Window focused, refetching candidate data for real-time sync..."
-  //       );
-  //       fetchCandidateById(candidateId);
+  //       //       fetchCandidateById(candidateId);
   //       fetchJobs();
   //     }
   //   };
@@ -332,8 +280,7 @@ export default function CandidateDetailsPage() {
 
   //   const interval = setInterval(() => {
   //     if (document.visibilityState === "visible") {
-  //       console.log("Polling for candidate updates...");
-  //       fetchCandidateById(candidateId);
+  //       //       fetchCandidateById(candidateId);
   //     }
   //   }, 30000); // 30 seconds
 
@@ -343,24 +290,8 @@ export default function CandidateDetailsPage() {
   // Log candidate data for debugging
   React.useEffect(() => {
     if (candidateData) {
-      console.log("=== CANDIDATE DATA ===");
-      console.log("Full candidate object:", candidateData);
-      console.log("Job IDs:", candidateData.jobIds);
-      console.log("Job Applications:", candidateData.jobApplications);
-      console.log("Skills:", candidateData.skills);
-      console.log("Education:", candidateData.education);
       // Backend uses 'experience' field, frontend type has 'workExperience'
-      console.log(
-        "Work Experience (experience field):",
-        (candidateData as unknown as Record<string, unknown>).experience
-      );
-      console.log(
-        "Work Experience (workExperience field):",
-        candidateData.workExperience
-      );
-      console.log("Resume:", candidateData.resume);
-      console.log("=====================");
-    }
+      }
   }, [candidateData]);
 
   // DISABLED: Interviews not yet migrated to Firestore - no API call
@@ -376,8 +307,7 @@ export default function CandidateDetailsPage() {
   //     const result = await response.json();
   //     setInterviews(result.data?.interviews || []);
   //   } catch (error) {
-  //     console.error("Failed to fetch interviews:", error);
-  //     setInterviews([]);
+  //     //     setInterviews([]);
   //   } finally {
   //     setIsLoadingInterviews(false);
   //   }
@@ -390,18 +320,13 @@ export default function CandidateDetailsPage() {
   // 🔥 REALTIME: Derive selected tags directly from candidate data (updates automatically with Firestore)
   const selectedTags = React.useMemo(() => {
     if (!candidateData) {
-      console.log("🏷️ No candidateData, returning empty tags");
       return [];
     }
 
     // Access tagIds directly from candidateData
     const tagIds = candidateData.tagIds;
 
-    console.log("🏷️ Candidate data:", candidateData);
-    console.log("🏷️ Candidate tagIds from Firestore:", tagIds);
-
     if (!tagIds || !Array.isArray(tagIds)) {
-      console.log("🏷️ No tagIds or not an array");
       return [];
     }
 
@@ -411,9 +336,6 @@ export default function CandidateDetailsPage() {
         typeof id === "object" ? id._id || id.id || "" : id
       )
       .filter(Boolean);
-
-    console.log("🏷️ Processed tag IDs:", processedTags);
-    console.log("🏷️ All available tags count:", allTags.length);
 
     return processedTags;
   }, [candidateData, allTags.length]);
@@ -441,8 +363,7 @@ export default function CandidateDetailsPage() {
 
         // Firestore will automatically update candidate data in realtime
       } catch (error) {
-        console.error("Failed to update candidate tags:", error);
-      }
+        }
     },
     [candidateId]
   );
@@ -535,14 +456,6 @@ export default function CandidateDetailsPage() {
   }
 
   // Log job and client data
-  console.log("=== JOB & CLIENT DATA ===");
-  console.log("First Job ID:", firstJobId);
-  console.log("Job:", job);
-  console.log("Client:", client);
-  console.log("All Jobs:", jobs);
-  console.log("All Clients:", clients);
-  console.log("========================");
-
   // Helper function to safely convert date values (Firestore Timestamps, Date objects, or strings)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const toSafeDate = (dateValue: any): string => {
@@ -577,7 +490,6 @@ export default function CandidateDetailsPage() {
       // If we can't convert it, return N/A
       return "N/A";
     } catch (error) {
-      console.error("Error converting date:", error);
       return "N/A";
     }
   };
@@ -697,11 +609,7 @@ export default function CandidateDetailsPage() {
         }
       ).assignedTo;
 
-      console.log("👤 Candidate assignedTo from Firestore:", assignedTo);
-      console.log("👥 Available team members:", teamMembers.length);
-
       if (!assignedTo) {
-        console.log("❌ No assignedTo - returning N/A");
         return "N/A";
       }
 
@@ -711,11 +619,9 @@ export default function CandidateDetailsPage() {
           `${assignedTo.firstName || ""} ${assignedTo.lastName || ""}`.trim() ||
           assignedTo.email ||
           "N/A";
-        console.log("✅ Found assigned user (object):", name);
         return name;
       } else if (typeof assignedTo === "string") {
         // User ID - look up in team members (THIS IS THE ASSIGNED USER, NOT LOGGED-IN USER)
-        console.log("🔍 Looking up user ID:", assignedTo);
         const member = teamMembers.find(
           (m) => m.userId === assignedTo || m.id === assignedTo
         );
@@ -724,11 +630,9 @@ export default function CandidateDetailsPage() {
             `${member.firstName} ${member.lastName}`.trim() ||
             member.email ||
             "N/A";
-          console.log("✅ Found assigned team member:", name);
           return name;
         } else {
-          console.log("❌ Team member not found for ID:", assignedTo);
-        }
+          }
       }
 
       return "N/A";
@@ -776,10 +680,6 @@ export default function CandidateDetailsPage() {
   };
 
   // Log transformed candidate object
-  console.log("=== TRANSFORMED CANDIDATE ===");
-  console.log("Transformed candidate:", candidate);
-  console.log("============================");
-
   // Build history data from jobApplications
   const historyData: Array<{
     id: string;
@@ -857,11 +757,6 @@ export default function CandidateDetailsPage() {
         };
       })
     : [];
-
-  console.log("=== HISTORY DATA ===");
-  console.log("Job Applications:", candidateData.jobApplications);
-  console.log("History Data:", historyData);
-  console.log("====================");
 
   return (
     <div className="flex flex-1 flex-col">
@@ -2245,8 +2140,7 @@ export default function CandidateDetailsPage() {
                               );
                             } else {
                               // Fallback: show error message
-                              console.error("No job ID found for candidate");
-                            }
+                              }
                           }}
                         >
                           <IconMail className="h-4 w-4 mr-2" />
