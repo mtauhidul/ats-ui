@@ -754,7 +754,7 @@ export function JobDetails({
                     Experience Required
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    {job.requirements?.experience || "Not specified"}
+                    {job.requirements?.experience ? `${job.requirements.experience} years` : "Not specified"}
                   </p>
                 </div>
                 <Separator />

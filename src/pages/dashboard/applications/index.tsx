@@ -220,6 +220,7 @@ export default function ApplicationsPage() {
     type: backendApp.isValidResume === true ? "valid" : backendApp.isValidResume === false ? "invalid" : "pending", // AI status (kept for compatibility)
     status: app.status || "pending", // Use raw status from backend: approved, rejected, or pending
     target: applicationDate ? applicationDate.getDate() : 0, // Day number for sorting but we'll override display
+    submittedAtTimestamp: applicationDate ? applicationDate.getTime() : 0, // Full timestamp for proper sorting (newest first)
     limit: app.id, // Show actual application ID
     reviewer: (() => {
       if (!app.reviewedBy) return "Not Reviewed";

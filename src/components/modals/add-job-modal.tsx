@@ -793,6 +793,8 @@ export function AddJobModal({
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="experience"
+                        type="number"
+                        min="0"
                         value={formData.requirements.experience}
                         onChange={(e) => {
                           setFormData({
@@ -805,7 +807,7 @@ export function AddJobModal({
                           if (errors.experience)
                             setErrors({ ...errors, experience: "" });
                         }}
-                        placeholder="e.g., 3-5 years in software development"
+                        placeholder="e.g., 3"
                         className={`h-11 pl-10 ${
                           errors.experience ? "border-red-500" : ""
                         }`}
@@ -817,7 +819,7 @@ export function AddJobModal({
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Describe the experience level required for this position
+                      Enter the number of years of experience required
                     </p>
                   </div>
 

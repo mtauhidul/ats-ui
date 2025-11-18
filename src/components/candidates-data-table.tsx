@@ -671,7 +671,9 @@ export function CandidatesDataTable({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "target", desc: true } // Default: sort by newest first (Date Applied - Newest)
+  ]);
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,

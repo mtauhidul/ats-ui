@@ -240,7 +240,7 @@ export default function JobDetailPage() {
                         Experience
                       </h3>
                       <p className="text-muted-foreground pl-6">
-                        {job.requirements.experience}
+                        {job.requirements.experience} years
                       </p>
                     </div>
                   )}

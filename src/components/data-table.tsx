@@ -283,6 +283,12 @@ const createColumns = (
     },
   },
   {
+    accessorKey: "submittedAtTimestamp",
+    header: "Submitted Date",
+    cell: () => null, // Hidden column, used only for sorting
+    enableHiding: true,
+  },
+  {
     id: "actions",
     cell: () => null, // Will be populated with handlers in the component
   },
@@ -385,11 +391,15 @@ export function DataTable({
   const [data, setData] = React.useState(() => initialData);
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>({
+      submittedAtTimestamp: false, // Hide timestamp column (used only for sorting)
+    });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "submittedAtTimestamp", desc: true } // Default: sort by newest first
+  ]);
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,
@@ -909,14 +919,14 @@ export function DataTable({
                   <DropdownMenuCheckboxItem
                     checked={
                       columnFilters.find((f) => f.id === "status")?.value ===
-                      "Approved"
+                      "approved"
                     }
                     onCheckedChange={(checked) => {
                       setColumnFilters((prev) =>
                         checked
                           ? [
                               ...prev.filter((f) => f.id !== "status"),
-                              { id: "status", value: "Approved" },
+                              { id: "status", value: "approved" },
                             ]
                           : prev.filter((f) => f.id !== "status")
                       );
@@ -928,33 +938,33 @@ export function DataTable({
                   <DropdownMenuCheckboxItem
                     checked={
                       columnFilters.find((f) => f.id === "status")?.value ===
-                      "In Process"
+                      "pending"
                     }
                     onCheckedChange={(checked) => {
                       setColumnFilters((prev) =>
                         checked
                           ? [
                               ...prev.filter((f) => f.id !== "status"),
-                              { id: "status", value: "In Process" },
+                              { id: "status", value: "pending" },
                             ]
                           : prev.filter((f) => f.id !== "status")
                       );
                     }}
                   >
                     <IconClockHour4 className="h-3 w-3 mr-2 text-amber-600" />
-                    In Process
+                    Pending
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={
                       columnFilters.find((f) => f.id === "status")?.value ===
-                      "Rejected"
+                      "rejected"
                     }
                     onCheckedChange={(checked) => {
                       setColumnFilters((prev) =>
                         checked
                           ? [
                               ...prev.filter((f) => f.id !== "status"),
-                              { id: "status", value: "Rejected" },
+                              { id: "status", value: "rejected" },
                             ]
                           : prev.filter((f) => f.id !== "status")
                       );
@@ -1051,17 +1061,17 @@ export function DataTable({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() =>
-                      setSorting([{ id: "dateApplied", desc: true }])
+                      setSorting([{ id: "submittedAtTimestamp", desc: true }])
                     }
                   >
-                    Date (Newest)
+                    Date (Newest First)
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() =>
-                      setSorting([{ id: "dateApplied", desc: false }])
+                      setSorting([{ id: "submittedAtTimestamp", desc: false }])
                     }
                   >
-                    Date (Oldest)
+                    Date (Oldest First)
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setSorting([{ id: "status", desc: false }])}
@@ -1079,10 +1089,10 @@ export function DataTable({
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => setSorting([])}
-                        className="text-destructive"
+                        onClick={() => setSorting([{ id: "submittedAtTimestamp", desc: true }])}
+                        className="text-muted-foreground"
                       >
-                        Clear Sorting
+                        Reset to Default (Newest First)
                       </DropdownMenuItem>
                     </>
                   )}
