@@ -1727,6 +1727,19 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                         </Button>
                         <Button
                           variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (item.resumeUrl) {
+                              window.open(item.resumeUrl, "_blank");
+                            }
+                          }}
+                          className="h-8 px-3"
+                          title="Open resume in full view"
+                        >
+                          <span className="text-xs">Full View</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
                           size="icon"
                           onClick={() => {
                             if (item.resumeUrl) {

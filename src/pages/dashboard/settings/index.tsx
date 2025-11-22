@@ -1,8 +1,9 @@
 import { EmailMonitoringSettings } from "@/components/settings/email-monitoring-settings";
 import { EmailTemplatesSettings } from "@/components/settings/email-templates-settings";
 import { BulkImportSettings } from "@/components/settings/bulk-import-settings";
+import { PipelineTemplatesSettings } from "@/components/settings/pipeline-templates-settings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Mail, Download, Settings } from "lucide-react";
+import { Activity, Mail, Download, Settings, Workflow } from "lucide-react";
 import { useState } from "react";
 
 export default function SettingsPage() {
@@ -58,6 +59,14 @@ export default function SettingsPage() {
                     <span className="hidden sm:inline">Bulk Import</span>
                     <span className="sm:hidden">Import</span>
                   </TabsTrigger>
+                  <TabsTrigger
+                    value="pipeline-templates"
+                    className="flex-1 md:flex-initial px-3 md:px-6 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white! data-[state=inactive]:text-muted-foreground whitespace-nowrap"
+                  >
+                    <Workflow className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                    <span className="hidden sm:inline">Pipeline Templates</span>
+                    <span className="sm:hidden">Pipelines</span>
+                  </TabsTrigger>
                 </TabsList>
               </div>
 
@@ -71,6 +80,10 @@ export default function SettingsPage() {
 
               <TabsContent value="bulk-import" className="mt-0">
                 <BulkImportSettings />
+              </TabsContent>
+
+              <TabsContent value="pipeline-templates" className="mt-0">
+                <PipelineTemplatesSettings />
               </TabsContent>
             </Tabs>
           </div>

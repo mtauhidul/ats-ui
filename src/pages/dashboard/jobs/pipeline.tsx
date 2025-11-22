@@ -49,8 +49,14 @@ export default function JobPipelinePage() {
   // Get realtime data from Firestore via Redux hooks (which use Firestore internally)
   const { jobs } = useJobs();
   const { candidates: allCandidates } = useCandidates();
+  const { pipelines: allPipelines } = usePipelines();
 
   const job = jobs.find((j) => j.id === jobId);
+
+  // Get user-created templates (pipelines without jobId)
+  const userTemplates = useMemo(() => {
+    return allPipelines.filter((p) => !p.jobId && p.isActive);
+  }, [allPipelines]);
 
   // Get pipeline from Firestore by jobId (realtime subscription)
   const { pipeline: firestorePipeline, loading: pipelineLoading } =
@@ -94,12 +100,16 @@ export default function JobPipelinePage() {
     if (firestorePipeline && firestorePipeline.id !== currentPipeline?.id) {
       setCurrentPipeline(firestorePipeline);
     }
-    // If no pipeline exists in Firestore yet, user needs to create one (show empty state)
+    // If no pipeline exists for this job, clear currentPipeline to show empty state
+    else if (!firestorePipeline && !pipelineLoading && currentPipeline?.jobId !== jobId) {
+      setCurrentPipeline(null);
+    }
   }, [
     job,
     jobId,
     firestorePipeline,
     currentPipeline?.id,
+    currentPipeline?.jobId,
     setCurrentPipeline,
     pipelineLoading,
   ]);
@@ -170,6 +180,40 @@ export default function JobPipelinePage() {
           // Firestore realtime subscription will automatically update firestorePipeline
           // which will then update currentPipeline via useEffect
           toast.success("Pipeline created successfully!");
+        } else {
+          toast.error("Failed to get pipeline ID");
+        }
+      } catch (error) {
+        toast.error("Failed to create pipeline");
+      }
+    }
+  };
+
+  const handleSelectUserTemplate = async (pipelineId: string) => {
+    const template = userTemplates.find((p) => p.id === pipelineId);
+    if (template && job && jobId) {
+      try {
+        // Create a new pipeline based on the user template
+        const result = await createPipeline({
+          name: `${job.title} - ${template.name}`,
+          description: template.description,
+          type: template.type || "candidate",
+          jobId, // Link pipeline to this job
+          stages: template.stages.map((stage) => ({
+            name: stage.name,
+            description: stage.description,
+            color: stage.color,
+            order: stage.order,
+            isActive: true,
+          })),
+        });
+
+        // Update job with the new pipeline ID
+        if (result.payload && "id" in result.payload) {
+          const pipelineId = result.payload.id;
+          await updateJob(job.id, { pipelineId });
+
+          toast.success("Pipeline created from template!");
         } else {
           toast.error("Failed to get pipeline ID");
         }
@@ -349,6 +393,8 @@ export default function JobPipelinePage() {
               <PipelineEmptyState
                 onCreateCustom={handleCreateCustom}
                 onSelectTemplate={handleSelectTemplate}
+                onSelectPipeline={handleSelectUserTemplate}
+                userTemplates={userTemplates}
               />
             </div>
           ) : isBuilding || isEditing ? (
