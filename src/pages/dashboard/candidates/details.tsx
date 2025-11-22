@@ -29,12 +29,12 @@ import { useCandidate, useEmailsByCandidate, useTags } from "@/hooks/firestore";
 import { useInterviewsByCandidate } from "@/hooks/useInterviews";
 import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import {
+  useCandidates,
   useClients,
   useJobs,
   usePipelines,
   useTeam,
 } from "@/store/hooks/index";
-import { useCandidates } from "@/store/hooks/index";
 import {
   IconArrowDown,
   IconArrowLeft,
@@ -109,10 +109,12 @@ export default function CandidateDetailsPage() {
   const { clients, isLoading: clientsLoading } = useClients();
   const { pipelines, isLoading: pipelinesLoading } = usePipelines();
   const { updateCandidate, candidates } = useCandidates();
-  
+
   // Reassignment dialog state
-  const [reassignJobDialogOpen, setReassignJobDialogOpen] = React.useState(false);
-  const [selectedJobForReassign, setSelectedJobForReassign] = React.useState<string>("");
+  const [reassignJobDialogOpen, setReassignJobDialogOpen] =
+    React.useState(false);
+  const [selectedJobForReassign, setSelectedJobForReassign] =
+    React.useState<string>("");
 
   // 🔥 REALTIME: Get interviews from Firestore for this candidate across all jobs
   // Use candidateData.id if available, otherwise use candidateId from URL
@@ -125,7 +127,7 @@ export default function CandidateDetailsPage() {
   } = useInterviewsByCandidate(actualCandidateId);
 
   if (interviewsError) {
-    }
+  }
 
   // Transform Firestore interviews to match the interface
   const interviews: Interview[] = React.useMemo(() => {
@@ -188,15 +190,17 @@ export default function CandidateDetailsPage() {
       // Find the full candidate and job
       const candidate = candidates.find((c) => c.id === candidateData.id);
       const job = jobs.find((j) => j.id === selectedJobForReassign);
-      
+
       if (!candidate || !job) {
         toast.error("Candidate or job not found");
         return;
       }
 
       // Check if candidate is already ACTIVELY assigned to this job
-      const existingJobApp = candidate.jobApplications?.find(app => app.jobId === selectedJobForReassign);
-      if (existingJobApp && existingJobApp.status === 'active') {
+      const existingJobApp = candidate.jobApplications?.find(
+        (app) => app.jobId === selectedJobForReassign
+      );
+      if (existingJobApp && existingJobApp.status === "active") {
         toast.error("Candidate is already actively assigned to this job");
         return;
       }
@@ -204,14 +208,20 @@ export default function CandidateDetailsPage() {
       let updatedJobIds = candidate.jobIds || [];
       let updatedJobApplications = candidate.jobApplications || [];
 
+      // Get the job's pipeline and first stage
+      const jobPipeline = pipelines.find(
+        (p) => p.jobId === selectedJobForReassign
+      );
+      const firstStageId = jobPipeline?.stages?.[0]?.id;
+
       if (existingJobApp) {
         // Candidate was previously assigned to this job (rejected/hired) - reactivate
-        updatedJobApplications = updatedJobApplications.map(app => 
+        updatedJobApplications = updatedJobApplications.map((app) =>
           app.jobId === selectedJobForReassign
             ? {
                 ...app,
-                status: 'active' as const,
-                currentStage: 'new', // Reset to first stage
+                status: "active" as const,
+                currentStage: firstStageId || undefined, // Reset to first stage of pipeline
                 lastStatusChange: new Date(),
               }
             : app
@@ -220,16 +230,16 @@ export default function CandidateDetailsPage() {
         // New assignment - add to arrays
         const newJobApplication = {
           jobId: selectedJobForReassign,
-          status: 'active' as const,
+          status: "active" as const,
           appliedAt: new Date(),
-          currentStage: 'new', // Default stage - backend will update to actual first stage
+          currentStage: firstStageId || undefined, // Use first stage of pipeline
           lastStatusChange: new Date(),
           // Email tracking fields (required by CandidatePipeline interface)
           emailIds: [],
           emailsSent: 0,
           emailsReceived: 0,
         };
-        
+
         updatedJobIds = [...updatedJobIds, selectedJobForReassign];
         updatedJobApplications = [...updatedJobApplications, newJobApplication];
       }
@@ -238,12 +248,18 @@ export default function CandidateDetailsPage() {
       await updateCandidate(candidateData.id, {
         jobIds: updatedJobIds,
         jobApplications: updatedJobApplications,
-        clientIds: [...new Set([...(candidate.clientIds || []), job.clientId as string])],
-        status: 'active', // Reactivate candidate if they were globally rejected
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        clientIds: [
+          ...new Set([...(candidate.clientIds || []), job.clientId as string]),
+        ],
+        status: "active", // Reactivate candidate if they were globally rejected
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
-      toast.success(`Candidate ${existingJobApp ? 'reactivated for' : 'assigned to'} ${job.title}`);
+      toast.success(
+        `Candidate ${existingJobApp ? "reactivated for" : "assigned to"} ${
+          job.title
+        }`
+      );
       setReassignJobDialogOpen(false);
       setSelectedJobForReassign("");
     } catch (error) {
@@ -291,7 +307,7 @@ export default function CandidateDetailsPage() {
   React.useEffect(() => {
     if (candidateData) {
       // Backend uses 'experience' field, frontend type has 'workExperience'
-      }
+    }
   }, [candidateData]);
 
   // DISABLED: Interviews not yet migrated to Firestore - no API call
@@ -362,8 +378,7 @@ export default function CandidateDetailsPage() {
         }
 
         // Firestore will automatically update candidate data in realtime
-      } catch (error) {
-        }
+      } catch (error) {}
     },
     [candidateId]
   );
@@ -558,35 +573,57 @@ export default function CandidateDetailsPage() {
     jobId: job?.id || "N/A",
     jobTitle: job?.title || "N/A",
     currentStage: (() => {
-      // Check both currentPipelineStageId (new field) and currentStage (legacy field)
-
       const stageId =
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (candidateData as any).currentPipelineStageId ||
         candidateData.currentStage;
 
-      if (!stageId) return "Not Assigned";
+      if (!stageId || typeof stageId !== "string" || !job?.pipelineId) {
+        return "Not Assigned";
+      }
 
-      // If it's already an object with name, return the name
-      if (typeof stageId === "object" && "name" in stageId) return stageId.name;
+      const jobPipeline = pipelines.find((p) => p.id === job.pipelineId);
 
-      // If it's a string, it's a stage ID - look it up
-      if (typeof stageId === "string") {
-        // Find the pipeline for this job
-        const jobPipeline = pipelines.find((p) => p.jobId === job?.id);
+      if (jobPipeline?.stages && jobPipeline.stages.length > 0) {
+        let stage;
 
-        if (jobPipeline) {
-          // Find the stage in this pipeline
-          const pipelineStage = jobPipeline.stages?.find(
-            (s) => s.id === stageId
+        // Step 1: Try exact stage ID match (current pipeline)
+        stage = jobPipeline.stages.find((s: any) => s.id === stageId);
+
+        // Step 2: If not found, try exact stage name match (case-insensitive)
+        if (!stage) {
+          stage = jobPipeline.stages.find(
+            (s: any) => s.name?.toLowerCase() === stageId.toLowerCase()
           );
-          if (pipelineStage) {
-            return pipelineStage.name;
+        }
+
+        // Step 3: If not found and stageId is an old stage ID format, match by index
+        if (!stage && stageId.includes("stage_") && stageId.includes("_")) {
+          const parts = stageId.split("_");
+          const stageIndex = parseInt(parts[parts.length - 1]);
+          if (!isNaN(stageIndex) && stageIndex < jobPipeline.stages.length) {
+            stage = jobPipeline.stages[stageIndex];
           }
         }
 
-        // If we can't find the stage, return the ID as-is
-        return stageId;
+        // Step 4: Fuzzy match for renamed stages
+        if (!stage) {
+          const stageIdLower = stageId.toLowerCase();
+          stage = jobPipeline.stages.find((s: any) => {
+            const stageName = s.name?.toLowerCase() || "";
+            const significantWords = stageIdLower
+              .split(" ")
+              .filter((w) => w.length > 2);
+            if (significantWords.length >= 2) {
+              const matchCount = significantWords.filter((word) =>
+                stageName.includes(word)
+              ).length;
+              if (matchCount >= 2) return true;
+            }
+            return false;
+          });
+        }
+
+        if (stage?.name) return stage.name;
       }
 
       return "Not Assigned";
@@ -632,7 +669,7 @@ export default function CandidateDetailsPage() {
             "N/A";
           return name;
         } else {
-          }
+        }
       }
 
       return "N/A";
@@ -800,9 +837,10 @@ export default function CandidateDetailsPage() {
                           <h1 className="text-xl md:text-2xl font-bold">
                             {candidate.fullName}
                           </h1>
-                          {candidateData?.status?.toLowerCase() === "rejected" && (
-                            <Badge 
-                              variant="destructive" 
+                          {candidateData?.status?.toLowerCase() ===
+                            "rejected" && (
+                            <Badge
+                              variant="destructive"
                               className="text-sm px-3 py-1 animate-pulse"
                             >
                               REJECTED
@@ -1631,7 +1669,11 @@ export default function CandidateDetailsPage() {
                           Candidate Rejected
                         </p>
                         <p className="text-sm text-red-700 dark:text-red-300">
-                          This candidate has been rejected and is no longer active in the hiring process. Stage changes and interview scheduling are disabled. The candidate remains visible for historical record and future reference.
+                          This candidate has been rejected and is no longer
+                          active in the hiring process. Stage changes and
+                          interview scheduling are disabled. The candidate
+                          remains visible for historical record and future
+                          reference.
                         </p>
                       </div>
                     </div>
@@ -1817,7 +1859,10 @@ export default function CandidateDetailsPage() {
                           Email Communication Still Available
                         </p>
                         <p className="text-xs text-blue-700 dark:text-blue-300">
-                          Although this candidate has been rejected, email communication remains available in case the hiring team reconsiders or needs to reach out for future opportunities.
+                          Although this candidate has been rejected, email
+                          communication remains available in case the hiring
+                          team reconsiders or needs to reach out for future
+                          opportunities.
                         </p>
                       </div>
                     </div>
@@ -2140,7 +2185,7 @@ export default function CandidateDetailsPage() {
                               );
                             } else {
                               // Fallback: show error message
-                              }
+                            }
                           }}
                         >
                           <IconMail className="h-4 w-4 mr-2" />
@@ -2173,7 +2218,10 @@ export default function CandidateDetailsPage() {
                               Candidate Rejected
                             </p>
                             <p className="text-xs text-red-700 dark:text-red-300 mt-1">
-                              This candidate has been rejected. Interview scheduling and stage changes are disabled. Only viewing past interviews and sending emails are allowed.
+                              This candidate has been rejected. Interview
+                              scheduling and stage changes are disabled. Only
+                              viewing past interviews and sending emails are
+                              allowed.
                             </p>
                           </div>
                         </div>
@@ -2723,87 +2771,106 @@ export default function CandidateDetailsPage() {
         </div>
 
         {/* Reassign to Job Dialog */}
-        {reassignJobDialogOpen && candidateData && (() => {
-      const candidate = candidates.find((c) => c.id === candidateData.id);
-      const availableJobs = jobs.filter((job) => {
-        // Filter logic:
-        // - Show if candidate never applied to this job
-        // - Show if candidate was rejected from this job (can be reactivated)
-        // - Hide if candidate is currently active in this job
-        // - Hide if candidate was hired for this job (hiring is final)
-        const jobApplication = candidate?.jobApplications?.find(app => app.jobId === job.id);
-        const isJobOpen = job.status === 'open';
-        
-        if (!isJobOpen) return false;
-        if (!jobApplication) return true; // Never applied - show it
-        
-        const status = jobApplication.status;
-        // Show if rejected (can reactivate), hide if active or hired
-        return status === 'rejected';
-      });
+        {reassignJobDialogOpen &&
+          candidateData &&
+          (() => {
+            const candidate = candidates.find((c) => c.id === candidateData.id);
+            const availableJobs = jobs.filter((job) => {
+              // Filter logic:
+              // - Show if candidate never applied to this job
+              // - Show if candidate was rejected from this job (can be reactivated)
+              // - Hide if candidate is currently active in this job
+              // - Hide if candidate was hired for this job (hiring is final)
+              const jobApplication = candidate?.jobApplications?.find(
+                (app) => app.jobId === job.id
+              );
+              const isJobOpen = job.status === "open";
 
-      return (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">Apply to Another Job</h2>
-            
-            {availableJobs.length === 0 ? (
-              <p className="text-sm text-muted-foreground mb-4">
-                No available jobs to assign this candidate to. The candidate may already be actively assigned to all open jobs.
-              </p>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Select a job to assign this candidate to:
-                </p>
-                <Select value={selectedJobForReassign} onValueChange={setSelectedJobForReassign}>
-                  <SelectTrigger className="w-full mb-4">
-                    <SelectValue placeholder="Select a job" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableJobs.map((job) => {
-                      // Get client name
-                      const clientName = typeof job.clientId === 'object' && job.clientId !== null
-                        ? job.clientId.companyName
-                        : clients.find((client) => client.id === job.clientId)?.companyName || 'Unknown Client';
-                      
-                      return (
-                        <SelectItem key={job.id} value={job.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{job.title}</span>
-                            <span className="text-xs text-muted-foreground">{clientName}</span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </>
-            )}
+              if (!isJobOpen) return false;
+              if (!jobApplication) return true; // Never applied - show it
 
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setReassignJobDialogOpen(false);
-                  setSelectedJobForReassign("");
-                }}
-              >
-                Cancel
-              </Button>
-              {availableJobs.length > 0 && (
-                <Button
-                  onClick={handleReassignJobConfirm}
-                  disabled={!selectedJobForReassign}
-                >
-                  Assign
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    })()}
+              const status = jobApplication.status;
+              // Show if rejected (can reactivate), hide if active or hired
+              return status === "rejected";
+            });
+
+            return (
+              <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+                <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg max-w-md w-full p-6">
+                  <h2 className="text-lg font-semibold mb-4">
+                    Apply to Another Job
+                  </h2>
+
+                  {availableJobs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground mb-4">
+                      No available jobs to assign this candidate to. The
+                      candidate may already be actively assigned to all open
+                      jobs.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Select a job to assign this candidate to:
+                      </p>
+                      <Select
+                        value={selectedJobForReassign}
+                        onValueChange={setSelectedJobForReassign}
+                      >
+                        <SelectTrigger className="w-full mb-4">
+                          <SelectValue placeholder="Select a job" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableJobs.map((job) => {
+                            // Get client name
+                            const clientName =
+                              typeof job.clientId === "object" &&
+                              job.clientId !== null
+                                ? job.clientId.companyName
+                                : clients.find(
+                                    (client) => client.id === job.clientId
+                                  )?.companyName || "Unknown Client";
+
+                            return (
+                              <SelectItem key={job.id} value={job.id}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {job.title}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {clientName}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
+
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setReassignJobDialogOpen(false);
+                        setSelectedJobForReassign("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    {availableJobs.length > 0 && (
+                      <Button
+                        onClick={handleReassignJobConfirm}
+                        disabled={!selectedJobForReassign}
+                      >
+                        Assign
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
       </div>
     </div>
   );

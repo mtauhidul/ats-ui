@@ -60,6 +60,7 @@ const getCandidateInitials = (candidate: Candidate) => {
 
 export function JobKanbanBoard({
   pipeline,
+  jobId,
   candidates,
   onCandidateClick,
   onStatusChange,
@@ -99,33 +100,39 @@ export function JobKanbanBoard({
       grouped[stage.id] = [];
     });
 
-    // Group candidates by their current stage
-    candidates.forEach((candidate, index) => {
+    // Group candidates by their current stage FOR THIS SPECIFIC JOB
+    candidates.forEach((candidate) => {
+      // CRITICAL: For multi-job candidates, get the stage from jobApplications for THIS job
+      const jobApplication = candidate.jobApplications?.find((app: any) => {
+        const appJobId =
+          typeof app.jobId === "string" ? app.jobId : app.jobId?.id;
+        return appJobId === jobId;
+      });
+
+      // Use job-specific stage, fallback to global stage (for backwards compatibility)
       const candidateWithStage = candidate as {
         currentPipelineStageId?: string | { toString(): string };
         currentStage?: { id: string };
       };
 
       const currentStageId =
+        jobApplication?.currentStage ||
         candidateWithStage.currentPipelineStageId?.toString() ||
         candidateWithStage.currentStage?.id;
 
       if (currentStageId && grouped[currentStageId]) {
         grouped[currentStageId].push(candidate);
-        } else {
+      } else {
         // If no stage assigned, put in first stage
         const firstStage = stages[0];
         if (firstStage) {
           grouped[firstStage.id].push(candidate);
-          }
+        }
       }
     });
 
-    Object.entries(grouped).forEach(([stageId, stageCandidates]) => {
-      const stage = stages.find((s) => s.id === stageId);
-      });
     return grouped;
-  }, [candidates, stages, optimisticColumns]);
+  }, [candidates, stages, optimisticColumns, jobId]);
 
   const getCandidatesForStage = useCallback(
     (stageId: string) => columnData[stageId] || [],
@@ -134,8 +141,7 @@ export function JobKanbanBoard({
 
   // Listen for real-time updates and clear optimistic state when Firestore updates arrive
   useEffect(() => {
-    const handleRefetch = () => {
-      };
+    const handleRefetch = () => {};
 
     window.addEventListener("refetchCandidates", handleRefetch);
 
@@ -181,7 +187,7 @@ export function JobKanbanBoard({
           // This candidate was moved to this stage
           movedCandidateId = candidate.id;
           targetStageId = stageId;
-          }
+        }
       });
     });
 
@@ -194,7 +200,7 @@ export function JobKanbanBoard({
         setTimeout(() => {
           setOptimisticColumns(null);
         }, 500); // Give Firestore realtime listener time to update
-      } catch (error) {
+      } catch {
         // 5. API failed - revert to original state immediately
         setOptimisticColumns(null);
 
@@ -206,8 +212,7 @@ export function JobKanbanBoard({
   };
 
   // Debug: log when columnData changes
-  useEffect(() => {
-    }, [columnData, optimisticColumns]);
+  useEffect(() => {}, [columnData, optimisticColumns]);
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -339,95 +344,109 @@ export function JobKanbanBoard({
                       ) : (
                         getCandidatesForStage(stage.id).map(
                           (candidate, idx) => {
-                            const isRejected = candidate.status?.toLowerCase() === "rejected";
+                            const isRejected =
+                              candidate.status?.toLowerCase() === "rejected";
                             return (
-                            <Kanban.Item
-                              key={
-                                candidate.id ||
-                                (candidate as any)._id ||
-                                `candidate-${stage.id}-${idx}`
-                              }
-                              value={candidate.id || (candidate as any)._id}
-                              asHandle={!isRejected}
-                              asChild
-                              disabled={isRejected}
-                            >
-                              <div
-                                className={`rounded-md border p-3 shadow-sm transition-all duration-150 will-change-transform ${
-                                  isRejected 
-                                    ? "bg-red-50/50 border-red-200 dark:bg-red-950/20 dark:border-red-800 opacity-60 cursor-not-allowed" 
-                                    : "bg-card hover:shadow-lg cursor-pointer hover:border-primary/30 active:scale-[0.98]"
-                                }`}
-                                onClick={() => !isRejected && onCandidateClick(candidate)}
-                                style={
-                                  {
-                                    backfaceVisibility: "hidden",
-                                    WebkitBackfaceVisibility: "hidden",
-                                  } as React.CSSProperties
+                              <Kanban.Item
+                                key={
+                                  candidate.id ||
+                                  (candidate as any)._id ||
+                                  `candidate-${stage.id}-${idx}`
                                 }
+                                value={candidate.id || (candidate as any)._id}
+                                asHandle={!isRejected}
+                                asChild
+                                disabled={isRejected}
                               >
-                                <div className="flex flex-col gap-2.5">
-                                  {/* Candidate Name with Rejected Badge */}
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <div className={`size-8 rounded-full flex items-center justify-center shrink-0 ${
-                                      isRejected ? "bg-red-200 dark:bg-red-900" : "bg-primary/20"
-                                    }`}>
-                                      <span className={`text-xs font-semibold ${
-                                        isRejected ? "text-red-700 dark:text-red-300" : "text-primary"
-                                      }`}>
-                                        {getCandidateInitials(candidate)}
-                                      </span>
+                                <div
+                                  className={`rounded-md border p-3 shadow-sm transition-all duration-150 will-change-transform ${
+                                    isRejected
+                                      ? "bg-red-50/50 border-red-200 dark:bg-red-950/20 dark:border-red-800 opacity-60 cursor-not-allowed"
+                                      : "bg-card hover:shadow-lg cursor-pointer hover:border-primary/30 active:scale-[0.98]"
+                                  }`}
+                                  onClick={() =>
+                                    !isRejected && onCandidateClick(candidate)
+                                  }
+                                  style={
+                                    {
+                                      backfaceVisibility: "hidden",
+                                      WebkitBackfaceVisibility: "hidden",
+                                    } as React.CSSProperties
+                                  }
+                                >
+                                  <div className="flex flex-col gap-2.5">
+                                    {/* Candidate Name with Rejected Badge */}
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <div
+                                        className={`size-8 rounded-full flex items-center justify-center shrink-0 ${
+                                          isRejected
+                                            ? "bg-red-200 dark:bg-red-900"
+                                            : "bg-primary/20"
+                                        }`}
+                                      >
+                                        <span
+                                          className={`text-xs font-semibold ${
+                                            isRejected
+                                              ? "text-red-700 dark:text-red-300"
+                                              : "text-primary"
+                                          }`}
+                                        >
+                                          {getCandidateInitials(candidate)}
+                                        </span>
+                                      </div>
+                                      <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                                        <span className="line-clamp-1 font-medium text-sm">
+                                          {getCandidateName(candidate)}
+                                        </span>
+                                        {isRejected && (
+                                          <Badge
+                                            variant="destructive"
+                                            className="w-fit text-[10px] px-1.5 py-0"
+                                          >
+                                            Rejected
+                                          </Badge>
+                                        )}
+                                      </div>
                                     </div>
-                                    <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                                      <span className="line-clamp-1 font-medium text-sm">
-                                        {getCandidateName(candidate)}
-                                      </span>
-                                      {isRejected && (
-                                        <Badge variant="destructive" className="w-fit text-[10px] px-1.5 py-0">
-                                          Rejected
-                                        </Badge>
-                                      )}
-                                    </div>
+
+                                    {/* Contact Info */}
+                                    {(candidate.email || candidate.phone) && (
+                                      <div className="flex flex-col gap-1 text-muted-foreground text-xs">
+                                        {candidate.email && (
+                                          <div className="flex items-center gap-1.5 truncate">
+                                            <Mail className="h-3 w-3 shrink-0" />
+                                            <span className="truncate">
+                                              {candidate.email}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {candidate.phone && (
+                                          <div className="flex items-center gap-1.5">
+                                            <Phone className="h-3 w-3 shrink-0" />
+                                            <span>{candidate.phone}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Applied Date */}
+                                    {candidate.createdAt && (
+                                      <div className="flex items-center justify-between text-muted-foreground text-[10px] tabular-nums mt-0.5">
+                                        <span>
+                                          Applied:{" "}
+                                          {new Date(
+                                            candidate.createdAt
+                                          ).toLocaleDateString("en-US", {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                          })}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
-
-                                  {/* Contact Info */}
-                                  {(candidate.email || candidate.phone) && (
-                                    <div className="flex flex-col gap-1 text-muted-foreground text-xs">
-                                      {candidate.email && (
-                                        <div className="flex items-center gap-1.5 truncate">
-                                          <Mail className="h-3 w-3 shrink-0" />
-                                          <span className="truncate">
-                                            {candidate.email}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {candidate.phone && (
-                                        <div className="flex items-center gap-1.5">
-                                          <Phone className="h-3 w-3 shrink-0" />
-                                          <span>{candidate.phone}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {/* Applied Date */}
-                                  {candidate.createdAt && (
-                                    <div className="flex items-center justify-between text-muted-foreground text-[10px] tabular-nums mt-0.5">
-                                      <span>
-                                        Applied:{" "}
-                                        {new Date(
-                                          candidate.createdAt
-                                        ).toLocaleDateString("en-US", {
-                                          month: "short",
-                                          day: "numeric",
-                                          year: "numeric",
-                                        })}
-                                      </span>
-                                    </div>
-                                  )}
                                 </div>
-                              </div>
-                            </Kanban.Item>
+                              </Kanban.Item>
                             );
                           }
                         )

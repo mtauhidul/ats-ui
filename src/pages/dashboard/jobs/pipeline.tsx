@@ -101,7 +101,11 @@ export default function JobPipelinePage() {
       setCurrentPipeline(firestorePipeline);
     }
     // If no pipeline exists for this job, clear currentPipeline to show empty state
-    else if (!firestorePipeline && !pipelineLoading && currentPipeline?.jobId !== jobId) {
+    else if (
+      !firestorePipeline &&
+      !pipelineLoading &&
+      currentPipeline?.jobId !== jobId
+    ) {
       setCurrentPipeline(null);
     }
   }, [
@@ -183,14 +187,14 @@ export default function JobPipelinePage() {
         } else {
           toast.error("Failed to get pipeline ID");
         }
-      } catch (error) {
+      } catch {
         toast.error("Failed to create pipeline");
       }
     }
   };
 
-  const handleSelectUserTemplate = async (pipelineId: string) => {
-    const template = userTemplates.find((p) => p.id === pipelineId);
+  const handleCreatePipelineFromTemplate = async (templateId: string) => {
+    const template = userTemplates.find((p) => p.id === templateId);
     if (template && job && jobId) {
       try {
         // Create a new pipeline based on the user template
@@ -217,7 +221,7 @@ export default function JobPipelinePage() {
         } else {
           toast.error("Failed to get pipeline ID");
         }
-      } catch (error) {
+      } catch {
         toast.error("Failed to create pipeline");
       }
     }
@@ -268,7 +272,7 @@ export default function JobPipelinePage() {
 
       setIsBuilding(false);
       setIsEditing(false);
-    } catch (error) {
+    } catch {
       toast.error("Failed to save pipeline");
     }
   };
@@ -307,14 +311,14 @@ export default function JobPipelinePage() {
     }
 
     try {
-      // Update candidate's pipeline stage in backend
+      // CRITICAL: Pass jobId so backend knows which job's stage to update
       await updateCandidate(candidateId, {
         currentPipelineStageId: newStageId,
       });
 
       // Firestore will automatically update candidates in realtime
       toast.success("Candidate moved to new stage!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to move candidate");
 
       // Firestore will automatically sync the correct state
@@ -338,7 +342,7 @@ export default function JobPipelinePage() {
           isActive: true,
         })),
       });
-    } catch (error) {
+    } catch {
       toast.error("Failed to update stage");
     }
   };
@@ -393,7 +397,7 @@ export default function JobPipelinePage() {
               <PipelineEmptyState
                 onCreateCustom={handleCreateCustom}
                 onSelectTemplate={handleSelectTemplate}
-                onSelectPipeline={handleSelectUserTemplate}
+                onSelectPipeline={handleCreatePipelineFromTemplate}
                 userTemplates={userTemplates}
               />
             </div>

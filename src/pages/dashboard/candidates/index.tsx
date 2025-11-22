@@ -63,24 +63,42 @@ export default function CandidatesPage() {
       await deleteCandidate(candidateId);
       // Firestore will automatically update the list after deletion
       invalidateCache();
-    } catch (error) {
-      }
+    } catch (error) {}
   };
 
+  // Transform candidates into rows - one row per job application
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const transformedData = candidates.map((candidate: any, index) => {
-    // Debug: Log candidate resume data
-    if (index === 0) {
-      }
+  const transformedData = candidates.flatMap((candidate: any, index) => {
+    // Get all job IDs for this candidate
+    const jobIds = candidate.jobIds || [];
 
+    if (jobIds.length === 0) {
+      // No jobs - create a single row with "General Applicant"
+      return [createCandidateRow(candidate, null, null, index)];
+    }
+
+    // Create one row per job
+    return jobIds.map((jobId: any) => {
+      return createCandidateRow(candidate, jobId, null, index);
+    });
+  });
+
+  // Helper function to create a candidate row
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function createCandidateRow(
+    candidate: any,
+    jobIdOrObject: any,
+    _client: any,
+    index: number
+  ) {
     // Randomly assign 0-3 team members
     const teamMemberCount = Math.floor(Math.random() * 4);
     const shuffled = [...teamMembersPool].sort(() => 0.5 - Math.random());
     const selectedTeamMembers =
       teamMemberCount > 0 ? shuffled.slice(0, teamMemberCount) : [];
 
-    // Get first job details - jobIds can be populated objects or strings
-    const firstJobId = candidate.jobIds?.[0];
+    // Get job details - jobIdOrObject can be a populated object or string ID
+    const firstJobId = jobIdOrObject;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let job: any = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,35 +158,74 @@ export default function CandidatesPage() {
     // Use normalized id field (backend now returns both id and _id)
     const candidateId = candidate.id || candidate._id || "";
 
-    // Get current stage from backend (can be string or object)
-    // Check both currentPipelineStageId (new field) and currentStage (legacy field)
+    // Find the job application for this specific job
+    const currentJobApp = candidate.jobApplications?.find((app: any) => {
+      const appJobId =
+        typeof app.jobId === "string" ? app.jobId : app.jobId?.id;
+      return appJobId === job?.id;
+    });
+
+    // Get current stage name
     let currentStage = "Not Started";
 
-    // Get the stage ID from either field
-    const stageId =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (candidate as any).currentPipelineStageId || candidate.currentStage;
+    // CRITICAL: For multi-job candidates, use job-specific stage from jobApplications
+    // This ensures each job shows the correct stage for that specific application
+    // Only fallback to global stage if jobApplication doesn't exist for this job
+    const stageId = currentJobApp
+      ? currentJobApp.currentStage
+      : candidate.currentPipelineStageId || candidate.currentStage;
 
-    if (typeof stageId === "object" && stageId?.name) {
-      // Already populated with stage object
-      currentStage = stageId.name;
-    } else if (stageId && typeof stageId === "string") {
-      // It's a stage ID, look it up in pipelines
-      // Find the pipeline for this job
-      const jobPipeline = pipelines.find((p) => p.jobId === job?.id);
+    if (stageId && typeof stageId === "string" && job?.pipelineId) {
+      const jobPipeline = pipelines.find((p) => p.id === job.pipelineId);
 
-      if (jobPipeline) {
-        // Find the stage in this pipeline
-        const stage = jobPipeline.stages?.find((s) => s.id === stageId);
-        if (stage) {
-          currentStage = stage.name;
-        } else {
-          // Stage ID not found in pipeline, show the ID
-          currentStage = stageId;
+      if (jobPipeline?.stages && jobPipeline.stages.length > 0) {
+        let stage;
+
+        // Step 1: Try exact stage ID match (current pipeline)
+        stage = jobPipeline.stages.find((s: any) => s.id === stageId);
+
+        // Step 2: If not found, try exact stage name match (case-insensitive)
+        if (!stage) {
+          stage = jobPipeline.stages.find(
+            (s: any) => s.name?.toLowerCase() === stageId.toLowerCase()
+          );
         }
-      } else {
-        // No pipeline found, show the stage ID
-        currentStage = stageId;
+
+        // Step 3: If not found and stageId is an old stage ID format, match by index
+        // Old: stage_1763585843289_6, New: stage_1763612161072_6
+        // Both have index 6, so match by index to preserve stage position
+        if (!stage && stageId.includes("stage_") && stageId.includes("_")) {
+          const parts = stageId.split("_");
+          const stageIndex = parseInt(parts[parts.length - 1]);
+          if (!isNaN(stageIndex) && stageIndex < jobPipeline.stages.length) {
+            stage = jobPipeline.stages[stageIndex];
+          }
+        }
+
+        // Step 4: Fuzzy match for renamed stages (e.g., "Move to Candidate Pool" -> "Move to Candidates")
+        if (!stage) {
+          const stageIdLower = stageId.toLowerCase();
+          stage = jobPipeline.stages.find((s: any) => {
+            const stageName = s.name?.toLowerCase() || "";
+
+            // Check if significant words match (at least 2 words with length > 2)
+            const significantWords = stageIdLower
+              .split(" ")
+              .filter((w) => w.length > 2);
+            if (significantWords.length >= 2) {
+              const matchCount = significantWords.filter((word) =>
+                stageName.includes(word)
+              ).length;
+              if (matchCount >= 2) return true;
+            }
+
+            return false;
+          });
+        }
+
+        if (stage?.name) {
+          currentStage = stage.name;
+        }
       }
     }
 
@@ -178,11 +235,24 @@ export default function CandidatesPage() {
       header: `${candidate.firstName} ${candidate.lastName}`, // Candidate name
       type: job?.title || "General Applicant", // Job title they applied for
       status: getDisplayStatus(candidate.status || "active"),
-      target: new Date(candidate.createdAt).getTime(), // Timestamp for sorting
+      // Use job application date for this specific job (for sorting latest first)
+      target: currentJobApp?.appliedAt
+        ? typeof currentJobApp.appliedAt === "object" &&
+          "seconds" in currentJobApp.appliedAt
+          ? currentJobApp.appliedAt.seconds * 1000
+          : new Date(currentJobApp.appliedAt).getTime()
+        : new Date(candidate.createdAt).getTime(),
       limit: candidate.yearsOfExperience || 0, // For sorting
       reviewer: "Team", // Could be derived from job assignments
       // Properly mapped display data
-      dateApplied: new Date(candidate.createdAt).toLocaleDateString(), // Candidate creation date
+      dateApplied: currentJobApp?.appliedAt
+        ? typeof currentJobApp.appliedAt === "object" &&
+          "seconds" in currentJobApp.appliedAt
+          ? new Date(
+              currentJobApp.appliedAt.seconds * 1000
+            ).toLocaleDateString()
+          : new Date(currentJobApp.appliedAt).toLocaleDateString()
+        : new Date(candidate.createdAt).toLocaleDateString(),
       currentStage: currentStage, // Current pipeline stage from backend
       jobIdDisplay: job?.id || "N/A", // Actual job ID
       jobTitle: job?.title || "General Applicant", // Job title
@@ -206,9 +276,18 @@ export default function CandidatesPage() {
       coverLetter: candidate.coverLetter?.url || undefined,
       resumeText: undefined,
       // Check multiple possible resume field locations (Cloudinary)
-      resumeFilename: candidate.resume?.name || candidate.resume?.originalName || candidate.resumeFileName || undefined,
-      resumeFileSize: candidate.resume?.size || candidate.resumeFileSize || undefined,
-      resumeUrl: candidate.resume?.url || candidate.resumeUrl || candidate.resume?.secure_url || undefined,
+      resumeFilename:
+        candidate.resume?.name ||
+        candidate.resume?.originalName ||
+        candidate.resumeFileName ||
+        undefined,
+      resumeFileSize:
+        candidate.resume?.size || candidate.resumeFileSize || undefined,
+      resumeUrl:
+        candidate.resume?.url ||
+        candidate.resumeUrl ||
+        candidate.resume?.secure_url ||
+        undefined,
       // Personal details
       location: candidate.address
         ? `${candidate.address.city}, ${candidate.address.country}`
@@ -229,7 +308,10 @@ export default function CandidatesPage() {
       videoIntroFileSize: index === 0 ? "15.2 MB" : undefined,
       videoIntroDuration: index === 0 ? "2:30" : undefined,
     };
-  });
+  }
+
+  // Sort by application date (newest first) so latest applications appear on top
+  const sortedData = transformedData.sort((a, b) => b.target - a.target);
 
   const isLoading =
     candidatesLoading || jobsLoading || clientsLoading || pipelinesLoading;
@@ -256,7 +338,7 @@ export default function CandidatesPage() {
             </div>
           </div>
           <CandidatesDataTable
-            data={transformedData}
+            data={sortedData}
             onDeleteCandidate={handleDeleteCandidate}
           />
         </div>

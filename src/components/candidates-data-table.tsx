@@ -79,9 +79,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { useAuth } from "@/hooks/useAuth";
 import { useClients } from "@/hooks/firestore";
-import { useCandidates, useJobs, useTeam } from "@/store/hooks/index";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  useCandidates,
+  useJobs,
+  usePipelines,
+  useTeam,
+} from "@/store/hooks/index";
 import type { schema } from "./data-table-schema.tsx";
 
 // Table cell viewer component for candidate name - decorated like applications table
@@ -125,14 +130,13 @@ function AssignedSelector({
   // 🔥 REALTIME: Team members come from Firestore automatically
   const { teamMembers } = useTeam();
   const { updateCandidate } = useCandidates();
-  
+
   // 🔒 RBAC: Check if current user is admin
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === "admin";
 
   // Debug: Log team members
-  React.useEffect(() => {
-    }, [teamMembers]);
+  React.useEffect(() => {}, [teamMembers]);
 
   // Update selected member when initialAssignee changes (e.g., after data refresh)
   React.useEffect(() => {
@@ -149,7 +153,7 @@ function AssignedSelector({
         await updateCandidate(candidateId.toString(), { assignedTo: null });
         onUpdate?.(); // Trigger parent refresh
         toast.success("Team member unassigned");
-      } catch (error) {
+      } catch {
         toast.error("Failed to unassign team member");
         setSelectedMember(previousAssignee);
       }
@@ -169,7 +173,7 @@ function AssignedSelector({
           });
           onUpdate?.(); // Trigger parent refresh
           toast.success(`Assigned ${memberName} to candidate`);
-        } catch (error) {
+        } catch {
           toast.error("Failed to assign team member");
           setSelectedMember(initialAssignee || null);
         }
@@ -192,10 +196,12 @@ function AssignedSelector({
   if (!isAdmin || disabled) {
     return (
       <div className="h-8 px-3 py-2 text-sm border rounded-md bg-muted/50 flex items-center w-full cursor-not-allowed">
-        {selectedMember || 
-          (candidateStatus?.toLowerCase() === "hired" ? "Hired" : 
-           candidateStatus?.toLowerCase() === "rejected" ? "Rejected" : 
-           "Not assigned")}
+        {selectedMember ||
+          (candidateStatus?.toLowerCase() === "hired"
+            ? "Hired"
+            : candidateStatus?.toLowerCase() === "rejected"
+            ? "Rejected"
+            : "Not assigned")}
       </div>
     );
   }
@@ -210,9 +216,7 @@ function AssignedSelector({
       disabled={disabled}
     >
       <SelectTrigger className="h-8 text-sm w-full" disabled={disabled}>
-        <SelectValue>
-          {selectedMember || "Assign someone"}
-        </SelectValue>
+        <SelectValue>{selectedMember || "Assign someone"}</SelectValue>
       </SelectTrigger>
       <SelectContent>
         <div className="p-1">
@@ -446,7 +450,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
         : stageName;
 
       return (
-        <div className="min-w-[120px] max-w-[120px] overflow-hidden">
+        <div className="min-w-[180px] max-w-[180px] overflow-hidden">
           <Badge
             className={`px-2.5 py-1 text-xs font-medium w-fit truncate max-w-full ${getStageColor(
               stageName
@@ -461,9 +465,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
       return value.includes(row.original.dateApplied);
     },
     enableHiding: true,
-    size: 120,
-    minSize: 120,
-    maxSize: 120,
+    size: 180,
+    minSize: 180,
+    maxSize: 180,
   },
   {
     accessorKey: "limit",
@@ -638,7 +642,7 @@ const createActionsColumn = (handlers: {
               onClick={() => handlers.onReassignJob(row.original.id)}
             >
               <IconBriefcase className="h-3 w-3 mr-2" />
-              Reassign to Job
+              Reassign to another Job
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -672,7 +676,7 @@ export function CandidatesDataTable({
     []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "target", desc: true } // Default: sort by newest first (Date Applied - Newest)
+    { id: "target", desc: true }, // Default: sort by newest first (Date Applied - Newest)
   ]);
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
@@ -685,17 +689,20 @@ export function CandidatesDataTable({
   const { updateCandidate, candidates } = useCandidates();
   const { jobs } = useJobs();
   const { data: clients } = useClients();
+  const { pipelines } = usePipelines();
 
   // Dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [candidateToDelete, setCandidateToDelete] = React.useState<{
     id: string | number;
     candidateId?: string;
+    jobId?: string;
   } | null>(null);
   const [assignTeamDialogOpen, setAssignTeamDialogOpen] = React.useState(false);
   const [bulkAssignTeamDialogOpen, setBulkAssignTeamDialogOpen] =
     React.useState(false);
-  const [bulkAssignSelectedMember, setBulkAssignSelectedMember] = React.useState<string>("");
+  const [bulkAssignSelectedMember, setBulkAssignSelectedMember] =
+    React.useState<string>("");
   const [candidateIdForAssign, setCandidateIdForAssign] = React.useState<
     string | number | null
   >(null);
@@ -743,7 +750,7 @@ export function CandidatesDataTable({
       await Promise.all(updatePromises);
       toast.success(`${selectedRows.length} candidates marked as hired`);
       table.resetRowSelection();
-    } catch (error) {
+    } catch {
       toast.error("Failed to update some candidates");
       setData(initialData);
     }
@@ -771,7 +778,7 @@ export function CandidatesDataTable({
       await Promise.all(updatePromises);
       toast.success(`${selectedRows.length} candidates rejected`);
       table.resetRowSelection();
-    } catch (error) {
+    } catch {
       toast.error("Failed to update some candidates");
       setData(initialData);
     }
@@ -827,7 +834,7 @@ export function CandidatesDataTable({
       table.resetRowSelection();
       setBulkAssignTeamDialogOpen(false);
       setBulkAssignSelectedMember("");
-    } catch (error) {
+    } catch {
       toast.error("Failed to assign some candidates");
       setData(initialData);
     }
@@ -878,7 +885,7 @@ export function CandidatesDataTable({
       // Update in Firestore
       await updateCandidate(candidateId, { status: "hired" });
       toast.success("Candidate marked as hired");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update candidate status");
       // Revert optimistic update on error
       setData(initialData);
@@ -925,7 +932,7 @@ export function CandidatesDataTable({
       } as any);
 
       toast.success("Candidate marked as rejected");
-    } catch (error) {
+    } catch {
       toast.error("Failed to reject candidate");
       // Revert optimistic update on error
       setData(initialData);
@@ -971,7 +978,7 @@ export function CandidatesDataTable({
         assignedTo: member.userId || member.id,
       });
       toast.success(`Assigned to ${teamMember}`);
-    } catch (error) {
+    } catch {
       toast.error("Failed to assign team member");
       // Revert optimistic update on error
       setData(initialData);
@@ -1001,15 +1008,78 @@ export function CandidatesDataTable({
   };
 
   const handleDelete = (id: string | number) => {
-    const candidate = data.find((item) => item.id === id);
-    setCandidateToDelete({ id, candidateId: candidate?.candidateId });
+    const rowData = data.find((item) => item.id === id);
+    setCandidateToDelete({
+      id,
+      candidateId: rowData?.candidateId,
+      jobId: rowData?.jobIdDisplay, // Store the job ID for this specific application
+    });
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (candidateToDelete) {
-      if (candidateToDelete.candidateId && onDeleteCandidate) {
-        onDeleteCandidate(candidateToDelete.candidateId);
+      if (candidateToDelete.candidateId) {
+        try {
+          // Find the full candidate data
+          const candidate = candidates.find(
+            (c) => c.id === candidateToDelete.candidateId
+          );
+
+          if (!candidate) {
+            toast.error("Candidate not found");
+            return;
+          }
+
+          const jobId = candidateToDelete.jobId;
+
+          // If jobId exists, remove only this job application
+          if (jobId && jobId !== "N/A") {
+            const updatedJobIds = (candidate.jobIds || []).filter(
+              (jid: string | { id: string }) => {
+                const id = typeof jid === "string" ? jid : jid?.id;
+                return id !== jobId;
+              }
+            );
+
+            const updatedJobApplications = (
+              candidate.jobApplications || []
+            ).filter((app) => app.jobId !== jobId);
+
+            // If this was the last job, delete the entire candidate
+            if (updatedJobIds.length === 0) {
+              if (onDeleteCandidate) {
+                onDeleteCandidate(candidateToDelete.candidateId);
+              }
+              toast.success("Candidate removed (no more active jobs)");
+            } else {
+              // Update candidate with remaining jobs
+              await updateCandidate(candidateToDelete.candidateId, {
+                jobIds: updatedJobIds,
+                jobApplications: updatedJobApplications,
+              });
+
+              // Firestore will automatically update via real-time subscription
+              // Force immediate local state update for better UX
+              setData((prevData) =>
+                prevData.filter((item) => item.id !== candidateToDelete.id)
+              );
+
+              toast.success("Removed candidate from this job");
+            }
+          } else {
+            // No specific job, delete entire candidate
+            if (onDeleteCandidate) {
+              onDeleteCandidate(candidateToDelete.candidateId);
+            }
+            toast.success("Candidate deleted");
+          }
+
+          setDeleteDialogOpen(false);
+          setCandidateToDelete(null);
+        } catch {
+          toast.error("Failed to remove candidate from job");
+        }
       } else {
         // Fallback to local state update if no callback provided
         setData((prevData) =>
@@ -1055,23 +1125,44 @@ export function CandidatesDataTable({
 
       if (existingJobApp) {
         // Candidate was previously assigned to this job (rejected/hired) - reactivate
+        // Get the job's pipeline and first stage
+        const jobPipeline = pipelines.find(
+          (p) => p.jobId === selectedJobForReassign
+        );
+        const firstStageId = jobPipeline?.stages?.[0]?.id;
+
         updatedJobApplications = updatedJobApplications.map((app) =>
           app.jobId === selectedJobForReassign
             ? {
                 ...app,
                 status: "active" as const,
-                currentStage: "new", // Reset to first stage
+                currentStage: firstStageId || undefined, // Reset to first stage of pipeline
                 lastStatusChange: new Date(),
               }
             : app
         );
       } else {
-        // New assignment - add to arrays
+        // New assignment - get the job's pipeline and first stage
+        const jobPipeline = pipelines.find(
+          (p) => p.jobId === selectedJobForReassign
+        );
+        const firstStageId = jobPipeline?.stages?.[0]?.id;
+
+        console.log("=== REASSIGN DEBUG ===");
+        console.log("Job ID:", selectedJobForReassign);
+        console.log("Job Title:", job.title);
+        console.log("Pipeline found:", !!jobPipeline);
+        console.log("Pipeline ID:", jobPipeline?.id);
+        console.log("Pipeline stages count:", jobPipeline?.stages?.length);
+        console.log("First stage ID:", firstStageId);
+        console.log("First stage name:", jobPipeline?.stages?.[0]?.name);
+        console.log("====================");
+
         const newJobApplication = {
           jobId: selectedJobForReassign,
           status: "active" as const,
           appliedAt: new Date(),
-          currentStage: "new", // Default stage - backend will update to actual first stage
+          currentStage: firstStageId || undefined, // Use first stage of pipeline if exists
           lastStatusChange: new Date(),
           // Email tracking fields (required by CandidatePipeline interface)
           emailIds: [],
@@ -1102,7 +1193,7 @@ export function CandidatesDataTable({
       setReassignJobDialogOpen(false);
       setCandidateToReassign(null);
       setSelectedJobForReassign("");
-    } catch (error) {
+    } catch {
       toast.error("Failed to reassign candidate");
     }
   };
@@ -1700,9 +1791,21 @@ export function CandidatesDataTable({
       <ConfirmationDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title="Delete Candidate"
-        description="Are you sure you want to delete this candidate? This action cannot be undone."
-        confirmText="Delete"
+        title={
+          candidateToDelete?.jobId && candidateToDelete.jobId !== "N/A"
+            ? "Remove from Job"
+            : "Delete Candidate"
+        }
+        description={
+          candidateToDelete?.jobId && candidateToDelete.jobId !== "N/A"
+            ? "Are you sure you want to remove this candidate from this job? The candidate will still be available for other jobs they applied to."
+            : "Are you sure you want to delete this candidate completely? This will remove them from all jobs and cannot be undone."
+        }
+        confirmText={
+          candidateToDelete?.jobId && candidateToDelete.jobId !== "N/A"
+            ? "Remove from Job"
+            : "Delete"
+        }
         cancelText="Cancel"
         onConfirm={confirmDelete}
         variant="destructive"
@@ -1720,12 +1823,17 @@ export function CandidatesDataTable({
         cancelText="Cancel"
       />
 
-      <Dialog open={bulkAssignTeamDialogOpen} onOpenChange={setBulkAssignTeamDialogOpen}>
+      <Dialog
+        open={bulkAssignTeamDialogOpen}
+        onOpenChange={setBulkAssignTeamDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Assign Team Member</DialogTitle>
             <DialogDescription>
-              Select a team member to assign to {table.getFilteredSelectedRowModel().rows.length} selected candidates.
+              Select a team member to assign to{" "}
+              {table.getFilteredSelectedRowModel().rows.length} selected
+              candidates.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -1746,7 +1854,8 @@ export function CandidatesDataTable({
                   ) : (
                     teamMembers.map((member) => (
                       <SelectItem key={member.id} value={member.id}>
-                        {`${member.firstName} ${member.lastName}`.trim() || member.email}
+                        {`${member.firstName} ${member.lastName}`.trim() ||
+                          member.email}
                       </SelectItem>
                     ))
                   )}
@@ -1814,7 +1923,9 @@ export function CandidatesDataTable({
           return (
             <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
               <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg max-w-md w-full p-6">
-                <h2 className="text-lg font-semibold mb-4">Reassign to Job</h2>
+                <h2 className="text-lg font-semibold mb-4">
+                  Reassign to Another Job
+                </h2>
 
                 {availableJobs.length === 0 ? (
                   <p className="text-sm text-muted-foreground mb-4">
